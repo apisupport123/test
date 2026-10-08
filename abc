@@ -1,572 +1,531 @@
-<%@page contentType="text/html" pageEncoding="UTF-8"%>
-
-
-
-    <%@page import="java.util.*"%>
+<%@page pageEncoding="UTF-8"%>
+<%@page import="java.util.*"%>
 <%@page import="java.sql.*"%>
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="ISO-8859-1">
+<meta charset="UTF-8">
 <meta http-equiv="refresh" content="600">
- <title>ErrorDashboard</title>
-  <style>
-   .ag-format-container {
-  width: auto;
-  margin: 0 ;
-  position: relative;
-  top: -100px;
-}
+<title>Error Dashboard</title>
+<link href="<%=request.getContextPath()%>/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="<%=request.getContextPath()%>/css/all.min.css">
 
-
+<style>
+/* ============ PAGE BASE ============ */
 body {
-  background-color: #000;
-}
-.ag-courses_box {
-  
-      width: 100%;
-      background-color: black;
-      position: relative;
-      float: left;
-      margin: 1%;
-
-  padding: 50px 0;
-}
-.ag-courses_item {
-  -ms-flex-preferred-size: calc(3.33333% - 30px);
-  flex-basis: calc(33.33333% - 30px);
-
-  margin: 0 15px 30px;
-
-  overflow: hidden;
-
-  border-radius: 28px;
-}
-.ag-courses-item_link {
-  display: block;
-  padding: 30px 20px;
-  background-color: white;
-
-  overflow: hidden;
-
-  position: relative;
+  background: var(--bg) !important;
+  color: var(--ink) !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
-.ag-courses-item_link1 {
-  display: block;
-  padding: 30px 20px;
-  background-color: red;
-
-  overflow: hidden;
-
-  position: relative;
-}
-.ag-courses-item_link:hover,
-.ag-courses-item_link:hover .ag-courses-item_date {
-  text-decoration: none;
-  color: #FFF;
-}
-.ag-courses-item_link:hover .ag-courses-item_bg {
-  -webkit-transform: scale(10);
-  -ms-transform: scale(10);
-  transform: scale(10);
+.page-container {
+  padding: 32px 32px 48px;
+  max-width: 1600px;
+  margin: 0 auto;
 }
 
-.ag-courses-item_link:hover .ag-courses-item_bg1 {
-  -webkit-transform: scale(10);
-  -ms-transform: scale(10);
-  transform: scale(10);
+/* ============ PAGE HEADER ============ */
+.page-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+.page-head .ttl-wrap { flex: 1; min-width: 260px; }
+.page-head .ttl {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 800;
+  font-size: 1.65rem;
+  letter-spacing: -0.6px;
+  color: var(--ink);
+  line-height: 1.2;
+  margin: 0;
+}
+.page-head .ttl .ttl-icon {
+  width: 44px; height: 44px;
+  display: grid; place-items: center;
+  background: var(--brand-light);
+  color: var(--brand);
+  border-radius: 12px;
+  font-size: 1.05rem;
+  flex-shrink: 0;
+}
+html[data-theme="dark"] .page-head .ttl .ttl-icon {
+  background: rgba(248,111,3,.15);
+}
+.page-head .sub {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin: 6px 0 0 56px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.refresh-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  background: var(--brand-light);
+  color: var(--brand);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+html[data-theme="dark"] .refresh-badge {
+  background: rgba(248,111,3,.15);
+}
+.refresh-badge .timer {
+  font-family: 'JetBrains Mono', Consolas, monospace;
+  font-weight: 700;
+  font-size: 0.85rem;
 }
 
-.ag-courses-item_link:hover .ag-courses-item_bg2 {
-  -webkit-transform: scale(10);
-  -ms-transform: scale(10);
-  transform: scale(10);
+/* ============ LEGEND ROW (GEN5 / NON-GEN5 / SI) ============ */
+.legend-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 28px;
+  max-width: 900px;
 }
-.ag-courses-item_title {
-  min-height: 87px;
-  margin: 0 0 25px;
-  overflow: hidden;
-  font-weight: bold;
-  font-size: 30px;
-  color: black;
-  z-index: 2;
-  position: relative;
+.legend-card {
+  border-radius: 16px;
+  padding: 18px 22px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  border: none;
+  transition: all .2s ease;
+  box-shadow: 0 4px 14px rgba(0,0,0,.05);
 }
-.ag-courses-item_date-box {
-  font-size: 18px;
-  color: black;
-
-  z-index: 2;
-  position: relative;
+.legend-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,.1);
 }
-.ag-courses-item_date {
-  font-weight: bold;
-  color: #f9b234;
-
-  -webkit-transition: color .5s ease;
-  -o-transition: color .5s ease;
-  transition: color .5s ease
+.legend-card.gen5 {
+  background: #F9B234;
+  color: #1A1A1A;
 }
-.ag-courses-item_bg {
-  height: 158px;
-  width: 158px;
-  background-color: #f9b234;
-
-  z-index: 1;
-  position: absolute;
-  top: -75px;
-  right: -75px;
-
+.legend-card.nongen5 {
+  background: #16A34A;
+  color: #fff;
+}
+.legend-card.si {
+  background: #38BDF8;
+  color: #1A1A1A;
+}
+.legend-card .dot {
+  width: 10px; height: 10px;
   border-radius: 50%;
-
-  -webkit-transition: all .5s ease;
-  -o-transition: all .5s ease;
-  transition: all .5s ease;
+  background: rgba(0,0,0,.25);
+  flex-shrink: 0;
+}
+.legend-card.nongen5 .dot { background: rgba(255,255,255,.5); }
+.legend-card .lbl {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  opacity: .75;
+  font-weight: 600;
+}
+.legend-card .val {
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: -.3px;
 }
 
-.ag-courses-item_bg1 {
-  height: 158px;
-  width: 158px;
-  background-color: green;
-
-  z-index: 1;
-  position: absolute;
-  top: -75px;
-  right: -75px;
-
-  border-radius: 50%;
-
-  -webkit-transition: all .5s ease;
-  -o-transition: all .5s ease;
-  transition: all .5s ease;
+/* ============ CARD GRID ============ */
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 18px;
+  margin-bottom: 32px;
 }
 
-.ag-courses-item_bg2 {
-  height: 158px;
-  width: 158px;
-  background-color: skyblue;
-
-  z-index: 1;
-  position: absolute;
-  top: -75px;
-  right: -75px;
-
-  border-radius: 50%;
-
-  -webkit-transition: all .5s ease;
-  -o-transition: all .5s ease;
-  transition: all .5s ease;
+.err-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all .25s ease;
+  position: relative;
+  min-height: 160px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 2px 12px rgba(0,0,0,.03);
 }
 
-
-
-
-@media only screen and (max-width: 979px) {
-  .ag-courses_item {
-    -ms-flex-preferred-size: calc(50% - 30px);
-    flex-basis: calc(50% - 30px);
-  }
-  .ag-courses-item_title {
-    font-size: 24px;
-  }
+.err-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 40px -12px rgba(248,111,3,.22);
+  border-color: var(--brand);
 }
 
-@media only screen and (max-width: 767px) {
-  .ag-format-container {
-    width: 96%;
-  }
-
-}
-@media only screen and (max-width: 639px) {
-  .ag-courses_item {
-    -ms-flex-preferred-size: 100%;
-    flex-basis: 100%;
-  }
-  .ag-courses-item_title {
-    min-height: 72px;
-    line-height: 1;
-
-    font-size: 24px;
-  }
-  .ag-courses-item_link {
-    padding: 22px 40px;
-  }
-  .ag-courses-item_date-box {
-    font-size: 16px;
-  }
-}
-    .card {
-
-      transition: 0.3s;
-      width: 18%;
-      background-color: white;
-      position: relative;
-      float: left;
-      margin: 1%;
-    }
-    .container {
-      padding: 2px 16px;
-    }
-
-
-    .card:hover {
-      -ms-transform: scale(1.1);
-      /* IE 9 */
-      -webkit-transform: scale(1.1);
-      /* Safari 3-8 */
-      transform: scale(1.1);
-    }
-
-    
-
-
-    .timer {
-      /* text-align: center; */
-      border: 2px solid white;
-      display: inline;
-      padding: 5px;
-      color: white;
-      font-family: Verdana, sans-serif, Arial;
-      font-size: 20px;
-      height: 50px;
-      font-weight: bold;
-      text-decoration: none;
-    }
-
-   
-
-
-  .footer {
-	   position: fixed;
-	   left: 0;
-	   bottom: 0;
-	   width: 100%;
-	   color: white;
-	   text-align: center;
-	}
-
-    
-    /* Float four columns side by side */
-.column {
-  float: left;
-  width: 25%;
-  padding: 0 10px;
-}
-
-/* Remove extra left and right margins, due to padding */
-.row {margin: 0 500px;}
-
-/* Clear floats after the columns */
-.row:after {
+/* Accent bar top */
+.err-card::before {
   content: "";
-  display: table;
-  clear: both;
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  background: var(--brand);
+}
+.err-card.gen5::before { background: #F9B234; }
+.err-card.nongen5::before { background: #16A34A; }
+.err-card.si::before { background: #38BDF8; }
+.err-card.warn::before { background: #EF4444; }
+
+/* Decorative circle */
+.err-card .bg-circle {
+  position: absolute;
+  top: -60px; right: -60px;
+  width: 140px; height: 140px;
+  border-radius: 50%;
+  opacity: .12;
+  transition: all .4s ease;
+  pointer-events: none;
+}
+.err-card.gen5 .bg-circle { background: #F9B234; }
+.err-card.nongen5 .bg-circle { background: #16A34A; }
+.err-card.si .bg-circle { background: #38BDF8; }
+.err-card.warn .bg-circle { background: #EF4444; }
+.err-card:hover .bg-circle {
+  transform: scale(1.6);
+  opacity: .22;
 }
 
-/* Responsive columns */
-@media screen and (max-width: 600px) {
-  .column {
-    width: 100%;
-    display: block;
-    margin-bottom: auto;
-  }
+.err-card .card-body-inner {
+  padding: 22px 22px 16px;
+  position: relative;
+  z-index: 2;
+}
+.err-card .err-tag {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  margin-bottom: 12px;
+}
+.err-card.gen5 .err-tag { background: #FEF3C7; color: #92400E; }
+.err-card.nongen5 .err-tag { background: #DCFCE7; color: #166534; }
+.err-card.si .err-tag { background: #E0F2FE; color: #075985; }
+.err-card.warn .err-tag { background: #FEE2E2; color: #991B1B; }
+html[data-theme="dark"] .err-card.gen5 .err-tag { background: rgba(249,178,52,.18); color: #F9B234; }
+html[data-theme="dark"] .err-card.nongen5 .err-tag { background: rgba(22,163,74,.18); color: #4ADE80; }
+html[data-theme="dark"] .err-card.si .err-tag { background: rgba(56,189,248,.18); color: #38BDF8; }
+html[data-theme="dark"] .err-card.warn .err-tag { background: rgba(239,68,68,.18); color: #F87171; }
+
+.err-card .err-code {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -.3px;
+  margin-bottom: 4px;
+  word-break: break-all;
+}
+.err-card .err-label {
+  font-size: 0.72rem;
+  color: var(--muted);
+  font-weight: 500;
 }
 
-/* Style the counter cards */
-.card1 {
-  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
-  padding: 5px;
+.err-card .card-stats {
+  display: flex;
+  gap: 18px;
+  padding: 14px 22px;
+  border-top: 1px solid var(--line);
+  background: var(--bg);
+  position: relative;
+  z-index: 2;
+}
+html[data-theme="dark"] .err-card .card-stats {
+  background: rgba(0,0,0,.25);
+}
+.err-card .stat-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.err-card .stat-item .st-lbl {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  color: var(--muted);
+  font-weight: 600;
+}
+.err-card .stat-item .st-val {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -.3px;
+}
+.err-card.gen5 .stat-item .st-val.highlight { color: #D97706; }
+.err-card.nongen5 .stat-item .st-val.highlight { color: #16A34A; }
+.err-card.si .stat-item .st-val.highlight { color: #0284C7; }
+.err-card.warn .stat-item .st-val.highlight { color: #DC2626; }
+
+/* Blink animation for warning cards */
+@keyframes pulse-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .55; }
+}
+.err-card.warn .err-tag {
+  animation: pulse-blink 2s ease-in-out infinite;
+}
+
+/* ============ EMPTY STATE ============ */
+.empty-state {
+  grid-column: 1 / -1;
   text-align: center;
-  background-color: #f1f1f1;
+  padding: 60px 20px;
+  color: var(--muted);
+  background: var(--card);
+  border: 1px dashed var(--line);
+  border-radius: 18px;
 }
-.blinkbox {
-         
-            animation: animate 
-                7.5s linear infinite;
-        }
-  
-        @keyframes animate {
-            0% {
-                opacity: 0;
-            }
-  
-            50% {
-                opacity: 1;
-            }
-  
-            100% {
-                opacity: 0;
-            }
-        }
-  </style>
-  <script type="text/javascript">
-  function showerrorcodegen(errorcodegen) {
-	  var a = '<%=request.getContextPath() + "/ErrorDashboardServises?&errorcodegen="%>'+errorcodegen;
-    	window.open(a,'_blank');
+.empty-state i {
+  font-size: 2.5rem;
+  color: var(--brand);
+  opacity: .4;
+  display: block;
+  margin-bottom: 12px;
 }
-  
-  function showerrorcodenon(errorcodenon) {
-	  var a = '<%=request.getContextPath() + "/ErrorDashboardServises?&errorcodenon="%>'+errorcodenon;
-  	window.open(a,'_blank');
-  	/* alert(errorcodenon); */
+.empty-state h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 4px;
 }
-  function showerrorcodeSI(errorcodeSI) {
-	  var a = '<%=request.getContextPath() + "/ErrorDashboardServises?&errorcodeSI="%>'+errorcodeSI;
-  	window.open(a,'_blank');
-  /* 	alert(errorcodeSI); */
+.empty-state p {
+  font-size: 0.85rem;
 }
-  
-  </script>
-</head>
-	  <%@include file="./DRPRHeader.jsp"%>
 
-<body style="background-color: black; zoom: 95%;">
+/* ============ FOOTER ============ */
+.foot {
+  margin-top: 48px;
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.foot b { color: var(--brand); }
+
+/* ============ RESPONSIVE ============ */
+@media (max-width: 900px) {
+  .page-container { padding: 20px 16px 32px; }
+  .page-head { flex-direction: column; align-items: flex-start; }
+  .page-head .ttl { font-size: 1.3rem; }
+  .page-head .ttl .ttl-icon { width: 38px; height: 38px; font-size: .9rem; }
+  .page-head .sub { margin-left: 50px; font-size: 0.82rem; }
+  .legend-row { grid-template-columns: 1fr; gap: 10px; }
+  .cards-grid { grid-template-columns: 1fr; }
+}
+</style>
+
+<script type="text/javascript">
+  function showerrorcodegen(errorcodegen) {
+    var a = '<%=request.getContextPath() + "/ErrorDashboardServises?&errorcodegen="%>' + errorcodegen;
+    window.open(a, '_blank');
+  }
+  function showerrorcodenon(errorcodenon) {
+    var a = '<%=request.getContextPath() + "/ErrorDashboardServises?&errorcodenon="%>' + errorcodenon;
+    window.open(a, '_blank');
+  }
+  function showerrorcodeSI(errorcodeSI) {
+    var a = '<%=request.getContextPath() + "/ErrorDashboardServises?&errorcodeSI="%>' + errorcodeSI;
+    window.open(a, '_blank');
+  }
+</script>
+</head>
+
+<body>
+
+<%@include file="../userheader.jsp"%>
+
 <%
-List<String> error_code=(List<String>) request.getAttribute("error_code");
-List<Integer> error_code_count=(List<Integer>)request.getAttribute("error_code_count");
-List<Double> error_per=(List<Double>)request.getAttribute("error_per");
-/* List<String> non_error_code=(List<String>) request.getAttribute("non_error_code");
-List<Integer> non_error_code_count=(List<Integer>)request.getAttribute("non_error_code_count");
-List<Double> non_error_per=(List<Double>)request.getAttribute("non_error_per"); */
-List<String> ERROR_CODE_SIDB=(List<String>) request.getAttribute("ERROR_CODE_SIDB");
-List<Integer> ERROR_CODE_COUNT_SIDB=(List<Integer>)request.getAttribute("ERROR_CODE_COUNT_SIDB");
-List<Double> ERROR_PERCENT_SIDB=(List<Double>)request.getAttribute("ERROR_PERCENT_SIDB");
+    List<String>  error_code            = (List<String>)  request.getAttribute("error_code");
+    List<Integer> error_code_count      = (List<Integer>) request.getAttribute("error_code_count");
+    List<Double>  error_per             = (List<Double>)  request.getAttribute("error_per");
+    List<String>  ERROR_CODE_SIDB       = (List<String>)  request.getAttribute("ERROR_CODE_SIDB");
+    List<Integer> ERROR_CODE_COUNT_SIDB = (List<Integer>) request.getAttribute("ERROR_CODE_COUNT_SIDB");
+    List<Double>  ERROR_PERCENT_SIDB    = (List<Double>)  request.getAttribute("ERROR_PERCENT_SIDB");
 %>
 
+<div class="new-wrapper">
+  <div class="page-container">
 
-  <h1
-    style="text-align: center; color: white; font-size: 40px; font-weight: bolder; position: relative; margin-top: 1px;">
-    Error Code Dashboard <span class="blink" style="font-size: 25px; color: white; text-align: center;"> This Data get
-      Auto Refresh after <span class="timer" id="ten-countdown"></span> Minutes
-    </span></h1>
- <div class="row" style="position: relative; left: 8%;">
-    <div class="column"  >
-      <div class="card1" style="height: 80px; width: 150px; background-color: #f9b234; border-radius: 5%; color: black; font-size: 30px;position: center;">
-        <p style="position: relative; margin-top: -20px;"><h2>GEN 5</h2> </p>
-        
+    <!-- ============ PAGE HEADER ============ -->
+    <div class="page-head">
+      <div class="ttl-wrap">
+        <h1 class="ttl">
+          <span class="ttl-icon"><i class="fas fa-triangle-exclamation"></i></span>
+          Error Code Dashboard
+        </h1>
+        <p class="sub">
+          Live error tracking · auto refresh in
+          <span class="refresh-badge">
+            <i class="far fa-clock"></i>
+            <span class="timer" id="ten-countdown">--:--</span>
+          </span>
+        </p>
       </div>
     </div>
-  
-    <div class="column">
-      <div class="card1" style="height: 80px; width: 250px; background-color: green;  border-radius: 5%; color: white; font-size: 30px; position: relative; ; right: 45px">
-        <p style="position: relative; margin-top: -20px;"><h2>NON-GEN 5</h2></p>
-        
-      </div>
-    </div>
-    
-    <div class="column">
-      <div class="card1" style="height: 80px; width: 150px; background-color: skyblue;  border-radius: 5%; color: black; font-size: 30px;">
-        <p style="position: relative; margin-top: -20px;"><h2>SI</h2></p>
-      </div>
-    </div>
-  </div>
-  
-   <div>
-    <div class="ag-format-container" style="position: relative; top: 10px;">
-        <div class="ag-courses_box" >
-         
-             <%
-             if (error_code != null && error_code.size()>0) {
-	for (int i = 0; i < error_code.size(); i++) { 
-	%>
-         <%   if(error_per.get(i)>=1){%>
-          <div class="ag-courses_item card " onclick="showerrorcodegen('<%=error_code.get(i)%>')">
-          <a href="#" class="ag-courses-item_link1" style="width: auto; height: 140px; text-decoration: none;">
-          <%} else{ %>
-           <div class="ag-courses_item card" onclick="showerrorcodegen('<%=error_code.get(i)%>')">
-            <a href="#" class="ag-courses-item_link" style="width: auto; height: 140px; text-decoration: none;">
-           <%} %>
-        <!--    <div class="ag-courses_item card" onclick="showerrorcodegen('<%=error_code.get(i)%>')" >-->
-           
-              <div class="ag-courses-item_bg"></div>
-      
-              <div class="ag-courses-item_title">
-                <div style="width: 200px; height: 150px; background-color: transparent;">
-                    <div class="container">
-                        <h5 style="position: relative; top: -45px;"><b>ERROR CODE: <%=error_code.get(i)%></b></h5>
-                           <p style="color: black; position: relative; top: -65px; font-size: 20px;">COUNT: <%=error_code_count.get(i)%></p>
-                        <p style="color: black; position: relative; top: -77px; font-size: 20px;">Percentage: <%=error_per.get(i)%></p>
-                        </div>
-                        </div>
-              </div>
-      
-              <div class="ag-courses-item_date-box" style="position: relative; top: -35px; text-align: center;">
-               
-                <span class="ag-courses-item_date">
-                  Gen-5 Error Code
-                </span>
-              </div>
-            </a>
-          </div>
-          
-          
-                 <%} }%>
-        
-          <%--  <%
-           if (non_error_code != null && non_error_code.size()>0) {
-	for (int i = 0; i < non_error_code.size(); i++) {
-	%>
-        <%   if(non_error_per.get(i)>=1){%>
-          <div class="ag-courses_item card" onclick="showerrorcodenon('<%=non_error_code.get(i)%>')">
-          <a href="#" class="ag-courses-item_link1" style="width: auto; height: 140px; text-decoration: none;">
-          <%} else{ %>
-           <div class="ag-courses_item card" onclick="showerrorcodenon('<%=non_error_code.get(i)%>')">
-           <a href="#" class="ag-courses-item_link" style="width: auto; height: 140px; text-decoration: none;">
-           <%} %>
-              <div class="ag-courses-item_bg1"></div>
-      
-              <div class="ag-courses-item_title">
-                <div style="width: 200px; height: 150px; background-color: transparent;">
-                    <div class="container">
-                        <h5 style="position: relative; top: -45px;"><b>ERROR CODE: <%=non_error_code.get(i)%> </b></h5>
-                         <p style="color: black; position: relative; top: -65px; font-size: 20px;">COUNT: <%=non_error_code_count.get(i)%></p>
-                        <p style="color: black; position: relative; top: -77px; font-size: 20px;">Percentage: <%=non_error_per.get(i)%></p>
-                        </div>
-                        </div>
-              </div>      
-              <div class="ag-courses-item_date-box" style="position: relative; top: -35px; text-align: center;">
-               
-                <span class="ag-courses-item_date">
-                  Non Gen-5 Error Code
-                </span>
-              </div>
-            </a>
-          </div>
-          
-                      <%} }%> --%>
-        
-          <%
-          if (ERROR_CODE_SIDB != null && ERROR_CODE_SIDB.size()>0) {
-	for (int i = 0; i < ERROR_CODE_SIDB.size(); i++) {
-	%>
-	      <%   if(ERROR_PERCENT_SIDB.get(i)>1){%>
-          <div class="ag-courses_item card" onclick="showerrorcodeSI('<%=ERROR_CODE_SIDB.get(i)%>')">
-           <a href="#" class="ag-courses-item_link1" style="width: auto; height: 140px; text-decoration: none;">
-          <%} else{ %>
-           <div class="ag-courses_item card" onclick="showerrorcodeSI('<%=ERROR_CODE_SIDB.get(i)%>')">
-           <a href="#" class="ag-courses-item_link" style="width: auto; height: 140px; text-decoration: none;	">
-           <%} %>
-         <!--   <div class="ag-courses_item card" onclick="showerrorcodeSI('<%=ERROR_CODE_SIDB.get(i)%>')">-->
-            
-              <div class="ag-courses-item_bg2"></div>
-      
-              <div class="ag-courses-item_title">
-                <div style="width: 200px; height: 150px; background-color: transparent;">
-                    <div class="container">
-                        <h5 style="position: relative; top: -45px;"><b>ERROR CODE: <%=ERROR_CODE_SIDB.get(i)%></b></h5>
-                         <p style="color: black; position: relative; top: -65px; font-size: 20px;">COUNT: <%=ERROR_CODE_COUNT_SIDB.get(i)%></p>
-                        <p style="color: black; position: relative; top: -77px; font-size: 20px;">Percentage: <%=ERROR_PERCENT_SIDB.get(i)%></p>
-                        </div>
-                        </div>
-              </div>
-      
-              <div class="ag-courses-item_date-box" style="position: relative; top: -35px; text-align: center;">
-               
-                <span class="ag-courses-item_date">
-                  SI Error Code
-                </span>
-              </div>
-            </a>
-          </div>
-          <%} } %>
-          
+
+    <!-- ============ LEGEND ROW ============ -->
+    <div class="legend-row">
+      <div class="legend-card gen5">
+        <div class="dot"></div>
+        <div>
+          <div class="lbl">Source</div>
+          <div class="val">GEN 5</div>
         </div>
       </div>
-</div> 
-  
-  
-  
-  
-  
-  <%-- 
-  <div style="position: relative; margin-top: -100px;">
+      <div class="legend-card nongen5">
+        <div class="dot"></div>
+        <div>
+          <div class="lbl">Source</div>
+          <div class="val">NON-GEN 5</div>
+        </div>
+      </div>
+      <div class="legend-card si">
+        <div class="dot"></div>
+        <div>
+          <div class="lbl">Source</div>
+          <div class="val">SI</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ ERROR CARDS GRID ============ -->
+    <div class="cards-grid">
+
+      <!-- ✅ GEN 5 Error Codes -->
       <%
-	for (int i = 0; i < error_code.size(); i++) {
-	%>
-    <div class="card" style="background-color: rgb(223, 107, 107); font-weight: 800; " onclick="showerrorcodegen('<%=error_code.get(i)%>')">
-    
+          boolean hasGen5 = (error_code != null && error_code.size() > 0);
+          boolean hasSI   = (ERROR_CODE_SIDB != null && ERROR_CODE_SIDB.size() > 0);
 
-	
-    
-      <div class="container">    
-        <h4><b> <span style="font-weight: bolder;">Error Code: </span> <%=error_code.get(i)%></b></h4>
-        <p> <span style="font-weight: bolder;">Error Count: </span><%=error_code_count.get(i)%></p>
-        <p> <span style="font-weight: bolder;">Error Percentage: </span><%=error_per.get(i)%></p>
+          if (hasGen5) {
+              for (int i = 0; i < error_code.size(); i++) {
+                  double pct = error_per != null && error_per.get(i) != null ? error_per.get(i) : 0.0;
+                  boolean isHigh = pct >= 1.0;
+      %>
+      <div class="err-card gen5 <%= isHigh ? "warn" : "" %>" onclick="showerrorcodegen('<%=error_code.get(i)%>')">
+        <div class="bg-circle"></div>
+        <div class="card-body-inner">
+          <span class="err-tag"><%= isHigh ? "GEN 5 · HIGH" : "GEN 5" %></span>
+          <div class="err-code"><%= error_code.get(i) %></div>
+          <div class="err-label">Error Code</div>
+        </div>
+        <div class="card-stats">
+          <div class="stat-item">
+            <div class="st-lbl">Count</div>
+            <div class="st-val highlight"><%= error_code_count.get(i) %></div>
+          </div>
+          <div class="stat-item">
+            <div class="st-lbl">Percentage</div>
+            <div class="st-val highlight"><%= error_per.get(i) %>%</div>
+          </div>
+        </div>
       </div>
-  
-    </div>
-        <%} %>
-        
-           <%
-	for (int i = 0; i < non_error_code.size(); i++) {
-	%>
-    <div class="card" style="background-color:orange ; font-weight: 800; " onclick="showerrorcodenon('<%=non_error_code.get(i)%>')">
-    
+      <%    }
+          }
+      %>
 
-	
-    
-      <div class="container">    
-        <h4><b> <span style="font-weight: bolder;">Error Code: </span> <%=non_error_code.get(i)%></b></h4>
-        <p> <span style="font-weight: bolder;">Error Count: </span><%=non_error_code_count.get(i)%></p>
-        <p> <span style="font-weight: bolder;">Error Percentage: </span><%=non_error_per.get(i)%></p>
+      <!-- ✅ SI (SIDB) Error Codes -->
+      <%
+          if (hasSI) {
+              for (int i = 0; i < ERROR_CODE_SIDB.size(); i++) {
+                  double pct = ERROR_PERCENT_SIDB != null && ERROR_PERCENT_SIDB.get(i) != null ? ERROR_PERCENT_SIDB.get(i) : 0.0;
+                  boolean isHigh = pct > 1.0;
+      %>
+      <div class="err-card si <%= isHigh ? "warn" : "" %>" onclick="showerrorcodeSI('<%=ERROR_CODE_SIDB.get(i)%>')">
+        <div class="bg-circle"></div>
+        <div class="card-body-inner">
+          <span class="err-tag"><%= isHigh ? "SI · HIGH" : "SI" %></span>
+          <div class="err-code"><%= ERROR_CODE_SIDB.get(i) %></div>
+          <div class="err-label">Error Code</div>
+        </div>
+        <div class="card-stats">
+          <div class="stat-item">
+            <div class="st-lbl">Count</div>
+            <div class="st-val highlight"><%= ERROR_CODE_COUNT_SIDB.get(i) %></div>
+          </div>
+          <div class="stat-item">
+            <div class="st-lbl">Percentage</div>
+            <div class="st-val highlight"><%= ERROR_PERCENT_SIDB.get(i) %>%</div>
+          </div>
+        </div>
       </div>
-  
-    </div>
-        <%} %>
-        
-          <%
-	for (int i = 0; i < ERROR_CODE_SIDB.size(); i++) {
-	%>
-    <div class="card" style="background-color:yellow ; font-weight: 800; " onclick="showerrorcodeSI('<%=ERROR_CODE_SIDB.get(i)%>')">
-    
+      <%    }
+          }
+      %>
 
-	
-    
-      <div class="container">    
-        <h4><b> <span style="font-weight: bolder;">Error Code: </span> <%=ERROR_CODE_SIDB.get(i)%></b></h4>
-        <p> <span style="font-weight: bolder;">Error Count: </span><%=ERROR_CODE_COUNT_SIDB.get(i)%></p>
-        <p> <span style="font-weight: bolder;">Error Percentage: </span><%=ERROR_PERCENT_SIDB.get(i)%></p>
+      <!-- ✅ Empty State -->
+      <% if (!hasGen5 && !hasSI) { %>
+      <div class="empty-state">
+        <i class="fa-solid fa-circle-check"></i>
+        <h3>All Clear</h3>
+        <p>No error codes to display for the current period.</p>
       </div>
-  
+      <% } %>
+
     </div>
-        <%} %>
-  </div> --%>
 
-  <script>
-    function countdown(elementName, minutes, seconds) {
-      var element, endTime, hours, mins, msLeft, time;
+    <!-- ============ FOOTER ============ -->
+    <div class="foot">
+      Designed &amp; Developed by <b>@Shubham Chaudhari</b> · EIS Automation Team
+    </div>
 
-      function twoDigits(n) {
-        return (n <= 9 ? "0" + n : n);
-      }
+  </div>
+</div>
 
-      function updateTimer() {
-        msLeft = endTime - (+new Date);
-        if (msLeft < 1000) {
-          element.innerHTML = "Please Wait Fetching the Latest Data!";
-        } else {
-          time = new Date(msLeft);
-          hours = time.getUTCHours();
-          mins = time.getUTCMinutes();
-          element.innerHTML = (hours ? hours + ':' + twoDigits(mins) : mins) + ':' + twoDigits(time.getUTCSeconds());
-          setTimeout(updateTimer, time.getUTCMilliseconds() + 500);
-        }
-      }
+<script>
+  /* Countdown timer — same logic */
+  function countdown(elementName, minutes, seconds) {
+    var element, endTime, hours, mins, msLeft, time;
 
-      element = document.getElementById(elementName);
-      endTime = (+new Date) + 1000 * (60 * minutes + seconds) + 500;
-      updateTimer();
+    function twoDigits(n) {
+      return (n <= 9 ? "0" + n : n);
     }
 
-    countdown("ten-countdown", 10, 0);
+    function updateTimer() {
+      msLeft = endTime - (+new Date);
+      if (msLeft < 1000) {
+        element.innerHTML = "Fetching...";
+      } else {
+        time = new Date(msLeft);
+        hours = time.getUTCHours();
+        mins = time.getUTCMinutes();
+        element.innerHTML = (hours ? hours + ':' + twoDigits(mins) : mins) + ':' + twoDigits(time.getUTCSeconds());
+        setTimeout(updateTimer, time.getUTCMilliseconds() + 500);
+      }
+    }
 
-  </script>
+    element = document.getElementById(elementName);
+    endTime = (+new Date) + 1000 * (60 * minutes + seconds) + 500;
+    updateTimer();
+  }
 
+  countdown("ten-countdown", 10, 0);
+</script>
 
-	 <div class="footer">
-    <p class="font-italic text-center text-bottom" style="color: white; font-size: 18px">Designed & Developed by @Shubham Chaudhari  </p>
-    </div>
-
+<script src="<%=request.getContextPath()%>/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
