@@ -942,15 +942,7 @@
 
         <!-- ============================================================ -->
         <!-- CARD 2: ServiceWise - SI (COMMENTED) -->
-        <%-- <div class="card-modern">
-            <div class="card-header-modern">
-                <span class="title"><i class="fas fa-code"></i> SI</span>
-                <span class="badge-count" id="swSiCount">0</span>
-            </div>
-            <div class="tile-grid" id="sw-si">
-                <!-- SI data -->
-            </div>
-        </div> --%>
+        <%-- <div class="card-modern">...</div> --%>
 
         <!-- ============================================================ -->
         <!-- CARD 3: ServiceWise - ThirdParty -->
@@ -1043,7 +1035,7 @@
         </div>
 
         <!-- ============================================================ -->
-        <!-- CARD 4: ServiceWise - Combined -->
+        <!-- CARD 4: ServiceWise - Combined (I4C · IVR · CAPS)  -- UPDATED -->
         <!-- ============================================================ -->
         <div class="card-modern">
             <div class="card-header-modern">
@@ -1060,51 +1052,59 @@
                     List<String> swCombHits = new ArrayList<>();
                     List<String> swCombTd = new ArrayList<>();
                     List<String> swCombTime = new ArrayList<>();
+                    List<String> swCombTransaction = new ArrayList<>();
+                    List<String> swCombSupUrl = new ArrayList<>();
                     
                     try {
-                        // I4C
+                        // -------- I4C --------
                         String q = "select * from (select sup_url,transaction_urn,original_urn, sum(total_hits) as total_hits, sum(td) as td, round(avg(td_percent),2) as td_percent, SUM(SI_EEROR) AS SI_EEROR, error_code,source_id, issue_time from gen5_ThirdParty_servicewise_fail TEMP where trim(CONCAT(temp.sup_url,temp.SOURCE_ID)) not in(select trim(CONCAT(API_NAME,SOURCE_ID)||error_description) from vaild_bd_master) and insert_time >= SYSDATE - INTERVAL '10' minute AND source_id = 'I4' and original_urn not in (select service_name from service_temporary_pause_master where service_name is not null) AND trim(temp.error_code ) not in (select DISTINCT trim(ERRCODE) FROM cbs_err_map WHERE substr(errcode,3,3) NOT in ('002','014') OR errcode in ('SI001','SI007','SI051','SI569','SI570')) GROUP BY sup_url,transaction_urn,original_urn,error_code,source_id,issue_time order by 2 desc) TEMP where issue_time = (select max(issue_time) from gen5_ThirdParty_servicewise_fail temp_in where temp_in.sup_url = temp.sup_url group by sup_url)";
                         ResultSet rs = con.createStatement().executeQuery(q);
                         while(rs.next()) {
                             if(rs.getDouble("TD") >= 50) {
                                 swCombPer.add(rs.getDouble("TD_PERCENT"));
                                 swCombName.add(nvl(rs.getString("original_urn"), "N/A"));
-                                swCombCat.add("I4C");
+                                swCombCat.add("ThirdParty");   // <-- category mapping for View button
                                 swCombSource.add(nvl(rs.getString("Source_id"), "N/A"));
                                 swCombError.add(nvl(rs.getString("error_code"), "N/A"));
                                 swCombHits.add(String.valueOf(rs.getInt("TOTAL_HITS")));
                                 swCombTd.add(String.valueOf(rs.getInt("TD")));
                                 swCombTime.add(nvl(rs.getString("issue_time"), "N/A"));
+                                swCombTransaction.add(nvl(rs.getString("transaction_urn"), "N/A"));
+                                swCombSupUrl.add(nvl(rs.getString("sup_url"), "N/A"));
                             }
                         }
-                        // IVR
+                        // -------- IVR --------
                         q = "SELECT * FROM (SELECT api_name, Source_id,error_code,SUM(total_hits) AS total_hits,sum(SUCCESS) as SUCCESS,issue_time,SUM(td) AS td,round(AVG(td_per), 2) AS td_per FROM gen5_ServiceWise_fail TEMP WHERE trim(CONCAT(temp.API_NAME,temp.SOURCE_ID)) not in(select trim(CONCAT(API_NAME,SOURCE_ID)||error_description) from vaild_bd_master) AND substr(api_name,1,3) not in 'gen' AND insert_time >= SYSDATE - INTERVAL '10' minute and Source_id = 'CC' and api_name NOT IN (SELECT service_name FROM service_temporary_pause_master WHERE service_name IS NOT NULL) AND trim(temp.error_code) not in (select DISTINCT trim(ERRCODE) FROM cbs_err_map WHERE substr(errcode,3,3) NOT in ('002','014') OR errcode in ('SI001','SI007','SI051','SI569','SI570')) GROUP BY api_name,Source_id,error_code, issue_time ORDER BY 2 DESC) TEMP WHERE issue_time =(select max(issue_time) from gen5_ServiceWise_fail temp_in where temp_in.api_name = temp.api_name group by api_name)";
                         rs = con.createStatement().executeQuery(q);
                         while(rs.next()) {
                             if(rs.getDouble("TD") >= 10) {
                                 swCombPer.add(rs.getDouble("TD_PER"));
                                 swCombName.add(nvl(rs.getString("API_NAME"), "N/A"));
-                                swCombCat.add("IVR");
+                                swCombCat.add("IVR-Service");   // <-- category mapping
                                 swCombSource.add(nvl(rs.getString("Source_id"), "N/A"));
                                 swCombError.add(nvl(rs.getString("ERROR_CODE"), "N/A"));
                                 swCombHits.add(String.valueOf(rs.getInt("TOTAL_HITS")));
                                 swCombTd.add(String.valueOf(rs.getInt("TD")));
                                 swCombTime.add(nvl(rs.getString("issue_time"), "N/A"));
+                                swCombTransaction.add("N/A");
+                                swCombSupUrl.add("N/A");
                             }
                         }
-                        // SBICAPS
+                        // -------- SBICAPS --------
                         q = "SELECT * FROM(SELECT api_name,source_id, error_code,SUM(total_hits) AS total_hits,SUM(success) AS success,issue_time, SUM(td) AS td,round(AVG(TD_PERCENT), 2) AS td_per FROM gen5_SBICABS_servicewise_fail temp WHERE TRIM(concat(temp.api_name, temp.source_id)) NOT IN (SELECT TRIM(concat(api_name, source_id) || error_description) FROM vaild_bd_master) AND trim(temp.error_code ) not in (select DISTINCT ERRCODE FROM cbs_err_map WHERE substr(errcode,3,3) NOT in ('002','014') OR errcode in ('SI001','SI007','SI051','SI569','SI570')) AND substr(api_name, 1, 3) NOT IN 'gen' AND insert_time >= sysdate - INTERVAL '10' MINUTE AND api_name NOT IN (SELECT service_name FROM service_temporary_pause_master WHERE service_name IS NOT NULL) GROUP BY api_name, source_id, error_code, issue_time ORDER BY 2 DESC) temp WHERE issue_time = (SELECT MAX(issue_time) FROM gen5_SBICABS_servicewise_fail temp_in WHERE temp_in.api_name = temp.api_name GROUP BY api_name)";
                         rs = con.createStatement().executeQuery(q);
                         while(rs.next()) {
                             if(rs.getDouble("TD") >= 10) {
                                 swCombPer.add(rs.getDouble("TD_PER"));
                                 swCombName.add(nvl(rs.getString("API_NAME"), "N/A"));
-                                swCombCat.add("SBICAPS");
+                                swCombCat.add("SBICAPS-Service");   // <-- category mapping
                                 swCombSource.add(nvl(rs.getString("source_id"), "N/A"));
                                 swCombError.add(nvl(rs.getString("ERROR_CODE"), "N/A"));
                                 swCombHits.add(String.valueOf(rs.getInt("TOTAL_HITS")));
                                 swCombTd.add(String.valueOf(rs.getInt("TD")));
                                 swCombTime.add(nvl(rs.getString("issue_time"), "N/A"));
+                                swCombTransaction.add("N/A");
+                                swCombSupUrl.add("N/A");
                             }
                         }
                         rs.close();
@@ -1127,13 +1127,24 @@
                             bar = "80%";
                             tip = "⚠ " + swCombName.get(i) + " | TD: " + swCombTd.get(i);
                             tipClass = "tip-critical";
-                            String alertMsg = "<b>Service:</b> " + swCombName.get(i) + "<br><b>Category:</b> " + swCombCat.get(i) + "<br><b>Error:</b> " + swCombError.get(i) + "<br><b>Source:</b> " + swCombSource.get(i) + "<br><b>Hits:</b> " + swCombHits.get(i) + "<br><b>TD Count:</b> <span class='highlight-td'>" + swCombTd.get(i) + "</span><br><b>Fail %:</b> <span class='highlight-td'>" + String.format("%.2f", pct) + "%</span><br><b>Time:</b> " + swCombTime.get(i);
+                            String alertMsg = "<b>Service:</b> " + swCombName.get(i) 
+                                            + "<br><b>Category:</b> " + swCombCat.get(i) 
+                                            + "<br><b>Error:</b> " + swCombError.get(i) 
+                                            + "<br><b>Source:</b> " + swCombSource.get(i) 
+                                            + "<br><b>Hits:</b> " + swCombHits.get(i) 
+                                            + "<br><b>TD Count:</b> <span class='highlight-td'>" + swCombTd.get(i) + "</span>"
+                                            + "<br><b>Fail %:</b> <span class='highlight-td'>" + String.format("%.2f", pct) + "%</span>"
+                                            + "<br><b>Time:</b> " + swCombTime.get(i);
                             String name = swCombName.get(i).replace("'", "\\'");
                             String cat = swCombCat.get(i).replace("'", "\\'");
                             String source = swCombSource.get(i).replace("'", "\\'");
                             String error = swCombError.get(i).replace("'", "\\'");
                             String time = swCombTime.get(i).replace("'", "\\'");
-                            onclick = "onclick=\"openModal('" + alertMsg.replace("'", "\\'") + "','" + name + "','" + cat + "','ServiceWise','" + source + "','" + error + "','" + swCombHits.get(i) + "','" + swCombTd.get(i) + "','" + time + "','','','','')\"";
+                            String transaction = swCombTransaction.get(i).replace("'", "\\'");
+                            String supurl = swCombSupUrl.get(i).replace("'", "\\'");
+                            // 13 params to match openModal signature:
+                            // msg, api, cat, type, src, err, hits, td, time, transaction, supurl, originalurn, apiname
+                            onclick = "onclick=\"openModal('" + alertMsg.replace("'", "\\'") + "','" + name + "','" + cat + "','ServiceWise','" + source + "','" + error + "','" + swCombHits.get(i) + "','" + swCombTd.get(i) + "','" + time + "','" + transaction + "','" + supurl + "','" + name + "','" + name + "')\"";
                         }
                         out.print("<div class='" + cls + "' data-tip='" + tip + "' data-tip-class='" + tipClass + "' " + onclick + ">");
                         out.print("<span class='val'>" + val + "</span>");
@@ -1262,18 +1273,10 @@
 
         <!-- ============================================================ -->
         <!-- CARD 6: 100% SI (COMMENTED) -->
-        <%-- <div class="card-modern">
-            <div class="card-header-modern">
-                <span class="title"><i class="fas fa-code"></i> 100% SI</span>
-                <span class="badge-count" id="hSiCount">0</span>
-            </div>
-            <div class="tile-grid" id="h-si">
-                <!-- 100% SI data -->
-            </div>
-        </div> --%>
+        <%-- <div class="card-modern">...</div> --%>
 
         <!-- ============================================================ -->
-        <!-- CARD 7: 100% ThirdParty (NO API_NAME - FIXED) -->
+        <!-- CARD 7: 100% ThirdParty -->
         <!-- ============================================================ -->
         <div class="card-modern">
             <div class="card-header-modern">
@@ -1358,7 +1361,6 @@
                     maxTiles = Math.max(h3TdPer.size() + h3BdPer.size() + h3MixedPer.size(), 35);
                     int h3Idx = 0;
                     
-                    // TD
                     for(int i = 0; i < h3TdPer.size(); i++) {
                         String cls = "tile tile-td pulse";
                         String tip = "⚠ TD 100% | " + h3TdName.get(i);
@@ -1384,7 +1386,6 @@
                         h3Idx++;
                     }
                     
-                    // BD
                     for(int i = 0; i < h3BdPer.size(); i++) {
                         String cls = "tile tile-bd pulse";
                         String tip = "⚠ BD 100% | " + h3BdName.get(i);
@@ -1409,7 +1410,6 @@
                         h3Idx++;
                     }
                     
-                    // MIXED
                     for(int i = 0; i < h3MixedPer.size(); i++) {
                         String cls = "tile tile-mixed pulse";
                         String tip = "⚠ Mixed 100% | " + h3MixedName.get(i);
@@ -1707,7 +1707,7 @@
                     + encodeURIComponent(mApi)
                     + '&SourceID=' + encodeURIComponent(mSource)
                     + '&TextArea=' + encodeURIComponent(comment)
-                    + '&pasuseTime=' + encodeURIComponent(pTime)
+                    + '&pasuseTime=' + encodeURIComponent(puseTime)
                     + '&ErrorCode=' + encodeURIComponent(mError)
                     + '&closeName=' + encodeURIComponent(closer)
                     + '&ServiceCategory=' + encodeURIComponent(mCat)
@@ -1721,12 +1721,20 @@
             location.replace(url);
         });
         
+        // ============ UPDATED VIEW BUTTON ============
+        // Now supports GEN-5, ThirdParty, IVR-Service, SBICAPS-Service
         document.getElementById('detailsBtn').addEventListener('click', function() {
-            if(mCat != 'SI' && mCat != 'SIServices' && mCat != 'IVR' && mCat != 'SBICAPS') {
-                var url = '<%=request.getContextPath() %>/showFailureServicesWise.action?action=showFailureServicesWise&url=' 
-                    + encodeURIComponent(mApi) 
-                    + '&ServiceCategory=' + encodeURIComponent(mCat);
+            // Build category that ShowfailureServicesWiseAction understands
+            var viewCat = mCat;
+            if(viewCat === 'I4C') viewCat = 'ThirdParty';
+            
+            if(mApi != '' && mApi != 'N/A') {
+                var url = '<%=request.getContextPath() %>/showFailureServicesWise.action'
+                    + '?url=' + encodeURIComponent(mApi)
+                    + '&ServiceCategory=' + encodeURIComponent(viewCat);
                 window.open(url, '_blank');
+            } else {
+                alert('No service name available for details.');
             }
         });
     });
