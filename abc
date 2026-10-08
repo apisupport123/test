@@ -89,13 +89,13 @@ html[data-theme="dark"] .refresh-badge {
   font-size: 0.85rem;
 }
 
-/* ============ LEGEND ROW (GEN5 / NON-GEN5 / SI) ============ */
+/* ============ LEGEND ROW (GEN5 / SI only) ============ */
 .legend-row {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 16px;
   margin-bottom: 28px;
-  max-width: 900px;
+  max-width: 600px;
 }
 .legend-card {
   border-radius: 16px;
@@ -117,10 +117,6 @@ html[data-theme="dark"] .refresh-badge {
   background: #F9B234;
   color: #1A1A1A;
 }
-.legend-card.nongen5 {
-  background: #16A34A;
-  color: #fff;
-}
 .legend-card.si {
   background: #38BDF8;
   color: #1A1A1A;
@@ -131,7 +127,6 @@ html[data-theme="dark"] .refresh-badge {
   background: rgba(0,0,0,.25);
   flex-shrink: 0;
 }
-.legend-card.nongen5 .dot { background: rgba(255,255,255,.5); }
 .legend-card .lbl {
   font-size: 0.7rem;
   text-transform: uppercase;
@@ -183,7 +178,6 @@ html[data-theme="dark"] .refresh-badge {
   background: var(--brand);
 }
 .err-card.gen5::before { background: #F9B234; }
-.err-card.nongen5::before { background: #16A34A; }
 .err-card.si::before { background: #38BDF8; }
 .err-card.warn::before { background: #EF4444; }
 
@@ -198,7 +192,6 @@ html[data-theme="dark"] .refresh-badge {
   pointer-events: none;
 }
 .err-card.gen5 .bg-circle { background: #F9B234; }
-.err-card.nongen5 .bg-circle { background: #16A34A; }
 .err-card.si .bg-circle { background: #38BDF8; }
 .err-card.warn .bg-circle { background: #EF4444; }
 .err-card:hover .bg-circle {
@@ -222,11 +215,9 @@ html[data-theme="dark"] .refresh-badge {
   margin-bottom: 12px;
 }
 .err-card.gen5 .err-tag { background: #FEF3C7; color: #92400E; }
-.err-card.nongen5 .err-tag { background: #DCFCE7; color: #166534; }
 .err-card.si .err-tag { background: #E0F2FE; color: #075985; }
 .err-card.warn .err-tag { background: #FEE2E2; color: #991B1B; }
 html[data-theme="dark"] .err-card.gen5 .err-tag { background: rgba(249,178,52,.18); color: #F9B234; }
-html[data-theme="dark"] .err-card.nongen5 .err-tag { background: rgba(22,163,74,.18); color: #4ADE80; }
 html[data-theme="dark"] .err-card.si .err-tag { background: rgba(56,189,248,.18); color: #38BDF8; }
 html[data-theme="dark"] .err-card.warn .err-tag { background: rgba(239,68,68,.18); color: #F87171; }
 
@@ -276,7 +267,6 @@ html[data-theme="dark"] .err-card .card-stats {
   letter-spacing: -.3px;
 }
 .err-card.gen5 .stat-item .st-val.highlight { color: #D97706; }
-.err-card.nongen5 .stat-item .st-val.highlight { color: #16A34A; }
 .err-card.si .stat-item .st-val.highlight { color: #0284C7; }
 .err-card.warn .stat-item .st-val.highlight { color: #DC2626; }
 
@@ -315,17 +305,6 @@ html[data-theme="dark"] .err-card .card-stats {
 .empty-state p {
   font-size: 0.85rem;
 }
-
-/* ============ FOOTER ============ */
-.foot {
-  margin-top: 48px;
-  padding-top: 24px;
-  border-top: 1px solid var(--line);
-  text-align: center;
-  font-size: 0.8rem;
-  color: var(--muted);
-}
-.foot b { color: var(--brand); }
 
 /* ============ RESPONSIVE ============ */
 @media (max-width: 900px) {
@@ -388,20 +367,13 @@ html[data-theme="dark"] .err-card .card-stats {
       </div>
     </div>
 
-    <!-- ============ LEGEND ROW ============ -->
+    <!-- ============ LEGEND ROW (GEN5 / SI only) ============ -->
     <div class="legend-row">
       <div class="legend-card gen5">
         <div class="dot"></div>
         <div>
           <div class="lbl">Source</div>
           <div class="val">GEN 5</div>
-        </div>
-      </div>
-      <div class="legend-card nongen5">
-        <div class="dot"></div>
-        <div>
-          <div class="lbl">Source</div>
-          <div class="val">NON-GEN 5</div>
         </div>
       </div>
       <div class="legend-card si">
@@ -486,11 +458,6 @@ html[data-theme="dark"] .err-card .card-stats {
       </div>
       <% } %>
 
-    </div>
-
-    <!-- ============ FOOTER ============ -->
-    <div class="foot">
-      Designed &amp; Developed by <b>@Shubham Chaudhari</b> · EIS Automation Team
     </div>
 
   </div>
