@@ -1,1010 +1,639 @@
-UserHomeScreen.jsp
-
-
-
-<!------ Include the above in your HEAD tag ---------->
-
-
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
-
-
-
 <!doctype html>
 <html lang="en">
 <head>
-
 <meta charset="utf-8">
-<meta name="viewport"
-	content="width=device-width, initial-scale=1, shrink-to-fit=no">
-	<script type="text/javascript"
-	src="js/jquery.min.js"></script>
-	<style>
-	span{
-	margin: 0 15px;
-	line-height: .7;
-	text-shadow: 0 0 2px rgba(0, 0, 0, .45);
-	animation: span 3s ease-in infinite alternate;
-	color: white
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<title>EIS Portal — Home</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="js/jquery.min.js"></script>
+<style>
+:root{
+  --brand:#F86F03;
+  --brand-dark:#E85D00;
+  --brand-light:#FFF4EC;
+  --text:#0A0A0A;
+  --muted:#6B7280;
+  --line:#E5E7EB;
+  --bg:#FAFAFA;
 }
-.main{
-	display: flex;
-	justify-content: center;
-	align-items: flex-start;
-  
-  	
-	@media(max-width: 600px){ transform: scale(.65); }
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  font-family:'Plus Jakarta Sans',system-ui,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
 }
-.letter{
-	display: inline-flex;
-	height: 30px;
-	width: 27px;
-	/* border: 2.5px solid #FF1EAD; */
-	border: 2.35px solid white;
-	border-radius: 14px;
-	box-shadow:
-		0 0 2px rgba(0, 0, 0, .75),
-		inset 0 0 2px rgba(0, 0, 0, .45);
+a{color:inherit;text-decoration:none}
 
-	animation: letter 3s ease-in-out infinite alternate;
-}
-@keyframes span {
-	0%,30%{ margin: 0 15px; }
-	70%,100%{ margin: 0 5px; }
-}
-@keyframes letter {
-	0%,30%{ width: 27px; }
-	70%,100%{ width: 30vw; }
-}
- 
- 
- 
-   .footer {
-   position: relative;
-   left: 0;
-   bottom: 0;
-   width: 100%;
-   color: white;
-   text-align: center;
+/* ============ MAIN CONTENT AREA ============ */
+.welcome-wrap{
+  margin-left:64px; /* hamburger space */
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  padding:0;
+  background:
+    radial-gradient(900px 500px at 100% 0%, rgba(248,111,3,.08), transparent 60%),
+    radial-gradient(700px 400px at 0% 100%, rgba(248,111,3,.05), transparent 60%),
+    var(--bg);
 }
 
-
-.zoom {
-
-  transition: transform 1.5s;
- 
+.hero{
+  flex:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:56px 40px 32px;
+  position:relative;
+}
+.hero-inner{
+  max-width:1080px;
+  width:100%;
+  display:grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap:56px;
+  align-items:center;
 }
 
-.zoom:hover {
-  -ms-transform: scale(1.1); /* IE 9 */
-  -webkit-transform: scale(1.1); /* Safari 3-8 */
-  transform: scale(1.1); 
+.hero-text .eyebrow{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:6px 14px;
+  background:var(--brand-light);
+  color:var(--brand);
+  font-size:.75rem;
+  font-weight:700;
+  letter-spacing:.5px;
+  text-transform:uppercase;
+  border-radius:999px;
+  margin-bottom:20px;
 }
-	</style>
+.hero-text .eyebrow .dot{
+  width:6px;height:6px;border-radius:50%;
+  background:var(--brand);
+  animation:blink 2s ease-in-out infinite;
+}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+.hero-text h1{
+  font-size:3rem;
+  font-weight:800;
+  letter-spacing:-1.5px;
+  line-height:1.1;
+  margin-bottom:18px;
+  color:var(--text);
+}
+.hero-text h1 .accent{
+  background:linear-gradient(135deg, var(--brand) 0%, #FF9A3D 100%);
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent;
+}
+.hero-text p{
+  font-size:1.05rem;
+  line-height:1.7;
+  color:var(--muted);
+  max-width:480px;
+  margin-bottom:32px;
+}
+.hero-text .stats{
+  display:flex;
+  gap:36px;
+  padding-top:24px;
+  border-top:1px solid var(--line);
+}
+.stat-item .num{
+  font-size:1.6rem;
+  font-weight:800;
+  color:var(--text);
+  letter-spacing:-.5px;
+}
+.stat-item .lbl{
+  font-size:.8rem;
+  color:var(--muted);
+  font-weight:500;
+  margin-top:2px;
+}
+
+.hero-visual{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  position:relative;
+}
+.hero-visual img{
+  width:100%;
+  max-width:460px;
+  filter:drop-shadow(0 20px 40px rgba(248,111,3,.15));
+  animation:float 6s ease-in-out infinite;
+}
+@keyframes float{
+  0%,100%{transform:translateY(0)}
+  50%{transform:translateY(-12px)}
+}
+
+/* ============ FOOTER ============ */
+.foot{
+  padding:20px 40px;
+  border-top:1px solid var(--line);
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  font-size:.82rem;
+  color:var(--muted);
+  margin-left:0;
+}
+.foot .brandline{
+  font-weight:600;
+  color:var(--text);
+}
+.foot .brandline span{color:var(--brand)}
+
+/* ============ RESPONSIVE ============ */
+@media (max-width: 900px){
+  .welcome-wrap{margin-left:56px}
+  .hero{padding:40px 24px}
+  .hero-inner{grid-template-columns:1fr;gap:32px}
+  .hero-text h1{font-size:2.2rem}
+  .hero-visual img{max-width:340px}
+  .hero-text .stats{gap:24px}
+  .foot{flex-direction:column;gap:6px;text-align:center;padding:16px 20px}
+}
+@media (max-width: 480px){
+  .hero-text h1{font-size:1.8rem}
+  .hero-text p{font-size:.95rem}
+  .stat-item .num{font-size:1.3rem}
+  .hero{padding:32px 18px}
+}
+</style>
 </head>
-<body style="background-color: black;">
-	<%@include file="./userheader.jsp"%>
-<div class="new-wrapper">
+<body>
 
-	<div id="main">
+<!-- ✅ Header include — as is, no changes -->
+<%@include file="./userheader.jsp"%>
 
-		<div id="main-contents">
-       <div class="main" style="font-size: 50px; margin-top: 0%; position: relative ;right: 400px; width: 200% ; ">
-	<span>W</span>
-	<span>E</span>
-	<span>L</span>
-	<span>C</span>
-	<span>O</span>
-	<span>M</span>
-	<span>E</span>
-	<span></span>
-	<span></span>
-	<div>
-	<span>T</span>
-	<span class="letter"></span>
-	<span>  </span>
-	<span>E</span>
-	<span>I</span>
-	<span>S</span>
-	<span> </span>
-	<span>P</span>
-	<span>O</span>
-	<span>R</span>
-	<span>T</span>
-	<span>A</span>
-	<span>L</span>
-	</div>
-	
-	<div>
-	
-	</div>
-</div>
+<div class="welcome-wrap">
+  <section class="hero">
+    <div class="hero-inner">
 
-<center>
-<div class="zoom" style="margin-top: 15%; width: 550px ">
-<img src="./images/Cybersecurity.png">
- </div>
- </center>
-	
+      <div class="hero-text">
+        <div class="eyebrow">
+          <span class="dot"></span>
+          System Online
+        </div>
+        <h1>Welcome to <span class="accent">EIS Portal</span></h1>
+        <p>
+          Your unified command center for enterprise monitoring, deployment tracking,
+          incident management, and operational dashboards — all in one secure place.
+        </p>
 
-    <div class="footer">
-    <p class="font-italic text-center text-bottom" style="position:relative;  font-size: 15px; margin-top: 0%; font-weight: bolder; top: 120px ">Designed and Developed by EIS AUTOMATION TEAM  </p>
+        <div class="stats">
+          <div class="stat-item">
+            <div class="num">24×7</div>
+            <div class="lbl">Uptime</div>
+          </div>
+          <div class="stat-item">
+            <div class="num">100+</div>
+            <div class="lbl">Services</div>
+          </div>
+          <div class="stat-item">
+            <div class="num">EIS</div>
+            <div class="lbl">Automation Team</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-visual">
+        <img src="./images/Cybersecurity.png" alt="EIS Portal">
+      </div>
+
     </div>
+  </section>
 
-       
-			
-		</div>
-
-	</div>
-
+  <footer class="foot">
+    <div class="brandline">EIS <span>Portal</span> · Internal Use Only</div>
+    <div>Designed &amp; Developed by EIS Automation Team</div>
+  </footer>
 </div>
 
 </body>
 </html>
 
 
------------------------------------------------------------------------------------------------------------------
+
+------------------------------------------------------------------------------------------------------
 
 
-userheader.jsp
-
-<!------ Include the above in your HEAD tag ---------->
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <!doctype html>
 <html lang="en">
-   <head>
-      <meta charset="utf-8">
-      <meta name="viewport"
-         content="width=device-width, initial-scale=1, shrink-to-fit=no">
-      <link
-         href="https://maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css"
-         rel="stylesheet">
-      </script>
-      <script>
-         $(document).ready(function () {
-          
-          $('.nav-toggle').click(function(e) {
-         	
-         	  e.preventDefault();
-         	  $("html").toggleClass("openNav");
-         	  $(".nav-toggle").toggleClass("active");
-         
-         	});
-         });
-         
-      </script>
-      <style type="text/css">
-         body {
-         font-family: 'Work Sans', sans-serif;
-         margin: 0;
-         }
-         /* Layout */
-         #container {
-         padding: 0;
-         margin: 0;
-         background-color: #fff;
-         }
-         #main {
-         padding: 4% 1.5em;
-         max-width: 55em;
-         margin: 0 auto;
-         }
-         #header {
-         padding: 1.5em;
-         margin: 0 0 1em 0;
-         background-color: #eee;
-         }
-         #footer {
-         padding: 1.5em;
-         margin: 2em 0 0 0;
-         background-color: #eee;
-         }
-         /* Menu Styles */
-         .primary-nav {
-         position: fixed;
-         z-index: 999;
-         top: -15PX;
-         }
-         .menu {
-         position: relative;
-         }
-         .menu ul {
-         margin: 0;
-         padding: 0;
-         list-style: none;
-         }
-         .open-panel {
-         border: none;
-         background-color: #fff;
-         padding: 0;
-         }
-         .hamburger {
-         background: #fff;
-         position: relative;
-         display: block;
-         text-align: center;
-         padding: 13px 0;
-         width: 50px;
-         height: 73px;
-         left: 0;
-         top: 0;
-         z-index: 1000;
-         cursor: pointer;
-         }
-         .hamburger:before {
-         content: "\2630"; /* hamburger icon */
-         display: block;
-         color: #000;
-         line-height: 32px;
-         font-size: 16px;
-         }
-         .openNav .hamburger:before {
-         content: "\2715"; /* close icon */
-         display: block;
-         color: #000;
-         line-height: 32px;
-         font-size: 16px;
-         }
-         .hamburger:hover:before {
-         color: #777;
-         }
-         .primary-nav .menu li {
-         position: relative;
-         }
-         .menu .icon {
-         position: absolute;
-         top: 12px;
-         right: 10px;
-         pointer-events: none;
-         width: 24px;
-         height: 24px;
-         color: #fff;
-         }
-         .menu, .menu a, .menu a:visited {
-         color: #aaa;
-         text-decoration: none !important;
-         position: relative;
-         }
-         .menu a {
-         display: block;
-         white-space: nowrap;
-         padding: 1em;
-         font-size: 14px;
-         }
-         .menu a:hover {
-         color: #fff;
-         }
-         .menu {
-         margin-bottom: 3em;
-         }
-         .menu-dropdown li .icon {
-         color: #777;
-         }
-         .menu-dropdown li:hover .icon {
-         color: #fff;
-         }
-         .menu label {
-         margin-bottom: 0;
-         display: block;
-         }
-         .menu label:hover {
-         cursor: pointer;
-         }
-         .menu input[type="checkbox"] {
-         display: none;
-         }
-         input#menu[type="checkbox"] {
-         display: none;
-         }
-         .sub-menu-dropdown {
-         display: none;
-         }
-         .new-wrapper {
-         position: absolute;
-         left: 50px;
-         width: calc(100% - 50px);
-         transition: transform .45s cubic-bezier(0.77, 0, 0.175, 1);
-         }
-         #menu:checked+ul.menu-dropdown {
-         left: 0;
-         -webkit-animation: all .45s cubic-bezier(0.77, 0, 0.175, 1);
-         animation: all .45s cubic-bezier(0.77, 0, 0.175, 1);
-         }
-         .sub-menu-checkbox:checked+ul.sub-menu-dropdown {
-         display: block !important;
-         -webkit-animation: grow .45s cubic-bezier(0.77, 0, 0.175, 1);
-         animation: grow .45s cubic-bezier(0.77, 0, 0.175, 1);
-         }
-         .openNav .new-wrapper {
-         position: absolute;
-         transform: translate3d(200px, 0, 0);
-         width: calc(100% - 250px);
-         transition: transform .45s cubic-bezier(0.77, 0, 0.175, 1);
-         }
-         .downarrow {
-         background: transparent;
-         position: absolute;
-         right: 50px;
-         top: 12px;
-         color: #777;
-         width: 24px;
-         height: 24px;
-         text-align: center;
-         display: block;
-         }
-         .downarrow:hover {
-         color: #fff;
-         }
-         .menu {
-         position: absolute;
-         display: block;
-         left: -200px;
-         top: 0;
-         width: 250px;
-         transition: all 0.45s cubic-bezier(0.77, 0, 0.175, 1);
-         background-color: #000;
-         z-index: 999;
-         }
-         .menu-dropdown {
-         top: 0;
-         overflow-y: auto;
-         }
-         .overflow-container {
-         position: relative;
-         height: calc(100vh - 73px) !important;
-         overflow-y: auto;
-         border-top: 73px solid #fff;
-         z-index: -1;
-         display: block;
-         }
-         .menu a.logotype {
-         position: absolute !important;
-         top: 11px;
-         left: 55px;
-         display: block;
-         font-family: 'Work Sans', sans-serif;
-         text-transform: uppercase;
-         font-weight: 800;
-         color: #000;
-         font-size: 21px;
-         padding: 10px;
-         }
-         .menu a.logotype span {
-         font-weight: 400;
-         }
-         .menu a.logotype:hover {
-         color: #777;
-         }
-         .sub-menu-dropdown {
-         background-color: #333;
-         }
-         .menu:hover {
-         position: absolute;
-         left: 0;
-         top: 0;
-         }
-         .openNav .menu:hover {
-         position: absolute;
-         left: -200px;
-         top
-         73px;
-         }
-         .openNav .menu {top 73px;
-         transform: translate3d(200px, 0, 0);
-         transition: transform .45s cubic-bezier(0.77, 0, 0.175, 1);
-         }
-         /* label.hamburger {
-         display: none;
-         } */
-         /* look and feel only, not needed for core menu*/
-         @
-         -webkit-keyframes grow { 0% {
-         display: none;
-         opacity: 0;
-         }
-         50%
-         {
-         display
-         :
-         block
-         ;
-         opacity
-         :
-         0
-         .5
-         ;
-         }
-         100%
-         {
-         opacity
-         :
-         1;
-         }
-         }
-         @
-         keyframes grow { 0% {
-         display: none;
-         opacity: 0;
-         }
-         50%
-         {
-         display
-         :
-         block
-         ;
-         opacity
-         :
-         0
-         .5
-         ;
-         }
-         100%
-         {
-         opacity
-         :
-         1
-         }
-         }
-         /* Text meant only for screen readers. */
-         .screen-reader-text {
-         clip: rect(1px, 1px, 1px, 1px);
-         position: absolute !important;
-         height: 1px;
-         width: 1px;
-         overflow: hidden;
-         }
-         .screen-reader-text:focus {
-         background-color: #f1f1f1;
-         border-radius: 3px;
-         -webkit-box-shadow: 0 0 2px 2px rgba(0, 0, 0, 0.6);
-         box-shadow: 0 0 2px 2px rgba(0, 0, 0, 0.6);
-         clip: auto !important;
-         color: #21759b;
-         display: block;
-         font-size: 14px;
-         font-size: 0.875rem;
-         font-weight: bold;
-         height: auto;
-         left: 5px;
-         line-height: normal;
-         padding: 15px 23px 14px;
-         text-decoration: none;
-         top: 5px;
-         width: auto;
-         z-index: 100000;
-         /* Above WP toolbar. */
-         }
-         /* Resposive Typography */
-         body, button, input, select, optgroup, textarea {
-         color: #000;
-         font-size: 1em;
-         line-height: 1.5;
-         font-weight: 300;
-         }
-         h1, h2, h3, h4, h5, h6 {
-         clear: both;
-         font-weight: 800;
-         }
-         dfn, cite, em, i {
-         font-style: italic;
-         }
-         blockquote {
-         margin: 0 1.5em;
-         }
-         address {
-         margin: 0 0 1.5em;
-         }
-         pre {
-         background: #eee;
-         font-family: "Courier 10 Pitch", Courier, monospace;
-         font-size: 15px;
-         font-size: 0.9375rem;
-         line-height: 1.6;
-         margin-bottom: 1.6em;
-         max-width: 100%;
-         overflow: auto;
-         padding: 1.6em;
-         }
-         code, kbd, tt, var {
-         font-family: Monaco, Consolas, "Andale Mono", "DejaVu Sans Mono",
-         monospace;
-         font-size: 15px;
-         font-size: 0.9375rem;
-         }
-         abbr, acronym {
-         border-bottom: 1px dotted #666;
-         cursor: help;
-         }
-         mark, ins {
-         background: #fff9c0;
-         text-decoration: none;
-         }
-         big {
-         font-size: 125%;
-         }
-         .light {
-         color: #ddd;
-         }
-         strong {
-         font-weight: 600;
-         }
-         cite, em, i {
-         font-style: italic;
-         }
-         p.big {
-         font-size: 140%;
-         line-height: 1.3em;
-         }
-         p.small {
-         font-size: 80%;
-         }
-         blockquote {
-         display: block;
-         margin: 1em 20px;
-         padding: 0 1em;
-         position: relative;
-         }
-         blockquote:before {
-         }
-         blockquote cite, blockquote em, blockquote i {
-         font-style: italic;
-         }
-         abbr, acronym {
-         border-bottom: 1px dotted #666;
-         cursor: help;
-         }
-         sup, sub {
-         height: 0;
-         line-height: 1;
-         vertical-align: baseline;
-         position: relative;
-         }
-         sup {
-         bottom: 1ex;
-         }
-         sub {
-         top: .5ex;
-         }
-         p {
-         font-size: 1em;
-         margin: 0 0 2em 0;
-         }
-         article:last-of-type, p:last-of-type {
-         margin-bottom: 0;
-         }
-         p.intro {
-         font-size: 1.25em;
-         line-height: 1.5;
-         font-weight: 300;
-         margin: 0 0 1.5em 0;
-         }
-         h1, h2 {
-         letter-spacing: -1px;
-         }
-         h1, .h1, h2, .h2, h3, .h3, h4, .h4 {
-         margin: 0 0 0.5em 0;
-         line-height: 1.1;
-         }
-         h1, .h1 {
-         font-size: 2.074em;
-         }
-         h2, .h2 {
-         font-size: 1.728em;
-         }
-         h3, .h3 {
-         font-size: 1.44em;
-         }
-         h4, .h4 {
-         font-size: 1.2em;
-         }
-         /* Medium Screen Typography - Scale: 1.333 Perfect Fourth (thanks http://type-scale.com/)  */
-         @media screen and (min-width: 42em) {
-         h1, .h1 {
-         letter-spacing: -2px;
-         }
-         h1, .h1 {
-         font-size: 3.157em;
-         }
-         h2, .h2 {
-         font-size: 2.369em;
-         }
-         h3, .h3 {
-         font-size: 1.777em;
-         }
-         h4, .h4 {
-         font-size: 1.333em;
-         }
-         p {
-         font-size: 1.0625em;
-         }
-         p.intro {
-         font-size: 1.3em;
-         }
-         }
-         /* Large Screen Typography  - Scale: 1.414 Augmented Fourth (thanks http://type-scale.com/)  */
-         @media screen and (min-width: 72em) {
-         h1 {
-         letter-spacing: -3px;
-         }
-         h1, .h1 {
-         margin-bottom: 0.35em;
-         font-size: 3.998em;
-         }
-         h2, .h2 {
-         font-size: 2.827em;
-         }
-         h3, .h3 {
-         font-size: 1.999em;
-         }
-         h4, .h4 {
-         font-size: 1.414em;
-         }
-         p {
-         font-size: 1.125em;
-         }
-         p.intro {
-         font-size: 1.4em;
-         }
-         }
-         @font-face {
-         font-family: 'Titillium Web';
-         font-style: normal;
-         font-weight: 300;
-         src: local('Titillium WebLight'), local('TitilliumWeb-Light'), url(../fonts/anMUvcNT0H1YN4FII8wpr24bNCNEoFTpS2BTjF6FB5E.woff) format('woff');
-         }
-         #searchbar {
-         margin: 10px;
-         padding: 10px;
-         border-radius: 5px;
-         width: 50%;
-         box-sizing: border-box;
-         }
-         #list {
-         list-style: none;
-         padding: 0;
-         margin: 0;
-         }
-         .animals {
-         font-size: 1.2em;
-         padding: 10px;
-         border-bottom: 1px solid #ccc;
-         animation: fadeIn 0.5s ease-in-out;
-         }
-         .animals:last-child {
-         border-bottom: none;
-         }
-         @keyframes fadeIn {
-         from {
-         opacity: 0;
-         transform: translateY(-10px);
-         }
-         to {
-         opacity: 1;
-         transform: translateY(0);
-         }
-         }
-      </style>
-      <script>
-         function search_animal() {
-         	  let input = document.getElementById('searchbar').value
-         	  input = input.toLowerCase();
-         	  let x = document.getElementsByClassName('animals');
-         	 
-         	  for (i = 0; i < x.length; i++) {
-         	    if (!x[i].innerHTML.toLowerCase().includes(input)) {
-         	      x[i].style.display = "none";
-         	    }
-         	    else {
-         	      x[i].style.display = "list-item";
-         	    }
-         	  }
-         	}
-      </script>
-   </head>
-   <body>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<title>EIS Navigation</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script>
+$(document).ready(function () {
+  $('.nav-toggle').click(function(e) {
+    e.preventDefault();
+    $("html").toggleClass("openNav");
+    $(".nav-toggle").toggleClass("active");
+  });
+});
+</script>
+<style>
+:root{
+  --brand:#F86F03;
+  --brand-dark:#E85D00;
+  --brand-light:#FFF4EC;
+  --text:#0A0A0A;
+  --muted:#6B7280;
+  --line:#E5E7EB;
+  --bg:#FAFAFA;
+  --sidebar-bg:#0F1115;
+  --sidebar-hover:rgba(248,111,3,.12);
+  --sidebar-text:#B4BAC6;
+  --sidebar-text-active:#FFFFFF;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:'Plus Jakarta Sans',system-ui,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ============ HAMBURGER ============ */
+.hamburger{
+  position:fixed;
+  top:16px;left:16px;
+  z-index:1100;
+  width:44px;height:44px;
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:12px;
+  display:grid;place-items:center;
+  cursor:pointer;
+  color:var(--text);
+  font-size:1rem;
+  transition:all .25s ease;
+  box-shadow:0 4px 14px rgba(0,0,0,.06);
+}
+.hamburger:hover{
+  background:var(--brand-light);
+  border-color:var(--brand);
+  color:var(--brand);
+}
+.hamburger:before{
+  content:"\f0c9"; /* bars */
+  font-family:"Font Awesome 6 Free";
+  font-weight:900;
+}
+html.openNav .hamburger:before{
+  content:"\f00d"; /* close */
+}
+html.openNav .hamburger{
+  background:var(--brand);
+  border-color:var(--brand);
+  color:#fff;
+}
+
+/* ============ SIDEBAR ============ */
+.sidebar{
+  position:fixed;
+  top:0;left:0;
+  width:340px;
+  height:100vh;
+  background:var(--sidebar-bg);
+  z-index:1000;
+  transform:translateX(-100%);
+  transition:transform .35s cubic-bezier(.4,0,.2,1);
+  display:flex;
+  flex-direction:column;
+  border-right:1px solid rgba(255,255,255,.05);
+}
+html.openNav .sidebar{
+  transform:translateX(0);
+}
+
+/* Logo */
+.sidebar-head{
+  padding:20px 24px 20px 76px;
+  border-bottom:1px solid rgba(255,255,255,.06);
+  display:flex;
+  align-items:center;
+  gap:12px;
+  min-height:76px;
+}
+.sidebar-logo{
+  width:34px;height:34px;
+  background:var(--brand);
+  border-radius:9px;
+  display:grid;place-items:center;
+  color:#fff;
+  font-size:.95rem;
+  box-shadow:0 6px 16px -6px var(--brand);
+}
+.sidebar-title{
+  font-size:1rem;
+  font-weight:800;
+  color:#fff;
+  letter-spacing:-.3px;
+}
+.sidebar-title span{
+  display:block;
+  font-size:.65rem;
+  font-weight:500;
+  color:var(--sidebar-text);
+  letter-spacing:1.5px;
+  text-transform:uppercase;
+  margin-top:2px;
+}
+
+/* Search */
+.sidebar-search{
+  padding:16px 20px;
+  border-bottom:1px solid rgba(255,255,255,.06);
+}
+.search-box{
+  position:relative;
+  display:flex;
+  align-items:center;
+}
+.search-box i{
+  position:absolute;
+  left:14px;
+  color:var(--sidebar-text);
+  font-size:.85rem;
+  pointer-events:none;
+}
+.search-box input{
+  width:100%;
+  padding:11px 14px 11px 38px;
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:10px;
+  color:#fff;
+  font-family:inherit;
+  font-size:.85rem;
+  font-weight:500;
+  outline:none;
+  transition:all .2s ease;
+}
+.search-box input::placeholder{color:var(--sidebar-text);opacity:.7}
+.search-box input:focus{
+  background:rgba(255,255,255,.08);
+  border-color:var(--brand);
+  box-shadow:0 0 0 3px rgba(248,111,3,.15);
+}
+
+/* Menu */
+.sidebar-body{
+  flex:1;
+  overflow-y:auto;
+  padding:14px 12px 20px;
+}
+.sidebar-body::-webkit-scrollbar{width:6px}
+.sidebar-body::-webkit-scrollbar-track{background:transparent}
+.sidebar-body::-webkit-scrollbar-thumb{
+  background:rgba(255,255,255,.1);
+  border-radius:3px;
+}
+
+.menu-list{
+  list-style:none;
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
+.menu-list li a{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:11px 14px;
+  font-size:.82rem;
+  font-weight:500;
+  color:var(--sidebar-text);
+  border-radius:9px;
+  transition:all .18s ease;
+  line-height:1.35;
+  position:relative;
+}
+.menu-list li a:hover{
+  background:var(--sidebar-hover);
+  color:var(--sidebar-text-active);
+}
+.menu-list li a:hover .icon{
+  color:var(--brand);
+  background:rgba(248,111,3,.15);
+}
+.menu-list li a .icon{
+  flex-shrink:0;
+  width:30px;height:30px;
+  display:grid;place-items:center;
+  background:rgba(255,255,255,.04);
+  border-radius:8px;
+  color:var(--sidebar-text);
+  font-size:.82rem;
+  transition:all .18s ease;
+}
+.menu-list li a.logout{
+  color:#FF8A8A;
+  margin-top:10px;
+  border-top:1px solid rgba(255,255,255,.06);
+  padding-top:14px;
+  border-radius:0;
+}
+.menu-list li a.logout:hover{
+  color:#FF4D4D;
+  background:rgba(255,77,77,.08);
+}
+
+/* Overlay */
+.overlay{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.5);
+  backdrop-filter:blur(4px);
+  z-index:990;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .3s ease;
+}
+html.openNav .overlay{
+  opacity:1;
+  pointer-events:auto;
+}
+
+/* ============ CONTENT SHIFT (optional) ============ */
+.new-wrapper{
+  transition:transform .35s cubic-bezier(.4,0,.2,1);
+}
+html.openNav .new-wrapper{
+  transform:translateX(340px);
+}
+
+/* ============ RESPONSIVE ============ */
+@media (max-width: 600px){
+  .sidebar{width:290px}
+  html.openNav .new-wrapper{transform:translateX(290px)}
+}
+</style>
+</head>
+<body>
 <%
-                     session = request.getSession(false);
-                     String m_strrole = (String) session.getAttribute("role");
-                     System.out.println("Role: " + m_strrole);
-%>   
-      <div class="primary-nav">
-         <button href="#" class="hamburger open-panel nav-toggle">
-         <span class="screen-reader-text">Menu</span>
-         </button>
-         <nav role="navigation" class="menu">
-            <div class="overflow-container">
-               <input style="width: 200px" id="searchbar"
-                  onkeyup="search_animal()"
-                  type="text" name="search" autoComplete='nope'
-                  placeholder="Search Dashboard">
-               <ul class="menu-dropdown" id='list'>
-               
-           <!-- Main Portals Start -->
-                 
-               <!-- STATUS Portals Start -->
-               
-               <li class="animals"><a href="<%=request.getContextPath() + "/jsp/statMgmtDashboard.jsp"%>">EIS STRATEGIC MGMT.<br>STATUS (Report-DB)</a><span class="icon"><i
-								class="fa fa-dashboard"></i></span></li>
-				<li class="animals"><a href="<%=request.getContextPath() + "/jsp/eisSbiDashboard.jsp"%>">EIS SBI SUPPORT <br>STATUS (Report-DB) </a><span class="icon"><i
-								class="fa fa-dashboard"></i></span></li>
-               
-                <%--   <li class="animals"><a href="<%=request.getContextPath() + "/jsp/Eis_Strategic_Mgmt_Status.jsp"%>">EIS STRATEGIC MGMT.<br>STATUS NEW</a><span class="icon"><i
-                     class="fa fa-dashboard"></i></span></li>
-                  <li class="animals"><a href="<%=request.getContextPath() + "/jsp/EIS_SBI_STATUS.jsp"%>">EIS SBI SUPPORT STATUS<br>NEW</a><span class="icon"><i
-                     class="fa fa-dashboard"></i></span></li> --%>
-                     
-                <!-- STATUS Portals Start -->
-                  
-                <!-- AutoRefresh Portals Start --> 
-                  
-                  <li class="animals"><a href="<%=request.getContextPath() + "/jsp/100PercentFailure.jsp"%>">100% FAILURE HONEYCOMB</a><span class="icon"><i
-                     class="fa fa-heart"></i></span></li>   
-				  <li class="animals"><a
-                     href="<%=request.getContextPath() + "/jsp/ServiceWiseFailure.jsp"%>">SERVICE-WISE FAILURE<br>HONEYCOMB
-                     </a><span class="icon"><i class="fa fa-heart"></i></span>
-                  </li>
-                   <li class="animals"><a href="<%=request.getContextPath() + "/ErrorDashboard"%>">ERROR DASHBOARD</a><span class="icon"><i
-                     class="fa fa-heart"></i></span></li>
-				 <%--  <li class="animals"><a
-                     href="<%=request.getContextPath() + "/jsp/ExpServerBrokerWiseMonitoring_New.jsp"%>">EXP SERVER BROKER WISE<br>DASHBOARD
-                     </a><span class="icon"><i class="fa fa-heart"></i></span>
-                  </li>
-                  <li class="animals"><a
-                     href="<%=request.getContextPath() + "/jsp/SysServerBrokerWiseMonitoring_New.jsp"%>">SYS SERVER BROKER WISE<br>DASHBOARD
-                     </a><span class="icon"><i class="fa fa-heart"></i></span>
-                  </li> --%>
-                  
-                  <li class="animals"><a
-						href="<%=request.getContextPath() + "/jsp/A_EXP_SERVERWISE_COUNT_LDAP.jsp"%>">LDAP EXP Server Broker Wise <br> Dashboard
-					</a><span class="icon"><i class="fa fa-dashboard"></i></span></li>	
-				
-				<li class="animals"><a
-						href="<%=request.getContextPath() + "/jsp/A_SYS_SERVERWISE_COUNT_LDAP.jsp"%>">LDAP SYS Server Broker Wise <br> Dashboard
-					</a><span class="icon"><i class="fa fa-dashboard"></i></span></li>	
-					
-                  <li class="animals"><a href="<%=request.getContextPath() + "/AtmCardServlet"%>">ATM IP PORT WISE PORTAL</a><span class="icon"><i
-                     class="fa fa-heart"></i></span></li>
-                  <li class="animals"><a href="<%=request.getContextPath() + "/jsp/TransactionEndPointBank.jsp"%>">TRANSACTION END POINT</a><span class="icon"><i
-                     class="fa fa-heart"></i></span></li>
-                  <li class="animals"><a href="<%=request.getContextPath() + "/jsp/AutoRefreshTxnEndpoint_New.jsp"%>">TRANSACTION END POINT<br>(FOR GOLDEN GATE)</a><span class="icon"><i
-                     class="fa fa-heart"></i></span></li>
-                     
-                  <li class="animals"><a href="<%=request.getContextPath() + "/jsp/AutoRefreshExpSysServiceWise.jsp"%>">EXP SYS Service Wise Failure</a><span class="icon"><i
-								class="fa fa-dashboard"></i></span></li>   
-                     
-                 <!-- AutoRefresh Portals End -->   
-                  
-             <!-- Main Portals End -->  
-             
-             
-            <!-- Deployments Portals Start -->  
-                   
-                     <%-- <li class="animals"><a
-                        href="<%=request.getContextPath() + "/deploymentsheet.action"%>">ADD DEPLOYMENT<br>SHEET
-                        </a><span class="icon"><i class="fa fa-dashboard"></i></span> --%>
-                     </li>
-                     <li class="animals"><a
-                        href="<%=request.getContextPath() + "/DeploymentSheetServlet"%>">ADD DEPLOYMENT_Serv<br>SHEET
-                        </a><span class="icon"><i class="fa fa-dashboard"></i></span>
-                     </li>
-                     <%-- <li class="animals"><a
-                        href="<%=request.getContextPath() + "/viewdeploymentsheet.action"%>">VIEW DEPLOYMENT<br>SHEET
-                        </a><span class="icon"><i class="fa fa-dashboard"></i></span>
-                     </li> --%>
-                     
-                     <li class="animals"><a
-                        href="<%=request.getContextPath() + "/ViewDeploymentSheetActionServ"%>">VIEW DEPLOYMENT_Serv<br>SHEET
-                        </a><span class="icon"><i class="fa fa-dashboard"></i></span>
-                     </li>
- 
-                    <li class="animals"><a href="<%=request.getContextPath() + "/jsp/deployment_analysis.jsp"%>">DEPLOYMENT ANALYSIS<br>DASHBOARD</a><span class="icon"><i
-                     class="fa fa-dashboard"></i></span></li>
-                  
-           <!-- Deployments Portals End -->       
-           
-            
-           <!-- Data Related Portals Start --> 
-           	     
-           	       <li class="animals"><a href="<%=request.getContextPath() + "/jsp/Dpg_Sys_Log.jsp"%>">SYS LOG'S</a><span class="icon"><i
-                     class="fa fa-heart"></i></span></li>
-                  <li class="animals"><a href="<%=request.getContextPath() + "/jsp/Dpg_log.jsp"%>">DPG LOG'S</a><span class="icon"><i
-                     class="fa fa-heart"></i></span></li>
-                  <li class="animals"><a href="<%=request.getContextPath() + "/jsp/Exp_Sys_Url_Mapper.jsp"%>">EXP & SYS URL MAPPER</a><span class="icon"><i
-                     class="fa fa-heart"></i></span></li>   
-                  <li class="animals"><a href="<%=request.getContextPath() + "/jsp/PortStatus.jsp"%>"> SERVICE STATUS<br>DASHBOARD</a><span class="icon"><i
-                     class="fa fa-heart"></i></span></li>   
-                  <li class="animals"><a href="<%=request.getContextPath() + "/UploadExcelServlet"%>"> SOURCE CERTIFICATE<br>DASHBOARD</a><span class="icon"><i
-                     class="fa fa-heart"></i></span></li>   
-                  <li class="animals"><a href="<%=request.getContextPath() + "/jsp/ITSMDetailsBackup.jsp"%>">ITSM DETAILS</a><span class="icon"><i
-                     class="fa fa-heart"></i></span></li>      
-           	      <li class="animals"><a href="<%=request.getContextPath() + "/jsp/ThirdPartyExcel.jsp"%>">THIRD PARTY EXCEL</a><span class="icon"><i
-                     class="fa fa-heart"></i></span></li>
-           	      <li class="animals"><a href="<%=request.getContextPath() + "/jsp/newChannelDestination.jsp?&role="%><%=m_strrole%>">CHANNEL & DESTINATION<br>CONTACT DETAIL'S</a><span class="icon"><i
-                     class="fa fa-heart"></i></span></li>
-                  <li class="animals"><a href="<%=request.getContextPath() + "/TxnContactDetail"%>">TXN CONTACT DETAIL'S</a><span class="icon"><i
-                     class="fa fa-heart"></i></span></li>
-                  <% 
-                     if(!"Manager".equals(m_strrole))
-                     {
-                     %>								
-                  <li class="animals"><a href="<%=request.getContextPath() + "/jsp/EISSOPDashboard.jsp?&role="%><%=m_strrole%>">SOP MANAGEMENT SYSTEM</a><span class="icon"><i
-                     class="fa fa-dashboard"></i></span></li>
-                  <li class="animals"><a href="<%=request.getContextPath() + "/jsp/channel_journey.jsp?&role="%><%=m_strrole%>">CHANNEL JOURNEY'S</a><span class="icon"><i
-                     class="fa fa-dashboard"></i></span></li>
-                  <%} 
-                     else
-                     {
-                     %>
-                  <li class="animals"><a href="<%=request.getContextPath() + "/jsp/EISSOPDashboard.jsp?&role="%><%=m_strrole%>">SOP MANAGEMENT SYSTEM</a><span class="icon"><i
-                     class="fa fa-dashboard"></i></span></li>
-                  <li class="animals"><a href="<%=request.getContextPath() + "/jsp/channel_journey.jsp?&role="%><%=m_strrole%>">CHANNEL JOURNEY'S</a><span class="icon"><i
-                     class="fa fa-dashboard"></i></span></li>
-                  <%
-                     }
-                   %>   
-                     
-           	     
-           <!-- Data Related Portals End --> 
-            
-            
-		   <!-- Others Portals Start --> 
-		   
-                  <li class="animals"><a href="<%=request.getContextPath() + "/jsp/TicketHome.jsp?&role="%><%=m_strrole%>">EIS TICKETING PORTAL</a><span class="icon"><i
-                     class="fa fa-heart"></i></span></li>
-                  <li class="animals"><a href="<%=request.getContextPath() + "/jsp/ProblemCET.jsp"%>">CET PORTAL</a><span class="icon"><i
-                     class="fa fa-heart"></i></span></li>
-                  <li class="animals"><a href="<%=request.getContextPath() + "/jsp/FlashReport.jsp"%>">FLASH REPORT</a><span class="icon"><i
-                     class="fa fa-heart"></i></span></li>
-					<li class="animals"><a href="<%=request.getContextPath() + "/SourceWiseTdCron"%>">Source Wise TD Failure Using Cron</a><span class="icon"><i
-							class="fa fa-dashboard"></i></span></li>
-					<li class="animals"><a href="<%=request.getContextPath() + "/jsp/SourceWiseTdSearch.jsp"%>">Source Wise TD Failure Manual</a><span class="icon"><i
-							class="fa fa-dashboard"></i></span></li>
-					<li class="animals"><a href="<%=request.getContextPath() + "/jsp/TxnEndPointSearch.jsp"%>">Txn End Point Manual</a><span class="icon"><i
-							class="fa fa-dashboard"></i></span></li>
+  session = request.getSession(false);
+  String m_strrole = (String) session.getAttribute("role");
+  System.out.println("Role: " + m_strrole);
+%>
 
-					<li class="animals"><a href="<%=request.getContextPath() + "/jsp/CombinedServiceWise&HundreadPerFailure.jsp"%>">EIS COMMAND Service<br>Monitoring Center</a><span 
-						    class="icon"><i class="fa fa-dashboard"></i></span></li>
+<!-- Hamburger -->
+<button class="hamburger nav-toggle" aria-label="Menu"></button>
 
-					<li class="animals"><a href="<%=request.getContextPath() + "/jsp/Exp_Sys_Url_Mapper.jsp"%>">EXP & SYS URL Mapper</a><span class="icon"><i
-							 class="fa fa-dashboard"></i></span></li>
-					<li class="animals"><a href="<%=request.getContextPath() + "/autocompleteapiwithtdbd.do"%>">API WISE <br> TD% BD%
-							</a><span class="icon"><i class="fa fa-dashboard"></i></span></li>
-					<li class="animals"><a
-						href="<%=request.getContextPath() + "/jsp/AtmPortWiseManualSearch.jsp"%>">
-							Manual ATM IP Port Wise Portal </a><span class="icon"><i
-							class="fa fa-heart"></i></span></li>
-					<li class="animals"><a
-						href="<%=request.getContextPath() + "/ErrorDashboardLDAP"%>">LDAP
-							Error Dashboard</a><span class="icon"><i
-							class="fa fa-dashboard"></i></span></li>
-					<li class="animals"><a
-						href="<%=request.getContextPath() + "/jsp/ServiceWiseFailure_LDAP.jsp"%>">LDAP
-							Service-Wise Failure <br> Dashboard
-					</a><span class="icon"><i class="fa fa-dashboard"></i></span></li>
-					<li class="animals"><a
-						href="<%=request.getContextPath() + "/jsp/yonoGraph.jsp"%>">YONO
-							2.0 ANALYTICS<br>DASHBOARD
-					</a><span class="icon"><i class="fa fa-dashboard"></i></span></li>
-					<li class="animals"><a
-						href="<%=request.getContextPath() + "/jsp/100PercentFailure_LDAP.jsp"%>">LDAP
-							100% Failure Honeycomb</a><span class="icon"><i
-							class="fa fa-dashboard"></i></span></li>
-					<li class="animals"><a
-						href="<%=request.getContextPath() + "/jsp/dpg-carts.jsp"%>">DMZ
-							DPG Incoming <br> Transaction Monitoring
-					</a><span class="icon"><i class="fa fa-dashboard"></i></span></li>
+<!-- Overlay -->
+<div class="overlay nav-toggle"></div>
 
-					<li class="animals"><a
-						href="<%=request.getContextPath() + "/jsp/channelwisepresent&pastdata.jsp"%>">Channel
-							Wise Volume Change<br>DASHBOARD
-					</a><span class="icon"><i class="fa fa-dashboard"></i></span></li>
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="sidebar-head">
+    <div class="sidebar-logo"><i class="fa-solid fa-shield-halved"></i></div>
+    <div class="sidebar-title">
+      EIS Portal
+      <span>Navigation</span>
+    </div>
+  </div>
 
-					<li class="animals"><a
-						href="<%=request.getContextPath() + "/jsp/BarFileReader.jsp"%>">Java
-							Source Code Extractor <br> Dashboard
-					</a><span class="icon"><i class="fa fa-dashboard"></i></span></li>
+  <div class="sidebar-search">
+    <div class="search-box">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input type="text" id="searchbar" onkeyup="search_animal()" placeholder="Search dashboard..." autocomplete="off">
+    </div>
+  </div>
 
-					<li class="animals"><a
-						href="<%=request.getContextPath() + "/jsp/Centralized query storage User.jsp"%>">Centralized
-							query storage User <br> Dashboard
-					</a><span class="icon"><i class="fa fa-dashboard"></i></span></li>
+  <nav class="sidebar-body">
+    <ul class="menu-list" id="list">
 
-					<li class="animals"><a
-						href="<%=request.getContextPath() + "/jsp/monitoring_dashboard_morethan_30Per_fail.jsp"%>">BD
-							API Monitor <br> Dashboard
-					</a><span class="icon"><i class="fa fa-dashboard"></i></span></li>
+      <!-- ========== STATUS ========== -->
+      <li class="animals"><a href="<%=request.getContextPath() + "/jsp/statMgmtDashboard.jsp"%>"><span class="icon"><i class="fa-solid fa-chart-line"></i></span><span>EIS Strategic Mgmt. Status<br>(Report-DB)</span></a></li>
+      <li class="animals"><a href="<%=request.getContextPath() + "/jsp/eisSbiDashboard.jsp"%>"><span class="icon"><i class="fa-solid fa-chart-line"></i></span><span>EIS SBI Support Status<br>(Report-DB)</span></a></li>
 
-					<li class="animals"><a
-						href="<%=request.getContextPath() + "/jsp/Source_Monitor.jsp"%>">Source
-							Monitor <br> Dashboard
-					</a><span class="icon"><i class="fa fa-dashboard"></i></span></li>
+      <!-- ========== AUTO REFRESH ========== -->
+      <li class="animals"><a href="<%=request.getContextPath() + "/jsp/100PercentFailure.jsp"%>"><span class="icon"><i class="fa-solid fa-heart-pulse"></i></span><span>100% Failure Honeycomb</span></a></li>
+      <li class="animals"><a href="<%=request.getContextPath() + "/jsp/ServiceWiseFailure.jsp"%>"><span class="icon"><i class="fa-solid fa-heart-pulse"></i></span><span>Service-Wise Failure Honeycomb</span></a></li>
+      <li class="animals"><a href="<%=request.getContextPath() + "/ErrorDashboard"%>"><span class="icon"><i class="fa-solid fa-heart-pulse"></i></span><span>Error Dashboard</span></a></li>
+      <li class="animals"><a href="<%=request.getContextPath() + "/jsp/A_EXP_SERVERWISE_COUNT_LDAP.jsp"%>"><span class="icon"><i class="fa-solid fa-chart-line"></i></span><span>LDAP EXP Server Broker Wise Dashboard</span></a></li>
+      <li class="animals"><a href="<%=request.getContextPath() + "/jsp/A_SYS_SERVERWISE_COUNT_LDAP.jsp"%>"><span class="icon"><i class="fa-solid fa-chart-line"></i></span><span>LDAP SYS Server Broker Wise Dashboard</span></a></li>
+      <li class="animals"><a href="<%=request.getContextPath() + "/AtmCardServlet"%>"><span class="icon"><i class="fa-solid fa-heart-pulse"></i></span><span>ATM IP Port Wise Portal</span></a></li>
+      <li class="animals"><a href="<%=request.getContextPath() + "/jsp/TransactionEndPointBank.jsp"%>"><span class="icon"><i class="fa-solid fa-heart-pulse"></i></span><span>Transaction End Point</span></a></li>
+      <li class="animals"><a href="<%=request.getContextPath() + "/jsp/AutoRefreshTxnEndpoint_New.jsp"%>"><span class="icon"><i class="fa-solid fa-heart-pulse"></i></span><span>Transaction End Point (Golden Gate)</span></a></li>
+      <li class="animals"><a href="<%=request.getContextPath() + "/jsp/AutoRefreshExpSysServiceWise.jsp"%>"><span class="icon"><i class="fa-solid fa-chart-line"></i></span><span>EXP SYS Service Wise Failure</span></a></li>
 
-					<!-- Others Portals End -->  
-            
-           <!-- IBCE Portal Start -->  
-           	<li class="animals"><a href="<%=request.getContextPath() + "/CronController"%>">IBCE DR PR Activity</a><span class="icon"><i
-			class="fa fa-dashboard"></i></span></li>
+      <!-- ========== DEPLOYMENTS ========== -->
+      <li class="animals"><a href="<%=request.getContextPath() + "/DeploymentSheetServlet"%>"><span class="icon"><i class="fa-solid fa-chart-line"></i></span><span>Add Deployment Sheet</span></a></li>
+      <li class="animals"><a href="<%=request.getContextPath() + "/ViewDeploymentSheetActionServ"%>"><span class="icon"><i class="fa-solid fa-chart-line"></i></span><span>View Deployment Sheet</span></a></li>
+      <li class="animals"><a href="<%=request.getContextPath() + "/jsp/deployment_analysis.jsp"%>"><span class="icon"><i class="fa-solid fa-chart-line"></i></span><span>Deployment Analysis Dashboard</span></a></li>
 
-			<li class="animals"><a href="<%=request.getContextPath() + "/IbceActionNew"%>">IBCE DR PR Activity Active Active</a><span class="icon"><i
-			class="fa fa-dashboard"></i></span></li>      
-            <!-- IBCE Portal End -->     
-           <!-- NightShift Reports Start -->
-                 
-                  <li class="animals"><a href="<%=request.getContextPath() + "/jsp/TimeDefrenceAnalysisreport.jsp"%>">TIME DIFFRANCE ANALYSIS<br>REPORT</a><span class="icon"><i
-                     class="fa fa-dashboard"></i></span></li>
-                  <li class="animals"><a href="<%=request.getContextPath() + "/jsp/DailyStatisticsReport.jsp"%>">DAILY SATATISTICS REPORT</a><span class="icon"><i
-                     class="fa fa-dashboard"></i></span></li>
-                     
-           <!-- NightShift Reports End -->
-                 
-                  
-           <!-- Roster Start -->
-                  
-                   <% if(("Manager".equals(m_strrole)) || ("Team Lead".equals(m_strrole))){ %>
-                  <li class="animals"><a href="<%=request.getContextPath() + "/jsp/ExcelRoster.jsp?&role="%><%=m_strrole%>">ROSTER</a><span class="icon"><i
-                     class="fa fa-heart"></i></span></li>
-                  <%} else { %>			
-                  <li class="animals"><a href="<%=request.getContextPath() + "/jsp/ExcelRoster_new.jsp?&role="%><%=m_strrole%>">ROSTER</a><span class="icon"><i
-                     class="fa fa-heart"></i></span></li>
-                  <%} %>
-                  
-           <!-- Roster End -->
-                  
-                     
-           <!-- Checklist Start -->
-           
-                  <li class="animals"><a href="<%=request.getContextPath() + "/jsp/DRChecklistHomePage.jsp"%>">Module DR Checklist</a><span class="icon"><i
-						class="fa fa-dashboard"></i></span></li>
-						
-				<%   if("Service Reporting Management".equals(m_strrole)){	%>	
-                  <li class="animals"><a href="<%=request.getContextPath() + "/ServletConn"%>">ADHOC CHECKLIST</a><span class="icon"><i
-                        class="fa fa-dashboard"></i></span></li>
-                <%   } else if("Service Desk".equals(m_strrole)) {   %>
-                  <li class="animals"><a href="<%=request.getContextPath() + "/jsp/userscorechecklist.jsp"%>">SCORE CHECKLIST</a><span class="icon"><i
-                        class="fa fa-dashboard"></i></span></li>
-                   <%  } else if("Event Management".equals(m_strrole))  {  %>     
-                  <li class="animals"><a href="<%=request.getContextPath() + "/jsp/MonitoringChecklistUser.jsp"%>">MONITORING CHECKLIST</a><span class="icon"><i
-                        class="fa fa-dashboard"></i></span></li>
-                   <%  } else if("Incident Management".equals(m_strrole))  {  %>      
-                  <li class="animals"><a href="<%=request.getContextPath() + "/jsp/IssueMgmtEmployeemain.jsp"%>">MAIL'S CHECKLIST</a><span class="icon"><i
-                        class="fa fa-dashboard"></i></span></li>
-                    <%  } else if("Problem Management".equals(m_strrole))  {  %>     
-                  <li class="animals"><a href="<%=request.getContextPath() + "/jsp/Problemuserchecklist.jsp"%>">PROBLEM MANAGEMENT<br>CHECKLIST</a><span class="icon"><i
-                        class="fa fa-dashboard"></i></span></li>
-                        
-                    <%  }   %>     
-                  <li class="animals"><a href="<%=request.getContextPath() + "/jsp/NightShiftUser.jsp"%>">NIGHTSHIFT CHECKLIST</a><span class="icon"><i
-                     class="fa fa-dashboard"></i></span></li>
-                     
-                      
-                  <li class="animals"><a href="<%=request.getContextPath() + "/jsp/NightShiftCheckList_NEW.jsp"%>"> New NightShift Checklist </a><span class="icon"><i
-					class="fa fa-heart"></i></span></li>   
-					 
-                  <li class="animals"><a href="<%=request.getContextPath() + "/jsp/MailsNightShiftChecklist.jsp"%>">MAIL'S NIGHTSHIFT<br>CHECKLIST</a><span class="icon"><i
-                     class="fa fa-dashboard"></i></span></li>
-                       
-                       
-           <!-- Checklist End -->   
-           
-           <!-- Search Start -->  
-           <li class="animals"><a href="multiple.html">Search Gen5 Reference no</a><span
-							class="icon"><i class="fa fa-dashboard"></i></span></li>
-			<li class="animals"><a href="https://siapp1.sbi.co.in/LotusTransEnq/Home/About?">Search SI Reference <br>no</a><span class="icon"><i
-								class="fa fa-dashboard"></i></span></li>
-								
-			 <!-- Search End --> 					
-				<li class="animals"><a href="<%=request.getContextPath() + "/jsp/query.jsp"%>">EIS Query Console <br></a><span 
-						class="icon"><i class="fa fa-dashboard"></i></span></li>
-						
-				<li class="animals"><a href="<%=request.getContextPath() + "/jsp/ipo-monitor.jsp"%>">IPO Monitor <br></a><span 
-						class="icon"><i class="fa fa-dashboard"></i></span></li>										        
-                  
-            <!-- Logout Start -->
-                  <li class="animals"><a href="<%=request.getContextPath() + "/login.action"%>">LOGOUT</a><span class="icon"><i
-                     class="fa fa-heart"></i></span></li>  
-            <!-- Logout End -->     
-               </ul>
-            </div>
-         </nav>
-      </div>
-   </body>
+      <!-- ========== DATA ========== -->
+      <li class="animals"><a href="<%=request.getContextPath() + "/jsp/Dpg_Sys_Log.jsp"%>"><span class="icon"><i class="fa-solid fa-heart-pulse"></i></span><span>SYS Logs</span></a></li>
+      <li class="animals"><a href="<%=request.getContextPath() + "/jsp/Dpg_log.jsp"%>"><span class="icon"><i class="fa-solid fa-heart-pulse"></i></span><span>DPG Logs</span></a></li>
+      <li class="animals"><a href="<%=request.getContextPath() + "/jsp/Exp_Sys_Url_Mapper.jsp"%>"><span class="icon"><i class="fa-solid fa-heart-pulse"></i></span><span>EXP &amp; SYS URL Mapper</span></a></li>
+      <li class="animals"><a href="<%=request.getContextPath() + "/jsp/PortStatus.jsp"%>"><span class="icon"><i class="fa-solid fa-heart-pulse"></i></span><span>Service Status Dashboard</span></a></li>
+      <li class="animals"><a href="<%=request.getContextPath() + "/UploadExcelServlet"%>"><span class="icon"><i class="fa-solid fa-heart-pulse"></i></span><span>Source Certificate Dashboard</span></a></li>
+      <li class="animals"><a href="<%=request.getContextPath() + "/jsp/ITSMDetailsBackup.jsp"%>"><span class="icon"><i class="fa-solid fa-heart-pulse"></i></span><span>ITSM Details</span></a></li>
+      <li class="animals"><a href="<%=request.getContextPath() + "/jsp/ThirdPartyExcel.jsp"%>"><span class="icon"><i class="fa-solid fa-heart-pulse"></i></span><span>Third Party Excel</span></a></li>
+      <li class="animals"><a href="<%=request.getContextPath() + "/jsp/newChannelDestination.jsp?&role="%><%=m_strrole%>"><span class="icon"><i class="fa-solid fa-heart-pulse"></i></span><span>Channel &amp; Destination Contact Details</span></a></li>
+      <li class="animals"><a href="<%=request.getContextPath() + "/TxnContactDetail"%>"><span class="icon"><i class="fa-solid fa-heart-pulse"></i></span><span>TXN Contact Details</span></a></li>
+
+      <li class="animals"><a href="<%=request.getContextPath() + "/jsp/EISSOPDashboard.jsp?&role="%><%=m_strrole%>"><span class="icon"><i class="fa-solid fa-chart-line"></i></span><span>SOP Management System</span></a></li>
+      <li class="animals"><a href="<%=request.getContextPath() + "/jsp/channel_journey.jsp?&role="%><%=m_strrole%>"><span class="icon"><i class="fa-solid fa-chart-line"></i></span><span>Channel Journeys</span></a></li>
+
+      <!-- ========== OTHERS ========== -->
+      <li class="animals"><a href="<%=request.getContextPath() + "/jsp/TicketHome.jsp?&role="%><%=m_strrole%>"><span class="icon"><i class="fa-solid fa-heart-pulse"></i></span><span>EIS Ticketing Portal</span></a></li>
+      <li class="animals"><a href="<%=request.getContextPath() + "/jsp/ProblemCET.jsp"%>"><span class="icon"><i class="fa-solid fa-heart-pulse"></i></span><span>CET Portal</span></a></li>
+      <li class="animals"><a href="<%=request.getContextPath() + "/jsp/FlashReport.jsp"%>"><span class="icon"><i class="fa-solid fa-heart-pulse"></i></span><span>Flash Report</span></a></li>
+      <li class="animals"><a href="<%=request.getContextPath() + "/SourceWiseTdCron"%>"><span class="icon"><i class="fa-solid fa-chart-line"></i></span><span>Source Wise TD Failure (Cron)</span></a></li>
+      <li class="animals"><a href="<%=request.getContextPath() + "/jsp/SourceWiseTdSearch.jsp"%>"><span class="icon"><i class="fa-solid fa-chart-line"></i></span><span>Source Wise TD Failure Manual</span></a></li>
+      <li class="animals"><a href="<%=request.getContextPath() + "/jsp/TxnEndPointSearch.jsp"%>"><span class="icon"><i class="fa-solid fa-chart-line"></i></span><span>Txn End Point Manual</span></a></li>
+      <li class="animals"><a href="<%=request.getContextPath() + "/jsp/CombinedServiceWise&HundreadPerFailure.jsp"%>"><span class="icon"><i class="fa-solid fa-chart-line"></i></span><span>EIS Command Service Monitoring Center</span></a></li>
+      <li class="animals"><a href="<%=request.getContextPath() + "/autocompleteapiwithtdbd.do"%>"><span class="icon"><i class="fa-solid fa-chart-line"></i></span><span>API Wise TD% BD%</span></a></li>
+      <li class="animals"><a href="<%=request.getContextPath() + "/jsp/AtmPortWiseManualSearch.jsp"%>"><span class="icon"><i class="fa-solid fa-heart-pulse"></i></span><span>Manual ATM IP Port Wise Portal</span></a></li>
+      <li class="animals"><a href="<%=request.getContextPath() + "/ErrorDashboardLDAP"%>"><span class="icon"><i class="fa-solid fa-chart-line"></i></span><span>LDAP Error Dashboard</span></a></li>
+      <li class="animals"><a href="<%=request.getContextPath() + "/jsp/ServiceWiseFailure_LDAP.jsp"%>"><span class="icon"><i class="fa-solid fa-chart-line"></i></span><span>LDAP Service-Wise Failure Dashboard</span></a></li>
+      <li class="animals"><a href="<%=request.getContextPath() + "/jsp/yonoGraph.jsp"%>"><span class="icon"><i class="fa-solid fa-chart-line"></i></span><span>YONO 2.0 Analytics Dashboard</span></a></li>
+      <li class="animals"><a href="<%=request.getContextPath() + "/jsp/100PercentFailure_LDAP.jsp"%>"><span class="icon"><i class="fa-solid fa-chart-line"></i></span><span>LDAP 100% Failure Honeycomb</span></a></li>
+      <li class="animals"><a href="<%=request.getContextPath() + "/jsp/dpg-carts.jsp"%>"><span class="icon"><i class="fa-solid fa-chart-line"></i></span><span>DMZ DPG Incoming Transaction Monitoring</span></a></li>
+      <li class="animals"><a href="<%=request.getContextPath() + "/jsp/channelwisepresent&pastdata.jsp"%>"><span class="icon"><i class="fa-solid fa-chart-line"></i></span><span>Channel Wise Volume Change Dashboard</span></a></li>
+      <li class="animals"><a href="<%=request.getContextPath() + "/jsp/BarFileReader.jsp"%>"><span class="icon"><i class="fa-solid fa-chart-line"></i></span><span>Java Source Code Extractor Dashboard</span></a></li>
+      <li class="animals"><a href="<%=request.getContextPath() + "/jsp/Centralized query storage User.jsp"%>"><span class="icon"><i class="fa-solid fa-chart-line"></i></span><span>Centralized Query Storage User Dashboard</span></a></li>
+      <li class="animals"><a href="<%=request.getContextPath() + "/jsp/monitoring_dashboard_morethan_30Per_fail.jsp"%>"><span class="icon"><i class="fa-solid fa-chart-line"></i></span><span>BD API Monitor Dashboard</span></a></li>
+      <li class="animals"><a href="<%=request.getContextPath() + "/jsp/Source_Monitor.jsp"%>"><span class="icon"><i class="fa-solid fa-chart-line"></i></span><span>Source Monitor Dashboard</span></a></li>
+
+      <!-- ========== IBCE ========== -->
+      <li class="animals"><a href="<%=request.getContextPath() + "/CronController"%>"><span class="icon"><i class="fa-solid fa-chart-line"></i></span><span>IBCE DR PR Activity</span></a></li>
+      <li class="animals"><a href="<%=request.getContextPath() + "/IbceActionNew"%>"><span class="icon"><i class="fa-solid fa-chart-line"></i></span><span>IBCE DR PR Activity Active Active</span></a></li>
+
+      <!-- ========== NIGHT SHIFT REPORTS ========== -->
+      <li class="animals"><a href="<%=request.getContextPath() + "/jsp/TimeDefrenceAnalysisreport.jsp"%>"><span class="icon"><i class="fa-solid fa-chart-line"></i></span><span>Time Difference Analysis Report</span></a></li>
+      <li class="animals"><a href="<%=request.getContextPath() + "/jsp/DailyStatisticsReport.jsp"%>"><span class="icon"><i class="fa-solid fa-chart-line"></i></span><span>Daily Statistics Report</span></a></li>
+
+      <!-- ========== ROSTER ========== -->
+      <% if(("Manager".equals(m_strrole)) || ("Team Lead".equals(m_strrole))){ %>
+      <li class="animals"><a href="<%=request.getContextPath() + "/jsp/ExcelRoster.jsp?&role="%><%=m_strrole%>"><span class="icon"><i class="fa-solid fa-heart-pulse"></i></span><span>Roster</span></a></li>
+      <%} else { %>
+      <li class="animals"><a href="<%=request.getContextPath() + "/jsp/ExcelRoster_new.jsp?&role="%><%=m_strrole%>"><span class="icon"><i class="fa-solid fa-heart-pulse"></i></span><span>Roster</span></a></li>
+      <%} %>
+
+      <!-- ========== CHECKLIST ========== -->
+      <li class="animals"><a href="<%=request.getContextPath() + "/jsp/DRChecklistHomePage.jsp"%>"><span class="icon"><i class="fa-solid fa-chart-line"></i></span><span>Module DR Checklist</span></a></li>
+
+      <% if("Service Reporting Management".equals(m_strrole)){ %>
+      <li class="animals"><a href="<%=request.getContextPath() + "/ServletConn"%>"><span class="icon"><i class="fa-solid fa-chart-line"></i></span><span>Adhoc Checklist</span></a></li>
+      <% } else if("Service Desk".equals(m_strrole)) { %>
+      <li class="animals"><a href="<%=request.getContextPath() + "/jsp/userscorechecklist.jsp"%>"><span class="icon"><i class="fa-solid fa-chart-line"></i></span><span>SCORE Checklist</span></a></li>
+      <% } else if("Event Management".equals(m_strrole)) { %>
+      <li class="animals"><a href="<%=request.getContextPath() + "/jsp/MonitoringChecklistUser.jsp"%>"><span class="icon"><i class="fa-solid fa-chart-line"></i></span><span>Monitoring Checklist</span></a></li>
+      <% } else if("Incident Management".equals(m_strrole)) { %>
+      <li class="animals"><a href="<%=request.getContextPath() + "/jsp/IssueMgmtEmployeemain.jsp"%>"><span class="icon"><i class="fa-solid fa-chart-line"></i></span><span>Mail's Checklist</span></a></li>
+      <% } else if("Problem Management".equals(m_strrole)) { %>
+      <li class="animals"><a href="<%=request.getContextPath() + "/jsp/Problemuserchecklist.jsp"%>"><span class="icon"><i class="fa-solid fa-chart-line"></i></span><span>Problem Management Checklist</span></a></li>
+      <% } %>
+
+      <li class="animals"><a href="<%=request.getContextPath() + "/jsp/NightShiftUser.jsp"%>"><span class="icon"><i class="fa-solid fa-chart-line"></i></span><span>Nightshift Checklist</span></a></li>
+      <li class="animals"><a href="<%=request.getContextPath() + "/jsp/NightShiftCheckList_NEW.jsp"%>"><span class="icon"><i class="fa-solid fa-heart-pulse"></i></span><span>New Nightshift Checklist</span></a></li>
+      <li class="animals"><a href="<%=request.getContextPath() + "/jsp/MailsNightShiftChecklist.jsp"%>"><span class="icon"><i class="fa-solid fa-chart-line"></i></span><span>Mail's Nightshift Checklist</span></a></li>
+
+      <!-- ========== SEARCH ========== -->
+      <li class="animals"><a href="multiple.html"><span class="icon"><i class="fa-solid fa-chart-line"></i></span><span>Search Gen5 Reference No</span></a></li>
+      <li class="animals"><a href="https://siapp1.sbi.co.in/LotusTransEnq/Home/About?"><span class="icon"><i class="fa-solid fa-chart-line"></i></span><span>Search SI Reference No</span></a></li>
+
+      <li class="animals"><a href="<%=request.getContextPath() + "/jsp/query.jsp"%>"><span class="icon"><i class="fa-solid fa-chart-line"></i></span><span>EIS Query Console</span></a></li>
+      <li class="animals"><a href="<%=request.getContextPath() + "/jsp/ipo-monitor.jsp"%>"><span class="icon"><i class="fa-solid fa-chart-line"></i></span><span>IPO Monitor</span></a></li>
+
+      <!-- ========== LOGOUT ========== -->
+      <li class="animals"><a href="<%=request.getContextPath() + "/login.action"%>" class="logout"><span class="icon"><i class="fa-solid fa-right-from-bracket"></i></span><span>Logout</span></a></li>
+
+    </ul>
+  </nav>
+</aside>
+
+<script>
+function search_animal() {
+  let input = document.getElementById('searchbar').value.toLowerCase();
+  let x = document.getElementsByClassName('animals');
+  for (let i = 0; i < x.length; i++) {
+    if (!x[i].innerText.toLowerCase().includes(input)) {
+      x[i].style.display = "none";
+    } else {
+      x[i].style.display = "block";
+    }
+  }
+}
+</script>
+</body>
 </html>
