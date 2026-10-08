@@ -1,13 +1,10 @@
 <%--
   EIS Portal — Shared Header Fragment
-  ✅ Icons: Inline SVG (no Font Awesome dependency)
+  ✅ Icons: Inline SVG
+  ✅ Sidebar: Default OPEN, `<<` pe closed, `☰` pe open
 --%>
-
-<!-- ✅ Google Fonts (agar chahiye toh) — ya system font use karo -->
 <link rel="stylesheet" href="<%=request.getContextPath()%>/css/inter-font.css">
-
 <script src="<%=request.getContextPath()%>/js/jquery.min.js"></script>
-
 <style>
 :root{
   --brand:#F86F03;
@@ -54,17 +51,11 @@ body{
 }
 .primary-nav,.hamburger,.menu,.overflow-container{display:none!important}
 
-/* ============ SVG ICON HELPER ============ */
 .icon-svg{
-  width:16px;
-  height:16px;
-  display:inline-block;
-  flex-shrink:0;
-  stroke:currentColor;
-  fill:none;
-  stroke-width:2;
-  stroke-linecap:round;
-  stroke-linejoin:round;
+  width:16px;height:16px;
+  display:inline-block;flex-shrink:0;
+  stroke:currentColor;fill:none;stroke-width:2;
+  stroke-linecap:round;stroke-linejoin:round;
 }
 
 /* ============ SIDEBAR ============ */
@@ -77,6 +68,7 @@ body{
   display:flex;flex-direction:column;
   transition:transform .3s cubic-bezier(.4,0,.2,1),background .3s ease,border-color .3s ease;
 }
+/* ✅ SIDEBAR CLOSED state — sirf jab explicitly class add ho */
 html.sb-collapsed .sidebar{transform:translateX(-100%)}
 html.sb-collapsed .topnav{left:0}
 html.sb-collapsed .new-wrapper{margin-left:0}
@@ -230,8 +222,9 @@ html[data-theme="dark"] .sb-item:hover .sb-icon{
   display:none;width:36px;height:36px;
   background:transparent;border:1px solid var(--line);
   border-radius:9px;color:var(--ink);cursor:pointer;
-  display:grid;place-items:center;
+  place-items:center;
 }
+.tn-toggle .icon-svg{width:16px;height:16px}
 .tn-menu-btn{
   display:grid;place-items:center;
   width:36px;height:36px;
@@ -317,6 +310,7 @@ html.sb-open .sb-overlay{opacity:1;pointer-events:auto}
 <script>
 (function(){
   try{
+    // ✅ Theme: DEFAULT DARK
     var t = localStorage.getItem('eis-theme');
     if(!t){
       t = 'dark';
@@ -324,14 +318,15 @@ html.sb-open .sb-overlay{opacity:1;pointer-events:auto}
     }
     document.documentElement.setAttribute('data-theme', t);
 
-    var freshLogin = sessionStorage.getItem('eis-login-fresh');
-    if (freshLogin === '1') {
-      sessionStorage.removeItem('eis-login-fresh');
-    } else {
+    // ✅ Sidebar: agar user ne explicitly band kiya ho (localStorage), tabhi closed
+    // Warna DEFAULT OPEN
+    var sbClosed = localStorage.getItem('eis-sidebar-closed');
+    if (sbClosed === 'true') {
       document.documentElement.classList.add('sb-collapsed');
     }
+    // Warna kuch nahi karo — sidebar OPEN rehta hai
   }catch(e){
-    document.documentElement.classList.add('sb-collapsed');
+    // safe — sidebar open
   }
 })();
 </script>
@@ -707,12 +702,16 @@ function updateThemeIcon(){
 document.addEventListener('DOMContentLoaded', updateThemeIcon);
 updateThemeIcon();
 
+/* ✅ Sidebar toggle — user ki choice localStorage me save */
 function toggleSidebar(){
   var root = document.documentElement;
   if(window.innerWidth <= 900){
     root.classList.toggle('sb-open');
   } else {
     root.classList.toggle('sb-collapsed');
+    try{
+      localStorage.setItem('eis-sidebar-closed', root.classList.contains('sb-collapsed'));
+    }catch(e){}
   }
 }
 
@@ -742,6 +741,7 @@ function focusSidebarSearch(){
     document.documentElement.classList.add('sb-open');
   } else if(document.documentElement.classList.contains('sb-collapsed')){
     document.documentElement.classList.remove('sb-collapsed');
+    try{ localStorage.setItem('eis-sidebar-closed', 'false'); }catch(e){}
   }
   setTimeout(function(){ document.getElementById('searchbar').focus(); }, 150);
 }
