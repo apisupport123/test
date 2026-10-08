@@ -5,7 +5,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.struts2.ServletActionContext;
 import com.opensymphony.xwork2.ActionSupport;
@@ -21,7 +23,10 @@ import jakarta.servlet.http.HttpSession;
 @SuppressWarnings("serial")
 public class LoginAction extends ActionSupport implements ModelDriven<LoginForm> {
 
-    private LoginForm loginForm = new LoginForm(); // ModelDriven object
+    private LoginForm loginForm = new LoginForm();
+
+    // JSON response map (Struts2 JSON plugin isko serialize karega)
+    private Map<String, Object> jsonData = new HashMap<>();
 
     @Override
     public LoginForm getModel() {
@@ -32,144 +37,521 @@ public class LoginAction extends ActionSupport implements ModelDriven<LoginForm>
         return loginForm.getRolelist();
     }
 
-    // ðŸ”§ Default execute method: load roles
+    public Map<String, Object> getJsonData() {
+        return jsonData;
+    }
+
+    // Default: load login page with roles
     @Override
     public String execute() throws Exception {
-        System.out.println(">>> LoginAction.execute() called!.");
-        HttpServletRequest request = ServletActionContext.getRequest();
-
-        // Populate roles into loginForm
+        System.out.println(">>> LoginAction.execute() called");
         this.getEISRole(loginForm);
-        System.out.println("Roles Loaded : " + loginForm.getRolelist());
-
-        return "success"; // just load login page with roles
+        System.out.println("Roles Loaded: " + loginForm.getRolelist());
+        return "success";
     }
 
-    // ðŸ”§ Called when form is submitted to login!usersign.action
+    // ---------------- USER LOGIN (AJAX JSON) ----------------
     public String usersign() throws Exception {
         System.out.println(">>> usersign() called");
-
         HttpServletRequest request = ServletActionContext.getRequest();
 
-        if (request.getParameter("m_struserPassword") != null) {
-            boolean hasRole = this.checkRole(loginForm, request);
+        String username = request.getParameter("m_strUserName");
+        String password = request.getParameter("m_struserPassword");
+        String role     = request.getParameter("m_strRole");
 
-            if (hasRole) {
-                HttpSession session = request.getSession();
-                session.setAttribute("role", request.getParameter("m_strRole"));
-
-                if ("EIS Bank".equals(request.getParameter("m_strRole"))) {
-                    return "successbanker";
-                } else {
-                    return "successuser"; // triggers redirect to userhomescreen
-                }
-            } else {
-                loginForm.setM_strMessage("Validation failed");
-                return "success";
-            }
+        // Basic validation
+        if (username == null || username.trim().isEmpty()
+                || password == null || password.trim().isEmpty()
+                || role == null || role.trim().isEmpty()) {
+            jsonData.put("status", "error");
+            jsonData.put("message", "Please fill all fields");
+            return "jsonerror";
         }
 
-        return "success";
+        boolean hasRole = this.checkRole(loginForm, request);
+
+        if (hasRole) {
+            HttpSession session = request.getSession();
+            session.setAttribute("role", role);
+            session.setAttribute("username", username);
+
+            jsonData.put("status", "success");
+
+            if ("EIS Bank".equals(role)) {
+                jsonData.put("redirectUrl",
+                    request.getContextPath() + "/bankerHome.action");
+            } else {
+                jsonData.put("redirectUrl",
+                    request.getContextPath() + "/userhomescreen.action");
+            }
+            return "jsonsuccess";
+        } else {
+            jsonData.put("status", "error");
+            jsonData.put("message", "Invalid username, password or role");
+            return "jsonerror";
+        }
     }
 
-    // ðŸ”§ Called when form is submitted to login!adminsign.action
+    // ---------------- ADMIN LOGIN (AJAX JSON) ----------------
     public String adminsign() throws Exception {
         System.out.println(">>> adminsign() called");
-
         HttpServletRequest request = ServletActionContext.getRequest();
-        String m_stradminUserName = request.getParameter("m_stradminUserName");
 
-        if ("Admin".equalsIgnoreCase(m_stradminUserName)
-                && "admin".equals(request.getParameter("m_stradminPassword"))) {
-            return "successadmin";
-        } else {
-            // Check module user
-            String user = m_stradminUserName;
-            Connection con = DBUtilityAuto.getReportDBConnection();
-            String query = "SELECT * FROM a_module_leads WHERE LOWER(username) = LOWER('" + user + "')";
-            Statement stmt = con.createStatement();
-            ResultSet rs = stmt.executeQuery(query);
+        String adminUser = request.getParameter("m_stradminUserName");
+        String adminPass = request.getParameter("m_stradminPassword");
 
-            String password = null;
-
-            if (rs.next()) {
-                password = rs.getString("passwords");
-            }
-
-            rs.close();
-            stmt.close();
-            con.close();
-
-            if (password != null && password.equals(request.getParameter("m_stradminPassword"))) {
-                return "successmodule";
-            }
+        if (adminUser == null || adminUser.trim().isEmpty()
+                || adminPass == null || adminPass.trim().isEmpty()) {
+            jsonData.put("status", "error");
+            jsonData.put("message", "Please fill all fields");
+            return "jsonerror";
         }
 
-        return "success";
+        // Hardcoded admin
+        if ("Admin".equalsIgnoreCase(adminUser) && "admin".equals(adminPass)) {
+            request.getSession().setAttribute("role", "Admin");
+            jsonData.put("status", "success");
+            jsonData.put("redirectUrl", request.getContextPath() + "/adminHome.action");
+            return "jsonsuccess";
+        }
+
+        // Module lead check
+        Connection con = null;
+        Statement stmt = null;
+        ResultSet rs = null;
+        String password = null;
+
+        try {
+            con = DBUtilityAuto.getReportDBConnection();
+            String query = "SELECT passwords FROM a_module_leads WHERE LOWER(username) = LOWER('"
+                            + adminUser.replace("'", "''") + "')";
+            stmt = con.createStatement();
+            rs = stmt.executeQuery(query);
+            if (rs.next()) password = rs.getString("passwords");
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (rs != null) try { rs.close(); } catch (Exception ignored) {}
+            if (stmt != null) try { stmt.close(); } catch (Exception ignored) {}
+            if (con != null) try { con.close(); } catch (Exception ignored) {}
+        }
+
+        if (password != null && password.equals(adminPass)) {
+            request.getSession().setAttribute("role", "ModuleLead");
+            jsonData.put("status", "success");
+            jsonData.put("redirectUrl", request.getContextPath() + "/moduleHome.action");
+            return "jsonsuccess";
+        }
+
+        jsonData.put("status", "error");
+        jsonData.put("message", "Invalid admin credentials");
+        return "jsonerror";
     }
 
-    // For REST plugin
     public String index() throws Exception {
         return execute();
     }
 
     private boolean checkRole(LoginForm loginForm, HttpServletRequest request) throws SQLException {
-        Connection con = DBUtilityAuto.getReportDBConnection();
+        Connection con = null;
         Statement stmt = null;
         ResultSet rs = null;
-
         try {
             TrippleDes td = new TrippleDes();
             int count = 0;
 
-            String query = "SELECT COUNT(1) FROM rolemst WHERE username LIKE '%" + request.getParameter("m_strUserName") + "%' "
-                    + "AND password='" + td.encrypt(request.getParameter("m_struserPassword").trim()) + "' "
-                    + "AND rolename='" + request.getParameter("m_strRole") + "'";
+            String user = request.getParameter("m_strUserName").replace("'", "''");
+            String pass = td.encrypt(request.getParameter("m_struserPassword").trim());
+            String role = request.getParameter("m_strRole").replace("'", "''");
 
+            String query = "SELECT COUNT(1) FROM rolemst "
+                    + "WHERE username LIKE '%" + user + "%' "
+                    + "AND password='" + pass + "' "
+                    + "AND rolename='" + role + "'";
+
+            con = DBUtilityAuto.getReportDBConnection();
             stmt = con.createStatement();
             rs = stmt.executeQuery(query);
-
-            if (rs.next()) {
-                count = rs.getInt(1);
-            }
-
+            if (rs.next()) count = rs.getInt(1);
             return count > 0;
-
         } catch (Exception e) {
             e.printStackTrace();
             return false;
         } finally {
-            if (rs != null) rs.close();
-            if (stmt != null) stmt.close();
-            if (con != null) con.close();
+            if (rs != null) try { rs.close(); } catch (Exception ignored) {}
+            if (stmt != null) try { stmt.close(); } catch (Exception ignored) {}
+            if (con != null) try { con.close(); } catch (Exception ignored) {}
         }
     }
 
     private void getEISRole(LoginForm loginForm) throws SQLException {
-        Connection con = DBUtilityAuto.getReportDBConnection();
+        Connection con = null;
         Statement stmt = null;
         ResultSet rs = null;
-
         try {
             ArrayList<String> list = new ArrayList<>();
-            //list.add("Select Role");
-
-            String query = "SELECT rolename FROM rolemst";
+            con = DBUtilityAuto.getReportDBConnection();
             stmt = con.createStatement();
-            rs = stmt.executeQuery(query);
-
-            while (rs.next()) {
-                list.add(rs.getString("rolename"));
-            }
-
+            rs = stmt.executeQuery("SELECT rolename FROM rolemst");
+            while (rs.next()) list.add(rs.getString("rolename"));
             loginForm.setRolelist(list);
             System.out.println("Roles loaded: " + list);
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            if (rs != null) rs.close();
-            if (stmt != null) stmt.close();
-            if (con != null) con.close();
+            if (rs != null) try { rs.close(); } catch (Exception ignored) {}
+            if (stmt != null) try { stmt.close(); } catch (Exception ignored) {}
+            if (con != null) try { con.close(); } catch (Exception ignored) {}
         }
     }
 }
+
+---------------------------------------------------------------------------
+
+
+<%@page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%
+ response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+ response.setHeader("Pragma", "no-cache");
+ response.setDateHeader("Expires", 0);
+%>
+<%@ taglib prefix="s" uri="/struts-tags" %>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>EIS Portal — Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+:root{
+  --brand:#F86F03; --brand-2:#FFA41B;
+  --text:#0f172a; --muted:#64748b; --ring:rgba(248,111,3,.25);
+}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',system-ui,sans-serif}
+body{
+  min-height:100vh;
+  background:
+    radial-gradient(1200px 600px at 10% -10%, #ffb06633, transparent 60%),
+    radial-gradient(900px 500px at 110% 10%, #f86f0333, transparent 60%),
+    linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  display:flex; align-items:center; justify-content:center;
+  padding:24px; overflow-x:hidden;
+}
+.blob{position:fixed;border-radius:50%;filter:blur(80px);opacity:.45;z-index:0;animation:float 12s ease-in-out infinite}
+.blob.b1{width:420px;height:420px;background:#F86F03;top:-120px;left:-120px}
+.blob.b2{width:380px;height:380px;background:#FFA41B;bottom:-140px;right:-100px;animation-delay:-4s}
+.blob.b3{width:300px;height:300px;background:#ff5e7e;top:40%;right:30%;animation-delay:-8s;opacity:.25}
+@keyframes float{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(30px,-40px) scale(1.1)}}
+
+.shell{
+  position:relative;z-index:2;width:100%;max-width:1080px;
+  background:rgba(255,255,255,.98);border-radius:24px;
+  box-shadow:0 30px 80px rgba(0,0,0,.35);
+  display:grid;grid-template-columns:1.05fr 1fr;
+  overflow:hidden;min-height:640px;
+}
+.brand-panel{
+  background:
+    radial-gradient(600px 300px at 20% 10%, #ffb06655, transparent 60%),
+    linear-gradient(160deg,#F86F03 0%,#FFA41B 100%);
+  color:#fff;padding:48px 44px;
+  display:flex;flex-direction:column;justify-content:space-between;
+  position:relative;overflow:hidden;
+}
+.brand-panel::after{content:"";position:absolute;inset:auto -60px -60px auto;width:280px;height:280px;border-radius:50%;background:rgba(255,255,255,.12)}
+.brand-panel::before{content:"";position:absolute;top:-80px;left:-80px;width:220px;height:220px;border-radius:50%;background:rgba(255,255,255,.10)}
+.brand-logo{display:flex;align-items:center;gap:12px;font-weight:800;letter-spacing:.5px;font-size:1.15rem}
+.brand-logo i{background:rgba(255,255,255,.2);width:42px;height:42px;display:grid;place-items:center;border-radius:12px;font-size:1.1rem;backdrop-filter:blur(6px)}
+.brand-hero h1{font-size:2.4rem;line-height:1.15;font-weight:800;margin-bottom:14px;letter-spacing:-.5px}
+.brand-hero p{opacity:.92;font-size:1rem;line-height:1.6;max-width:380px}
+.brand-stats{display:flex;gap:24px;margin-top:26px}
+.stat{background:rgba(255,255,255,.15);padding:12px 18px;border-radius:14px;backdrop-filter:blur(6px)}
+.stat b{display:block;font-size:1.3rem}
+.stat span{font-size:.75rem;opacity:.9}
+
+.form-panel{padding:48px 44px;display:flex;flex-direction:column;justify-content:center;position:relative}
+.tabs{display:flex;gap:8px;background:#f1f5f9;padding:6px;border-radius:14px;margin-bottom:28px}
+.tab{flex:1;text-align:center;padding:12px 14px;border-radius:10px;font-weight:600;font-size:.92rem;color:var(--muted);cursor:pointer;transition:all .25s ease;border:none;background:transparent}
+.tab.active{background:#fff;color:var(--brand);box-shadow:0 4px 14px rgba(15,23,42,.08)}
+.form-title{font-size:1.6rem;font-weight:800;color:var(--text);letter-spacing:-.4px}
+.form-sub{color:var(--muted);font-size:.9rem;margin:6px 0 24px}
+.field{position:relative;margin-bottom:16px}
+.field i{position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:.95rem;pointer-events:none;z-index:1}
+.field input,.field select{
+  width:100%;padding:15px 16px 15px 46px;
+  background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;
+  font-size:.95rem;color:var(--text);outline:none;
+  transition:all .2s ease;font-weight:500;
+}
+.field select{cursor:pointer;appearance:none;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='3'><polyline points='6 9 12 15 18 9'/></svg>");
+  background-repeat:no-repeat;background-position:right 16px center;
+}
+.field input:focus,.field select:focus{border-color:var(--brand);background:#fff;box-shadow:0 0 0 4px var(--ring)}
+.btn-primary{
+  width:100%;padding:15px;border:none;border-radius:12px;
+  background:linear-gradient(135deg,#F86F03 0%,#FFA41B 100%);
+  color:#fff;font-weight:700;font-size:1rem;letter-spacing:.3px;
+  cursor:pointer;transition:all .25s ease;
+  box-shadow:0 10px 24px -8px var(--brand);
+  display:flex;align-items:center;justify-content:center;gap:10px;
+}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 14px 30px -8px var(--brand)}
+.btn-primary:active{transform:translateY(0)}
+.btn-primary:disabled{opacity:.7;cursor:not-allowed;transform:none}
+
+.alert{display:none;padding:12px 14px;border-radius:10px;font-size:.88rem;font-weight:500;margin-bottom:16px;align-items:center;gap:10px}
+.alert.error{background:#fef2f2;color:#b91c1c;border:1px solid #fecaca}
+.alert.success{background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0}
+.alert.show{display:flex}
+
+.form-view{display:none;animation:fadeIn .35s ease}
+.form-view.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+.spinner{width:18px;height:18px;border:2.5px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:none}
+.btn-primary.loading .spinner{display:block}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.quick-bar{position:relative;z-index:3;margin-top:22px;display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.quick-bar a{color:#cbd5e1;background:rgba(255,255,255,.06);padding:8px 14px;border-radius:999px;font-size:.8rem;font-weight:500;text-decoration:none;border:1px solid rgba(255,255,255,.08);transition:all .2s ease;cursor:pointer}
+.quick-bar a:hover{background:var(--brand);color:#fff;border-color:var(--brand)}
+
+.footer-note{position:fixed;bottom:14px;left:0;right:0;text-align:center;color:#94a3b8;font-size:.78rem;z-index:2}
+
+@media (max-width:900px){
+  .shell{grid-template-columns:1fr;max-width:520px;min-height:auto}
+  .brand-panel{padding:32px 28px}
+  .brand-hero h1{font-size:1.7rem}
+  .brand-stats{display:none}
+  .form-panel{padding:32px 28px}
+}
+@media (max-width:480px){
+  body{padding:12px}
+  .brand-hero p{display:none}
+  .form-panel{padding:24px 20px}
+}
+</style>
+</head>
+<body>
+
+<div class="blob b1"></div>
+<div class="blob b2"></div>
+<div class="blob b3"></div>
+
+<div>
+  <div class="shell">
+    <aside class="brand-panel">
+      <div class="brand-logo">
+        <i class="fa-solid fa-shield-halved"></i>
+        <span>EIS PORTAL</span>
+      </div>
+      <div class="brand-hero">
+        <h1>Welcome back to your workspace.</h1>
+        <p>Secure single sign-on for Enterprise Information Systems. Access dashboards, monitoring tools, and reports — all in one place.</p>
+        <div class="brand-stats">
+          <div class="stat"><b>24×7</b><span>Uptime</span></div>
+          <div class="stat"><b>100+</b><span>Services</span></div>
+          <div class="stat"><b>Secure</b><span>Access</span></div>
+        </div>
+      </div>
+      <div style="font-size:.8rem;opacity:.85;">© <%= java.time.Year.now() %> EIS Portal · Internal Use Only</div>
+    </aside>
+
+    <main class="form-panel">
+      <div class="tabs">
+        <button class="tab active" data-tab="user">User Login</button>
+        <button class="tab" data-tab="admin">Admin Login</button>
+      </div>
+
+      <s:form action="login" method="post" theme="simple" id="loginForm">
+        <div class="form-view active" id="view-user">
+          <h2 class="form-title">Sign in</h2>
+          <p class="form-sub">Enter your credentials to continue</p>
+
+          <div class="alert error" id="userAlert"><i class="fa-solid fa-circle-exclamation"></i><span></span></div>
+
+          <div class="field">
+            <i class="fa-solid fa-user"></i>
+            <input type="text" placeholder="Username" name="m_strUserName" id="m_strUserName" autocomplete="username" />
+          </div>
+
+          <div class="field">
+            <i class="fa-solid fa-lock"></i>
+            <input type="password" placeholder="Password" name="m_struserPassword" id="m_struserPassword" autocomplete="current-password" />
+          </div>
+
+          <div class="field">
+            <i class="fa-solid fa-user-tag"></i>
+            <s:select
+              name="m_strRole"
+              id="m_strRole"
+              list="rolelist"
+              headerKey=""
+              headerValue="Select Role"
+              theme="simple"
+            />
+          </div>
+
+          <button type="button" class="btn-primary" id="btnUserLogin" onclick="usersign()">
+            <span class="spinner"></span>
+            <span class="btn-text">Sign In</span>
+            <i class="fa-solid fa-arrow-right"></i>
+          </button>
+        </div>
+
+        <div class="form-view" id="view-admin">
+          <h2 class="form-title">Admin Login</h2>
+          <p class="form-sub">Restricted access — admins only</p>
+
+          <div class="alert error" id="adminAlert"><i class="fa-solid fa-circle-exclamation"></i><span></span></div>
+
+          <div class="field">
+            <i class="fa-solid fa-user-shield"></i>
+            <input type="text" placeholder="Admin Username" name="m_stradminUserName" id="m_stradminUserName" autocomplete="username" />
+          </div>
+
+          <div class="field">
+            <i class="fa-solid fa-lock"></i>
+            <input type="password" placeholder="Admin Password" name="m_stradminPassword" id="m_stradminPassword" autocomplete="current-password" />
+          </div>
+
+          <button type="button" class="btn-primary" id="btnAdminLogin" onclick="adminsign()">
+            <span class="spinner"></span>
+            <span class="btn-text">Sign In as Admin</span>
+            <i class="fa-solid fa-arrow-right"></i>
+          </button>
+        </div>
+      </s:form>
+    </main>
+  </div>
+
+  <div class="quick-bar">
+    <a onclick="openUrl('https://10.189.37.183/')">Dynatrace</a>
+    <a onclick="openUrl('https://10.188.10.106:2443/login')">LB Web UI</a>
+    <a onclick="openUrl('https://score.sbi/')">SCORE</a>
+    <a onclick="openUrl('https://nspm.sbi/algosec/suite/login.html')">NSPM (FAR)</a>
+    <a onclick="openUrl('https://10.191.171.12:5443/EISPortal/jsp/FlashReport.jsp')">Flash Report</a>
+    <a onclick="openUrl('https://10.191.171.12:5443/EIS/port_monitoring/')">EIS Port Monitor</a>
+    <a onclick="openUrl('https://10.191.171.12:5443/EIS/CBS_Connection/')">CBS Port Monitor</a>
+    <a onclick="openUrl('https://10.191.171.12:5443/PyPortal/APISearch/')">API Workload</a>
+    <a onclick="openUrl('https://10.191.171.12:5443/EISInfra/curlSearch/login.php/')">Curl Portal</a>
+    <a onclick="openUrl('https://www.ultimatix.net/')">Ultimatix</a>
+  </div>
+</div>
+
+<div class="footer-note">Made with <span style="color:#F86F03;">♥</span> for EIS Team</div>
+
+<script>
+const CTX = '<%=request.getContextPath()%>';
+
+/* ---------- Tab Switching ---------- */
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.form-view').forEach(v => v.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('view-' + tab.dataset.tab).classList.add('active');
+  });
+});
+
+/* ---------- Helpers ---------- */
+function showAlert(id, msg, type) {
+  const el = document.getElementById(id);
+  el.className = 'alert show ' + (type || 'error');
+  el.querySelector('span').textContent = msg;
+}
+function hideAlert(id) {
+  const el = document.getElementById(id);
+  el.className = 'alert error';
+}
+function setLoading(btnId, isLoading) {
+  const btn = document.getElementById(btnId);
+  btn.disabled = isLoading;
+  btn.classList.toggle('loading', isLoading);
+}
+function openUrl(url) { window.open(url, '_blank'); }
+
+/* ---------- AJAX Login ---------- */
+async function submitLogin(url, formEl, btnId, alertId) {
+  hideAlert(alertId);
+  setLoading(btnId, true);
+
+  try {
+    const fd = new FormData(formEl);
+    fd.append('struts.enableJSONValidation', 'true');
+
+    const res = await fetch(url, {
+      method: 'POST',
+      body: fd,
+      credentials: 'same-origin',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    });
+
+    const ct = res.headers.get('content-type') || '';
+    if (ct.includes('application/json')) {
+      const data = await res.json();
+      if (data.status === 'success') {
+        showAlert(alertId, 'Login successful, redirecting...', 'success');
+        setTimeout(() => {
+          window.location.href = data.redirectUrl || (CTX + '/userhomescreen.action');
+        }, 500);
+      } else {
+        showAlert(alertId, data.message || 'Invalid credentials', 'error');
+      }
+    } else {
+      // Fallback: agar JSON nahi mila, toh normally submit karo
+      formEl.action = url;
+      formEl.submit();
+    }
+  } catch (err) {
+    console.error(err);
+    showAlert(alertId, 'Network error. Please try again.', 'error');
+  } finally {
+    setLoading(btnId, false);
+  }
+}
+
+/* ---------- User Login ---------- */
+function usersign() {
+  const form = document.getElementById('loginForm');
+  const u = document.getElementById('m_strUserName').value.trim();
+  const p = document.getElementById('m_struserPassword').value;
+  const r = document.getElementById('m_strRole').value;
+
+  if (!u) { showAlert('userAlert', 'Please enter username'); return; }
+  if (!p) { showAlert('userAlert', 'Please enter password'); return; }
+  if (!r || r === 'Select Role') { showAlert('userAlert', 'Please select a role'); return; }
+
+  localStorage.clear();
+  sessionStorage.clear();
+
+  submitLogin(CTX + '/login!usersign.action', form, 'btnUserLogin', 'userAlert');
+}
+
+/* ---------- Admin Login ---------- */
+function adminsign() {
+  const form = document.getElementById('loginForm');
+  const u = document.getElementById('m_stradminUserName').value.trim();
+  const p = document.getElementById('m_stradminPassword').value;
+
+  if (!u) { showAlert('adminAlert', 'Please enter admin username'); return; }
+  if (!p) { showAlert('adminAlert', 'Please enter admin password'); return; }
+
+  submitLogin(CTX + '/login!adminsign.action', form, 'btnAdminLogin', 'adminAlert');
+}
+
+/* ---------- Enter key ---------- */
+document.getElementById('loginForm').addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    const activeTab = document.querySelector('.tab.active').dataset.tab;
+    activeTab === 'user' ? usersign() : adminsign();
+  }
+});
+</script>
+
+</body>
+</html>
