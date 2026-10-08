@@ -2,11 +2,11 @@
   EIS Portal — Shared Header Fragment
   ✅ All fonts BOLD (700+)
   ✅ Local fonts only (no CDN)
-  ✅ Sidebar default OPEN
+  ✅ Sidebar: original tab OPEN, new tab CLOSED (window.name)
   ✅ Inline SVG icons
+  ✅ Default DARK theme
 --%>
 
-<!-- ✅ LOCAL FONT (system font stack — har machine pe available) -->
 <script src="<%=request.getContextPath()%>/js/jquery.min.js"></script>
 
 <style>
@@ -32,8 +32,8 @@
   --topnav-h:64px;
   --sidebar-w:260px;
 
-  /* ✅ BOLD FONT STACK — system fonts, no download */
-  --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  /* ✅ LOCAL FONT STACK — no download, no CDN */
+  --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
 }
 html[data-theme="dark"]{
   --ink:#F5F5F5;
@@ -56,7 +56,7 @@ html[data-theme="dark"]{
 /* ✅ SAB FONTS BOLD */
 html, body, button, input, select, textarea {
   font-family: var(--font-stack);
-  font-weight: 700;                    /* ✅ base 700 (bold) */
+  font-weight: 700;
   letter-spacing: -0.1px;
 }
 body{
@@ -68,7 +68,6 @@ body{
 }
 .primary-nav,.hamburger,.menu,.overflow-container{display:none!important}
 
-/* ✅ Headings — EXTRA BOLD */
 h1, h2, h3, h4, h5, h6, strong, b {
   font-weight: 800;
   letter-spacing: -0.3px;
@@ -374,14 +373,17 @@ html.sb-open .sb-overlay{opacity:1;pointer-events:auto}
 </style>
 
 <%--
-  ✅ BOOT SCRIPT
-  - Theme: DEFAULT DARK
-  - Sidebar: Har tab me OPEN — koi auto-close nahi
+  ✅ BOOT SCRIPT — per-tab sidebar logic using window.name
+  - window.name har tab me persist karta hai, new tab me empty hota hai
+  - Original tab → panel OPEN
+  - New tab (link click se) → panel CLOSED
 --%>
 <script>
 (function(){
   try{
-    // ✅ Theme: DEFAULT DARK
+    // ============================================================
+    // ✅ THEME: DEFAULT DARK
+    // ============================================================
     var t = localStorage.getItem('eis-theme');
     if(!t){
       t = 'dark';
@@ -389,15 +391,35 @@ html.sb-open .sb-overlay{opacity:1;pointer-events:auto}
     }
     document.documentElement.setAttribute('data-theme', t);
 
-    // ✅ Sidebar: default OPEN — koi logic nahi
-    // User ne `<<` dabaya tabhi closed (localStorage me save)
-    var sbClosed = localStorage.getItem('eis-sidebar-closed');
-    if (sbClosed === 'true') {
+    // ============================================================
+    // ✅ SIDEBAR LOGIC — per-tab using window.name
+    // ============================================================
+    var tabName = window.name || '';
+
+    if (tabName === 'eis-original-tab') {
+      // ✅ Ye wahi original tab hai — panel OPEN rahe
+      // Kuch mat karo — sidebar default open
+    } else if (tabName === 'eis-sub-tab') {
+      // ✅ Ye sub-tab hai (link click se khula) — panel CLOSED
       document.documentElement.classList.add('sb-collapsed');
+    } else {
+      // ✅ Fresh tab ya first load
+      // Check karo: kya ye login ke turant baad ka pehla page hai?
+      var freshLogin = sessionStorage.getItem('eis-fresh-login');
+
+      if (freshLogin === '1') {
+        // ✅ Login ke baad pehla page — panel OPEN
+        sessionStorage.removeItem('eis-fresh-login');
+        window.name = 'eis-original-tab';
+        // kuch class add nahi — panel OPEN
+      } else {
+        // ✅ Koi aur naya tab (link click se) — panel CLOSED
+        document.documentElement.classList.add('sb-collapsed');
+        window.name = 'eis-sub-tab';
+      }
     }
-    // Warna sidebar OPEN rehta hai
   }catch(e){
-    // safe — sidebar open
+    // safe fallback — panel open
   }
 })();
 </script>
@@ -773,16 +795,13 @@ function updateThemeIcon(){
 document.addEventListener('DOMContentLoaded', updateThemeIcon);
 updateThemeIcon();
 
-/* ✅ Sidebar toggle — user ki choice localStorage me save */
+/* ✅ Sidebar toggle — current tab me */
 function toggleSidebar(){
   var root = document.documentElement;
   if(window.innerWidth <= 900){
     root.classList.toggle('sb-open');
   } else {
     root.classList.toggle('sb-collapsed');
-    try{
-      localStorage.setItem('eis-sidebar-closed', root.classList.contains('sb-collapsed'));
-    }catch(e){}
   }
 }
 
@@ -812,7 +831,6 @@ function focusSidebarSearch(){
     document.documentElement.classList.add('sb-open');
   } else if(document.documentElement.classList.contains('sb-collapsed')){
     document.documentElement.classList.remove('sb-collapsed');
-    try{ localStorage.setItem('eis-sidebar-closed', 'false'); }catch(e){}
   }
   setTimeout(function(){ document.getElementById('searchbar').focus(); }, 150);
 }
