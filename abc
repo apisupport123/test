@@ -3,208 +3,148 @@
 <%@page import="java.sql.*"%>
 <%@page import="com.jdbc.DBUtilityAuto" %>
 <%@page import="com.jdbc.DBUtility" %>
-<%@page import="java.time.ZoneId, java.time.ZonedDateTime, java.time.format.DateTimeFormatter, java.time.LocalTime" %>
-<%@page import="java.util.concurrent.*"%>
 <!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="refresh" content="600; url=<%= request.getRequestURI() %>">
-<title>EXP &amp; SYS Service Wise Failure Dashboard</title>
+<title>Transaction End Point</title>
 <script nonce="undefined" src="<%=request.getContextPath()%>/js/zingchart.min.js"></script>
-<script src="<%=request.getContextPath()%>/js/jquery.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
 <style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-
-html, body {
-    height: 100%;
-    width: 100%;
-    overflow: hidden;
-    background-color: var(--bg) !important;
-    color: var(--ink);
-    transition: background .3s ease, color .3s ease;
-}
-
-.new-wrapper {
-    height: calc(100vh - 64px - 12px) !important;
-    margin-top: 12px !important;
-    padding: 6px 10px 8px 10px !important;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    background-color: var(--bg);
-    transition: margin-left .3s cubic-bezier(.4,0,.2,1), background .3s ease;
-}
-html.sb-collapsed .new-wrapper { margin-left: 0 !important; }
-
-.page-main-heading {
-    text-align: center;
-    flex-shrink: 0;
-    padding: 2px 0 6px 0;
-    border-bottom: 1px solid var(--line);
-    margin-bottom: 6px;
-}
-.page-main-heading h1 {
-    font-size: 20px;
-    font-weight: 800;
-    letter-spacing: -0.3px;
-    color: var(--ink);
-    margin: 0;
-    line-height: 1.2;
-}
-.page-main-heading h1 .accent { color: var(--brand); }
-
-.header-info {
-    color: var(--ink) !important;
-    text-align: center;
-    flex-shrink: 0;
-    padding: 4px 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-}
-
-.dashboard-container {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-    gap: 6px;
-    min-height: 0;
-    overflow: hidden;
-}
-
-.chart-wrapper {
-    flex: 1;
-    background-color: var(--card) !important;
-    border-radius: 6px;
-    padding: 4px;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-    position: relative;
-    border: 1px solid var(--line);
-    overflow: hidden;
-}
-
-.chart-title {
-    color: var(--ink) !important;
-    text-align: center;
-    font-size: 18px;
-    height: 30px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    flex-shrink: 0;
-    font-weight: 700;
-}
-
+/* ================================================================
+   ORIGINAL STYLES — AS-IS (theme-aware)
+   ================================================================ */
 .chart--container {
-    flex: 1;
+    min-height: 620px;
     width: 100%;
-    min-height: 0;
-    position: relative;
-    overflow: hidden;
-}
-
-.loading-indicator {
-    color: var(--ink) !important;
-    text-align: center;
-    background-color: var(--sidebar-hover) !important;
-    border-radius: 5px;
     height: 100%;
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 16px;
 }
 
 .blink {
     animation: blinker 0s linear infinite;
-    color: var(--ink) !important;
     font-family: sans-serif;
+    font-size: larger;
+    text-align-last: center;
     font-weight: 900;
-    display: inline;
-    font-size: 16px !important;
+    color: var(--ink) !important;
 }
-@keyframes blinker { 50% { opacity: 0; } }
 
-.timer {
-    border: 3px solid var(--brand);
-    display: inline;
-    padding: 2px 8px;
-    color: var(--brand) !important;
-    font-family: Verdana, sans-serif;
-    font-size: 18px;
+@keyframes blinker {
+    50% { opacity: 0; }
+}
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    padding-top: 100px;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.4);
+}
+.modal-content {
+    position: relative;
+    background-color: var(--card);
+    margin: auto;
+    padding: 0;
+    border: 1px solid var(--line);
+    width: 80%;
+    box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19);
+    color: var(--ink);
+}
+@-webkit-keyframes animatetop {
+    from {top:-300px; opacity:0}
+    to {top:0; opacity:1}
+}
+@keyframes animatetop {
+    from {top:-300px; opacity:0}
+    to {top:0; opacity:1}
+}
+.close {
+    color: white;
+    float: right;
+    font-size: 28px;
     font-weight: bold;
-    border-radius: 6px;
+}
+.close:hover,
+.close:focus {
+    color: #000;
+    text-decoration: none;
+    cursor: pointer;
+}
+.modal-header {
+    padding: 2px 16px;
+    background-color: #AB5AF3;
+    color: white;
+}
+.modal-body {
+    padding: 2px 16px;
+    font-size: large;
+    color: var(--ink);
+}
+.modal-footer {
+    padding: 2px 16px;
+    background-color: #AB5AF3;
+    color: white;
+}
+
+table {
+    font-family: arial, sans-serif;
+    border-collapse: collapse;
+    width: 100%;
+}
+td, th {
+    border: 1px solid #dddddd;
+    text-align: left;
+    padding: 8px;
+}
+tr:nth-child(even) {
+    background-color: #dddddd;
+}
+
+/* Timer — theme aware */
+.timer {
+    border: 5px solid var(--brand);
+    display: inline;
+    padding: 5px;
+    color: var(--brand) !important;
+    font-family: Verdana, sans-serif, Arial;
+    font-size: 40px;
+    height: 50px;
+    font-weight: bold;
+    text-decoration: none;
+    border-radius: 8px;
     background: var(--brand-light);
 }
-html[data-theme="dark"] .timer { background: rgba(248,111,3,.15); }
-
-.status-indicator {
-    display: inline-block;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
+html[data-theme="dark"] .timer {
+    background: rgba(248,111,3,.15);
 }
-.status-loaded { background-color: #32CD32; }
-.status-loading { background-color: #ff9933; animation: pulse 1.5s infinite; }
-@keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
 
-#timeRangeMessage { font-size: 14px !important; color: var(--muted); margin-left: 10px; }
-
-.chart--container div { max-height: 100%; }
-.zc-tooltip { font-family: Arial, sans-serif; line-height: 1.5; }
-.zc-bar { cursor: pointer; }
-
-.zingchart text[data-element="scale-x-item"] tspan {
-    white-space: nowrap;
-    overflow: visible !important;
-    text-overflow: clip !important;
-    font-size: 12px !important;
+.wait {
+    font-family: arial;
+    font-size: 13px;
+    color: #ff0000;
+    font-weight: bold;
+    zoom: 10%;
 }
-.zingchart .zc-scale-x line,
-.zingchart .zc-scale-x path { display: none; }
-.zingchart .zc-plot { overflow: visible !important; }
-.zingchart .zc-scale-x-inner { min-height: 100px !important; overflow: visible !important; }
 
-.dashboard-legend {
-    position: absolute;
-    top: 60px;
-    right: 20px;
-    background-color: var(--card);
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    padding: 8px 12px;
-    z-index: 40;
-    font-family: Arial, sans-serif;
-    font-size: 11px;
-    color: var(--ink);
-    box-shadow: 0 2px 10px rgba(0,0,0,0.12);
-    max-width: 220px;
-    line-height: 1.5;
+/* ================================================================
+   THEME-AWARE OVERRIDES
+   ================================================================ */
+body {
+    background-color: var(--bg) !important;
+    color: var(--ink) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    transition: background .3s ease, color .3s ease;
 }
-.dashboard-legend h4 {
-    margin: 0 0 6px 0;
-    font-size: 12px;
-    text-align: center;
-    color: var(--brand);
-    font-weight: 700;
-}
-.dashboard-legend ul { list-style: none; margin: 0; padding: 0; }
-.dashboard-legend li { margin-bottom: 3px; display: flex; align-items: center; gap: 6px; }
-.legend-color-box {
-    width: 11px; height: 11px;
-    border-radius: 2px;
-    display: inline-block;
-    border: 1px solid var(--line);
-    flex-shrink: 0;
-}
-.legend-text { font-size: 11px; color: var(--ink); white-space: nowrap; }
 
+/* Topnav theme-aware */
 .topnav {
     background: var(--topnav-bg) !important;
     border-bottom: 1px solid var(--line) !important;
@@ -214,7 +154,10 @@ html[data-theme="dark"] .timer { background: rgba(248,111,3,.15); }
     border-color: var(--line) !important;
     color: var(--muted) !important;
 }
-.topnav .tn-search:hover { border-color: var(--brand) !important; color: var(--ink) !important; }
+.topnav .tn-search:hover {
+    border-color: var(--brand) !important;
+    color: var(--ink) !important;
+}
 .topnav .tn-search .kbd {
     background: var(--sidebar-hover) !important;
     border-color: var(--line) !important;
@@ -240,632 +183,304 @@ html[data-theme="dark"] .timer { background: rgba(248,111,3,.15); }
     border-color: var(--brand) !important;
     color: #fff !important;
 }
-.topnav .tn-toggle { border-color: var(--line) !important; color: var(--ink) !important; }
+.topnav .tn-toggle {
+    border-color: var(--line) !important;
+    color: var(--ink) !important;
+}
 
-@media (max-width: 900px) {
-    .new-wrapper { margin-left: 0 !important; }
-    .dashboard-legend { top: 50px; right: 10px; font-size: 10px; padding: 6px 10px; }
-    .page-main-heading h1 { font-size: 16px; }
+/* Content wrapper — topnav ke neeche */
+.new-wrapper {
+    padding-top: 64px !important;
+    margin-left: 260px !important;
+    background-color: var(--bg);
+    min-height: 100vh;
+    transition: margin-left .3s cubic-bezier(.4,0,.2,1), background .3s ease;
+}
+html.sb-collapsed .new-wrapper {
+    margin-left: 0 !important;
+}
+
+/* Blink <p> */
+.new-wrapper .blink {
+    margin: 0 !important;
+    padding: 16px 20px 8px 20px !important;
+    color: var(--ink) !important;
+}
+
+/* Chart container */
+.new-wrapper .chart--container {
+    margin-top: 20px !important;
+    padding: 0 20px !important;
+    height: 800px !important;
+    zoom: 85%;
+    position: relative;
 }
 </style>
 </head>
 <body>
 
-<%!
-public String formatAPINameWithLineBreaks(String apiName) {
-    if (apiName == null || apiName.isEmpty()) return "";
-    apiName = apiName.replace("_", " ");
-    if (apiName.length() <= 16) return apiName;
-    StringBuilder formatted = new StringBuilder();
-    for (int i = 0; i < apiName.length(); i += 16) {
-        if (i > 0) {
-            formatted.append("</p><br><p class='ep-name' style='font-weight: bolder; font-size: 13px'>");
-        }
-        int endIndex = Math.min(i + 16, apiName.length());
-        formatted.append(apiName.substring(i, endIndex));
-    }
-    return formatted.toString();
-}
-
-public String formatBrokerNameOnly(String brokerName) {
-    if (brokerName == null || brokerName.trim().isEmpty()) {
-        return "<span style='color:#FFA500; font-weight:bold; font-size:12px;'>N/A</span>";
-    }
-    return "<span style='color:#FFA500; font-weight:bold; font-size:12px;'>" + brokerName + "</span>";
-}
-%>
-
-<%
-class ExpDataHolder {
-    List<String> labels = new ArrayList<>();
-    List<Double> values = new ArrayList<>();
-    List<String> apiNames = new ArrayList<>();
-    List<String> brokerNames = new ArrayList<>();
-    List<String> errorCodes = new ArrayList<>();
-    boolean loaded = false;
-}
-
-class SysDataHolder {
-    List<String> labels = new ArrayList<>();
-    List<Double> values = new ArrayList<>();
-    List<String> apiNames = new ArrayList<>();
-    List<String> brokerNames = new ArrayList<>();
-    List<String> errorCodes = new ArrayList<>();
-    boolean loaded = false;
-}
-
-final ExpDataHolder expHolder = new ExpDataHolder();
-final SysDataHolder sysHolder = new SysDataHolder();
-
-Thread expThread = new Thread(new Runnable() {
-    public void run() {
-        try {
-            Connection conn = null;
-            String flagStatus = null;
-            String sql = null;
-
-            try (Connection conn1 = DBUtilityAuto.getReportDBConnection();
-                 Statement smt = conn1.createStatement();
-                 ResultSet rs = smt.executeQuery("SELECT FLAG FROM connection_master")) {
-                if (rs.next()) {
-                    flagStatus = rs.getString("FLAG");
-                    if (flagStatus == null) flagStatus = "DR";
-                }
-            } catch(Exception e) { flagStatus = "DR"; }
-
-            try {
-                conn = DBUtilityAuto.getReportDBConnection();
-                String dbLink = flagStatus.equalsIgnoreCase("PR") ? "MIDB_LINK" : "HIDB_LINK";
-
-                sql = "WITH filtered_logs AS ( "
-                    + " SELECT /*+MATERIALIZE*/ API_NAME, BROKER_NAME, error_code, "
-                    + " CASE WHEN (substr(error_code,3,3) in ('002','014') OR error_code in ('SI001','SI007','SI569','SI570','SI015')) AND error_code <> '00014' THEN 1 ELSE 0 END AS is_td_error "
-                    + " FROM eisapp.API_LOG@" + dbLink + " "
-                    + " WHERE REQUEST_DATE_TIME >= SYSDATE - INTERVAL '10' MINUTE "
-                    + " AND API_NAME NOT LIKE '%gen.%' "
-                    + " AND trim(CONCAT(API_NAME, SOURCE_ID) || error_description) NOT IN ( "
-                    + "   SELECT trim(CONCAT(API_NAME, SOURCE_ID) || error_description) FROM vaild_bd_master "
-                    + " ) "
-                    + ") "
-                    + "SELECT * FROM ( "
-                    + " SELECT API_NAME, BROKER_NAME, COUNT(1) AS TOTAL_HITS, SUM(is_td_error) AS TD_COUNT, "
-                    + " ROUND(SUM(is_td_error) * 100 / COUNT(1), 2) AS TD_PERCENT, "
-                    + " TRIM(',' FROM "
-                    + " CASE WHEN SUM(CASE WHEN error_code = 'SI001' THEN 1 ELSE 0 END) > 0 THEN ',SI001' ELSE '' END || "
-                    + " CASE WHEN SUM(CASE WHEN error_code = 'SI002' THEN 1 ELSE 0 END) > 0 THEN ',SI002' ELSE '' END || "
-                    + " CASE WHEN SUM(CASE WHEN substr(error_code,3,3) = '002' AND error_code <> 'SI002' THEN 1 ELSE 0 END) > 0 THEN ',DYNAMIC 002' ELSE '' END || "
-                    + " CASE WHEN SUM(CASE WHEN error_code = 'SI007' AND error_code <> '70007' THEN 1 ELSE 0 END) > 0 THEN ',SI007' ELSE '' END || "
-                    + " CASE WHEN SUM(CASE WHEN error_code = 'SI051' THEN 1 ELSE 0 END) > 0 THEN ',SI051' ELSE '' END || "
-                    + " CASE WHEN SUM(CASE WHEN substr(error_code,3,3) = '014' AND error_code <> '00014' THEN 1 ELSE 0 END) > 0 THEN ',014' ELSE '' END || "
-                    + " CASE WHEN SUM(CASE WHEN error_code = 'SI569' THEN 1 ELSE 0 END) > 0 THEN ',SI569' ELSE '' END || "
-                    + " CASE WHEN SUM(CASE WHEN error_code = 'SI570' THEN 1 ELSE 0 END) > 0 THEN ',SI570' ELSE '' END || "
-                    + " CASE WHEN SUM(CASE WHEN error_code = 'SI015' THEN 1 ELSE 0 END) > 0 THEN ',SI015' ELSE '' END "
-                    + " ) AS ACTIVE_ERROR_CODES "
-                    + " FROM filtered_logs GROUP BY API_NAME, BROKER_NAME "
-                    + " HAVING ROUND(SUM(is_td_error) * 100 / COUNT(1), 2) >= 0.5 "
-                    + " ORDER BY TD_PERCENT DESC "
-                    + ") WHERE ROWNUM <= 10";
-
-                Statement statement = conn.createStatement();
-                ResultSet resultSet = statement.executeQuery(sql);
-
-                while (resultSet.next()) {
-                    String brokerNameOnly = resultSet.getString("BROKER_NAME");
-                    String formattedBrokerOnly = formatBrokerNameOnly(brokerNameOnly);
-                    String name = "<p style='color:#ff9933; font-weight: bolder;font-size: 13px'>"
-                        + Integer.toString(resultSet.getInt("TD_COUNT"))
-                        + "</p><br><p class='ep-name' style='font-weight: bolder;font-size: 13px'>"
-                        + formatAPINameWithLineBreaks(resultSet.getString("API_NAME"))
-                        + "</p><br>" + formattedBrokerOnly
-                        + "<br><p style='color:#32CD32; font-weight: bolder;font-size: 13px'>"
-                        + Integer.toString(resultSet.getInt("TOTAL_HITS")) + "</p>";
-                    expHolder.labels.add(name);
-                    expHolder.values.add(resultSet.getDouble("TD_PERCENT"));
-                    expHolder.apiNames.add(resultSet.getString("API_NAME"));
-                    expHolder.brokerNames.add(brokerNameOnly == null ? "N/A" : brokerNameOnly);
-                    String activeErrorCodes = resultSet.getString("ACTIVE_ERROR_CODES");
-                    if (activeErrorCodes == null || activeErrorCodes.trim().isEmpty()) activeErrorCodes = "None";
-                    expHolder.errorCodes.add(activeErrorCodes);
-                }
-                resultSet.close();
-                statement.close();
-            } catch (Exception e) { e.printStackTrace(); }
-            finally { if (conn != null) try { conn.close(); } catch (Exception e) {} }
-            expHolder.loaded = true;
-        } catch(Exception e) { e.printStackTrace(); expHolder.loaded = true; }
-    }
-});
-
-Thread sysThread = new Thread(new Runnable() {
-    public void run() {
-        try {
-            Connection connSys = null;
-            try {
-                connSys = DBUtilityAuto.getIIBDBConnection();
-                ZonedDateTime CurrentDate = ZonedDateTime.now(ZoneId.of("Asia/Kolkata"));
-                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM_yy").withLocale(Locale.US);
-                String PART = CurrentDate.format(formatter).toUpperCase();
-
-                String SysSql = "WITH filtered_logs AS ( "
-                    + " SELECT /*+PARALLEL(04)*/ API_NAME, SYS_BROKER, error_code, "
-                    + " CASE WHEN (substr(error_code,3,3) in ('002','014') OR error_code in ('SI001','SI007','SI569','SI570','SI015')) AND error_code <> '00014' THEN 1 ELSE 0 END AS is_td_error "
-                    + " FROM eisapp.backend_log PARTITION(" + PART + ") "
-                    + " WHERE REQUEST_DATE_TIME >= SYSDATE - INTERVAL '10' MINUTE "
-                    + " AND API_NAME NOT LIKE '%gen.%' "
-                    + ") "
-                    + "SELECT * FROM ( "
-                    + " SELECT API_NAME, SYS_BROKER, COUNT(1) AS TOTAL_HITS, SUM(is_td_error) AS TD_COUNT, "
-                    + " ROUND(SUM(is_td_error) * 100 / COUNT(1), 2) AS TD_PERCENT, "
-                    + " TRIM(',' FROM "
-                    + " CASE WHEN SUM(CASE WHEN error_code = 'SI001' THEN 1 ELSE 0 END) > 0 THEN ',SI001' ELSE '' END || "
-                    + " CASE WHEN SUM(CASE WHEN error_code = 'SI002' THEN 1 ELSE 0 END) > 0 THEN ',SI002' ELSE '' END || "
-                    + " CASE WHEN SUM(CASE WHEN substr(error_code,3,3) = '002' AND error_code <> 'SI002' THEN 1 ELSE 0 END) > 0 THEN ',DYNAMIC 002' ELSE '' END || "
-                    + " CASE WHEN SUM(CASE WHEN error_code = 'SI007' AND error_code <> '70007' THEN 1 ELSE 0 END) > 0 THEN ',SI007' ELSE '' END || "
-                    + " CASE WHEN SUM(CASE WHEN error_code = 'SI051' THEN 1 ELSE 0 END) > 0 THEN ',SI051' ELSE '' END || "
-                    + " CASE WHEN SUM(CASE WHEN substr(error_code,3,3) = '014' AND error_code <> '00014' THEN 1 ELSE 0 END) > 0 THEN ',014' ELSE '' END || "
-                    + " CASE WHEN SUM(CASE WHEN error_code = 'SI569' THEN 1 ELSE 0 END) > 0 THEN ',SI569' ELSE '' END || "
-                    + " CASE WHEN SUM(CASE WHEN error_code = 'SI570' THEN 1 ELSE 0 END) > 0 THEN ',SI570' ELSE '' END || "
-                    + " CASE WHEN SUM(CASE WHEN error_code = 'SI015' THEN 1 ELSE 0 END) > 0 THEN ',SI015' ELSE '' END "
-                    + " ) AS ACTIVE_ERROR_CODES "
-                    + " FROM filtered_logs GROUP BY API_NAME, SYS_BROKER "
-                    + " HAVING COUNT(1)>10 "
-                    + " ORDER BY TD_PERCENT DESC "
-                    + ") WHERE ROWNUM <= 10";
-
-                Statement statement = connSys.createStatement();
-                ResultSet resultSet = statement.executeQuery(SysSql);
-
-                while (resultSet.next()) {
-                    String sysBrokerOnly = resultSet.getString("SYS_BROKER");
-                    String formattedSysBrokerOnly = formatBrokerNameOnly(sysBrokerOnly);
-                    String name = "<p style='color:#ff9933; font-weight: bolder; font-size: 13px'>"
-                        + Integer.toString(resultSet.getInt("TD_COUNT"))
-                        + "</p><br><p class='ep-name' style='font-weight: bolder;font-size: 13px'>"
-                        + formatAPINameWithLineBreaks(resultSet.getString("API_NAME"))
-                        + "</p><br>" + formattedSysBrokerOnly
-                        + "<br><p style='color:#32CD32; font-weight: bolder;font-size: 13px'>"
-                        + Integer.toString(resultSet.getInt("TOTAL_HITS")) + "</p>";
-                    sysHolder.labels.add(name);
-                    sysHolder.values.add(resultSet.getDouble("TD_PERCENT"));
-                    sysHolder.apiNames.add(resultSet.getString("API_NAME"));
-                    sysHolder.brokerNames.add(sysBrokerOnly == null ? "N/A" : sysBrokerOnly);
-                    String activeErrorCodes = resultSet.getString("ACTIVE_ERROR_CODES");
-                    if (activeErrorCodes == null || activeErrorCodes.trim().isEmpty()) activeErrorCodes = "None";
-                    sysHolder.errorCodes.add(activeErrorCodes);
-                }
-                resultSet.close();
-                statement.close();
-            } catch (Exception e) { e.printStackTrace(); }
-            finally { if (connSys != null) try { connSys.close(); } catch (Exception e) {} }
-            sysHolder.loaded = true;
-        } catch(Exception e) { e.printStackTrace(); sysHolder.loaded = true; }
-    }
-});
-
-expThread.start();
-sysThread.start();
-expThread.join();
-sysThread.join();
-
-request.setAttribute("expLabels", expHolder.labels);
-request.setAttribute("expValues", expHolder.values);
-request.setAttribute("expApiNames", expHolder.apiNames);
-request.setAttribute("expBrokerNames", expHolder.brokerNames);
-request.setAttribute("expErrorCodes", expHolder.errorCodes);
-request.setAttribute("sysLabels", sysHolder.labels);
-request.setAttribute("sysValues", sysHolder.values);
-request.setAttribute("sysApiNames", sysHolder.apiNames);
-request.setAttribute("sysBrokerNames", sysHolder.brokerNames);
-request.setAttribute("sysErrorCodes", sysHolder.errorCodes);
-%>
-
-<%@include file="../userheader.jsp"%>
+<%@include file="./userheader.jsp"%>
 
 <div class="new-wrapper">
 
-    <div class="page-main-heading">
-        <h1><span class="accent">EXP</span> &amp; <span class="accent">SYS</span> Service Wise Failure Dashboard</h1>
-    </div>
+<p class="blink" style="font-size: 30px;"> This Data get Auto Refresh after <span class="timer" id="ten-countdown"></span> Minutes
+</p>
 
-    <div class="dashboard-legend">
-        <h4>Color Guide</h4>
-        <ul>
-            <li><span class="legend-color-box" style="background-color: #ff9933;"></span><span class="legend-text">TD Count</span></li>
-            <li><span class="legend-color-box" style="background-color: var(--ink);"></span><span class="legend-text">API Name</span></li>
-            <li><span class="legend-color-box" style="background-color: #32CD32;"></span><span class="legend-text">Total Hits</span></li>
-            <li><span class="legend-color-box" style="background-color: #FFA500;"></span><span class="legend-text">Broker</span></li>
-            <li><span class="legend-color-box" style="background-color: #673AB7;"></span><span class="legend-text">Tooltip</span></li>
-            <li><span class="legend-color-box" style="background-color: #99ccff;"></span><span class="legend-text">EXP Bar</span></li>
-            <li><span class="legend-color-box" style="background-color: #C0C0C0;"></span><span class="legend-text">SYS Bar</span></li>
-        </ul>
-    </div>
-
-    <div class="header-info">
-        <p class="blink">
-            This Data get Auto Refresh after <span class="timer" id="ten-countdown"></span> min
-            <span id="timeRangeMessage"></span>
-        </p>
-    </div>
-
-    <div class="dashboard-container">
-        <div class="chart-wrapper">
-            <div class="chart-title">
-                <span class="status-indicator" id="expStatus"></span>
-                Failure % EXP Service Wise
-            </div>
-            <div id="expChart" class="chart--container">
-                <div id="expLoading" class="loading-indicator">
-                    <div>Loading EXP Dashboard...</div>
-                </div>
-            </div>
-        </div>
-        <div class="chart-wrapper">
-            <div class="chart-title">
-                <span class="status-indicator" id="sysStatus"></span>
-                Failure % SYS Service Wise
-            </div>
-            <div id="sysChart" class="chart--container">
-                <div id="sysLoading" class="loading-indicator">
-                    <div>Loading SYS Dashboard...</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-</div>
+<div id="myChart" class="chart--container"></div>
 
 <script>
-var expData = { labels: [], values: [], apiNames: [], brokerNames: [], errorCodes: [], loaded: false };
-var sysData = { labels: [], values: [], apiNames: [], sysBrokerNames: [], errorCodes: [], loaded: false };
+function myFunction_Time() {
+    var x = document.lastModified;
+    var el = document.getElementById("demo");
+    if(el) el.innerHTML = x;
+}
+</script>
 
-/* ✅ Theme detect + colors */
+<script>
+var Arr = new Array();
+<%
+    String m_strtxnArray="";
+    response.setIntHeader("Refresh", 600);
+
+    Connection conn = DBUtilityAuto.getIIBDBConnection();
+
+    String sql = "Select * from(select txn_endpoint,"
+        + "COUNT(1) AS TOTAL_HITS,"
+        + "SUM(CASE WHEN (substr(error_code,3,3) in ('002','014') OR error_code in ('SI001','SI007','SI569','SI570')) and error_code <> '00014' THEN 1 ELSE 0 END) AS TD_COUNT,"
+        + "ROUND((SUM(CASE WHEN (substr(error_code,3,3) in ('002','014') OR error_code in ('SI001','SI007','SI569','SI570')) and error_code <> '00014' THEN 1 ELSE 0 END)*100)/COUNT(1),2) AS TD_PERCENT "
+        + "from eisapp.BACKEND_LOG_V where txn_endpoint != 'NATIONAL_PORTAL' and "
+        + "REQUEST_DATE_TIME>=SYSDATE - INTERVAL '10' MINUTE "
+        + "GROUP BY txn_endpoint "
+        + "having ROUND((SUM(CASE WHEN (substr(error_code,3,3) in ('002','014') OR error_code in ('SI001','SI007','SI569','SI570')) and error_code <> '00014' THEN 1 ELSE 0 END)*100)/COUNT(1),2)>= 0.5 "
+        + "order by TD_PERCENT desc)where ROWNUM <=12";
+    System.out.println(sql);
+    Statement statement = conn.createStatement();
+    ResultSet resultSet = statement.executeQuery(sql);
+
+    List<String> labels = new ArrayList<String>();
+    List<Double> failure = new ArrayList<Double>();
+    int j = 0;
+    while (resultSet.next()) {
+        /* ✅ Endpoint name ka color generic rakha — JS me theme ke hisaab se set karenge */
+        String name = "<p style='color:#ff9933; font-weight: bolder; '>"
+                + Integer.toString(resultSet.getInt("TD_COUNT"))
+                + "</p><br><p class='ep-name' style='font-weight: bolder;'>"
+                + resultSet.getString("txn_endpoint").replaceAll("_",
+                        "</p><br><p class='ep-name' style='font-weight: bolder;'>")
+                + "</p><br>" + "<p style='color:#32CD32; font-weight: bolder;'>"
+                + Integer.toString(resultSet.getInt("TOTAL_HITS")) + "</p>";
+%>
+Arr[<%=j %>] = '<%=resultSet.getString("txn_endpoint") %>';
+<%
+        double value = resultSet.getDouble("TD_PERCENT");
+        labels.add(name);
+        failure.add(value);
+        j++;
+    }
+    resultSet.close();
+    statement.close();
+    conn.close();
+%>
+
+/* ✅ Theme detection */
 var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
 
-function getThemeColors() {
-    var dark = document.documentElement.getAttribute('data-theme') === 'dark';
-    return {
-        bg:        dark ? '#000000' : '#FFFFFF',
-        text:      dark ? '#FFFFFF' : '#0A0A0A',
-        grid:      dark ? '#333333' : '#E5E7EB',
-        tick:      dark ? '#333333' : '#D1D5DB',
-        border:    dark ? '#333333' : '#CCCCCC',
-        /* ✅ Bars — light mode me dark, dark mode me light */
-        expBar1:   dark ? '#99ccff' : '#2563EB',
-        expBar2:   dark ? '#7399ff' : '#1D4ED8',
-        sysBar1:   dark ? '#f2f7f2' : '#7C3AED',
-        sysBar2:   dark ? '#C0C0C0' : '#6D28D9',
-        valueBox:  dark ? '#FFFFFF' : '#0A0A0A',
-        tooltip:   '#673AB7'
-    };
-}
+/* ✅ Theme-based colors */
+var chartBg        = isDark ? '#000000' : '#FFFFFF';
+var chartText      = isDark ? '#FFFFFF' : '#0A0A0A';
+var chartGridLine  = isDark ? '#333333' : '#E5E7EB';
+var chartTickColor = isDark ? '#333333' : '#D1D5DB';
+var chartBorder    = isDark ? '#333333' : '#CCCCCC';
 
-var TC = getThemeColors();
+let chartConfig = {
+    type: "bar3d",
+    "3dAspect": { depth: 30, true3d: 0, yAngle: 10 },
+    backgroundColor: chartBg,
+    title: {
+        text: "Failure %   End Point Wise",
+        fontWeight: "bold",
+        height: "25px",
+        color: chartText,
+        fontSize: "40px",
+        fontFamily: "Times New Roman",
+    },
+    plotarea: {
+        alpha: 0.3,
+        backgroundColor: chartBg,
+        margin: "50px 35px 250px 200px",
+    },
+    scaleX: {
+        values: [<%
+            if(labels.size()<=5){
+                for(String label: labels){
+                    out.print("\""+label+"\",");
+                }
+                for(int i=labels.size();i<5;i++)
+                {
+                    out.print("\""+" "+"\",");
+                }
+            }
+            else
+            {
+                for(String label: labels){
+                    out.print("\""+label+"\",");
+                }
+            }
+        %>],
+        alpha: 0.5,
+        backgroundColor: chartBg,
+        borderColor: chartBorder,
+        borderWidth: "1px",
+        guide: { visible: false },
+        item: { fontColor: chartText, fontSize: "30px" },
+        tick: { alpha: 0.2, lineColor: chartTickColor },
+        label: {
+            text: '<p style="color:#ff9933;">TD FAILURE, </p><p style="color:' + chartText + ';"> END POINT, </p><p style="color:#32CD32;">TOTAL HITS</p>',
+            color: chartText,
+            fontSize: "30",
+            offsetX: '-100px',
+        },
+        item: { 'font-size': 30 },
+        guide: {
+            visible: true,
+            'line-color': chartGridLine,
+            'line-style': "dotted",
+            alpha: 1
+        }
+    },
+    scaleY: {
+        alpha: 0.5,
+        backgroundColor: chartBg,
+        borderColor: chartBorder,
+        borderWidth: "1px",
+        guide: { alpha: 0.2, lineColor: chartGridLine, lineStyle: "solid" },
+        item: { fontColor: chartText, paddingRight: "10px" },
+        tick: { alpha: 0.2, lineColor: chartTickColor },
+        label: {
+            text: "Failure Percentage",
+            color: chartText,
+            fontSize: "30",
+        },
+        item: { 'font-size': 30 },
+        guide: {
+            visible: true,
+            'line-color': chartGridLine,
+            'line-style': "dotted",
+            alpha: 1
+        }
+    },
+    series: [
+        {
+            text: "Product 2",
+            values: [<%
+                for(Double value: failure)
+                {
+                    out.print(value+",");
+                }
+            %>],
+            "value-box": {
+                "text": "%v %",
+                "placement": "top",
+                "font-color": chartText,
+                "font-size": "30px",
+                "font-weight": "bold",
+                "offset-y": -10,
+            },
+            tooltip: {
+                backgroundColor: "#673AB7",
+                borderColor: "none",
+                borderRadius: "5px",
+                fontSize: "20px",
+                padding: "6px 12px",
+                shadow: false,
+            },
+            backgroundColor: "#673AB7 #9575CD",
+            borderColor: "#fff",
+            legendMarker: { borderColor: "#673AB7" },
+        },
+    ],
+};
 
-document.addEventListener('DOMContentLoaded', function() {
-    var currentTime = new Date();
-    var tenMinutesAgo = new Date();
-    tenMinutesAgo.setMinutes(currentTime.getMinutes() - 10);
-    var formatTime = function(date) {
-        var hours = date.getHours();
-        var minutes = date.getMinutes();
-        hours = hours < 10 ? '0' + hours : hours;
-        minutes = minutes < 10 ? '0' + minutes : minutes;
-        return hours + ':' + minutes;
-    };
-    var message = '(' + formatTime(tenMinutesAgo) + ' - ' + formatTime(currentTime) + ')';
-    document.getElementById('timeRangeMessage').innerText = message;
+let updateChart = (p) => {
+    initState = zingchart.exec(p.id, 'getdata');
+    /* ✅ Chart bar click pe detail page khulta hai — SAME as original */
+    var a = '<%=request.getContextPath() + "/jsp/TransactionEndPointWiseService_new.jsp?txnEndPoint="%>' + Arr[p.nodeindex];
+    window.open(a, '_blank');
+};
+
+zingchart.render({
+    id: 'myChart',
+    data: chartConfig,
+    height: '100%',
+    width: '100%',
 });
 
-function initializeDashboards() {
-    document.getElementById('expStatus').className = 'status-indicator status-loading';
-    document.getElementById('sysStatus').className = 'status-indicator status-loading';
+zingchart.bind('myChart', 'node_click', updateChart);
 
-    expData.labels = [<%
-        List<String> expLabelsList = (List<String>)request.getAttribute("expLabels");
-        if(expLabelsList != null) { for(String label: expLabelsList) { out.print("\"" + label.replace("\\","\\\\").replace("\"", "\\\"").replace("\n","").replace("\r","") + "\","); } }
-    %>];
-    expData.values = [<%
-        List<Double> expValuesList = (List<Double>)request.getAttribute("expValues");
-        if(expValuesList != null) { for(Double value: expValuesList) { out.print(value + ","); } }
-    %>];
-    expData.apiNames = [<%
-        List<String> expApiNamesList = (List<String>)request.getAttribute("expApiNames");
-        if(expApiNamesList != null) { for(String name: expApiNamesList) { out.print("\"" + name.replace("\"", "\\\"") + "\","); } }
-    %>];
-    expData.brokerNames = [<%
-        List<String> expBrokerNamesList = (List<String>)request.getAttribute("expBrokerNames");
-        if(expBrokerNamesList != null) { for(String broker: expBrokerNamesList) { out.print("\"" + broker.replace("\"", "\\\"") + "\","); } }
-    %>];
-    expData.errorCodes = [<%
-        List<String> expErrorCodesList = (List<String>)request.getAttribute("expErrorCodes");
-        if(expErrorCodesList != null) { for(String codes: expErrorCodesList) { out.print("\"" + codes.replace("\"", "\\\"") + "\","); } }
-    %>];
-    expData.loaded = true;
+/* ✅ Chart ke endpoint labels ko theme ke hisaab se color karo */
+setTimeout(function(){
+    var names = document.querySelectorAll('.ep-name');
+    var color = isDark ? '#FFFFFF' : '#0A0A0A';
+    names.forEach(function(el){ el.style.color = color; });
+}, 250);
 
-    sysData.labels = [<%
-        List<String> sysLabelsList = (List<String>)request.getAttribute("sysLabels");
-        if(sysLabelsList != null) { for(String label: sysLabelsList) { out.print("\"" + label.replace("\\","\\\\").replace("\"", "\\\"").replace("\n","").replace("\r","") + "\","); } }
-    %>];
-    sysData.values = [<%
-        List<Double> sysValuesList = (List<Double>)request.getAttribute("sysValues");
-        if(sysValuesList != null) { for(Double value: sysValuesList) { out.print(value + ","); } }
-    %>];
-    sysData.apiNames = [<%
-        List<String> sysApiNamesList = (List<String>)request.getAttribute("sysApiNames");
-        if(sysApiNamesList != null) { for(String name: sysApiNamesList) { out.print("\"" + name.replace("\"", "\\\"") + "\","); } }
-    %>];
-    sysData.sysBrokerNames = [<%
-        List<String> sysBrokerNamesList = (List<String>)request.getAttribute("sysBrokerNames");
-        if(sysBrokerNamesList != null) { for(String broker: sysBrokerNamesList) { out.print("\"" + broker.replace("\"", "\\\"") + "\","); } }
-    %>];
-    sysData.errorCodes = [<%
-        List<String> sysErrorCodesList = (List<String>)request.getAttribute("sysErrorCodes");
-        if(sysErrorCodesList != null) { for(String codes: sysErrorCodesList) { out.print("\"" + codes.replace("\"", "\\\"") + "\","); } }
-    %>];
-    sysData.loaded = true;
-
-    document.getElementById('expStatus').className = 'status-indicator status-loaded';
-    document.getElementById('sysStatus').className = 'status-indicator status-loaded';
-
-    var expLoading = document.getElementById('expLoading');
-    if(expLoading){ expLoading.style.display = 'none'; }
-    var sysLoading = document.getElementById('sysLoading');
-    if(sysLoading){ sysLoading.style.display = 'none'; }
-
-    renderExpChart();
-    renderSysChart();
-
-    setTimeout(function(){
-        var names = document.querySelectorAll('.ep-name');
-        var color = TC.text;
-        names.forEach(function(el){ el.style.color = color; });
-    }, 300);
-}
-
-function renderExpChart() {
-    if (!expData.loaded) return;
-
-    var tooltips = [];
-    for (var i = 0; i < expData.values.length; i++) {
-        tooltips.push(
-            "<b>Failure Rate:</b> " + expData.values[i] + "%" +
-            "<br><b>Broker Name:</b> " + (expData.brokerNames[i] || "N/A") +
-            "<br><b>Error Codes:</b> " + (expData.errorCodes[i] || "None") +
-            "<br><b>API:</b> " + expData.apiNames[i] +
-            "<br><b>Click to view details</b>"
-        );
-    }
-
-    var barCount = expData.values.length > 0 ? expData.values.length : 1;
-    var bottomMargin = Math.max(110, barCount * 8);
-    var leftMargin = 110;
-    var rightMargin = 20;
-    var topMargin = 25;
-
-    let chartConfig = {
-        type: "bar3d",
-        "3dAspect": { depth: 15, true3d: 0, yAngle: 8 },
-        backgroundColor: TC.bg,
-        plotarea: {
-            alpha: 1,
-            backgroundColor: TC.bg,
-            margin: topMargin + "px " + rightMargin + "px " + bottomMargin + "px " + leftMargin + "px"
-        },
-        scaleX: {
-            values: expData.labels.length > 0 ? expData.labels : ["No Data"],
-            alpha: 1,
-            backgroundColor: TC.bg,
-            borderColor: TC.border,
-            borderWidth: "1px",
-            guide: { visible: false },
-            item: { fontColor: TC.text, fontSize: "12px", fontFamily: "Arial", wrapText: false, overflow: "visible", maxChars: null, angle: 0, textAlign: "center" },
-            tick: { alpha: 0.2, lineColor: TC.tick },
-            label: { text: '', color: TC.text, fontSize: "16px", offsetX: '-40px' },
-            layout: { type: "auto", adjustLayout: true },
-            maxItems: 50,
-            step: 1,
-            transform: { type: "none" }
-        },
-        scaleY: {
-            alpha: 1,
-            backgroundColor: TC.bg,
-            borderColor: TC.border,
-            borderWidth: "1px",
-            guide: { alpha: 0.3, lineColor: TC.grid, lineStyle: "solid" },
-            item: { fontColor: TC.text, paddingRight: "5px", fontSize: "14px" },
-            tick: { alpha: 0.2, lineColor: TC.tick },
-            label: { text: "Failure %", color: TC.text, fontSize: "14px" },
-            guide: { visible: true, 'line-color': TC.grid, 'line-style': "dotted", alpha: 1 }
-        },
-        series: [{
-            text: "Failure Rate",
-            values: expData.values.length > 0 ? expData.values : [0],
-            "data-tooltip": tooltips,
-            "value-box": { "text": "%v%", "placement": "top", "font-color": TC.valueBox, "font-size": "14px", "font-weight": "bold", "offset-y": -3 },
-            tooltip: { text: "%data-tooltip", backgroundColor: TC.tooltip, borderColor: "none", borderRadius: "5px", fontSize: "14px", padding: "6px 10px", shadow: false, wrapText: true },
-            /* ✅ Bar colors — theme-based */
-            backgroundColor: TC.expBar1 + " " + TC.expBar2,
-            borderColor: TC.border,
-            borderWidth: 1
-        }],
-        options: { responsive: true, maintainAspectRatio: false, scaleOverflow: "visible" }
-    };
-
-    zingchart.render({
-        id: 'expChart',
-        data: chartConfig,
-        height: '100%',
-        width: '100%',
-        callback: function() {
-            var chartContainer = document.getElementById('expChart');
-            if (chartContainer) {
-                var chartDiv = chartContainer.querySelector('.zingchart');
-                if (chartDiv) chartDiv.style.overflow = 'visible';
-            }
-        }
-    });
-
-    zingchart.bind('expChart', 'node_click', function(event) {
-        var nodeIndex = event.nodeindex;
-        if (nodeIndex < expData.apiNames.length) {
-            var apiName = expData.apiNames[nodeIndex];
-            var expUrl = '<%=request.getContextPath() + "/jsp/AutoRefreshExpWiseService.jsp?apiName="%>' + encodeURIComponent(apiName);
-            window.open(expUrl, '_blank');
-        }
-    });
-}
-
-function renderSysChart() {
-    if (!sysData.loaded) return;
-
-    var tooltips = [];
-    for (var i = 0; i < sysData.values.length; i++) {
-        tooltips.push(
-            "<b>Failure Rate:</b> " + sysData.values[i] + "%" +
-            "<br><b>SYS Broker Name:</b> " + (sysData.sysBrokerNames[i] || "N/A") +
-            "<br><b>Error Codes:</b> " + (sysData.errorCodes[i] || "None") +
-            "<br><b>API:</b> " + sysData.apiNames[i] +
-            "<br><b>Click to view details</b>"
-        );
-    }
-
-    var barCount = sysData.values.length > 0 ? sysData.values.length : 1;
-    var bottomMargin = Math.max(110, barCount * 8);
-    var leftMargin = 110;
-    var rightMargin = 20;
-    var topMargin = 25;
-
-    let chartConfig = {
-        type: "bar3d",
-        "3dAspect": { depth: 15, true3d: 0, yAngle: 8 },
-        backgroundColor: TC.bg,
-        plotarea: {
-            alpha: 1,
-            backgroundColor: TC.bg,
-            margin: topMargin + "px " + rightMargin + "px " + bottomMargin + "px " + leftMargin + "px"
-        },
-        scaleX: {
-            values: sysData.labels.length > 0 ? sysData.labels : ["No Data"],
-            alpha: 1,
-            backgroundColor: TC.bg,
-            borderColor: TC.border,
-            borderWidth: "1px",
-            guide: { visible: false },
-            item: { fontColor: TC.text, fontSize: "12px", fontFamily: "Arial", wrapText: false, overflow: "visible", maxChars: null, angle: 0, textAlign: "center" },
-            tick: { alpha: 0.2, lineColor: TC.tick },
-            label: { text: 'TD Count, API Name, Total count', color: TC.text, fontSize: "16px", offsetX: '-40px' },
-            layout: { type: "auto", adjustLayout: true },
-            maxItems: 50,
-            step: 1,
-            transform: { type: "none" }
-        },
-        scaleY: {
-            alpha: 1,
-            backgroundColor: TC.bg,
-            borderColor: TC.border,
-            borderWidth: "1px",
-            guide: { alpha: 0.3, lineColor: TC.grid, lineStyle: "solid" },
-            item: { fontColor: TC.text, paddingRight: "5px", fontSize: "14px" },
-            tick: { alpha: 0.2, lineColor: TC.tick },
-            label: { text: "Failure %", color: TC.text, fontSize: "14px" },
-            guide: { visible: true, 'line-color': TC.grid, 'line-style': "dotted", alpha: 1 }
-        },
-        series: [{
-            text: "Failure Rate",
-            values: sysData.values.length > 0 ? sysData.values : [0],
-            "data-tooltip": tooltips,
-            "value-box": { "text": "%v%", "placement": "top", "font-color": TC.valueBox, "font-size": "14px", "font-weight": "bold", "offset-y": -3 },
-            tooltip: { text: "%data-tooltip", backgroundColor: TC.tooltip, borderColor: "none", borderRadius: "5px", fontSize: "14px", padding: "6px 10px", shadow: false, wrapText: true },
-            /* ✅ Bar colors — theme-based */
-            backgroundColor: TC.sysBar1 + " " + TC.sysBar2,
-            borderColor: TC.border,
-            borderWidth: 1
-        }],
-        options: { responsive: true, maintainAspectRatio: false, scaleOverflow: "visible" }
-    };
-
-    zingchart.render({
-        id: 'sysChart',
-        data: chartConfig,
-        height: '100%',
-        width: '100%',
-        callback: function() {
-            var chartContainer = document.getElementById('sysChart');
-            if (chartContainer) {
-                var chartDiv = chartContainer.querySelector('.zingchart');
-                if (chartDiv) chartDiv.style.overflow = 'visible';
-            }
-        }
-    });
-
-    zingchart.bind('sysChart', 'node_click', function(event) {
-        var nodeIndex = event.nodeindex;
-        if (nodeIndex < sysData.apiNames.length) {
-            var apiName = sysData.apiNames[nodeIndex];
-            var sysUrl = '<%=request.getContextPath() + "/jsp/AutoRefreshSysWiseService.jsp?apiName="%>' + encodeURIComponent(apiName);
-            window.open(sysUrl, '_blank');
-        }
-    });
-}
-
-function countdown(elementName, minutes, seconds) {
-    var element, endTime, mins, msLeft, time;
-    function twoDigits(n) { return (n <= 9 ? "0" + n : n); }
-    function updateTimer() {
-        msLeft = endTime - (+new Date);
-        if (msLeft < 1000) {
-            element.innerHTML = "0:00";
-            window.location.reload();
-        } else {
-            time = new Date(msLeft);
-            mins = time.getUTCMinutes();
-            element.innerHTML = mins + ':' + twoDigits(time.getUTCSeconds());
-            setTimeout(updateTimer, time.getUTCMilliseconds() + 500);
-        }
-    }
-    element = document.getElementById(elementName);
-    endTime = (+new Date) + 1000 * (60 * minutes + seconds) + 500;
-    updateTimer();
-}
-
-/* ✅ Theme change — charts ko re-render karo (reload nahi) */
-function applyThemeToCharts() {
-    /* Update theme colors */
-    TC = getThemeColors();
-    isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-
-    /* ✅ Re-render charts with new colors (cleaner than setdata) */
-    try {
-        zingchart.exec('expChart', 'destroy');
-    } catch(e) {}
-    try {
-        zingchart.exec('sysChart', 'destroy');
-    } catch(e) {}
-
-    /* Small delay to let destroy complete */
-    setTimeout(function(){
-        renderExpChart();
-        renderSysChart();
-
-        /* Endpoint labels color */
-        var names = document.querySelectorAll('.ep-name');
-        names.forEach(function(el){ el.style.color = TC.text; });
-    }, 100);
-}
-
-var lastTheme = document.documentElement.getAttribute('data-theme') || 'light';
+/* ✅ Theme change hone pe reload */
+var _lastTheme = isDark ? 'dark' : 'light';
 setInterval(function(){
     var now = document.documentElement.getAttribute('data-theme') || 'light';
-    if(now !== lastTheme){
-        lastTheme = now;
-        applyThemeToCharts();
+    if(now !== _lastTheme){
+        _lastTheme = now;
+        location.reload();
     }
 }, 500);
 
-document.addEventListener('DOMContentLoaded', function(){
-    initializeDashboards();
-    countdown("ten-countdown", 10, 0);
-});
+/* Modal */
+var modal = document.getElementById("myModal");
+var btn = document.getElementById("myBtn");
+var span = document.getElementsByClassName("close")[0];
+if(btn){
+    btn.onclick = function() { modal.style.display = "block"; }
+}
+if(span){
+    span.onclick = function() { modal.style.display = "none"; }
+}
+window.onclick = function(event) {
+    if (event.target == modal) { modal.style.display = "none"; }
+}
 </script>
+
+<script>
+function countdown( elementName, minutes, seconds )
+{
+    var element, endTime, hours, mins, msLeft, time;
+
+    function twoDigits( n )
+    {
+        return (n <= 9 ? "0" + n : n);
+    }
+
+    function updateTimer()
+    {
+        msLeft = endTime - (+new Date);
+        if ( msLeft < 1000 ) {
+            element.innerHTML = "Please Wait Fetching the Latest Data!";
+        } else {
+            time = new Date( msLeft );
+            hours = time.getUTCHours();
+            mins = time.getUTCMinutes();
+            element.innerHTML = (hours ? hours + ':' + twoDigits( mins ) : mins) + ':' + twoDigits( time.getUTCSeconds() );
+            setTimeout( updateTimer, time.getUTCMilliseconds() + 500 );
+        }
+    }
+
+    element = document.getElementById( elementName );
+    endTime = (+new Date) + 1000 * (60*minutes + seconds) + 500;
+    updateTimer();
+}
+
+countdown( "ten-countdown", 10, 0 );
+</script>
+
+</div>
 </body>
 </html>
