@@ -1,886 +1,143 @@
-<%@ page import="java.sql.*, java.util.*, java.text.*" %>
-<%@ page import="com.jdbc.DBUtilityAuto" %>
-<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
-<%
-    // Parse start/end – default to previous hour
-    String startParam = request.getParameter("start");
-    String endParam = request.getParameter("end");
-    String showQueries = request.getParameter("showQueries");
-    
-    java.util.Date startDate, endDate;
-    
-    if (startParam != null && !startParam.isEmpty() && endParam != null && !endParam.isEmpty()) {
-        try {
-            SimpleDateFormat iso = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm");
-            startDate = iso.parse(startParam);
-            endDate = iso.parse(endParam);
-        } catch (Exception e) {
-            Calendar defaultCal = Calendar.getInstance();
-            defaultCal.set(Calendar.MINUTE, 0);
-            defaultCal.set(Calendar.SECOND, 0);
-            defaultCal.set(Calendar.MILLISECOND, 0);
-            defaultCal.add(Calendar.HOUR_OF_DAY, -1);
-            startDate = defaultCal.getTime();
-            defaultCal.add(Calendar.HOUR_OF_DAY, 1);
-            endDate = defaultCal.getTime();
-        }
-    } else {
-        Calendar cal = Calendar.getInstance();
-        cal.set(Calendar.MINUTE, 0);
-        cal.set(Calendar.SECOND, 0);
-        cal.set(Calendar.MILLISECOND, 0);
-        cal.add(Calendar.HOUR_OF_DAY, -1);
-        startDate = cal.getTime();
-        cal.add(Calendar.HOUR_OF_DAY, 1);
-        endDate = cal.getTime();
-    }
-    
-    if (startDate == null || endDate == null) {
-        Calendar defaultCal = Calendar.getInstance();
-        defaultCal.set(Calendar.MINUTE, 0);
-        defaultCal.set(Calendar.SECOND, 0);
-        defaultCal.set(Calendar.MILLISECOND, 0);
-        defaultCal.add(Calendar.HOUR_OF_DAY, -1);
-        startDate = defaultCal.getTime();
-        defaultCal.add(Calendar.HOUR_OF_DAY, 1);
-        endDate = defaultCal.getTime();
-    }
+Oct 08, 2026 3:54:27 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Server version name:   Apache Tomcat/11.0.13
+Oct 08, 2026 3:54:27 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Server built:          Oct 10 2025 13:57:31 UTC
+Oct 08, 2026 3:54:27 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Server version number: 11.0.13.0
+Oct 08, 2026 3:54:27 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: OS Name:               Windows 11
+Oct 08, 2026 3:54:27 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: OS Version:            10.0
+Oct 08, 2026 3:54:27 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Architecture:          amd64
+Oct 08, 2026 3:54:27 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Java Home:             D:\Jakarta EISPortal\eclipse\plugins\org.eclipse.justj.openjdk.hotspot.jre.full.win32.x86_64_21.0.8.v20250724-1412\jre
+Oct 08, 2026 3:54:27 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: JVM Version:           21.0.8+9-LTS
+Oct 08, 2026 3:54:27 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: JVM Vendor:            Eclipse Adoptium
+Oct 08, 2026 3:54:27 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: CATALINA_BASE:         D:\Jakarta EISPortal\.metadata\.plugins\org.eclipse.wst.server.core\tmp0
+Oct 08, 2026 3:54:27 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: CATALINA_HOME:         D:\apache-tomcat-11.0.13
+Oct 08, 2026 3:54:27 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Command line argument: -Dcatalina.base=D:\Jakarta EISPortal\.metadata\.plugins\org.eclipse.wst.server.core\tmp0
+Oct 08, 2026 3:54:27 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Command line argument: -Dcatalina.home=D:\apache-tomcat-11.0.13
+Oct 08, 2026 3:54:27 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Command line argument: -Dwtp.deploy=D:\Jakarta EISPortal\.metadata\.plugins\org.eclipse.wst.server.core\tmp0\wtpwebapps
+Oct 08, 2026 3:54:27 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Command line argument: -Djava.library.path=D:\apache-tomcat-11.0.13\bin
+Oct 08, 2026 3:54:27 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Command line argument: --enable-native-access=ALL-UNNAMED
+Oct 08, 2026 3:54:27 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Command line argument: --add-opens=java.base/java.lang=ALL-UNNAMED
+Oct 08, 2026 3:54:27 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Command line argument: --add-opens=java.base/java.io=ALL-UNNAMED
+Oct 08, 2026 3:54:27 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Command line argument: --add-opens=java.base/java.util=ALL-UNNAMED
+Oct 08, 2026 3:54:27 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Command line argument: --add-opens=java.base/java.util.concurrent=ALL-UNNAMED
+Oct 08, 2026 3:54:27 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Command line argument: --add-opens=java.rmi/sun.rmi.transport=ALL-UNNAMED
+Oct 08, 2026 3:54:27 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Command line argument: -Dfile.encoding=UTF-8
+Oct 08, 2026 3:54:27 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Command line argument: -Dstdout.encoding=UTF-8
+Oct 08, 2026 3:54:27 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Command line argument: -Dstderr.encoding=UTF-8
+Oct 08, 2026 3:54:27 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Command line argument: -XX:+ShowCodeDetailsInExceptionMessages
+Oct 08, 2026 3:54:27 PM org.apache.catalina.core.AprLifecycleListener lifecycleEvent
+INFO: Loaded Apache Tomcat Native library [2.0.9] using APR version [1.7.6].
+Oct 08, 2026 3:54:27 PM org.apache.catalina.core.AprLifecycleListener initializeSSL
+INFO: OpenSSL successfully initialized [OpenSSL 3.5.0 8 Apr 2025]
+Oct 08, 2026 3:54:27 PM org.apache.coyote.AbstractProtocol init
+INFO: Initializing ProtocolHandler ["http-nio-8085"]
+Oct 08, 2026 3:54:27 PM org.apache.catalina.startup.Catalina load
+INFO: Server initialization in [827] milliseconds
+Oct 08, 2026 3:54:27 PM org.apache.catalina.core.StandardService startInternal
+INFO: Starting service [Catalina]
+Oct 08, 2026 3:54:27 PM org.apache.catalina.core.StandardEngine startInternal
+INFO: Starting Servlet engine: [Apache Tomcat/11.0.13]
+Oct 08, 2026 3:54:35 PM org.apache.jasper.servlet.TldScanner scanJars
+INFO: At least one JAR was scanned for TLDs yet contained no TLDs. Enable debug logging for this logger for a complete list of JARs that were scanned but no TLDs were found in them. Skipping unneeded JARs during scanning can improve startup time and JSP compilation time.
+Oct 08, 2026 3:54:39 PM org.apache.coyote.AbstractProtocol start
+INFO: Starting ProtocolHandler ["http-nio-8085"]
+Oct 08, 2026 3:54:39 PM org.apache.catalina.startup.Catalina start
+INFO: Server startup in [12232] milliseconds
+SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+>>> LoginAction.execute() called
+[DBConfig] Config file found: D:\AppConfig\db.properties
+[DBConfig] Config loaded successfully from: D:\AppConfig\db.properties
+Connected to PRIMARY DB 1
+Flag Status: PR, Location: HI
+getReportDBConnection - flagStatus: PR
+Connecting to Report PR Database
+Report PR Connected
+Roles loaded: [Incident Management, Event Management, EIS Bank, Service Reporting Management, Manager, Problem Management, Service Desk, Process Improvement, Team Lead, EIS Infra, EIS Development, test]
+Roles Loaded : [Incident Management, Event Management, EIS Bank, Service Reporting Management, Manager, Problem Management, Service Desk, Process Improvement, Team Lead, EIS Infra, EIS Development, test]
+>>> usersign() called
+Connected to PRIMARY DB 1
+Flag Status: PR, Location: HI
+getReportDBConnection - flagStatus: PR
+Connecting to Report PR Database
+Report PR Connected
+Oct 08, 2026 3:55:10 PM org.apache.catalina.core.StandardWrapperValve invoke
+SEVERE: Servlet.service() for servlet [jsp] in context with path [/EISPortalVer2] threw exception [/jsp/userheader.jsp (line: [1], column: [2]) Page directive: illegal to have multiple occurrences of 'contentType' with different values (old: [text/html; charset=UTF-8], new: [text/html])] with root cause
+org.apache.jasper.JasperException: /jsp/userheader.jsp (line: [1], column: [2]) Page directive: illegal to have multiple occurrences of 'contentType' with different values (old: [text/html; charset=UTF-8], new: [text/html])
+	at org.apache.jasper.compiler.DefaultErrorHandler.jspError(DefaultErrorHandler.java:29)
+	at org.apache.jasper.compiler.ErrorDispatcher.dispatch(ErrorDispatcher.java:265)
+	at org.apache.jasper.compiler.ErrorDispatcher.jspError(ErrorDispatcher.java:102)
+	at org.apache.jasper.compiler.Validator$DirectiveVisitor.visit(Validator.java:122)
+	at org.apache.jasper.compiler.Node$PageDirective.accept(Node.java:537)
+	at org.apache.jasper.compiler.Node$Nodes.visit(Node.java:2148)
+	at org.apache.jasper.compiler.Node$Visitor.visitBody(Node.java:2204)
+	at org.apache.jasper.compiler.Node$Visitor.visit(Node.java:2210)
+	at org.apache.jasper.compiler.Node$Root.accept(Node.java:432)
+	at org.apache.jasper.compiler.Node$Nodes.visit(Node.java:2148)
+	at org.apache.jasper.compiler.Node$Visitor.visitBody(Node.java:2204)
+	at org.apache.jasper.compiler.Validator$DirectiveVisitor.visit(Validator.java:91)
+	at org.apache.jasper.compiler.Node$IncludeDirective.accept(Node.java:595)
+	at org.apache.jasper.compiler.Node$Nodes.visit(Node.java:2148)
+	at org.apache.jasper.compiler.Node$Visitor.visitBody(Node.java:2204)
+	at org.apache.jasper.compiler.Node$Visitor.visit(Node.java:2210)
+	at org.apache.jasper.compiler.Node$Root.accept(Node.java:432)
+	at org.apache.jasper.compiler.Node$Nodes.visit(Node.java:2148)
+	at org.apache.jasper.compiler.Validator.validateDirectives(Validator.java:1546)
+	at org.apache.jasper.compiler.Compiler.generateJava(Compiler.java:185)
+	at org.apache.jasper.compiler.Compiler.compile(Compiler.java:361)
+	at org.apache.jasper.compiler.Compiler.compile(Compiler.java:339)
+	at org.apache.jasper.compiler.Compiler.compile(Compiler.java:325)
+	at org.apache.jasper.JspCompilationContext.compile(JspCompilationContext.java:585)
+	at org.apache.jasper.servlet.JspServletWrapper.service(JspServletWrapper.java:368)
+	at org.apache.jasper.servlet.JspServlet.serviceJspFile(JspServlet.java:330)
+	at org.apache.jasper.servlet.JspServlet.service(JspServlet.java:281)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:710)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:128)
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:53)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+	at com.action.CORSFilter.doFilter(CORSFilter.java:22)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+	at com.action.CORSFilter.doFilter(CORSFilter.java:22)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:165)
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:77)
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:482)
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:113)
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:83)
+	at org.apache.catalina.valves.AbstractAccessLogValve.invoke(AbstractAccessLogValve.java:654)
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:72)
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:341)
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:397)
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63)
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:903)
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1778)
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:946)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:480)
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:57)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
 
-    SimpleDateFormat oracleFmt = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss");
-    String fromStr = oracleFmt.format(startDate).toUpperCase();
-    String toStr = oracleFmt.format(endDate).toUpperCase();
-    
-    SimpleDateFormat displayFmt = new SimpleDateFormat("dd-MMM-yyyy HH:mm");
-    String rangeDisplay = displayFmt.format(startDate) + " to " + displayFmt.format(endDate);
-    String startIso = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm").format(startDate);
-    String endIso = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm").format(endDate);
-
-    int selectedHour = startDate.getHours();
-
-    Calendar partCal = Calendar.getInstance();
-    partCal.setTime(startDate);
-    String[] months = {"JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"};
-    String partition = months[partCal.get(Calendar.MONTH)] + "_" + String.valueOf(partCal.get(Calendar.YEAR)).substring(2);
-
-    String[] tables = {
-        "EIS_TD_PERCENTAGE_HOURLY",
-        "MAJOR_DOWNSTREAM_HOURLY",
-        "CKYC_STATUS_HOURLY",
-        "PAN_STATUS_HOURLY",
-        "ACCOUNT_OPENING_HOURLY",
-        "YONO_STATUS_HOURLY",
-        "NON_YONO_STATUS_HOURLY",
-        "NPCI_STATUS_HOURLY"
-    };
-    String[] displayNames = {
-        "Overall EIS TD%",
-        "Major Downstream",
-        "CKYC Status",
-        "PAN Status",
-        "Account Opening",
-        "YONO",
-        "Non-YONO",
-        "NPCI"
-    };
-    String[] sourceDB = {
-        "IIB", "IIB", "IIB", "IIB", "IIB", "IIB", "IIB", "SIDB"
-    };
-
-    Map<String, List<Map<String, Object>>> tableData = new LinkedHashMap<>();
-    try (Connection conn = DBUtilityAuto.getReportDBConnection()) {
-        for (String tbl : tables) {
-            String sql = "SELECT * FROM " + tbl + " WHERE START_TIME >= ? AND START_TIME < ? ORDER BY START_TIME";
-            List<Map<String, Object>> rows = new ArrayList<>();
-            try (PreparedStatement ps = conn.prepareStatement(sql)) {
-                ps.setTimestamp(1, new java.sql.Timestamp(startDate.getTime()));
-                ps.setTimestamp(2, new java.sql.Timestamp(endDate.getTime()));
-                try (ResultSet rs = ps.executeQuery()) {
-                    ResultSetMetaData meta = rs.getMetaData();
-                    int colCount = meta.getColumnCount();
-                    while (rs.next()) {
-                        Map<String, Object> row = new LinkedHashMap<>();
-                        for (int i = 1; i <= colCount; i++) {
-                            row.put(meta.getColumnName(i).toUpperCase(), rs.getObject(i));
-                        }
-                        rows.add(row);
-                    }
-                }
-            } catch (SQLException e) {
-                System.err.println("Error fetching data for table: " + tbl);
-                e.printStackTrace();
-            }
-            tableData.put(tbl, rows);
-        }
-    } catch (Exception e) {
-        e.printStackTrace();
-    }
-
-    Set<String> hiddenCols = new HashSet<>(Arrays.asList("ID", "START_TIME", "END_TIME", "QUERY_DURATION_SEC"));
-
-    String queriesDisplay = "";
-    if ("true".equals(showQueries)) {
-        StringBuilder sb = new StringBuilder();
-        String part = " PARTITION(" + partition + ")";
-        String fromDate = fromStr;
-        String toDate = toStr;
-
-        sb.append("-- Query 0: Overall EIS TD%\n");
-        sb.append("SELECT /*+ PARALLEL(2) */ COUNT(*) AS TOTAL_COUNT,\n");
-        sb.append("COUNT(CASE WHEN ERROR_CODE IN ('SI002','SI014','SI001','SI051','SI007','SI569','SI570') THEN 1 END) AS TD_COUNT,\n");
-        sb.append("ROUND((COUNT(CASE WHEN ERROR_CODE IN ('SI002','SI014','SI001','SI051','SI007','SI569','SI570') THEN 1 END) * 100.0) / NULLIF(COUNT(*), 0), 2) AS TD_PERCENT\n");
-        sb.append("FROM EISAPP.api_log" + part + "\n");
-        sb.append("WHERE request_date_time BETWEEN TO_DATE('" + fromDate + "', 'DD-MON-YYYY HH24:MI:SS')\n");
-        sb.append("AND TO_DATE('" + toDate + "', 'DD-MON-YYYY HH24:MI:SS');\n\n");
-
-        sb.append("-- Query 1: Major Downstream\n");
-        sb.append("SELECT /*+ PARALLEL(2) */ txn_endpoint, COUNT(*) AS TOTAL_COUNT,\n");
-        sb.append("COUNT(CASE WHEN (ERROR_CODE IS NULL OR NVL(SUBSTR(error_code,3,3),'A') NOT IN ('001','002','007','051','014') OR error_code IN ('00014','70007','00017','CK001')) THEN 1 END) AS SUCCESS_COUNT,\n");
-        sb.append("ROUND((COUNT(CASE WHEN (ERROR_CODE IS NULL OR NVL(SUBSTR(error_code,3,3),'A') NOT IN ('001','002','007','051','014') OR error_code IN ('00014','70007','00017','CK001')) THEN 1 END) * 100.0) / NULLIF(COUNT(*), 0), 2) AS SUCCESS_PERCENT,\n");
-        sb.append("COUNT(CASE WHEN SUBSTR(error_code,3,3) IN ('001','002','007','051','014','111') AND error_code <> '00014' THEN 1 END) AS TD_COUNT,\n");
-        sb.append("ROUND((COUNT(CASE WHEN SUBSTR(error_code,3,3) IN ('001','002','007','051','014','111') AND error_code <> '00014' THEN 1 END) * 100.0) / NULLIF(COUNT(*), 0), 2) AS TD_PERCENT\n");
-        sb.append("FROM eisapp.BACKEND_LOG" + part + "\n");
-        sb.append("WHERE (txn_endpoint IN ('DCMS','Vault','NSDL','HRMS') AND request_date_time BETWEEN TO_DATE('" + fromDate + "', 'DD-MON-YYYY HH24:MI:SS') AND TO_DATE('" + toDate + "', 'DD-MON-YYYY HH24:MI:SS'))\n");
-        sb.append("OR (txn_endpoint = 'ATM' AND creation_date_time BETWEEN TO_DATE('" + fromDate + "', 'DD-MON-YYYY HH24:MI:SS') AND TO_DATE('" + toDate + "', 'DD-MON-YYYY HH24:MI:SS'))\n");
-        sb.append("GROUP BY txn_endpoint ORDER BY txn_endpoint;\n\n");
-
-        sb.append("-- Query 2: CKYC Status\n");
-        sb.append("SELECT /*+ PARALLEL(2) */ COUNT(*) AS TOTAL_COUNT,\n");
-        sb.append("COUNT(CASE WHEN ERROR_CODE IS NULL OR NVL(SUBSTR(error_code,3,3),'A') NOT IN ('001','002','007','051','014') OR error_code IN ('00014','70007','00017','CK001') THEN 1 END) AS SUCCESS_COUNT,\n");
-        sb.append("ROUND((COUNT(CASE WHEN ERROR_CODE IS NULL OR NVL(SUBSTR(error_code,3,3),'A') NOT IN ('001','002','007','051','014') OR error_code IN ('00014','70007','00017','CK001') THEN 1 END) * 100.0) / NULLIF(COUNT(*), 0), 2) AS SUCCESS_PERCENTAGE\n");
-        sb.append("FROM eisapp.BACKEND_LOG" + part + "\n");
-        sb.append("WHERE txn_endpoint='CKYC' AND request_date_time BETWEEN TO_DATE('" + fromDate + "', 'DD-MON-YYYY HH24:MI:SS') AND TO_DATE('" + toDate + "', 'DD-MON-YYYY HH24:MI:SS');\n\n");
-
-        sb.append("-- Query 3: PAN Status\n");
-        sb.append("SELECT /*+ PARALLEL(2) */ COUNT(*) AS TOTAL_COUNT,\n");
-        sb.append("COUNT(CASE WHEN error_code IS NULL AND response_status = '0' THEN 1 END) AS SUCCESS_COUNT,\n");
-        sb.append("COUNT(CASE WHEN (NVL(SUBSTR(error_code,3,3),'A') NOT IN ('001','002','007','051','014') OR error_code IN ('00014','70007')) AND RESPONSE_STATUS NOT IN ('0','SUCCESS') THEN 1 END) AS OTHER_COUNT,\n");
-        sb.append("ROUND((COUNT(CASE WHEN error_code IS NULL AND response_status = '0' THEN 1 END) + COUNT(CASE WHEN (NVL(SUBSTR(error_code,3,3),'A') NOT IN ('001','002','007','051','014') OR error_code IN ('00014','70007')) AND RESPONSE_STATUS NOT IN ('0','SUCCESS') THEN 1 END)) * 100.0 / NULLIF(COUNT(*), 0), 2) AS PAN_SUCCESS\n");
-        sb.append("FROM EISAPP.api_log" + part + "\n");
-        sb.append("WHERE url IN ('http://eispri.sbi.co.in:3002/dedupOn_bth/PANMobile/customers', 'http://eispri.sbi.co.in:3002/dedupOn/PANMobile/customers', 'http://eispri.sbi.co.in:3016/misc/PAN/Enquiry/details/misc', 'http://eispri.sbi.co.in:3013/misc/PAN/Details/misc', 'http://eispri.sbi.co.in:3013/misc/PAN_bth/Details/misc', 'http://eispri.sbi.co.in:3002/dedupOn_th/PANMobile/customers', 'http://eispri.sbi.co.in:3002/dedupOn_bth/PANMobileCheck/customers', 'http://eispri.sbi.co.in:3013/misc/PAN_th/Details/misc')\n");
-        sb.append("AND request_date_time BETWEEN TO_DATE('" + fromDate + "', 'DD-MON-YYYY HH24:MI:SS') AND TO_DATE('" + toDate + "', 'DD-MON-YYYY HH24:MI:SS');\n\n");
-
-        sb.append("-- Query 4: Account Opening\n");
-        sb.append("WITH urls AS (SELECT 'http://eispri.sbi.co.in:3002/personal/cifCreation/customers' AS url FROM DUAL UNION ALL SELECT 'http://eispri.sbi.co.in:3002/personal_th/cifCreation/customers' FROM DUAL UNION ALL SELECT 'http://eispri.sbi.co.in:3002/ckyc/Creation/customers' FROM DUAL UNION ALL SELECT 'http://eispri.sbi.co.in:3002/ckyc_th/Creation/customers' FROM DUAL UNION ALL SELECT 'http://eispri.sbi.co.in:3011/amlockName/acknowledgeDetails/misc' FROM DUAL UNION ALL SELECT 'http://eispri.sbi.co.in:3011/amlockName_th/acknowledgeDetails/misc' FROM DUAL UNION ALL SELECT 'http://eispri.sbi.co.in:3002/depositAccounts_th/opening/customers' FROM DUAL UNION ALL SELECT 'http://eispri.sbi.co.in:3002/depositAccounts/opening/customers' FROM DUAL UNION ALL SELECT 'http://eispri.sbi.co.in:3001/upload/signature/misc' FROM DUAL UNION ALL SELECT 'http://eispri.sbi.co.in:3001/upload_th/signature/misc' FROM DUAL UNION ALL SELECT 'http://eispri.sbi.co.in:3001/nominee/create/accounts' FROM DUAL UNION ALL SELECT 'http://eispri.sbi.co.in:3001/nominee_th/create/accounts' FROM DUAL)\n");
-        sb.append("SELECT COUNT(*) AS TOTAL_COUNT,\n");
-        sb.append("COUNT(CASE WHEN (SUBSTR(error_code,3,3) IN ('002','014') OR error_code IN ('SI001','SI007','SI051','SI569','SI570')) AND error_code <> '00014' THEN 1 END) AS TD_COUNT,\n");
-        sb.append("ROUND(COUNT(CASE WHEN (SUBSTR(error_code,3,3) IN ('002','014') OR error_code IN ('SI001','SI007','SI051','SI569','SI570')) AND error_code <> '00014' THEN 1 END) * 100.0 / NULLIF(COUNT(*), 0), 2) AS TD_PERCENT,\n");
-        sb.append("COUNT(CASE WHEN (NVL(SUBSTR(error_code,3,3),'A') NOT IN ('001','002','007','051','014') OR error_code IN ('00014','70007')) AND RESPONSE_STATUS NOT IN ('0','SUCCESS') THEN 1 END) AS BD_COUNT,\n");
-        sb.append("ROUND(COUNT(CASE WHEN (NVL(SUBSTR(error_code,3,3),'A') NOT IN ('001','002','007','051','014') OR error_code IN ('00014','70007')) AND RESPONSE_STATUS NOT IN ('0','SUCCESS') THEN 1 END) * 100.0 / NULLIF(COUNT(*), 0), 2) AS BD_PERCENT\n");
-        sb.append("FROM eisapp.api_log" + part + "\n");
-        sb.append("WHERE url IN (SELECT url FROM urls) AND request_date_time BETWEEN TO_DATE('" + fromDate + "', 'DD-MON-YYYY HH24:MI:SS') AND TO_DATE('" + toDate + "', 'DD-MON-YYYY HH24:MI:SS');\n\n");
-
-        sb.append("-- Query 5: YONO\n");
-        sb.append("SELECT /*+ PARALLEL(2) */ COUNT(*) AS TOTAL_COUNT,\n");
-        sb.append("COUNT(CASE WHEN (error_code IS NULL AND response_status IN ('0','SUCCESS')) OR SUBSTR(error_code,3,3) NOT IN ('001','002','007','051','014') THEN 1 END) AS SUCCESS_COUNT,\n");
-        sb.append("ROUND(COUNT(CASE WHEN (error_code IS NULL AND response_status IN ('0','SUCCESS')) OR SUBSTR(error_code,3,3) NOT IN ('001','002','007','051','014') THEN 1 END) * 100.0 / NULLIF(COUNT(*), 0), 2) AS SUCCESS_PERCENT,\n");
-        sb.append("COUNT(CASE WHEN error_code IS NOT NULL AND response_status NOT IN ('0','SUCCESS') THEN 1 END) AS FAILURE_COUNT\n");
-        sb.append("FROM eisapp.api_log" + part + "\n");
-        sb.append("WHERE source_id IN ('YA','YB') AND request_date_time BETWEEN TO_DATE('" + fromDate + "', 'DD-MON-YYYY HH24:MI:SS') AND TO_DATE('" + toDate + "', 'DD-MON-YYYY HH24:MI:SS');\n\n");
-
-        sb.append("-- Query 6: Non-YONO\n");
-        sb.append("SELECT /*+ PARALLEL(2) */ COUNT(*) AS TOTAL_COUNT,\n");
-        sb.append("COUNT(CASE WHEN (error_code IS NULL AND response_status IN ('0','SUCCESS')) OR SUBSTR(error_code,3,3) NOT IN ('001','002','007','051','014') THEN 1 END) AS SUCCESS_COUNT,\n");
-        sb.append("ROUND(COUNT(CASE WHEN (error_code IS NULL AND response_status IN ('0','SUCCESS')) OR SUBSTR(error_code,3,3) NOT IN ('001','002','007','051','014') THEN 1 END) * 100.0 / NULLIF(COUNT(*), 0), 2) AS SUCCESS_PERCENT,\n");
-        sb.append("COUNT(CASE WHEN error_code IS NOT NULL AND response_status NOT IN ('0','SUCCESS') THEN 1 END) AS FAILURE_COUNT\n");
-        sb.append("FROM eisapp.api_log" + part + "\n");
-        sb.append("WHERE source_id NOT IN ('YA','YB') AND request_date_time BETWEEN TO_DATE('" + fromDate + "', 'DD-MON-YYYY HH24:MI:SS') AND TO_DATE('" + toDate + "', 'DD-MON-YYYY HH24:MI:SS');\n\n");
-
-        sb.append("-- Query 7: NPCI\n");
-        sb.append("SELECT /*+ PARALLEL(2) */ COUNT(*) AS TOTAL_COUNT,\n");
-        sb.append("COUNT(CASE WHEN ERROR_CODE IS NULL OR error_code NOT IN ('SI207','SI392','SI001') THEN 1 END) AS SUCCESS_COUNT,\n");
-        sb.append("ROUND(COUNT(CASE WHEN ERROR_CODE IS NULL OR error_code NOT IN ('SI207','SI392','SI001') THEN 1 END) * 100.0 / NULLIF(COUNT(*), 0), 2) AS SUCCESS_PERCENT,\n");
-        sb.append("COUNT(CASE WHEN error_code IN ('SI207','SI392','SI001') THEN 1 END) AS TD_COUNT,\n");
-        sb.append("COUNT(CASE WHEN error_code IN ('SI207','SI392') THEN 1 END) AS SPECIFIC_TD_COUNT,\n");
-        sb.append("ROUND(COUNT(CASE WHEN error_code IN ('SI207','SI392') THEN 1 END) * 100.0 / NULLIF(COUNT(*), 0), 2) AS TD_PERCENT\n");
-        sb.append("FROM SBISI.EKYC_log\n");
-        sb.append("WHERE REQ_DATE_TIME BETWEEN TO_DATE('" + fromDate + "', 'DD-MON-YYYY HH24:MI:SS') AND TO_DATE('" + toDate + "', 'DD-MON-YYYY HH24:MI:SS');\n");
-
-        queriesDisplay = sb.toString();
-    }
-    
-    System.out.println("Stat Query:- "+ queriesDisplay);
-%>
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Stat Mgmt Dashboard</title>
-    <link href="<%=request.getContextPath()%>/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="<%=request.getContextPath()%>/css/all.min.css">
-
-    <style>
-    /* ================= THEME-AWARE OVERRIDES ================= */
-    /* Ye styles userheader.jsp ke CSS variables use karte hain,
-       so dark/light theme automatically apply ho jayega. */
-
-    body {
-      background: var(--bg) !important;
-      color: var(--ink) !important;
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      margin: 0;
-    }
-
-    /* ---- Page wrapper ---- */
-    .new-wrapper { padding: 0 !important; }
-    .page-container {
-      padding: 28px 32px 48px;
-      max-width: 1600px;
-      margin: 0 auto;
-    }
-
-    /* ---- Header ---- */
-    .page-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-      gap: 16px;
-      margin-bottom: 24px;
-      flex-wrap: wrap;
-    }
-    .page-head .ttl {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      font-weight: 800;
-      font-size: 1.65rem;
-      letter-spacing: -0.6px;
-      color: var(--ink);
-      line-height: 1.1;
-      margin: 0;
-    }
-    .page-head .ttl .ttl-icon {
-      width: 44px; height: 44px;
-      display: grid; place-items: center;
-      background: var(--brand-light);
-      color: var(--brand);
-      border-radius: 12px;
-      font-size: 1.05rem;
-    }
-    html[data-theme="dark"] .page-head .ttl .ttl-icon {
-      background: rgba(248,111,3,.15);
-    }
-    .page-head .sub {
-      color: var(--muted);
-      font-size: 0.9rem;
-      margin: 6px 0 0 56px;
-      font-weight: 500;
-    }
-    .time-badge {
-      background: var(--card);
-      border: 1px solid var(--line);
-      padding: 10px 20px;
-      border-radius: 999px;
-      font-size: 0.85rem;
-      color: var(--ink);
-      font-weight: 600;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,.03);
-    }
-    .time-badge i { color: var(--brand); }
-
-    /* ---- Controls card ---- */
-    .controls-card {
-      border-radius: 20px;
-      border: 1px solid var(--line) !important;
-      background: var(--card) !important;
-      padding: 24px;
-      box-shadow: 0 4px 20px rgba(0,0,0,.03);
-      margin-bottom: 28px;
-      transition: background .3s ease, border-color .3s ease;
-    }
-    html[data-theme="dark"] .controls-card {
-      box-shadow: 0 4px 20px rgba(0,0,0,.3);
-    }
-
-    .controls-card .form-label {
-      color: var(--ink);
-      font-weight: 600;
-      font-size: 0.82rem;
-      margin-bottom: 6px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .controls-card .form-label i { color: var(--brand); }
-
-    .controls-card .form-control {
-      border-radius: 11px;
-      border: 1.5px solid var(--line);
-      background: var(--bg);
-      color: var(--ink);
-      padding: 10px 14px;
-      font-size: 0.88rem;
-      transition: all .15s ease;
-      font-family: inherit;
-    }
-    .controls-card .form-control:focus {
-      border-color: var(--brand);
-      background: var(--card);
-      box-shadow: 0 0 0 4px rgba(248,111,3,.12);
-      color: var(--ink);
-    }
-
-    /* ---- Buttons ---- */
-    .hour-btn {
-      min-width: 52px;
-      padding: 6px 11px;
-      border-radius: 999px;
-      border: 1px solid var(--line);
-      background: var(--card);
-      font-size: 0.76rem;
-      font-weight: 600;
-      color: var(--muted);
-      transition: all .15s ease;
-      cursor: pointer;
-      font-family: inherit;
-    }
-    .hour-btn:hover {
-      background: var(--brand-light);
-      border-color: var(--brand);
-      color: var(--brand);
-    }
-    html[data-theme="dark"] .hour-btn:hover {
-      background: rgba(248,111,3,.15);
-    }
-    .hour-btn.active {
-      background: var(--brand);
-      color: #fff;
-      border-color: var(--brand);
-      box-shadow: 0 3px 10px rgba(248,111,3,.3);
-    }
-
-    .btn-fetch {
-      border-radius: 11px;
-      padding: 10px 24px;
-      font-weight: 600;
-      font-size: 0.85rem;
-      background: var(--brand);
-      border: none;
-      color: #fff;
-      transition: all .2s ease;
-      box-shadow: 0 6px 18px -6px var(--brand);
-    }
-    .btn-fetch:hover {
-      background: var(--brand-2);
-      transform: translateY(-1px);
-      color: #fff;
-    }
-    .btn-now {
-      border-radius: 11px;
-      padding: 10px 24px;
-      font-weight: 600;
-      font-size: 0.85rem;
-      border: 1px solid var(--line);
-      background: var(--card);
-      color: var(--ink);
-      transition: all .2s ease;
-    }
-    .btn-now:hover {
-      background: var(--bg);
-      border-color: var(--muted);
-      color: var(--ink);
-    }
-    .btn-queries {
-      border-radius: 11px;
-      padding: 10px 24px;
-      font-weight: 600;
-      font-size: 0.85rem;
-      background: #805AD5;
-      border: none;
-      color: white;
-      transition: all .2s ease;
-    }
-    .btn-queries:hover {
-      background: #6B46C1;
-      color: #fff;
-      transform: translateY(-1px);
-    }
-
-    /* ---- Hour shortcuts label ---- */
-    .hour-label {
-      color: var(--ink);
-      font-weight: 700;
-      font-size: 0.82rem;
-      letter-spacing: 0.3px;
-      margin-right: 8px;
-    }
-    .hour-label i { color: var(--brand); }
-
-    /* ---- Dashboard cards ---- */
-    .card-dashboard {
-      border-radius: 18px;
-      border: 1px solid var(--line) !important;
-      background: var(--card) !important;
-      box-shadow: 0 2px 12px rgba(0,0,0,.03);
-      transition: all .25s ease;
-      height: 100%;
-      overflow: hidden;
-    }
-    .card-dashboard:hover {
-      border-color: var(--brand) !important;
-      transform: translateY(-2px);
-      box-shadow: 0 12px 32px -10px rgba(248,111,3,.18);
-    }
-
-    .card-header-custom {
-      background: var(--card);
-      border-bottom: 1px solid var(--line);
-      padding: 16px 20px;
-      font-weight: 700;
-      font-size: 0.92rem;
-      color: var(--ink);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .badge-db {
-      padding: 4px 12px;
-      border-radius: 999px;
-      font-size: 0.66rem;
-      font-weight: 700;
-      letter-spacing: 0.4px;
-      text-transform: uppercase;
-    }
-    .badge-db.iib  { background: #DBEAFE; color: #1D4ED8; }
-    .badge-db.sidb { background: #F3E8FF; color: #7E22CE; }
-    html[data-theme="dark"] .badge-db.iib  { background: rgba(29,78,216,.18); color: #60A5FA; }
-    html[data-theme="dark"] .badge-db.sidb { background: rgba(126,34,206,.18); color: #C084FC; }
-
-    .badge-count {
-      background: var(--bg);
-      color: var(--muted);
-      font-weight: 600;
-      padding: 4px 10px;
-      border-radius: 999px;
-      font-size: 0.7rem;
-    }
-    html[data-theme="dark"] .badge-count { background: #222; color: #A1A1AA; }
-
-    .badge-duration {
-      background: var(--brand-light);
-      color: var(--brand);
-      padding: 4px 10px;
-      border-radius: 999px;
-      font-size: 0.7rem;
-      font-weight: 600;
-    }
-    html[data-theme="dark"] .badge-duration {
-      background: rgba(248,111,3,.15);
-    }
-
-    /* ---- Table ---- */
-    .table-container {
-      max-height: 320px;
-      overflow-y: auto;
-    }
-    .table-container::-webkit-scrollbar { width: 6px; height: 6px; }
-    .table-container::-webkit-scrollbar-thumb {
-      background: var(--line);
-      border-radius: 3px;
-    }
-    .table-container table {
-      font-size: 0.78rem;
-      margin-bottom: 0;
-      color: var(--ink);
-    }
-    .table-container thead {
-      position: sticky;
-      top: 0;
-      z-index: 1;
-    }
-    .table-container thead th {
-      background: var(--bg);
-      color: var(--muted);
-      font-weight: 700;
-      font-size: 0.72rem;
-      text-transform: uppercase;
-      letter-spacing: 0.4px;
-      border-bottom: 1px solid var(--line);
-      padding: 10px 12px;
-      white-space: nowrap;
-    }
-    .table-container tbody td {
-      padding: 8px 12px;
-      vertical-align: middle;
-      border-bottom: 1px solid var(--line);
-      color: var(--ink);
-    }
-    html[data-theme="dark"] .table-container tbody td {
-      border-bottom-color: #1F1F1F;
-    }
-    .table-container tbody tr:hover {
-      background: var(--bg);
-    }
-    html[data-theme="dark"] .table-container tbody tr:hover {
-      background: #1F1F1F;
-    }
-
-    .no-data {
-      color: var(--muted);
-      font-style: italic;
-      padding: 24px 0;
-      text-align: center;
-      font-size: 0.85rem;
-    }
-
-    /* ---- Queries panel ---- */
-    .queries-card {
-      border-radius: 18px;
-      border: 1px solid var(--line) !important;
-      background: var(--card) !important;
-      padding: 20px;
-      margin-bottom: 28px;
-    }
-    html[data-theme="dark"] .queries-card {
-      background: #0B0B0B !important;
-      border-color: #1F1F1F !important;
-    }
-    .queries-card .header-actions {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-    }
-    .queries-card .queries-title {
-      color: var(--ink);
-      font-weight: 700;
-      font-size: 0.9rem;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .queries-card .queries-title i { color: var(--brand); }
-
-    .queries-card .close-btn {
-      background: transparent;
-      border: none;
-      color: var(--muted);
-      font-size: 1.4rem;
-      cursor: pointer;
-      padding: 0 8px;
-      border-radius: 6px;
-      transition: all .15s;
-    }
-    .queries-card .close-btn:hover {
-      color: var(--ink);
-      background: var(--bg);
-    }
-    html[data-theme="dark"] .queries-card .close-btn:hover {
-      background: #1F1F1F;
-    }
-
-    .query-block {
-      background: #F7F7F5;
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      padding: 14px 16px;
-      margin-bottom: 10px;
-      position: relative;
-    }
-    html[data-theme="dark"] .query-block {
-      background: #131313;
-      border-color: #1F1F1F;
-    }
-    .query-block pre {
-      margin: 0;
-      color: var(--ink);
-      font-size: 0.76rem;
-      white-space: pre-wrap;
-      word-break: break-all;
-      font-family: 'JetBrains Mono', Consolas, monospace;
-      line-height: 1.5;
-    }
-    .query-block .copy-query-btn {
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      background: var(--card);
-      border: 1px solid var(--line);
-      color: var(--muted);
-      border-radius: 999px;
-      padding: 4px 12px;
-      font-size: 0.68rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all .15s;
-    }
-    .query-block .copy-query-btn:hover {
-      background: var(--brand);
-      border-color: var(--brand);
-      color: #fff;
-    }
-
-    .queries-card .copy-all-btn {
-      background: var(--brand);
-      border: none;
-      color: white;
-      border-radius: 999px;
-      padding: 7px 18px;
-      font-size: 0.78rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all .15s;
-    }
-    .queries-card .copy-all-btn:hover {
-      background: var(--brand-2);
-    }
-
-    /* ---- Responsive ---- */
-    @media (max-width: 900px) {
-      .page-container { padding: 20px 16px 32px; }
-      .page-head .ttl { font-size: 1.3rem; }
-      .page-head .ttl .ttl-icon { width: 38px; height: 38px; font-size: .9rem; }
-      .page-head .sub { margin-left: 50px; font-size: 0.82rem; }
-      .time-badge { padding: 8px 14px; font-size: 0.78rem; }
-    }
-    </style>
-</head>
-<body>
-
-<!-- ✅ Sidebar + topnav include -->
-<%@include file="../userheader.jsp"%>
-
-<div class="new-wrapper">
-  <div class="page-container">
-
-    <!-- ================= HEADER ================= -->
-    <div class="page-head">
-      <div>
-        <h1 class="ttl">
-          <span class="ttl-icon"><i class="fas fa-chart-line"></i></span>
-          Stat Mgmt Dashboard
-        </h1>
-        <p class="sub">Hourly KPI data from cron jobs</p>
-      </div>
-      <span class="time-badge">
-        <i class="far fa-clock"></i><%= rangeDisplay %>
-      </span>
-    </div>
-
-    <!-- ================= CONTROLS ================= -->
-    <form method="get" class="controls-card" id="mainForm">
-      <div class="row g-3 align-items-end">
-        <div class="col-md-3">
-          <label for="start" class="form-label"><i class="far fa-calendar-alt"></i>Start</label>
-          <input type="datetime-local" class="form-control" id="start" name="start" value="<%= startIso %>">
-        </div>
-        <div class="col-md-3">
-          <label for="end" class="form-label"><i class="far fa-calendar-alt"></i>End</label>
-          <input type="datetime-local" class="form-control" id="end" name="end" value="<%= endIso %>">
-        </div>
-        <div class="col-md-2">
-          <button type="submit" class="btn btn-fetch w-100">
-            <i class="fas fa-sync-alt me-2"></i>Fetch
-          </button>
-        </div>
-        <div class="col-md-2">
-          <button type="button" class="btn btn-now w-100" onclick="setPrevHour()">
-            <i class="fas fa-undo me-1"></i>Now
-          </button>
-        </div>
-        <div class="col-md-2">
-          <button type="submit" name="showQueries" value="true" class="btn btn-queries w-100">
-            <i class="fas fa-code me-1"></i>Show Queries
-          </button>
-        </div>
-      </div>
-
-      <div class="row mt-3">
-        <div class="col-12">
-          <span class="hour-label"><i class="fas fa-clock me-1"></i>Hour shortcuts:</span>
-          <div class="d-flex flex-wrap gap-1 mt-2">
-            <% for (int h = 0; h < 24; h++) {
-                String label = String.format("%02d-%02d", h, (h+1)%24);
-                String activeClass = (h == selectedHour) ? "active" : "";
-            %>
-            <button type="button" class="hour-btn <%= activeClass %>" onclick="setHour(<%= h %>)"><%= label %></button>
-            <% } %>
-          </div>
-        </div>
-      </div>
-    </form>
-
-    <!-- ================= QUERIES PANEL ================= -->
-    <% if ("true".equals(showQueries) && !queriesDisplay.isEmpty()) { %>
-    <div class="queries-card" id="queriesPanel">
-      <div class="d-flex justify-content-between align-items-center mb-3">
-        <span class="queries-title">
-          <i class="fas fa-database"></i>SQL Queries for this period
-        </span>
-        <div class="header-actions">
-          <button class="copy-all-btn" onclick="copyAllQueries()"><i class="far fa-copy me-1"></i>Copy All</button>
-          <button class="close-btn" onclick="closeQueries()">&times;</button>
-        </div>
-      </div>
-      <%
-          String[] queryBlocks = queriesDisplay.split("\n\n");
-          for (String block : queryBlocks) {
-              if (block.trim().isEmpty()) continue;
-              String escaped = block.replace("'", "\\'").replace("\"", "\\\"");
-      %>
-      <div class="query-block">
-        <button class="copy-query-btn" onclick="copyQuery('<%= escaped %>')"><i class="far fa-copy"></i> Copy</button>
-        <pre><%= block %></pre>
-      </div>
-      <% } %>
-    </div>
-    <script>
-      function closeQueries() {
-        var panel = document.getElementById('queriesPanel');
-        panel.style.display = 'none';
-        var url = new URL(window.location);
-        url.searchParams.delete('showQueries');
-        window.history.replaceState({}, '', url);
-      }
-      function copyQuery(text) {
-        navigator.clipboard.writeText(text).then(function() {
-          alert('Query copied to clipboard!');
-        }).catch(function() {
-          var ta = document.createElement('textarea');
-          ta.value = text;
-          document.body.appendChild(ta);
-          ta.select();
-          document.execCommand('copy');
-          ta.remove();
-          alert('Copied!');
-        });
-      }
-      function copyAllQueries() {
-        var texts = document.querySelectorAll('.query-block pre');
-        var full = '';
-        texts.forEach(function(pre) {
-          full += pre.innerText + '\n\n';
-        });
-        navigator.clipboard.writeText(full).then(function() {
-          alert('All queries copied to clipboard!');
-        }).catch(function() {
-          var ta = document.createElement('textarea');
-          ta.value = full;
-          document.body.appendChild(ta);
-          ta.select();
-          document.execCommand('copy');
-          ta.remove();
-          alert('Copied!');
-        });
-      }
-    </script>
-    <% } %>
-
-    <!-- ================= DASHBOARD CARDS ================= -->
-    <div class="row">
-      <% for (int i = 0; i < tables.length; i++) {
-          String tbl = tables[i];
-          String display = displayNames[i];
-          String dbSource = sourceDB[i];
-          List<Map<String, Object>> rows = tableData.get(tbl);
-          if (rows == null) rows = new ArrayList<>();
-          int rowCount = rows.size();
-          double avgDur = 0.0;
-          if (rowCount > 0) {
-              for (Map<String, Object> row : rows) {
-                  Object dur = row.get("QUERY_DURATION_SEC");
-                  if (dur instanceof Number) avgDur += ((Number)dur).doubleValue();
-              }
-              avgDur = avgDur / rowCount;
-          }
-          String dbBadgeClass = dbSource.equalsIgnoreCase("IIB") ? "iib" : "sidb";
-      %>
-      <div class="col-xl-4 col-lg-6 col-md-12 mb-4">
-        <div class="card-dashboard">
-          <div class="card-header-custom">
-            <span><%= display %></span>
-            <span class="d-flex align-items-center gap-2">
-              <span class="badge-db <%= dbBadgeClass %>"><%= dbSource %></span>
-              <span class="badge-count"><%= rowCount %></span>
-              <span class="badge-duration"><i class="far fa-clock me-1"></i><%= String.format("%.2f", avgDur) %>s</span>
-            </span>
-          </div>
-          <div class="card-body p-3">
-            <% if (rowCount == 0) { %>
-              <div class="no-data">No data for this period.</div>
-            <% } else { %>
-              <div class="table-container">
-                <table class="table">
-                  <thead>
-                    <tr>
-                      <% for (String col : rows.get(0).keySet()) {
-                          if (hiddenCols.contains(col)) continue;
-                          String displayCol = col.equals("QUERY_DURATION_SEC") ? "Duration (sec)" : col;
-                      %>
-                        <th><%= displayCol %></th>
-                      <% } %>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <% for (Map<String, Object> row : rows) { %>
-                      <tr>
-                        <% for (Map.Entry<String, Object> entry : row.entrySet()) {
-                            String col = entry.getKey();
-                            if (hiddenCols.contains(col)) continue;
-                            Object val = entry.getValue();
-                            String str = (val == null) ? "-" : val.toString();
-                            if (val instanceof Double || val instanceof Float) {
-                                str = String.format("%.2f", ((Number)val).doubleValue());
-                            }
-                        %>
-                          <td><%= str %></td>
-                        <% } %>
-                      </tr>
-                    <% } %>
-                  </tbody>
-                </table>
-              </div>
-            <% } %>
-          </div>
-        </div>
-      </div>
-      <% } %>
-    </div>
-
-  </div>
-</div>
-
-<script>
-    function setHour(h) {
-        let date = document.getElementById('start').value.substring(0,10);
-        let start = date + 'T' + String(h).padStart(2,'0') + ':00';
-        let endHour = (h+1) % 24;
-        let endDate = date;
-        if (h === 23) {
-            let d = new Date(date + 'T00:00:00');
-            d.setDate(d.getDate() + 1);
-            endDate = d.toISOString().split('T')[0];
-        }
-        let end = endDate + 'T' + String(endHour).padStart(2,'0') + ':00';
-        document.getElementById('start').value = start;
-        document.getElementById('end').value = end;
-        document.querySelector('form').submit();
-    }
-
-    function setPrevHour() {
-        let now = new Date();
-        now.setMinutes(0);
-        now.setSeconds(0);
-        now.setMilliseconds(0);
-        let end = new Date(now);
-        let start = new Date(now);
-        start.setHours(start.getHours() - 1);
-        const formatLocal = (d) => {
-            let year = d.getFullYear();
-            let month = String(d.getMonth()+1).padStart(2,'0');
-            let day = String(d.getDate()).padStart(2,'0');
-            let hours = String(d.getHours()).padStart(2,'0');
-            let mins = String(d.getMinutes()).padStart(2,'0');
-            return year + '-' + month + '-' + day + 'T' + hours + ':' + mins;
-        };
-        document.getElementById('start').value = formatLocal(start);
-        document.getElementById('end').value = formatLocal(end);
-        document.querySelector('form').submit();
-    }
-</script>
-<script src="<%=request.getContextPath()%>/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
