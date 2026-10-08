@@ -3,13 +3,13 @@
 <struts>
       
     <!-- Enable dynamic method invocation (DMI) -->
-    <constant name="struts.enable.DynamicMethodInvocation" value="true"/> <!-- // UPDATED -->
+    <constant name="struts.enable.DynamicMethodInvocation" value="true"/>
     <constant name="struts.devMode" value="false"/>
 
-    <package name="default" namespace="/" extends="struts-default" strict-method-invocation="true"> <!-- // UPDATED -->
+    <package name="default" namespace="/" extends="struts-default,json-default" strict-method-invocation="true">
 
         <!-- Whitelist allowed methods globally -->
-        <global-allowed-methods>execute,usersign,adminsign,showeisissue,showregpage,displayServices</global-allowed-methods> <!-- // UPDATED -->
+        <global-allowed-methods>execute,usersign,adminsign,showeisissue,showregpage,displayServices</global-allowed-methods>
    
              
       <action name="test">
@@ -29,6 +29,21 @@
          <result name="successbanker">/jsp/Bankheader.jsp</result>
                     
          <result name="successuser" type="redirectAction">userhomescreen</result>
+
+         <!-- ✅ NEW: AJAX JSON results -->
+         <result name="jsonsuccess" type="json">
+            <param name="root">jsonData</param>
+            <param name="contentType">application/json</param>
+            <param name="ignoreHierarchy">false</param>
+            <param name="excludeNullProperties">true</param>
+         </result>
+
+         <result name="jsonerror" type="json">
+            <param name="root">jsonData</param>
+            <param name="contentType">application/json</param>
+            <param name="ignoreHierarchy">false</param>
+            <param name="excludeNullProperties">true</param>
+         </result>
                 
       </action>
       
@@ -52,12 +67,6 @@
                 
       </action>
       
-<!--        <action name="ExcelRosterAction" class="com.action.ExcelRosterAction">
-                    
-         <result name="success">/jsp/ExcelRoster.jsp</result>
-                
-      </action> -->
-             
        <action name="role" class="com.action.RoleMasterAction">
                     
          <result name="success">/jsp/RoleMaster.jsp</result>
@@ -141,8 +150,6 @@
       <action name="eisappissue" class="com.action.EISAPPIssueAction" method="execute">
                     
          <result name="success">/jsp/EISAPPIssue.jsp</result>
-                    
-         <!-- <result name="session">/Sessionexpired.html</result> -->
                 
       </action>
              
@@ -238,7 +245,7 @@
                 
       </action>
              
-      <action name="autoRefreshApiwisehundreadpercfailonservernongen5" class="com.action.AutoRefreshApiwisehundreadpercfailonNonGen5serverAction">
+      <action name="autoRefreshApiwisehundreadpercfailonseronngen5" class="com.action.AutoRefreshApiwisehundreadpercfailonNonGen5serverAction">
                     
          <result name="success">/jsp/AutoRefreshApiwisehundreadpercfailonNonGen5server.jsp</result>
                 
@@ -288,14 +295,8 @@
       
       <action  name="ViewEisRegistrationDetails" class="com.action.ViewEISRegistrationDetailsAction">
 			<result name="success" >/jsp/ViewEISRegistrationDetails.jsp</result>
-			<!-- <result name="success" >/jsp/ViewEISRegistrationDetailsNew.jsp</result> -->
 			<result name="session" >/Sessionexpired.html</result>
 		</action>
-		
-		<!--  <action  name="ViewEisRegistrationDetailsNew" class="com.action.ViewEISRegistrationDetailsActionNew">
-			<result name="success" >/jsp/ViewEISRegistrationDetailsNew.jsp</result>
-			<result name="session" >/Sessionexpired.html</result>
-		</action> -->
          
    </package>
 </struts>
