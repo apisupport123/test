@@ -219,7 +219,7 @@ html.sb-collapsed .new-wrapper {
 </head>
 <body>
 
-<%@include file="./userheader.jsp"%>
+<%@include file="../userheader.jsp"%>
 
 <div class="new-wrapper">
 
@@ -261,7 +261,6 @@ var Arr = new Array();
     List<Double> failure = new ArrayList<Double>();
     int j = 0;
     while (resultSet.next()) {
-        /* ✅ Endpoint name ka color generic rakha — JS me theme ke hisaab se set karenge */
         String name = "<p style='color:#ff9933; font-weight: bolder; '>"
                 + Integer.toString(resultSet.getInt("TD_COUNT"))
                 + "</p><br><p class='ep-name' style='font-weight: bolder;'>"
@@ -282,155 +281,184 @@ Arr[<%=j %>] = '<%=resultSet.getString("txn_endpoint") %>';
     conn.close();
 %>
 
-/* ✅ Theme detection */
-var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+/* ✅ Theme-based colors — function se lo taaki latest mile */
+function getThemeColors() {
+    var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    return {
+        bg:         isDark ? '#000000' : '#FFFFFF',
+        text:       isDark ? '#FFFFFF' : '#0A0A0A',
+        gridLine:   isDark ? '#333333' : '#E5E7EB',
+        tickColor:  isDark ? '#333333' : '#D1D5DB',
+        border:     isDark ? '#333333' : '#CCCCCC',
+        /* ✅ Bar colors — light mode me dark, dark mode me light */
+        bar1:       isDark ? '#673AB7' : '#673AB7',
+        bar2:       isDark ? '#9575CD' : '#7E22CE'
+    };
+}
 
-/* ✅ Theme-based colors */
-var chartBg        = isDark ? '#000000' : '#FFFFFF';
-var chartText      = isDark ? '#FFFFFF' : '#0A0A0A';
-var chartGridLine  = isDark ? '#333333' : '#E5E7EB';
-var chartTickColor = isDark ? '#333333' : '#D1D5DB';
-var chartBorder    = isDark ? '#333333' : '#CCCCCC';
+function buildChartConfig() {
+    var TC = getThemeColors();
 
-let chartConfig = {
-    type: "bar3d",
-    "3dAspect": { depth: 30, true3d: 0, yAngle: 10 },
-    backgroundColor: chartBg,
-    title: {
-        text: "Failure %   End Point Wise",
-        fontWeight: "bold",
-        height: "25px",
-        color: chartText,
-        fontSize: "40px",
-        fontFamily: "Times New Roman",
-    },
-    plotarea: {
-        alpha: 0.3,
-        backgroundColor: chartBg,
-        margin: "50px 35px 250px 200px",
-    },
-    scaleX: {
-        values: [<%
-            if(labels.size()<=5){
-                for(String label: labels){
-                    out.print("\""+label+"\",");
-                }
-                for(int i=labels.size();i<5;i++)
-                {
-                    out.print("\""+" "+"\",");
-                }
-            }
-            else
-            {
-                for(String label: labels){
-                    out.print("\""+label+"\",");
-                }
-            }
-        %>],
-        alpha: 0.5,
-        backgroundColor: chartBg,
-        borderColor: chartBorder,
-        borderWidth: "1px",
-        guide: { visible: false },
-        item: { fontColor: chartText, fontSize: "30px" },
-        tick: { alpha: 0.2, lineColor: chartTickColor },
-        label: {
-            text: '<p style="color:#ff9933;">TD FAILURE, </p><p style="color:' + chartText + ';"> END POINT, </p><p style="color:#32CD32;">TOTAL HITS</p>',
-            color: chartText,
-            fontSize: "30",
-            offsetX: '-100px',
+    return {
+        type: "bar3d",
+        "3dAspect": { depth: 30, true3d: 0, yAngle: 10 },
+        backgroundColor: TC.bg,
+        title: {
+            text: "Failure %   End Point Wise",
+            fontWeight: "bold",
+            height: "25px",
+            color: TC.text,
+            fontSize: "40px",
+            fontFamily: "Times New Roman",
         },
-        item: { 'font-size': 30 },
-        guide: {
-            visible: true,
-            'line-color': chartGridLine,
-            'line-style': "dotted",
-            alpha: 1
-        }
-    },
-    scaleY: {
-        alpha: 0.5,
-        backgroundColor: chartBg,
-        borderColor: chartBorder,
-        borderWidth: "1px",
-        guide: { alpha: 0.2, lineColor: chartGridLine, lineStyle: "solid" },
-        item: { fontColor: chartText, paddingRight: "10px" },
-        tick: { alpha: 0.2, lineColor: chartTickColor },
-        label: {
-            text: "Failure Percentage",
-            color: chartText,
-            fontSize: "30",
+        plotarea: {
+            alpha: 1,
+            backgroundColor: TC.bg,
+            margin: "50px 35px 250px 200px",
         },
-        item: { 'font-size': 30 },
-        guide: {
-            visible: true,
-            'line-color': chartGridLine,
-            'line-style': "dotted",
-            alpha: 1
-        }
-    },
-    series: [
-        {
-            text: "Product 2",
+        scaleX: {
             values: [<%
-                for(Double value: failure)
+                if(labels.size()<=5){
+                    for(String label: labels){
+                        out.print("\""+label+"\",");
+                    }
+                    for(int i=labels.size();i<5;i++)
+                    {
+                        out.print("\""+" "+"\",");
+                    }
+                }
+                else
                 {
-                    out.print(value+",");
+                    for(String label: labels){
+                        out.print("\""+label+"\",");
+                    }
                 }
             %>],
-            "value-box": {
-                "text": "%v %",
-                "placement": "top",
-                "font-color": chartText,
-                "font-size": "30px",
-                "font-weight": "bold",
-                "offset-y": -10,
+            alpha: 1,
+            backgroundColor: TC.bg,
+            borderColor: TC.border,
+            borderWidth: "1px",
+            guide: { visible: false },
+            item: { fontColor: TC.text, fontSize: "30px" },
+            tick: { alpha: 0.2, lineColor: TC.tickColor },
+            label: {
+                text: '<p style="color:#ff9933;">TD FAILURE, </p><p style="color:' + TC.text + ';"> END POINT, </p><p style="color:#32CD32;">TOTAL HITS</p>',
+                color: TC.text,
+                fontSize: "30",
+                offsetX: '-100px',
             },
-            tooltip: {
-                backgroundColor: "#673AB7",
-                borderColor: "none",
-                borderRadius: "5px",
-                fontSize: "20px",
-                padding: "6px 12px",
-                shadow: false,
-            },
-            backgroundColor: "#673AB7 #9575CD",
-            borderColor: "#fff",
-            legendMarker: { borderColor: "#673AB7" },
+            item: { 'font-size': 30 },
+            guide: {
+                visible: true,
+                'line-color': TC.gridLine,
+                'line-style': "dotted",
+                alpha: 1
+            }
         },
-    ],
-};
+        scaleY: {
+            alpha: 1,
+            backgroundColor: TC.bg,
+            borderColor: TC.border,
+            borderWidth: "1px",
+            guide: { alpha: 0.3, lineColor: TC.gridLine, lineStyle: "solid" },
+            item: { fontColor: TC.text, paddingRight: "10px", fontSize: "30px" },
+            tick: { alpha: 0.2, lineColor: TC.tickColor },
+            label: {
+                text: "Failure Percentage",
+                color: TC.text,
+                fontSize: "30",
+            },
+            guide: {
+                visible: true,
+                'line-color': TC.gridLine,
+                'line-style': "dotted",
+                alpha: 1
+            }
+        },
+        series: [
+            {
+                text: "Product 2",
+                values: [<%
+                    for(Double value: failure)
+                    {
+                        out.print(value+",");
+                    }
+                %>],
+                "value-box": {
+                    "text": "%v %",
+                    "placement": "top",
+                    "font-color": TC.text,
+                    "font-size": "30px",
+                    "font-weight": "bold",
+                    "offset-y": -10,
+                },
+                tooltip: {
+                    backgroundColor: "#673AB7",
+                    borderColor: "none",
+                    borderRadius: "5px",
+                    fontSize: "20px",
+                    padding: "6px 12px",
+                    shadow: false,
+                },
+                backgroundColor: TC.bar1 + " " + TC.bar2,
+                borderColor: TC.border,
+                borderWidth: 1,
+                legendMarker: { borderColor: TC.bar1 },
+            },
+        ],
+    };
+}
 
 let updateChart = (p) => {
     initState = zingchart.exec(p.id, 'getdata');
-    /* ✅ Chart bar click pe detail page khulta hai — SAME as original */
     var a = '<%=request.getContextPath() + "/jsp/TransactionEndPointWiseService_new.jsp?txnEndPoint="%>' + Arr[p.nodeindex];
     window.open(a, '_blank');
 };
 
+/* ✅ Initial render */
 zingchart.render({
     id: 'myChart',
-    data: chartConfig,
+    data: buildChartConfig(),
     height: '100%',
     width: '100%',
 });
 
 zingchart.bind('myChart', 'node_click', updateChart);
 
-/* ✅ Chart ke endpoint labels ko theme ke hisaab se color karo */
-setTimeout(function(){
-    var names = document.querySelectorAll('.ep-name');
+/* ✅ Chart endpoint labels color — theme-based */
+function applyLabelsColor() {
+    var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     var color = isDark ? '#FFFFFF' : '#0A0A0A';
-    names.forEach(function(el){ el.style.color = color; });
-}, 250);
+    document.querySelectorAll('.ep-name').forEach(function(el){
+        el.style.color = color;
+    });
+}
+setTimeout(applyLabelsColor, 250);
 
-/* ✅ Theme change hone pe reload */
-var _lastTheme = isDark ? 'dark' : 'light';
+/* ✅ Theme change — NO PAGE RELOAD, sirf chart re-render */
+function reRenderChart() {
+    try {
+        zingchart.exec('myChart', 'destroy');
+    } catch(e) {}
+
+    setTimeout(function(){
+        zingchart.render({
+            id: 'myChart',
+            data: buildChartConfig(),
+            height: '100%',
+            width: '100%',
+        });
+        zingchart.bind('myChart', 'node_click', updateChart);
+        setTimeout(applyLabelsColor, 250);
+    }, 100);
+}
+
+var _lastTheme = document.documentElement.getAttribute('data-theme') || 'light';
 setInterval(function(){
     var now = document.documentElement.getAttribute('data-theme') || 'light';
     if(now !== _lastTheme){
         _lastTheme = now;
-        location.reload();
+        reRenderChart();   // ✅ Reload nahi, sirf chart re-render
     }
 }, 500);
 
