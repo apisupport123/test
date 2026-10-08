@@ -1,7 +1,7 @@
 <%--
   EIS Portal — Shared Header Fragment
   ⚠️ IMPORTANT: Ye file har page me include hoti hai.
-  Isme <html>, <head>, <body> tags NAHI hone chahiye — kyunki include karne wali JSP me already hai.
+  Isme <html>, <head>, <body> tags NAHI hone chahiye.
 --%>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -282,12 +282,13 @@ html.sb-open .sb-overlay{opacity:1;pointer-events:auto}
 </style>
 
 <%--
-  ✅ BOOT SCRIPT — Sidebar default CLOSED
-  Ye script body ke start me chalti hai, sidebar render hone se PEHLE.
-  Isliye:
-  1. Theme apply hoti hai
-  2. Sidebar default closed state set hoti hai
-  3. User ki last choice localStorage me save hoti hai (agar user ne toggle kiya ho)
+  ✅ BOOT SCRIPT — Smart logic:
+  1. Theme apply karo
+  2. Agar ye FIRST VISIT hai (sessionStorage me flag nahi) → sidebar OPEN rakho
+  3. Agar user ne portal click kiya / navigate kiya (flag set hai) → sidebar CLOSED
+  4. Har page pe reset — next page pe closed rahega
+  
+  sessionStorage use kar rahe hain (localStorage nahi) — kyunki sessionStorage tab band hone pe clear ho jati hai.
 --%>
 <script>
 (function(){
@@ -296,21 +297,20 @@ html.sb-open .sb-overlay{opacity:1;pointer-events:auto}
     var t = localStorage.getItem('eis-theme') || 'light';
     document.documentElement.setAttribute('data-theme', t);
 
-    // ---- Sidebar default CLOSED ----
-    var collapsed = localStorage.getItem('eis-sidebar-collapsed');
+    // ---- Sidebar default state ----
+    var visited = sessionStorage.getItem('eis-visited');
 
-    if (collapsed === null) {
-      // ✅ Pehli baar visit — sidebar CLOSED rakho aur default save karo
-      document.documentElement.classList.add('sb-collapsed');
-      localStorage.setItem('eis-sidebar-collapsed', 'true');
-    } else if (collapsed === 'true') {
-      // User ne last time closed rakha tha — closed rakho
+    if (visited === null) {
+      // ✅ FIRST VISIT — sidebar OPEN rakho (welcome feel)
+      // aur mark karo ki visit ho chuki hai
+      sessionStorage.setItem('eis-visited', '1');
+      // Koi class add nahi karenge — default state me sidebar visible hai
+    } else {
+      // ✅ NAVIGATE kiya (portal open kiya) — sidebar CLOSED
       document.documentElement.classList.add('sb-collapsed');
     }
-    // Agar collapsed === 'false' hai → user ne khola tha → open rakho
   }catch(e){
-    // localStorage blocked (private mode etc.) — default closed
-    document.documentElement.classList.add('sb-collapsed');
+    // sessionStorage blocked → default open rakho
   }
 })();
 </script>
@@ -617,16 +617,13 @@ function updateThemeIcon(){
 document.addEventListener('DOMContentLoaded', updateThemeIcon);
 updateThemeIcon();
 
-/* ✅ Sidebar toggle — user ki choice localStorage me save hoti hai */
+/* ✅ Sidebar toggle — session ke andar state rakho */
 function toggleSidebar(){
   var root = document.documentElement;
   if(window.innerWidth <= 900){
     root.classList.toggle('sb-open');
   } else {
     root.classList.toggle('sb-collapsed');
-    try{
-      localStorage.setItem('eis-sidebar-collapsed', root.classList.contains('sb-collapsed'));
-    }catch(e){}
   }
 }
 
@@ -655,9 +652,7 @@ function focusSidebarSearch(){
   if(window.innerWidth <= 900){
     document.documentElement.classList.add('sb-open');
   } else if(document.documentElement.classList.contains('sb-collapsed')){
-    // Agar collapsed hai, kholo aur localStorage me save karo
     document.documentElement.classList.remove('sb-collapsed');
-    try{ localStorage.setItem('eis-sidebar-collapsed', 'false'); }catch(e){}
   }
   setTimeout(function(){ document.getElementById('searchbar').focus(); }, 150);
 }
