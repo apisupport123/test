@@ -33,14 +33,21 @@ html, body {
 }
 
 /* ================================================================
-   NEW WRAPPER — userheader ke margin-left aur padding-top use karo
+   ✅ NEW WRAPPER — proper top gap (topnav ke neeche se)
+   padding shorthand use NAHI karo — explicit padding-top do
    ================================================================ */
 .new-wrapper {
-    height: calc(100vh - 64px) !important;
-    padding: 6px 10px 8px 10px !important;
+    height: calc(100vh - 64px - 12px) !important;
+    margin-top: 12px !important;              /* ✅ topnav ke neeche 12px gap */
+    padding: 6px 10px 8px 10px !important;    /* ✅ side/bottom padding — top NAHI */
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    background-color: var(--bg);
+    transition: margin-left .3s cubic-bezier(.4,0,.2,1), background .3s ease;
+}
+html.sb-collapsed .new-wrapper {
+    margin-left: 0 !important;
 }
 
 /* ================================================================
@@ -910,18 +917,87 @@ function countdown(elementName, minutes, seconds) {
     updateTimer();
 }
 
+/* ✅ Theme change — PAGE RELOAD NAHI, sirf chart colors live update */
+function applyThemeToCharts() {
+    var nowDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    var newBg     = nowDark ? '#000000' : '#FFFFFF';
+    var newText   = nowDark ? '#FFFFFF' : '#0A0A0A';
+    var newGrid   = nowDark ? '#333333' : '#E5E7EB';
+    var newTick   = nowDark ? '#333333' : '#D1D5DB';
+    var newBorder = nowDark ? '#333333' : '#CCCCCC';
+
+    /* Update global variables for future renders */
+    isDark = nowDark;
+    chartBg = newBg;
+    chartText = newText;
+    chartGrid = newGrid;
+    chartTick = newTick;
+    chartBorder = newBorder;
+
+    /* Update EXP chart colors live */
+    try {
+        zingchart.exec('expChart', 'setdata', {
+            backgroundColor: newBg,
+            plotarea: { backgroundColor: newBg },
+            scaleX: {
+                backgroundColor: newBg,
+                borderColor: newBorder,
+                item: { fontColor: newText },
+                tick: { lineColor: newTick }
+            },
+            scaleY: {
+                backgroundColor: newBg,
+                borderColor: newBorder,
+                item: { fontColor: newText },
+                tick: { lineColor: newTick },
+                label: { color: newText },
+                guide: { lineColor: newGrid }
+            },
+            series: [{ "value-box": { "font-color": newText } }]
+        });
+    } catch(e) { console.error('EXP chart theme error:', e); }
+
+    /* Update SYS chart colors live */
+    try {
+        zingchart.exec('sysChart', 'setdata', {
+            backgroundColor: newBg,
+            plotarea: { backgroundColor: newBg },
+            scaleX: {
+                backgroundColor: newBg,
+                borderColor: newBorder,
+                item: { fontColor: newText },
+                tick: { lineColor: newTick }
+            },
+            scaleY: {
+                backgroundColor: newBg,
+                borderColor: newBorder,
+                item: { fontColor: newText },
+                tick: { lineColor: newTick },
+                label: { color: newText },
+                guide: { lineColor: newGrid }
+            },
+            series: [{ "value-box": { "font-color": newText } }]
+        });
+    } catch(e) { console.error('SYS chart theme error:', e); }
+
+    /* Endpoint labels color */
+    var names = document.querySelectorAll('.ep-name');
+    names.forEach(function(el){ el.style.color = newText; });
+}
+
+/* ✅ Har 500ms pe theme check — agar change hua toh colors update (NO RELOAD) */
+var lastTheme = document.documentElement.getAttribute('data-theme') || 'light';
+setInterval(function(){
+    var now = document.documentElement.getAttribute('data-theme') || 'light';
+    if(now !== lastTheme){
+        lastTheme = now;
+        applyThemeToCharts();
+    }
+}, 500);
+
 document.addEventListener('DOMContentLoaded', function(){
     initializeDashboards();
     countdown("ten-countdown", 10, 0);
-
-    var lastTheme = isDark ? 'dark' : 'light';
-    setInterval(function(){
-        var now = document.documentElement.getAttribute('data-theme') || 'light';
-        if(now !== lastTheme){
-            lastTheme = now;
-            location.reload();
-        }
-    }, 500);
 });
 </script>
 </body>
