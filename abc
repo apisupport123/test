@@ -1,118 +1,96 @@
 <%@page pageEncoding="UTF-8"%>
-<%@page import="java.util.*"%>
-<%@page import="java.sql.*"%>
-<%@page import="com.jdbc.DBUtilityAuto" %>
-<%@page import="com.jdbc.DBUtility" %>
+<%@ page import="java.util.ArrayList" %>
+<%@page import="java.sql.ResultSet"%>
+<%@page import="java.sql.Statement"%>
+<%@page import="java.sql.Connection"%>
+<%@page import="java.sql.PreparedStatement"%>
+<%@page import="com.jdbc.DBUtilityAuto"%>
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Transaction End Point</title>
-<script nonce="undefined" src="<%=request.getContextPath()%>/js/zingchart.min.js"></script>
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-
+<meta http-equiv="refresh" content="600">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cards Display</title>
+<link rel="stylesheet" href="<%=request.getContextPath()%>/css/Atmbootstrap.min.css">
+<script src="<%=request.getContextPath()%>/js/Atmjquery.min.js"></script>
+<script src="<%=request.getContextPath()%>/js/Atmbootstrap.min.js"></script>
 <style>
 /* ================================================================
-   ORIGINAL STYLES — AS-IS (theme-aware)
+   ORIGINAL STYLES — AS-IS
    ================================================================ */
-.chart--container {
-    min-height: 620px;
-    width: 100%;
-    height: 100%;
+.button-container{
+    display: flex;
+    justify-content: flex-end;
+    margin-right: 10px;
 }
 
-.blink {
-    animation: blinker 0s linear infinite;
-    font-family: sans-serif;
-    font-size: larger;
-    text-align-last: center;
-    font-weight: 900;
-    color: var(--ink) !important;
+.button{
+    padding: 10px 20px;
+    border: none;
+    border-radius:5px;
+    cursor: pointer;
+    margin-right: 10px;
 }
 
-@keyframes blinker {
-    50% { opacity: 0; }
+.card-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    margin-bottom: 30px;
 }
-
-/* Modal */
-.modal {
-    display: none;
-    position: fixed;
-    z-index: 1;
-    padding-top: 100px;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    overflow: auto;
-    background-color: rgba(0,0,0,0.4);
-}
-.modal-content {
-    position: relative;
-    background-color: var(--card);
-    margin: auto;
-    padding: 0;
-    border: 1px solid var(--line);
-    width: 80%;
-    box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19);
-    color: var(--ink);
-}
-@-webkit-keyframes animatetop {
-    from {top:-300px; opacity:0}
-    to {top:0; opacity:1}
-}
-@keyframes animatetop {
-    from {top:-300px; opacity:0}
-    to {top:0; opacity:1}
-}
-.close {
+.card {
+    width: 310px;
+    height: 180px;
+    margin: 10px;
+    text-align: center;
+    transition: transform 0.3s ease, background-color 0.3s ease;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     color: white;
-    float: right;
-    font-size: 28px;
-    font-weight: bold;
-}
-.close:hover,
-.close:focus {
-    color: #000;
-    text-decoration: none;
     cursor: pointer;
 }
-.modal-header {
-    padding: 2px 16px;
-    background-color: #AB5AF3;
-    color: white;
+.card:hover {
+    transform: scale(1.05);
 }
-.modal-body {
-    padding: 2px 16px;
-    font-size: large;
-    color: var(--ink);
+.card-zero {
+    background-color: #dc3545;
 }
-.modal-footer {
-    padding: 2px 16px;
-    background-color: #AB5AF3;
-    color: white;
+.card-zero:hover {
+    background-color: #c82333;
+}
+.card-nonzero {
+    background-color: #007bff;
+}
+.card-nonzero:hover {
+    background-color: #0056b3;
+}
+.card-body {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: 100%;
+}
+.card-info {
+    font-size: 14px;
+}
+.card-title {
+    font-weight: bold;
+    margin-bottom: 10px;
+    font-size: 18px;
+}
+.section {
+    margin-bottom: 30px;
 }
 
-table {
-    font-family: arial, sans-serif;
-    border-collapse: collapse;
-    width: 100%;
-}
-td, th {
-    border: 1px solid #dddddd;
-    text-align: left;
-    padding: 8px;
-}
-tr:nth-child(even) {
-    background-color: #dddddd;
-}
-
-/* Timer — theme aware */
+/* ================================================================
+   ✅ TIMER — theme-aware (FIX: dark mode me black nahi hoga)
+   ================================================================ */
 .timer {
     border: 5px solid var(--brand);
     display: inline;
-    padding: 5px;
-    color: var(--brand) !important;
+    padding: 5px 12px;
+    color: var(--brand) !important;      /* ✅ Light & Dark dono me orange */
     font-family: Verdana, sans-serif, Arial;
     font-size: 40px;
     height: 50px;
@@ -122,7 +100,7 @@ tr:nth-child(even) {
     background: var(--brand-light);
 }
 html[data-theme="dark"] .timer {
-    background: rgba(248,111,3,.15);
+    background: rgba(248,111,3,.15);    /* ✅ Dark mode me dark tinted bg */
 }
 
 .wait {
@@ -131,6 +109,13 @@ html[data-theme="dark"] .timer {
     color: #ff0000;
     font-weight: bold;
     zoom: 10%;
+}
+
+/* ================================================================
+   ✅ BLINK — theme-aware
+   ================================================================ */
+.blink {
+    color: var(--ink) !important;       /* ✅ Light: black, Dark: white */
 }
 
 /* ================================================================
@@ -144,7 +129,6 @@ body {
     transition: background .3s ease, color .3s ease;
 }
 
-/* Topnav theme-aware */
 .topnav {
     background: var(--topnav-bg) !important;
     border-bottom: 1px solid var(--line) !important;
@@ -200,315 +184,315 @@ html.sb-collapsed .new-wrapper {
     margin-left: 0 !important;
 }
 
-/* Blink <p> */
-.new-wrapper .blink {
-    margin: 0 !important;
-    padding: 16px 20px 8px 20px !important;
+/* ================================================================
+   MODAL — theme-aware
+   ================================================================ */
+.modal-content {
+    background: var(--card) !important;
+    color: var(--ink) !important;
+    border: 1px solid var(--line) !important;
+}
+.modal-header {
+    border-bottom: 1px solid var(--line) !important;
+    background: var(--card) !important;
+}
+.modal-title {
     color: var(--ink) !important;
 }
-
-/* Chart container */
-.new-wrapper .chart--container {
-    margin-top: 20px !important;
-    padding: 0 20px !important;
-    height: 800px !important;
-    zoom: 85%;
-    position: relative;
+.modal-body {
+    color: var(--ink) !important;
+}
+.modal-body strong {
+    color: var(--ink) !important;
+}
+.modal-body .form-control {
+    background: var(--bg) !important;
+    border: 1px solid var(--line) !important;
+    color: var(--ink) !important;
+}
+.modal-body .form-control:focus {
+    border-color: var(--brand) !important;
+    box-shadow: 0 0 0 3px rgba(248,111,3,.12) !important;
+    background: var(--card) !important;
+    color: var(--ink) !important;
+}
+.modal-footer {
+    border-top: 1px solid var(--line) !important;
+    background: var(--card) !important;
+}
+.modal-header .close {
+    color: var(--muted) !important;
+    opacity: 1 !important;
+    text-shadow: none !important;
+}
+.modal-header .close:hover {
+    color: var(--ink) !important;
+}
+.modal-footer .btn-primary {
+    background: var(--brand) !important;
+    border-color: var(--brand) !important;
+}
+.modal-footer .btn-primary:hover {
+    background: var(--brand-2) !important;
+    border-color: var(--brand-2) !important;
 }
 </style>
+<script>
+    $(document).ready(function () {
+        $("#close,#submitBtn").click(function (e) {
+            e.preventDefault();
+            $("#cardInfoForm")[0].reset()
+        });
+    });
+
+    window.onload= function(){
+        window.history.replaceState({},'Roster Admin', '<%=request.getContextPath() + "/AtmCardServlet"%>');
+    };
+
+    function openNewPageManual(){
+        var a = '<%=request.getContextPath() + "/jsp/AtmPortWiseManualSearch.jsp"%>';
+        window.open(a, '_blank');
+    }
+</script>
 </head>
 <body>
 
 <%@include file="../userheader.jsp"%>
 
+<%
+Connection con=DBUtilityAuto.getReportDBConnection();
+ArrayList<String> list= new ArrayList<>();
+try{
+    String sqlQuery="select * from atmcloseissue where SYSDATE <= closetime";
+    PreparedStatement smt=con.prepareStatement(sqlQuery);
+    ResultSet rs= smt.executeQuery();
+    while(rs.next()){
+        list.add(rs.getString("name").trim());
+    }
+    System.out.println("list:-"+ list);
+}catch(Exception e){
+    e.getMessage();
+}finally{
+    if(con != null)
+        con.close();
+}
+%>
+
 <div class="new-wrapper">
-
-<p class="blink" style="font-size: 30px;"> This Data get Auto Refresh after <span class="timer" id="ten-countdown"></span> Minutes
+<div class="container" style="max-width: 3050px; width: 100%">
+<h1 class="text-center mb-4" style="text-align: center;">ATM IP Port Wise</h1>
+<p class="blink" style="font-size: 30px; text-align: center;"> This Data gets Auto Refresh after <span class="timer" id="ten-countdown"></span> Minutes
 </p>
+<div class="button-container">
+<input type="button" class="button" onclick="openNewPageManual();"  value="Switch To Manual" style="background-color: #ebe310; color: black; position: ">
+</div>
 
-<div id="myChart" class="chart--container"></div>
-
-<script>
-function myFunction_Time() {
-    var x = document.lastModified;
-    var el = document.getElementById("demo");
-    if(el) el.innerHTML = x;
-}
-</script>
-
-<script>
-var Arr = new Array();
+<!-- ============ SECTION 1: YONO 2.0 ============ -->
+<div class="section">
+<h3 class="text-center" style="text-align: center">Yono 2.0 Cash Business Services</h3>
+<div class="card-container">
 <%
-    String m_strtxnArray="";
-    response.setIntHeader("Refresh", 600);
-
-    Connection conn = DBUtilityAuto.getIIBDBConnection();
-
-    String sql = "Select * from(select txn_endpoint,"
-        + "COUNT(1) AS TOTAL_HITS,"
-        + "SUM(CASE WHEN (substr(error_code,3,3) in ('002','014') OR error_code in ('SI001','SI007','SI569','SI570')) and error_code <> '00014' THEN 1 ELSE 0 END) AS TD_COUNT,"
-        + "ROUND((SUM(CASE WHEN (substr(error_code,3,3) in ('002','014') OR error_code in ('SI001','SI007','SI569','SI570')) and error_code <> '00014' THEN 1 ELSE 0 END)*100)/COUNT(1),2) AS TD_PERCENT "
-        + "from eisapp.BACKEND_LOG_V where txn_endpoint != 'NATIONAL_PORTAL' and "
-        + "REQUEST_DATE_TIME>=SYSDATE - INTERVAL '10' MINUTE "
-        + "GROUP BY txn_endpoint "
-        + "having ROUND((SUM(CASE WHEN (substr(error_code,3,3) in ('002','014') OR error_code in ('SI001','SI007','SI569','SI570')) and error_code <> '00014' THEN 1 ELSE 0 END)*100)/COUNT(1),2)>= 0.5 "
-        + "order by TD_PERCENT desc)where ROWNUM <=12";
-    System.out.println(sql);
-    Statement statement = conn.createStatement();
-    ResultSet resultSet = statement.executeQuery(sql);
-
-    List<String> labels = new ArrayList<String>();
-    List<Double> failure = new ArrayList<Double>();
-    int j = 0;
-    while (resultSet.next()) {
-        String name = "<p style='color:#ff9933; font-weight: bolder; '>"
-                + Integer.toString(resultSet.getInt("TD_COUNT"))
-                + "</p><br><p class='ep-name' style='font-weight: bolder;'>"
-                + resultSet.getString("txn_endpoint").replaceAll("_",
-                        "</p><br><p class='ep-name' style='font-weight: bolder;'>")
-                + "</p><br>" + "<p style='color:#32CD32; font-weight: bolder;'>"
-                + Integer.toString(resultSet.getInt("TOTAL_HITS")) + "</p>";
-%>
-Arr[<%=j %>] = '<%=resultSet.getString("txn_endpoint") %>';
+String[] yono2Names={"YONOCash_Business_8092","YONOCash_Business_8093","YONOCash_Business_8094","YONOCash_Business_8095","YONOCash_Business_8096","YONOCash_Business_8097","YONOCash_Business_8098","YONOCash_Business_8099"};
+ArrayList<Integer> totalYono2 = (ArrayList<Integer>) request.getAttribute("totalYonoNew");
+ArrayList<String> ipYono2 = (ArrayList<String>) request.getAttribute("ipYonoNew");
+if (totalYono2 != null && ipYono2 != null) {
+    for (int i = 0; i < totalYono2.size(); i++) {
+        int totalHits = totalYono2.get(i);
+        String ip = ipYono2.get(i);
+        String cardClass = totalHits == 0 ? "card card-zero" : "card card-nonzero";
+if(totalHits==0){
+    System.out.println(list.contains(yono2Names[i]));
+if(list.contains(yono2Names[i])){%>
+ <div class="card card-nonzero">
+<%}else{ %>
+<div class="<%= cardClass %>" onclick="showCardInfo('<%= yono2Names[i] %>', '<%= totalHits %>', '<%= ip %>')">
+<%}}else { %>
+<div class="<%= cardClass %>">
+<%} %>
+    <div class="card-body">
+        <div class="card-info">
+            <p class="card-title"><%= yono2Names[i] %></p>
+            <p class="card-text">Hits: <%= totalHits %></p>
+            <p class="card-text">IP: <%= ip %></p>
+        </div>
+    </div>
+</div>
 <%
-        double value = resultSet.getDouble("TD_PERCENT");
-        labels.add(name);
-        failure.add(value);
-        j++;
     }
-    resultSet.close();
-    statement.close();
-    conn.close();
+}
 %>
+</div>
+</div>
 
-/* ✅ Theme-based colors — function se lo taaki latest mile */
-function getThemeColors() {
-    var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    return {
-        bg:         isDark ? '#000000' : '#FFFFFF',
-        text:       isDark ? '#FFFFFF' : '#0A0A0A',
-        gridLine:   isDark ? '#333333' : '#E5E7EB',
-        tickColor:  isDark ? '#333333' : '#D1D5DB',
-        border:     isDark ? '#333333' : '#CCCCCC',
-        /* ✅ Bar colors — light mode me dark, dark mode me light */
-        bar1:       isDark ? '#673AB7' : '#673AB7',
-        bar2:       isDark ? '#9575CD' : '#7E22CE'
-    };
-}
+<!-- ============ MODAL ============ -->
+<form id="cardInfoForm" method="post" action="<%=request.getContextPath() + "/AtmCloseServices" %>">
+<div class="modal fade" id="myModal" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" id="close" class="close" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title"><b>Card Information</b></h4>
+            </div>
+            <div class="modal-body">
+                <p><strong>Name:</strong> <span id="modal-card-name"></span></p>
+                <p><strong>Reason:</strong></p>
+                <textarea id="modal-textarea" class="form-control" rows="4" placeholder="Enter reason here"></textarea>
+                <p><strong>Close Time:</strong></p>
+                <select id="modal-close-time" class="form-control">
+                    <% for (int i = 1; i <= 24; i++) { %>
+                        <option value="<%= i %>"><%= i %> hour(s)</option>
+                    <% } %>
+                </select>
+                <p><strong>Close By:</strong></p>
+                <select id="modal-close-by" class="form-control">
+                <%
+                try{
+                Connection conn=DBUtilityAuto.getReportDBConnection();
+                String sql1="select FIRSTNAME || ' ' || lastname as Fullname from roster_employee_details where lower(team) like '%event%'";
+                Statement statement=conn.createStatement();
+                ResultSet rs= statement.executeQuery(sql1);
+                while(rs.next()){
+                %>
+                    <option value="<%= rs.getString("Fullname") %>"><%= rs.getString("Fullname") %></option>
+                    <%} }catch(Exception e){
+                        e.printStackTrace();
+                        }%>
+                </select>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="submitBtn" class="btn btn-primary" onclick="submitCardInfo();">Submit</button>
+            </div>
+        </div>
+    </div>
+</div>
+</form>
 
-function buildChartConfig() {
-    var TC = getThemeColors();
-
-    return {
-        type: "bar3d",
-        "3dAspect": { depth: 30, true3d: 0, yAngle: 10 },
-        backgroundColor: TC.bg,
-        title: {
-            text: "Failure %   End Point Wise",
-            fontWeight: "bold",
-            height: "25px",
-            color: TC.text,
-            fontSize: "40px",
-            fontFamily: "Times New Roman",
-        },
-        plotarea: {
-            alpha: 1,
-            backgroundColor: TC.bg,
-            margin: "50px 35px 250px 200px",
-        },
-        scaleX: {
-            values: [<%
-                if(labels.size()<=5){
-                    for(String label: labels){
-                        out.print("\""+label+"\",");
-                    }
-                    for(int i=labels.size();i<5;i++)
-                    {
-                        out.print("\""+" "+"\",");
-                    }
-                }
-                else
-                {
-                    for(String label: labels){
-                        out.print("\""+label+"\",");
-                    }
-                }
-            %>],
-            alpha: 1,
-            backgroundColor: TC.bg,
-            borderColor: TC.border,
-            borderWidth: "1px",
-            guide: { visible: false },
-            item: { fontColor: TC.text, fontSize: "30px" },
-            tick: { alpha: 0.2, lineColor: TC.tickColor },
-            label: {
-                text: '<p style="color:#ff9933;">TD FAILURE, </p><p style="color:' + TC.text + ';"> END POINT, </p><p style="color:#32CD32;">TOTAL HITS</p>',
-                color: TC.text,
-                fontSize: "30",
-                offsetX: '-100px',
-            },
-            item: { 'font-size': 30 },
-            guide: {
-                visible: true,
-                'line-color': TC.gridLine,
-                'line-style': "dotted",
-                alpha: 1
-            }
-        },
-        scaleY: {
-            alpha: 1,
-            backgroundColor: TC.bg,
-            borderColor: TC.border,
-            borderWidth: "1px",
-            guide: { alpha: 0.3, lineColor: TC.gridLine, lineStyle: "solid" },
-            item: { fontColor: TC.text, paddingRight: "10px", fontSize: "30px" },
-            tick: { alpha: 0.2, lineColor: TC.tickColor },
-            label: {
-                text: "Failure Percentage",
-                color: TC.text,
-                fontSize: "30",
-            },
-            guide: {
-                visible: true,
-                'line-color': TC.gridLine,
-                'line-style': "dotted",
-                alpha: 1
-            }
-        },
-        series: [
-            {
-                text: "Product 2",
-                values: [<%
-                    for(Double value: failure)
-                    {
-                        out.print(value+",");
-                    }
-                %>],
-                "value-box": {
-                    "text": "%v %",
-                    "placement": "top",
-                    "font-color": TC.text,
-                    "font-size": "30px",
-                    "font-weight": "bold",
-                    "offset-y": -10,
-                },
-                tooltip: {
-                    backgroundColor: "#673AB7",
-                    borderColor: "none",
-                    borderRadius: "5px",
-                    fontSize: "20px",
-                    padding: "6px 12px",
-                    shadow: false,
-                },
-                backgroundColor: TC.bar1 + " " + TC.bar2,
-                borderColor: TC.border,
-                borderWidth: 1,
-                legendMarker: { borderColor: TC.bar1 },
-            },
-        ],
-    };
-}
-
-let updateChart = (p) => {
-    initState = zingchart.exec(p.id, 'getdata');
-    var a = '<%=request.getContextPath() + "/jsp/TransactionEndPointWiseService_new.jsp?txnEndPoint="%>' + Arr[p.nodeindex];
-    window.open(a, '_blank');
-};
-
-/* ✅ Initial render */
-zingchart.render({
-    id: 'myChart',
-    data: buildChartConfig(),
-    height: '100%',
-    width: '100%',
-});
-
-zingchart.bind('myChart', 'node_click', updateChart);
-
-/* ✅ Chart endpoint labels color — theme-based */
-function applyLabelsColor() {
-    var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    var color = isDark ? '#FFFFFF' : '#0A0A0A';
-    document.querySelectorAll('.ep-name').forEach(function(el){
-        el.style.color = color;
-    });
-}
-setTimeout(applyLabelsColor, 250);
-
-/* ✅ Theme change — NO PAGE RELOAD, sirf chart re-render */
-function reRenderChart() {
-    try {
-        zingchart.exec('myChart', 'destroy');
-    } catch(e) {}
-
-    setTimeout(function(){
-        zingchart.render({
-            id: 'myChart',
-            data: buildChartConfig(),
-            height: '100%',
-            width: '100%',
-        });
-        zingchart.bind('myChart', 'node_click', updateChart);
-        setTimeout(applyLabelsColor, 250);
-    }, 100);
-}
-
-var _lastTheme = document.documentElement.getAttribute('data-theme') || 'light';
-setInterval(function(){
-    var now = document.documentElement.getAttribute('data-theme') || 'light';
-    if(now !== _lastTheme){
-        _lastTheme = now;
-        reRenderChart();   // ✅ Reload nahi, sirf chart re-render
+<!-- ============ SECTION 2: SEND OTP SMS ============ -->
+<div class="section">
+<h3 class="text-center" style="text-align: center">Send OTP Sms Services</h3>
+<div class="card-container">
+<%
+String[] otpsNames={"sendOtpSms_8115","sendOtpSms_8116","sendOtpSms_8117","sendOtpSms_8118","sendOtpSms_8119","sendOtpSms_8120","sendOtpSms_8121","sendOtpSms_8122","sendOtpSms_8123","sendOtpSms_8124","sendOtpSms_8125","sendOtpSms_8126","sendOtpSms_8127","sendOtpSms_8128","sendOtpSms_8129","sendOtpSms_8130","sendOtpSms_8131","sendOtpSms_8132","sendOtpSms_8133","sendOtpSms_8134","sendOtpSms_8135","sendOtpSms_8136","sendOtpSms_8137","sendOtpSms_8138","sendOtpSms_8139"};
+ArrayList<Integer> totalOtps = (ArrayList<Integer>) request.getAttribute("totalOtp");
+ArrayList<String> ipOtps = (ArrayList<String>) request.getAttribute("ipOtp");
+if (totalOtps != null && ipOtps != null) {
+    for (int i = 0; i < totalOtps.size(); i++) {
+        int totalHits = totalOtps.get(i);
+        String ip = ipOtps.get(i);
+        String cardClass = totalHits == 0 ? "card card-zero" : "card card-nonzero";
+if(totalHits==0){
+     System.out.println(list.contains(otpsNames[i]));
+if(list.contains(otpsNames[i])){%>
+<div class="card card-nonzero">
+<%} else{ %>
+<div class="<%= cardClass %>" onclick="showCardInfo('<%= otpsNames[i] %>', '<%= totalHits %>', '<%= ip %>')">
+<%}}else{ %>
+<div class="<%= cardClass %>">
+<%} %>
+    <div class="card-body">
+        <div class="card-info">
+            <p class="card-title"><%= otpsNames[i] %></p>
+            <p class="card-text">Hits: <%= totalHits %></p>
+            <p class="card-text">IP: <%= ip %></p>
+        </div>
+    </div>
+</div>
+<%
     }
-}, 500);
+}
+%>
+</div>
+</div>
 
-/* Modal */
-var modal = document.getElementById("myModal");
-var btn = document.getElementById("myBtn");
-var span = document.getElementsByClassName("close")[0];
-if(btn){
-    btn.onclick = function() { modal.style.display = "block"; }
+<!-- ============ SECTION 3: OTHER SERVICES ============ -->
+<div class="section">
+<h3 class="text-center" style="text-align: center">Other Services</h3>
+<div class="card-container">
+<%
+String[] othersName={"PCMS_ATM_8026","KycUpdation_ATM_TCP_8025","KycBranchTransfer_ATM_TCP_8027","YONOCash_POS_8082","NCMC_ATM_TCPIP_8020"};
+ArrayList<Integer> totalOthers = (ArrayList<Integer>) request.getAttribute("totalOther");
+ArrayList<String> ipOthers = (ArrayList<String>) request.getAttribute("ipOther");
+if (totalOthers != null && ipOthers != null) {
+    for (int i = 0; i < totalOthers.size(); i++) {
+        int totalHits = totalOthers.get(i);
+        String ip = ipOthers.get(i);
+        String cardClass = totalHits == 0 ? "card card-zero" : "card card-nonzero";
+if(totalHits==0){
+if(list.contains(othersName[i])){%>
+ <div class="card card-nonzero">
+<%} else{ %>
+<div class="<%= cardClass %>" onclick="showCardInfo('<%= othersName[i] %>', '<%= totalHits %>', '<%= ip %>')">
+<%}}else{ %>
+<div class="<%= cardClass %>">
+<%} %>
+    <div class="card-body">
+        <div class="card-info">
+            <p class="card-title"><%= othersName[i] %></p>
+            <p class="card-text">Hits: <%= totalHits %></p>
+            <p class="card-text">IP: <%= ip %></p>
+        </div>
+    </div>
+</div>
+<%
+    }
 }
-if(span){
-    span.onclick = function() { modal.style.display = "none"; }
-}
-window.onclick = function(event) {
-    if (event.target == modal) { modal.style.display = "none"; }
-}
-</script>
+%>
+</div>
+</div>
 
+<!-- ============ JavaScript ============ -->
 <script>
-function countdown( elementName, minutes, seconds )
-{
-    var element, endTime, hours, mins, msLeft, time;
-
-    function twoDigits( n )
-    {
-        return (n <= 9 ? "0" + n : n);
-    }
-
-    function updateTimer()
-    {
-        msLeft = endTime - (+new Date);
-        if ( msLeft < 1000 ) {
-            element.innerHTML = "Please Wait Fetching the Latest Data!";
-        } else {
-            time = new Date( msLeft );
-            hours = time.getUTCHours();
-            mins = time.getUTCMinutes();
-            element.innerHTML = (hours ? hours + ':' + twoDigits( mins ) : mins) + ':' + twoDigits( time.getUTCSeconds() );
-            setTimeout( updateTimer, time.getUTCMilliseconds() + 500 );
-        }
-    }
-
-    element = document.getElementById( elementName );
-    endTime = (+new Date) + 1000 * (60*minutes + seconds) + 500;
-    updateTimer();
+function showCardInfo(name, hits, ip) {
+    document.getElementById('modal-card-name').textContent = name;
+    $('#myModal').modal('show');
 }
 
-countdown( "ten-countdown", 10, 0 );
+function submitCardInfo() {
+    var name = document.getElementById('modal-card-name').textContent;
+    var reason = document.getElementById('modal-textarea').value;
+    var closeTime = document.getElementById('modal-close-time').value;
+    var closeBy = document.getElementById('modal-close-by').value;
+    console.log(".....");
+    console.log("Name:", name);
+    console.log("Reason:", reason);
+    console.log("Close Time:", closeTime);
+    console.log("Close By:", closeBy);
+    document.forms[0].action = '<%=request.getContextPath() + "/AtmCloseServices?name="%>'+name+"&reason="+reason+"&closeTime="+closeTime+"&closeBy="+closeBy;
+    document.forms[0].submit();
+    $('#myModal').modal('hide');
+}
 </script>
+<script>
+  function countdown( elementName, minutes, seconds )
+  {
+      var element, endTime, hours, mins, msLeft, time;
 
+      function twoDigits( n )
+      {
+          return (n <= 9 ? "0" + n : n);
+      }
+
+      function updateTimer()
+      {
+          msLeft = endTime - (+new Date);
+          if ( msLeft < 1000 ) {
+              element.innerHTML = "Please Wait Fetching the Latest Data!";
+          } else {
+              time = new Date( msLeft );
+              hours = time.getUTCHours();
+              mins = time.getUTCMinutes();
+              element.innerHTML = (hours ? hours + ':' + twoDigits( mins ) : mins) + ':' + twoDigits( time.getUTCSeconds() );
+              setTimeout( updateTimer, time.getUTCMilliseconds() + 500 );
+          }
+      }
+
+      element = document.getElementById( elementName );
+      endTime = (+new Date) + 1000 * (60*minutes + seconds) + 500;
+      updateTimer();
+  }
+
+  countdown( "ten-countdown", 10, 0 );
+  </script>
 </div>
 </body>
 </html>
