@@ -1,351 +1,694 @@
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page pageEncoding="UTF-8" %>
 <%@ page import="java.util.ArrayList" %>
 <%@page import="java.sql.ResultSet"%>
 <%@page import="java.sql.Statement"%>
 <%@page import="java.sql.Connection"%>
 <%@page import="java.sql.PreparedStatement"%>
 <%@page import="com.jdbc.DBUtilityAuto"%>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta http-equiv="refresh" content="600">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cards Display</title>
-<!-- Bootstrap for styling -->
-<link rel="stylesheet" href="./css/Atmbootstrap.min.css">
-<script src="./js/Atmjquery.min.js"></script>
-<script src="./js/Atmbootstrap.min.js"></script>
+<title>ATM IP Port Wise</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="<%=request.getContextPath()%>/css/Atmbootstrap.min.css">
+<script src="<%=request.getContextPath()%>/js/Atmjquery.min.js"></script>
+<script src="<%=request.getContextPath()%>/js/Atmbootstrap.min.js"></script>
+
 <style>
-.button-container{
-        display: flex;
-        justify-content: flex-end;
-        margin-right: 10px; 
+/* ============ PAGE BASE ============ */
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+    background: var(--bg) !important;
+    color: var(--ink) !important;
+    margin: 0 !important;
+    padding: 0 !important;
 }
 
-.button{
-  padding: 10px 20px;
-  border: none;
-  border-radius:5px;
-  cursor: pointer;
-  margin-right: 10px; 
+.page-container {
+    padding: 28px 32px 48px;
+    max-width: 1600px;
+    margin: 0 auto;
 }
 
-.card-container {
+/* ============ PAGE HEADER ============ */
+.page-head {
     display: flex;
-    flex-wrap: wrap;
     justify-content: space-between;
-    margin-bottom: 30px;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
 }
-.card {
-    width: 310px;
-    height: 180px;
-    margin: 10px;
-    text-align: center;
-    transition: transform 0.3s ease, background-color 0.3s ease;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    color: white;
+.page-head .ttl-wrap { flex: 1; min-width: 260px; }
+.page-head .ttl {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 800;
+    font-size: 1.65rem;
+    letter-spacing: -0.6px;
+    color: var(--ink);
+    line-height: 1.2;
+    margin: 0;
+}
+.page-head .ttl .ttl-icon {
+    width: 44px; height: 44px;
+    display: grid; place-items: center;
+    background: var(--brand-light);
+    color: var(--brand);
+    border-radius: 12px;
+    font-size: 1.05rem;
+    flex-shrink: 0;
+}
+html[data-theme="dark"] .page-head .ttl .ttl-icon {
+    background: rgba(248,111,3,.15);
+}
+.page-head .sub {
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin: 6px 0 0 56px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.refresh-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    background: var(--brand-light);
+    color: var(--brand);
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+html[data-theme="dark"] .refresh-badge {
+    background: rgba(248,111,3,.15);
+}
+.refresh-badge .timer {
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    font-weight: 700;
+    font-size: 0.85rem;
+}
+
+.btn-manual {
+    padding: 11px 22px;
+    border-radius: 11px;
+    font-weight: 700;
+    font-size: 0.82rem;
+    border: none;
+    background: #F59E0B;
+    color: #fff;
     cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: inherit;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    box-shadow: 0 4px 14px -4px #F59E0B;
+}
+.btn-manual:hover {
+    background: #D97706;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 22px -6px #F59E0B;
+}
+
+/* ============ SECTION ============ */
+.section {
+    margin-bottom: 32px;
+}
+.section-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--line);
+}
+.section-head .s-icon {
+    width: 34px; height: 34px;
+    display: grid; place-items: center;
+    background: var(--brand-light);
+    color: var(--brand);
+    border-radius: 10px;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+}
+html[data-theme="dark"] .section-head .s-icon {
+    background: rgba(248,111,3,.15);
+}
+.section-head h3 {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: var(--ink);
+    letter-spacing: -0.3px;
+    margin: 0;
+}
+.section-head .count-badge {
+    margin-left: auto;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--muted);
+    background: var(--card);
+    border: 1px solid var(--line);
+    padding: 4px 12px;
+    border-radius: 999px;
+}
+
+/* ============ CARD GRID ============ */
+.card-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 14px;
+}
+
+.card {
+    width: auto !important;
+    height: auto !important;
+    margin: 0 !important;
+    min-height: 150px;
+    border-radius: 14px !important;
+    box-shadow: 0 2px 12px rgba(0,0,0,.05) !important;
+    transition: all 0.25s ease;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    border: none !important;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 20px;
+}
+
+.card::before {
+    content: "";
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 140px; height: 140px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.1);
+    transition: all .4s ease;
+    pointer-events: none;
+}
+.card:hover::before {
+    transform: scale(1.5);
+    opacity: .25;
 }
 .card:hover {
-    transform: scale(1.05);
+    transform: translateY(-4px);
+    box-shadow: 0 16px 40px -12px rgba(0,0,0,.25) !important;
 }
+
 .card-zero {
-    background-color: #dc3545; /* Red for zero hits */
+    background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%) !important;
 }
 .card-zero:hover {
-    background-color: #c82333; /* Darker red on hover */
+    background: linear-gradient(135deg, #B91C1C 0%, #991B1B 100%) !important;
 }
 .card-nonzero {
-    background-color: #007bff; /* Blue for non-zero hits */
+    background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%) !important;
 }
 .card-nonzero:hover {
-    background-color: #0056b3; /* Darker blue on hover */
+    background: linear-gradient(135deg, #1D4ED8 0%, #1E40AF 100%) !important;
 }
+
 .card-body {
     display: flex;
     flex-direction: column;
     justify-content: center;
     height: 100%;
+    position: relative;
+    z-index: 2;
+    padding: 0 !important;
 }
 .card-info {
-    font-size: 14px;
+    font-size: 0.9rem;
 }
 .card-title {
-    font-weight: bold;
+    font-weight: 800 !important;
+    font-size: 0.95rem !important;
+    margin-bottom: 10px !important;
+    color: #fff;
+    letter-spacing: -0.3px;
+    line-height: 1.3;
+    word-break: break-word;
+}
+.card-text {
+    font-size: 0.78rem !important;
+    margin: 3px 0 !important;
+    opacity: .92;
+    font-weight: 500;
+}
+.card-text b {
+    font-weight: 800;
+}
+
+.card-badge {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 0.65rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    z-index: 3;
+}
+.card-zero .card-badge {
+    background: rgba(255,255,255,.2);
+    color: #fff;
+}
+.card-nonzero .card-badge {
+    background: rgba(255,255,255,.2);
+    color: #fff;
+}
+
+/* ============ EMPTY STATE ============ */
+.empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--muted);
+    background: var(--card);
+    border: 1px dashed var(--line);
+    border-radius: 14px;
+    font-size: 0.85rem;
+}
+.empty-state i {
+    font-size: 2rem;
+    color: var(--brand);
+    opacity: .4;
+    display: block;
     margin-bottom: 10px;
-    font-size: 18px;
 }
-.section {
-    margin-bottom: 30px;
+
+/* ============ MODAL (theme-aware) ============ */
+.modal-content {
+    background: var(--card) !important;
+    border: 1px solid var(--line) !important;
+    border-radius: 18px !important;
+    color: var(--ink) !important;
 }
-.timer {
-    border: 5px solid white;
-    display: inline;
-    padding: 5px;
-    color: black;
-    font-family: Verdana, sans-serif, Arial;
-    font-size: 40px;
-    height: 50px;
-    font-weight: bold;
-    text-decoration: none;
+.modal-header {
+    border-bottom: 1px solid var(--line) !important;
+    padding: 16px 20px !important;
 }
-.wait {
-    font-family: arial;
-    font-size: 13px;
-    color: #ff0000;
-    font-weight: bold;
-    zoom: 10%;
+.modal-title {
+    color: var(--ink) !important;
+    font-weight: 800 !important;
+}
+.modal-body {
+    padding: 18px 20px !important;
+    color: var(--ink) !important;
+}
+.modal-body p {
+    color: var(--ink);
+    font-size: 0.85rem;
+    margin-bottom: 8px;
+}
+.modal-body strong {
+    color: var(--muted);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    display: block;
+    margin-bottom: 4px;
+}
+.modal-body .form-control {
+    background: var(--bg) !important;
+    border: 1.5px solid var(--line) !important;
+    border-radius: 10px !important;
+    color: var(--ink) !important;
+    font-family: inherit;
+    font-size: 0.85rem;
+    padding: 10px 12px;
+}
+.modal-body .form-control:focus {
+    border-color: var(--brand) !important;
+    box-shadow: 0 0 0 4px rgba(248,111,3,.12) !important;
+    background: var(--card) !important;
+    color: var(--ink) !important;
+}
+.modal-footer {
+    border-top: 1px solid var(--line) !important;
+    padding: 14px 20px !important;
+}
+.modal-footer .btn-primary {
+    background: var(--brand) !important;
+    border: none !important;
+    border-radius: 10px !important;
+    padding: 10px 24px !important;
+    font-weight: 700 !important;
+    font-size: 0.82rem !important;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    box-shadow: 0 4px 14px -4px var(--brand) !important;
+}
+.modal-footer .btn-primary:hover {
+    background: var(--brand-2) !important;
+    transform: translateY(-1px);
+}
+.modal-header .close {
+    color: var(--muted) !important;
+    opacity: 1 !important;
+    font-size: 1.5rem;
+    text-shadow: none !important;
+    outline: none;
+}
+.modal-header .close:hover {
+    color: var(--ink) !important;
+}
+
+/* ============ RESPONSIVE ============ */
+@media (max-width: 900px) {
+    .page-container { padding: 20px 16px 32px; }
+    .page-head .ttl { font-size: 1.3rem; }
+    .page-head .ttl .ttl-icon { width: 38px; height: 38px; font-size: .9rem; }
+    .page-head .sub { margin-left: 50px; font-size: 0.82rem; }
+    .card-container { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+}
+@media (max-width: 500px) {
+    .card-container { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .card { min-height: 130px; padding: 16px; }
+    .card-title { font-size: 0.82rem !important; }
+    .card-text { font-size: 0.72rem !important; }
 }
 </style>
+
 <script>
-        $(document).ready(function () {
-            $("#close,#submitBtn").click(function (e) {          
-                e.preventDefault();
-                $("#cardInfoForm")[0].reset()
-            });
+    /* Same original logic — form reset */
+    $(document).ready(function () {
+        $("#close,#submitBtn").click(function (e) {
+            e.preventDefault();
+            $("#cardInfoForm")[0].reset();
         });
-        
-        window.onload= function(){
-    		window.history.replaceState({},'Roster Admin', '<%=request.getContextPath() + "/AtmCardServlet"%>');
-    		  
-    	} ;
-    	
-    	function openNewPageManual(){
-    	  	/*  window.location.href='/jsp/ExpServerBrokerWiseMonitoring.jsp'; */
-    	  	 var a = '<%=request.getContextPath() + "/jsp/AtmPortWiseManualSearch.jsp"%>';
-    			window.open(a, '_blank');
-    		}
-    </script>
+    });
+
+    window.onload = function(){
+        window.history.replaceState({}, 'Roster Admin', '<%=request.getContextPath() + "/AtmCardServlet"%>');
+    };
+
+    function openNewPageManual(){
+        var a = '<%=request.getContextPath() + "/jsp/AtmPortWiseManualSearch.jsp"%>';
+        window.open(a, '_blank');
+    }
+</script>
 </head>
 <body>
-<%
-Connection con=DBUtilityAuto.getReportDBConnection();
-ArrayList<String> list= new ArrayList<>();
-try{
-	
-String sqlQuery="select * from atmcloseissue where SYSDATE <= closetime";
-PreparedStatement smt=con.prepareStatement(sqlQuery);
-ResultSet rs= smt.executeQuery();
-while(rs.next()){
-	list.add(rs.getString("name").trim());
-	
-}
-System.out.println("list:-"+ list);
 
-}catch(Exception e){
-	e.getMessage();
-}finally{
-	if(con != null)
-		con.close();
-}
+<%@include file="../userheader.jsp"%>
+
+<%
+    Connection con = DBUtilityAuto.getReportDBConnection();
+    ArrayList<String> list = new ArrayList<>();
+    try {
+        String sqlQuery = "select * from atmcloseissue where SYSDATE <= closetime";
+        PreparedStatement smt = con.prepareStatement(sqlQuery);
+        ResultSet rs = smt.executeQuery();
+        while(rs.next()){
+            list.add(rs.getString("name").trim());
+        }
+        System.out.println("list:-" + list);
+    } catch(Exception e) {
+        e.getMessage();
+    } finally {
+        if(con != null) con.close();
+    }
 %>
-<div class="container" style="max-width: 3050px; width: 100%">
-<h1 class="text-center mb-4" style="text-align: center;">ATM IP Port Wise</h1>
-<p class="blink" style="font-size: 30px; text-align: center;"> This Data gets Auto Refresh after <span class="timer" id="ten-countdown"></span> Minutes
-</p>
-<div class="button-container">
-<input type="button" class="button" onclick="openNewPageManual();"  value="Switch To Manual" style="background-color: #ebe310; color: black; position: ">
-</div>
 
-<div class="section">
-<h3 class="text-center" style="text-align: center">Yono 2.0 Cash Business Services</h3>
-<div class="card-container">
-<%
-String[] yono2Names={"YONOCash_Business_8092","YONOCash_Business_8093","YONOCash_Business_8094","YONOCash_Business_8095","YONOCash_Business_8096","YONOCash_Business_8097","YONOCash_Business_8098","YONOCash_Business_8099"};
-// Get the first map (8 cards) from the servlet
-ArrayList<Integer> totalYono2 = (ArrayList<Integer>) request.getAttribute("totalYonoNew");
-ArrayList<String> ipYono2 = (ArrayList<String>) request.getAttribute("ipYonoNew");
-if (totalYono2 != null && ipYono2 != null) {
-    for (int i = 0; i < totalYono2.size(); i++) {
-        int totalHits = totalYono2.get(i);
-        String ip = ipYono2.get(i);
-        String cardClass = totalHits == 0 ? "card card-zero" : "card card-nonzero";
-if(totalHits==0){
-	System.out.println(list.contains(yono2Names[i]));
-if(list.contains(yono2Names[i])){%>
- <div class="card card-nonzero">
-<%}else{ %>
-<div class="<%= cardClass %>" onclick="showCardInfo('<%= yono2Names[i] %>', '<%= totalHits %>', '<%= ip %>')">
-<%}}else { %>
-<div class="<%= cardClass %>">
-<%} %>
-    <div class="card-body">
-        <div class="card-info">
-            <p class="card-title"><%= yono2Names[i] %></p>
-            <p class="card-text">Hits: <%= totalHits %></p>
-            <p class="card-text">IP: <%= ip %></p>
+<div class="new-wrapper">
+<div class="page-container">
+
+    <!-- ============ PAGE HEADER ============ -->
+    <div class="page-head">
+        <div class="ttl-wrap">
+            <h1 class="ttl">
+                <span class="ttl-icon"><i class="fas fa-credit-card"></i></span>
+                ATM IP Port Wise
+            </h1>
+            <p class="sub">
+                Live ATM services monitoring · auto refresh in
+                <span class="refresh-badge">
+                    <i class="far fa-clock"></i>
+                    <span class="timer" id="ten-countdown">--:--</span>
+                </span>
+            </p>
+        </div>
+        <button class="btn-manual" onclick="openNewPageManual()">
+            <i class="fas fa-exchange-alt"></i> Switch to Manual
+        </button>
+    </div>
+
+    <!-- ============ YONO 2.0 SECTION ============ -->
+    <div class="section">
+        <div class="section-head">
+            <div class="s-icon"><i class="fas fa-mobile-alt"></i></div>
+            <h3>Yono 2.0 Cash Business Services</h3>
+            <span class="count-badge">
+                <%
+                    ArrayList<Integer> totalYono2Count = (ArrayList<Integer>) request.getAttribute("totalYonoNew");
+                    out.print(totalYono2Count != null ? totalYono2Count.size() : 0);
+                %> services
+            </span>
+        </div>
+        <div class="card-container">
+        <%
+            String[] yono2Names = {"YONOCash_Business_8092","YONOCash_Business_8093","YONOCash_Business_8094","YONOCash_Business_8095","YONOCash_Business_8096","YONOCash_Business_8097","YONOCash_Business_8098","YONOCash_Business_8099"};
+            ArrayList<Integer> totalYono2 = (ArrayList<Integer>) request.getAttribute("totalYonoNew");
+            ArrayList<String> ipYono2 = (ArrayList<String>) request.getAttribute("ipYonoNew");
+            if (totalYono2 != null && ipYono2 != null && totalYono2.size() > 0) {
+                for (int i = 0; i < totalYono2.size(); i++) {
+                    int totalHits = totalYono2.get(i);
+                    String ip = ipYono2.get(i);
+                    String cardClass = totalHits == 0 ? "card card-zero" : "card card-nonzero";
+                    if(totalHits == 0) {
+                        if(list.contains(yono2Names[i])) {
+        %>
+            <div class="card card-nonzero" data-name="<%= yono2Names[i] %>" data-hits="<%= totalHits %>" data-ip="<%= ip %>">
+        <%
+                        } else {
+        %>
+            <div class="<%= cardClass %>" onclick="showCardInfo('<%= yono2Names[i] %>', '<%= totalHits %>', '<%= ip %>')">
+        <%
+                        }
+                    } else {
+        %>
+            <div class="<%= cardClass %>">
+        <%
+                    }
+        %>
+                <span class="card-badge"><%= totalHits == 0 ? "STOPPED" : "RUNNING" %></span>
+                <div class="card-body">
+                    <div class="card-info">
+                        <p class="card-title"><%= yono2Names[i] %></p>
+                        <p class="card-text"><b>Hits:</b> <%= totalHits %></p>
+                        <p class="card-text"><b>IP:</b> <%= ip %></p>
+                    </div>
+                </div>
+            </div>
+        <%
+                }
+            } else {
+        %>
+            <div class="empty-state">
+                <i class="fas fa-inbox"></i>
+                No data available for YONO 2.0 services
+            </div>
+        <%
+            }
+        %>
         </div>
     </div>
-</div>
-<%
-    }
-}
-%>
+
+    <!-- ============ SEND OTP SMS SECTION ============ -->
+    <div class="section">
+        <div class="section-head">
+            <div class="s-icon"><i class="fas fa-sms"></i></div>
+            <h3>Send OTP SMS Services</h3>
+            <span class="count-badge">
+                <%
+                    ArrayList<Integer> totalOtpsCount = (ArrayList<Integer>) request.getAttribute("totalOtp");
+                    out.print(totalOtpsCount != null ? totalOtpsCount.size() : 0);
+                %> services
+            </span>
+        </div>
+        <div class="card-container">
+        <%
+            String[] otpsNames = {"sendOtpSms_8115","sendOtpSms_8116","sendOtpSms_8117","sendOtpSms_8118","sendOtpSms_8119","sendOtpSms_8120","sendOtpSms_8121","sendOtpSms_8122","sendOtpSms_8123","sendOtpSms_8124","sendOtpSms_8125","sendOtpSms_8126","sendOtpSms_8127","sendOtpSms_8128","sendOtpSms_8129","sendOtpSms_8130","sendOtpSms_8131","sendOtpSms_8132","sendOtpSms_8133","sendOtpSms_8134","sendOtpSms_8135","sendOtpSms_8136","sendOtpSms_8137","sendOtpSms_8138","sendOtpSms_8139"};
+            ArrayList<Integer> totalOtps = (ArrayList<Integer>) request.getAttribute("totalOtp");
+            ArrayList<String> ipOtps = (ArrayList<String>) request.getAttribute("ipOtp");
+            if (totalOtps != null && ipOtps != null && totalOtps.size() > 0) {
+                for (int i = 0; i < totalOtps.size(); i++) {
+                    int totalHits = totalOtps.get(i);
+                    String ip = ipOtps.get(i);
+                    String cardClass = totalHits == 0 ? "card card-zero" : "card card-nonzero";
+                    if(totalHits == 0) {
+                        if(list.contains(otpsNames[i])) {
+        %>
+            <div class="card card-nonzero" data-name="<%= otpsNames[i] %>" data-hits="<%= totalHits %>" data-ip="<%= ip %>">
+        <%
+                        } else {
+        %>
+            <div class="<%= cardClass %>" onclick="showCardInfo('<%= otpsNames[i] %>', '<%= totalHits %>', '<%= ip %>')">
+        <%
+                        }
+                    } else {
+        %>
+            <div class="<%= cardClass %>">
+        <%
+                    }
+        %>
+                <span class="card-badge"><%= totalHits == 0 ? "STOPPED" : "RUNNING" %></span>
+                <div class="card-body">
+                    <div class="card-info">
+                        <p class="card-title"><%= otpsNames[i] %></p>
+                        <p class="card-text"><b>Hits:</b> <%= totalHits %></p>
+                        <p class="card-text"><b>IP:</b> <%= ip %></p>
+                    </div>
+                </div>
+            </div>
+        <%
+                }
+            } else {
+        %>
+            <div class="empty-state">
+                <i class="fas fa-inbox"></i>
+                No data available for OTP SMS services
+            </div>
+        <%
+            }
+        %>
+        </div>
+    </div>
+
+    <!-- ============ OTHER SERVICES SECTION ============ -->
+    <div class="section">
+        <div class="section-head">
+            <div class="s-icon"><i class="fas fa-cog"></i></div>
+            <h3>Other Services</h3>
+            <span class="count-badge">
+                <%
+                    ArrayList<Integer> totalOthersCount = (ArrayList<Integer>) request.getAttribute("totalOther");
+                    out.print(totalOthersCount != null ? totalOthersCount.size() : 0);
+                %> services
+            </span>
+        </div>
+        <div class="card-container">
+        <%
+            String[] othersName = {"PCMS_ATM_8026","KycUpdation_ATM_TCP_8025","KycBranchTransfer_ATM_TCP_8027","YONOCash_POS_8082","NCMC_ATM_TCPIP_8020"};
+            ArrayList<Integer> totalOthers = (ArrayList<Integer>) request.getAttribute("totalOther");
+            ArrayList<String> ipOthers = (ArrayList<String>) request.getAttribute("ipOther");
+            if (totalOthers != null && ipOthers != null && totalOthers.size() > 0) {
+                for (int i = 0; i < totalOthers.size(); i++) {
+                    int totalHits = totalOthers.get(i);
+                    String ip = ipOthers.get(i);
+                    String cardClass = totalHits == 0 ? "card card-zero" : "card card-nonzero";
+                    if(totalHits == 0) {
+                        if(list.contains(othersName[i])) {
+        %>
+            <div class="card card-nonzero" data-name="<%= othersName[i] %>" data-hits="<%= totalHits %>" data-ip="<%= ip %>">
+        <%
+                        } else {
+        %>
+            <div class="<%= cardClass %>" onclick="showCardInfo('<%= othersName[i] %>', '<%= totalHits %>', '<%= ip %>')">
+        <%
+                        }
+                    } else {
+        %>
+            <div class="<%= cardClass %>">
+        <%
+                    }
+        %>
+                <span class="card-badge"><%= totalHits == 0 ? "STOPPED" : "RUNNING" %></span>
+                <div class="card-body">
+                    <div class="card-info">
+                        <p class="card-title"><%= othersName[i] %></p>
+                        <p class="card-text"><b>Hits:</b> <%= totalHits %></p>
+                        <p class="card-text"><b>IP:</b> <%= ip %></p>
+                    </div>
+                </div>
+            </div>
+        <%
+                }
+            } else {
+        %>
+            <div class="empty-state">
+                <i class="fas fa-inbox"></i>
+                No data available for other services
+            </div>
+        <%
+            }
+        %>
+        </div>
+    </div>
+
 </div>
 </div>
 
-<!-- First Section (8 Cards) -->
-<%-- <div class="section">
-<h3 class="text-center" style="text-align: center">Yono Cash Business Services</h3>
-<div class="card-container">
-<%
-String[] yonoNames={"YONOCash_Business_8010","YONOCash_Business_8011","YONOCash_Business_8051","YONOCash_Business_8052","YONOCash_Business_8053","YONOCash_Business_8054","YONOCash_Business_8055","YONOCash_Business_8056"};
-// Get the first map (8 cards) from the servlet
-ArrayList<Integer> totalYonos = (ArrayList<Integer>) request.getAttribute("totalYono");
-ArrayList<String> ipYonos = (ArrayList<String>) request.getAttribute("ipYono");
-if (totalYonos != null && ipYonos != null) {
-    for (int i = 0; i < totalYonos.size(); i++) {
-        int totalHits = totalYonos.get(i);
-        String ip = ipYonos.get(i);
-        String cardClass = totalHits == 0 ? "card card-zero" : "card card-nonzero";
-if(totalHits==0){
-	System.out.println(list.contains(yonoNames[i]));
-if(list.contains(yonoNames[i])){%>
- <div class="card card-nonzero">
-<%} else{ %>
-<div class="<%= cardClass %>" onclick="showCardInfo('<%= yonoNames[i] %>', '<%= totalHits %>', '<%= ip %>')">
-<%}}else{ %>
-<div class="<%= cardClass %>">
-<%} %>
-    <div class="card-body">
-        <div class="card-info">
-            <p class="card-title"><%= yonoNames[i] %></p>
-            <p class="card-text">Hits: <%= totalHits %></p>
-            <p class="card-text">IP: <%= ip %></p>
-        </div>
-    </div>
-</div>
-<%
-    }
-}
-%>
-</div>
-</div> --%>
-<!-- Modal -->
+<!-- ============ MODAL ============ -->
 <form id="cardInfoForm" method="post" action="<%=request.getContextPath() + "/AtmCloseServices" %>">
 <div class="modal fade" id="myModal" role="dialog">
     <div class="modal-dialog">
-        <!-- Modal content-->
         <div class="modal-content">
             <div class="modal-header">
+                <h4 class="modal-title"><i class="fas fa-info-circle" style="color:var(--brand);margin-right:8px;"></i><b>Card Information</b></h4>
                 <button type="button" id="close" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="modal-title"><b>Card Information</b></h4>
             </div>
             <div class="modal-body">
-                <p><strong>Name:</strong> <span id="modal-card-name"></span></p>
-                <p><strong>Reason:</strong></p>
+                <p><strong>Name</strong> <span id="modal-card-name" style="font-weight:700;color:var(--ink);"></span></p>
+                <p><strong>Reason</strong></p>
                 <textarea id="modal-textarea" class="form-control" rows="4" placeholder="Enter reason here"></textarea>
-                <p><strong>Close Time:</strong></p>
+                <p style="margin-top:12px;"><strong>Close Time</strong></p>
                 <select id="modal-close-time" class="form-control">
                     <% for (int i = 1; i <= 24; i++) { %>
                         <option value="<%= i %>"><%= i %> hour(s)</option>
                     <% } %>
                 </select>
-                <p><strong>Close By:</strong></p>
+                <p style="margin-top:12px;"><strong>Close By</strong></p>
                 <select id="modal-close-by" class="form-control">
                 <%
-                try{
-                Connection conn=DBUtilityAuto.getReportDBConnection();
-                String sql1="select FIRSTNAME || ' ' || lastname as Fullname from roster_employee_details where lower(team) like '%event%'";	
-                //System.out.println(sql1);
-            	Statement statement=conn.createStatement();
-            	ResultSet rs= statement.executeQuery(sql1);
-            	while(rs.next()){
+                    try {
+                        Connection conn = DBUtilityAuto.getReportDBConnection();
+                        String sql1 = "select FIRSTNAME || ' ' || lastname as Fullname from roster_employee_details where lower(team) like '%event%'";
+                        Statement statement = conn.createStatement();
+                        ResultSet rs = statement.executeQuery(sql1);
+                        while(rs.next()){
                 %>
                     <option value="<%= rs.getString("Fullname") %>"><%= rs.getString("Fullname") %></option>
-                    <%} }catch(Exception e){
-                    	e.printStackTrace();
-                    	}%>
-                    <!-- Add more options as needed -->
+                <%
+                        }
+                        rs.close();
+                        statement.close();
+                        conn.close();
+                    } catch(Exception e){
+                        e.printStackTrace();
+                    }
+                %>
                 </select>
             </div>
             <div class="modal-footer">
-                <button type="button" id="submitBtn" class="btn btn-primary" onclick="submitCardInfo();">Submit</button>
+                <button type="button" id="submitBtn" class="btn btn-primary" onclick="submitCardInfo();">
+                    <i class="fas fa-check"></i> Submit
+                </button>
             </div>
         </div>
     </div>
 </div>
 </form>
-<!-- Second Section (24 Cards) -->
-<div class="section">
-<h3 class="text-center" style="text-align: center">Send OTP Sms Services</h3>
-<div class="card-container">
-<%
-String[] otpsNames={"sendOtpSms_8115","sendOtpSms_8116","sendOtpSms_8117","sendOtpSms_8118","sendOtpSms_8119","sendOtpSms_8120","sendOtpSms_8121","sendOtpSms_8122","sendOtpSms_8123","sendOtpSms_8124","sendOtpSms_8125","sendOtpSms_8126","sendOtpSms_8127","sendOtpSms_8128","sendOtpSms_8129","sendOtpSms_8130","sendOtpSms_8131","sendOtpSms_8132","sendOtpSms_8133","sendOtpSms_8134","sendOtpSms_8135","sendOtpSms_8136","sendOtpSms_8137","sendOtpSms_8138","sendOtpSms_8139"};
-ArrayList<Integer> totalOtps = (ArrayList<Integer>) request.getAttribute("totalOtp");
-ArrayList<String> ipOtps = (ArrayList<String>) request.getAttribute("ipOtp");
-if (totalOtps != null && ipOtps != null) {
-    for (int i = 0; i < totalOtps.size(); i++) {
-        int totalHits = totalOtps.get(i);
-        String ip = ipOtps.get(i);
-        String cardClass = totalHits == 0 ? "card card-zero" : "card card-nonzero";
-if(totalHits==0){
-	 System.out.println(list.contains(otpsNames[i]));
-if(list.contains(otpsNames[i])){%>
-<div class="card card-nonzero">
-<%} else{ %>
-<div class="<%= cardClass %>" onclick="showCardInfo('<%= otpsNames[i] %>', '<%= totalHits %>', '<%= ip %>')">
-<%}}else{ %>
-<div class="<%= cardClass %>">
-<%} %>
-    <div class="card-body">
-        <div class="card-info">
-            <p class="card-title"><%= otpsNames[i] %></p>
-            <p class="card-text">Hits: <%= totalHits %></p>
-            <p class="card-text">IP: <%= ip %></p>
-        </div>
-    </div>
-</div>
-<%
-    }
-}
-%>
-</div>
-</div>
-<!-- Third Section (4 Cards) -->
-<div class="section">
-<h3 class="text-center" style="text-align: center">Other Services</h3>
-<div class="card-container">
-<%
-String[] othersName={"PCMS_ATM_8026","KycUpdation_ATM_TCP_8025","KycBranchTransfer_ATM_TCP_8027","YONOCash_POS_8082","NCMC_ATM_TCPIP_8020"};
-// Get the third map (4 cards) from the servlet
-ArrayList<Integer> totalOthers = (ArrayList<Integer>) request.getAttribute("totalOther");
-ArrayList<String> ipOthers = (ArrayList<String>) request.getAttribute("ipOther");
-if (totalOthers != null && ipOthers != null) {
-    for (int i = 0; i < totalOthers.size(); i++) {
-        int totalHits = totalOthers.get(i);
-        String ip = ipOthers.get(i);
-        String cardClass = totalHits == 0 ? "card card-zero" : "card card-nonzero";
-if(totalHits==0){ 
-if(list.contains(othersName[i])){%>
- <div class="card card-nonzero">
-<%} else{ %>
-<div class="<%= cardClass %>" onclick="showCardInfo('<%= othersName[i] %>', '<%= totalHits %>', '<%= ip %>')">
-<%}}else{ %>
-<div class="<%= cardClass %>">
-<%} %>
-    <div class="card-body">
-        <div class="card-info">
-            <p class="card-title"><%= othersName[i] %></p>
-            <p class="card-text">Hits: <%= totalHits %></p>
-            <p class="card-text">IP: <%= ip %></p>
-        </div>
-    </div>
-</div>
-<%
-    }
-}
-%>
-</div>
-</div>
-<!-- JavaScript -->
+
 <script>
 function showCardInfo(name, hits, ip) {
     document.getElementById('modal-card-name').textContent = name;
-    // Optionally set other data in modal
     $('#myModal').modal('show');
 }
 
@@ -354,86 +697,39 @@ function submitCardInfo() {
     var reason = document.getElementById('modal-textarea').value;
     var closeTime = document.getElementById('modal-close-time').value;
     var closeBy = document.getElementById('modal-close-by').value;
-    console.log(".....");
-    // Here, you would typically send this data to the server or handle it as needed
-    console.log("Name:", name);
-    console.log("Reason:", reason);
-    console.log("Close Time:", closeTime);
-    console.log("Close By:", closeBy);
-    document.forms[0].action = '<%=request.getContextPath() + "/AtmCloseServices?name="%>'+name+"&reason="+reason+"&closeTime="+closeTime+"&closeBy="+closeBy;
-	document.forms[0].submit(); 
-    // For demonstration, we'll simply close the modal
+
+    document.forms[0].action = '<%=request.getContextPath() + "/AtmCloseServices?name="%>' + name + "&reason=" + reason + "&closeTime=" + closeTime + "&closeBy=" + closeBy;
+    document.forms[0].submit();
     $('#myModal').modal('hide');
 }
 
-<%-- function submitCardInfo() {
-    var name = encodeURIComponent(document.getElementById('modal-card-name').textContent);
-    var reason = encodeURIComponent(document.getElementById('modal-textarea').value);
-    var closeTime = encodeURIComponent(document.getElementById('modal-close-time').value);
-    var closeBy = encodeURIComponent(document.getElementById('modal-close-by').value);
+function countdown(elementName, minutes, seconds) {
+    var element, endTime, hours, mins, msLeft, time;
 
-    var form = document.getElementById('cardInfoForm');
-    form.action = '<%=request.getContextPath() + "/AtmCloseServices" %>';
-    form.method = 'post';
+    function twoDigits(n) {
+        return (n <= 9 ? "0" + n : n);
+    }
 
-    var inputName = document.createElement('input');
-    inputName.type = 'hidden';
-    inputName.name = 'name';
-    inputName.value = name;
-    form.appendChild(inputName);
+    function updateTimer() {
+        msLeft = endTime - (+new Date);
+        if (msLeft < 1000) {
+            element.innerHTML = "Fetching...";
+        } else {
+            time = new Date(msLeft);
+            hours = time.getUTCHours();
+            mins = time.getUTCMinutes();
+            element.innerHTML = (hours ? hours + ':' + twoDigits(mins) : mins) + ':' + twoDigits(time.getUTCSeconds());
+            setTimeout(updateTimer, time.getUTCMilliseconds() + 500);
+        }
+    }
 
-    var inputReason = document.createElement('input');
-    inputReason.type = 'hidden';
-    inputReason.name = 'reason';
-    inputReason.value = reason;
-    form.appendChild(inputReason);
+    element = document.getElementById(elementName);
+    endTime = (+new Date) + 1000 * (60 * minutes + seconds) + 500;
+    updateTimer();
+}
 
-    var inputCloseTime = document.createElement('input');
-    inputCloseTime.type = 'hidden';
-    inputCloseTime.name = 'closeTime';
-    inputCloseTime.value = closeTime;
-    form.appendChild(inputCloseTime);
-
-    var inputCloseBy = document.createElement('input');
-    inputCloseBy.type = 'hidden';
-    inputCloseBy.name = 'closeBy';
-    inputCloseBy.value = closeBy;
-    form.appendChild(inputCloseBy);
-
-    form.submit();
-    $('#myModal').modal('hide');
-} --%>
+countdown("ten-countdown", 10, 0);
 </script>
-<script>
-  function countdown( elementName, minutes, seconds )
-  {
-      var element, endTime, hours, mins, msLeft, time;
 
-      function twoDigits( n )
-      {
-          return (n <= 9 ? "0" + n : n);
-      }
-
-      function updateTimer()
-      {
-          msLeft = endTime - (+new Date);
-          if ( msLeft < 1000 ) {
-              element.innerHTML = "Please Wait Fetching the Latest Data!";
-          } else {
-              time = new Date( msLeft );
-              hours = time.getUTCHours();
-              mins = time.getUTCMinutes();
-              element.innerHTML = (hours ? hours + ':' + twoDigits( mins ) : mins) + ':' + twoDigits( time.getUTCSeconds() );
-              setTimeout( updateTimer, time.getUTCMilliseconds() + 500 );
-          }
-      }
-
-      element = document.getElementById( elementName );
-      endTime = (+new Date) + 1000 * (60*minutes + seconds) + 500;
-      updateTimer();
-  }
-
-  countdown( "ten-countdown", 10, 0 );
-  </script>
 </body>
 </html>
