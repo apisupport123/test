@@ -62,6 +62,7 @@
     String[] months = {"JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"};
     String partition = months[partCal.get(Calendar.MONTH)] + "_" + String.valueOf(partCal.get(Calendar.YEAR)).substring(2);
 
+    /* ✅ PMJJBY_HOURLY & PMSBY_HOURLY REMOVED */
     String[] tables = {
         "ADHARVAULT_HOURLY",
         "PANVALIDATION_HOURLY",
@@ -74,9 +75,7 @@
         "DEAF_LOGGING_HOURLY",
         "DEAF_AUDIT_HOURLY",
         "EIS_INACTIVE_HOURLY",
-        "EKYC_HOURLY",
-        "PMJJBY_HOURLY",
-        "PMSBY_HOURLY"
+        "EKYC_HOURLY"
     };
     String[] displayNames = {
         "Aadhar Vault",
@@ -90,12 +89,10 @@
         "Deaf Logging",
         "Deaf Audit",
         "EIS Inactive",
-        "EKYC",
-        "PMJJBY Renewal",
-        "PMSBY Renewal"
+        "EKYC"
     };
     String[] sourceDB = {
-        "IIB", "IIB", "IIB", "IIB", "IIB", "IIB", "IIB", "IIB", "IIB", "IIB", "IIB", "SIDB", "SIDB", "SIDB"
+        "IIB", "IIB", "IIB", "IIB", "IIB", "IIB", "IIB", "IIB", "IIB", "IIB", "IIB", "SIDB"
     };
 
     Map<String, List<Map<String, Object>>> tableData = new LinkedHashMap<>();
@@ -222,21 +219,9 @@
         sb.append("SUM(CASE WHEN ERROR_CODE IS NULL THEN 1 ELSE 0 END) AS SUCCESS,\n");
         sb.append("ROUND((SUM(CASE WHEN ERROR_CODE IN ('SI392','SI207') THEN 1 ELSE 0 END)/NULLIF(COUNT(1), 0))*100, 2) AS TD_PERCENT\n");
         sb.append("FROM SBISI.EKYC_log\n");
-        sb.append("WHERE REQ_DATE_TIME BETWEEN TO_DATE('" + fromDate + "', 'DD-MON-YYYY HH24:MI:SS') AND TO_DATE('" + toDate + "', 'DD-MON-YYYY HH24:MI:SS');\n\n");
+        sb.append("WHERE REQ_DATE_TIME BETWEEN TO_DATE('" + fromDate + "', 'DD-MON-YYYY HH24:MI:SS') AND TO_DATE('" + toDate + "', 'DD-MON-YYYY HH24:MI:SS');\n");
 
-        sb.append("-- Query 12: PMJJBY Renewal\n");
-        sb.append("SELECT /*+ PARALLEL(4) */ status_code, COUNT(1) AS COUNT\n");
-        sb.append("FROM SBISI.pmjjby_renewal_txn_master\n");
-        sb.append("WHERE txn_cycle = 1\n");
-        sb.append("GROUP BY status_code\n");
-        sb.append("ORDER BY status_code;\n\n");
-
-        sb.append("-- Query 13: PMSBY Renewal\n");
-        sb.append("SELECT /*+ PARALLEL(4) */ status_code, COUNT(1) AS COUNT\n");
-        sb.append("FROM SBISI.pmsby_renewal_txn_master\n");
-        sb.append("WHERE txn_cycle = 1\n");
-        sb.append("GROUP BY status_code\n");
-        sb.append("ORDER BY status_code;\n");
+        /* ✅ PMJJBY & PMSBY queries REMOVED */
 
         queriesDisplay = sb.toString();
     }
@@ -258,8 +243,6 @@
       margin: 0 !important;
       padding: 0 !important;
     }
-
-    /* ✅ userheader.jsp ka .new-wrapper padding-top:64px chahiye — override NAHI karo */
 
     .page-container {
       padding: 32px 32px 48px;
