@@ -1,13 +1,10 @@
 <%--
   EIS Portal — Shared Header Fragment
-  ⚠️ IMPORTANT: Isme <html>, <head>, <body> tags NAHI hone chahiye.
-  ✅ Sab kuch locally store — no CDN
+  ✅ Icons: Inline SVG (no Font Awesome dependency)
 --%>
 
-<!-- ✅ Google Fonts — LOCAL rakho ya system font use karo -->
+<!-- ✅ Google Fonts (agar chahiye toh) — ya system font use karo -->
 <link rel="stylesheet" href="<%=request.getContextPath()%>/css/inter-font.css">
-<!-- ✅ Font Awesome 6 — LOCAL -->
-<link rel="stylesheet" href="<%=request.getContextPath()%>/css/all.min.css">
 
 <script src="<%=request.getContextPath()%>/js/jquery.min.js"></script>
 
@@ -28,8 +25,6 @@
   --sidebar-hover:#F5F5F4;
   --sidebar-active:#FFF4EC;
   --topnav-bg:rgba(247,247,245,.85);
-  --hero-dark:#1A1A1A;
-  --hero-dark-2:#2A2A2A;
 
   --topnav-h:64px;
   --sidebar-w:260px;
@@ -46,20 +41,31 @@ html[data-theme="dark"]{
   --sidebar-hover:#1F1F1F;
   --sidebar-active:#1E1408;
   --topnav-bg:rgba(15,15,15,.85);
-  --hero-dark:#0B0B0B;
-  --hero-dark-2:#1A1A1A;
 }
 
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{height:100%}
 body{
-  font-family:'Inter',system-ui,sans-serif;
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
   background:var(--bg);
   color:var(--ink);
   -webkit-font-smoothing:antialiased;
   transition:background .3s ease,color .3s ease;
 }
 .primary-nav,.hamburger,.menu,.overflow-container{display:none!important}
+
+/* ============ SVG ICON HELPER ============ */
+.icon-svg{
+  width:16px;
+  height:16px;
+  display:inline-block;
+  flex-shrink:0;
+  stroke:currentColor;
+  fill:none;
+  stroke-width:2;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
 
 /* ============ SIDEBAR ============ */
 .sidebar{
@@ -86,10 +92,11 @@ html.sb-collapsed .new-wrapper{margin-left:0}
   width:36px;height:36px;
   background:linear-gradient(135deg,var(--brand),var(--brand-2));
   border-radius:10px;
-  display:grid;place-items:center;color:#fff;font-size:.9rem;
+  display:grid;place-items:center;color:#fff;
   box-shadow:0 6px 16px -6px var(--brand);
   flex-shrink:0;
 }
+.sb-logo .icon-svg{width:18px;height:18px}
 .sb-title{
   font-weight:800;font-size:.95rem;
   letter-spacing:-.3px;line-height:1.1;
@@ -108,10 +115,10 @@ html.sb-collapsed .new-wrapper{margin-left:0}
   border-radius:7px;
   color:var(--muted);
   cursor:pointer;
-  font-size:.7rem;
   transition:all .15s ease;
   flex-shrink:0;
 }
+.sb-collapse-btn .icon-svg{width:14px;height:14px}
 .sb-collapse-btn:hover{
   background:var(--brand);
   border-color:var(--brand);
@@ -138,21 +145,16 @@ html.sb-collapsed .new-wrapper{margin-left:0}
   box-shadow:0 10px 24px -6px var(--brand);
   color:#fff;
 }
-.sb-home-btn .icon{
-  width:24px;height:24px;
-  display:grid;place-items:center;
-  background:rgba(255,255,255,.2);
-  border-radius:7px;
-  font-size:.75rem;
-}
+.sb-home-btn .icon-svg{width:16px;height:16px}
 
 .sb-search{padding:8px 16px 8px;flex-shrink:0}
 .sb-search-box{position:relative;display:flex;align-items:center}
-.sb-search-box i{
-  position:absolute;left:12px;color:var(--muted);font-size:.8rem;pointer-events:none;
+.sb-search-box .icon-svg{
+  position:absolute;left:12px;color:var(--muted);
+  width:14px;height:14px;pointer-events:none;
 }
 .sb-search-box input{
-  width:100%;padding:9px 12px 9px 34px;
+  width:100%;padding:9px 12px 9px 36px;
   background:var(--sidebar-hover);
   border:1px solid transparent;
   border-radius:9px;
@@ -167,9 +169,7 @@ html.sb-collapsed .new-wrapper{margin-left:0}
   box-shadow:0 0 0 3px rgba(248,111,3,.12);
 }
 
-.sb-body{
-  flex:1;overflow-y:auto;padding:8px 12px 20px;
-}
+.sb-body{flex:1;overflow-y:auto;padding:8px 12px 20px;}
 .sb-body::-webkit-scrollbar{width:6px}
 .sb-body::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px}
 
@@ -193,10 +193,11 @@ html.sb-collapsed .new-wrapper{margin-left:0}
   width:26px;height:26px;
   display:grid;place-items:center;
   background:var(--sidebar-hover);
-  border-radius:7px;font-size:.72rem;
+  border-radius:7px;
   color:var(--sidebar-text);flex-shrink:0;
   transition:all .15s ease;
 }
+.sb-item .sb-icon .icon-svg{width:14px;height:14px}
 .sb-item:hover .sb-icon{
   background:var(--brand-light);color:var(--brand);
 }
@@ -212,8 +213,6 @@ html[data-theme="dark"] .sb-item:hover .sb-icon{
 .sb-item.sb-logout .sb-icon{background:#FFEBEE;color:#E53935}
 .sb-item.sb-logout:hover{background:#FFEBEE;color:#C62828}
 .sb-item.sb-logout:hover .sb-icon{background:#E53935;color:#fff}
-html[data-theme="dark"] .sb-item.sb-logout{color:#FF6B6B}
-html[data-theme="dark"] .sb-item.sb-logout .sb-icon{background:rgba(229,57,53,.15);color:#FF6B6B}
 
 /* ============ TOPNAV ============ */
 .topnav{
@@ -230,7 +229,8 @@ html[data-theme="dark"] .sb-item.sb-logout .sb-icon{background:rgba(229,57,53,.1
 .tn-toggle{
   display:none;width:36px;height:36px;
   background:transparent;border:1px solid var(--line);
-  border-radius:9px;color:var(--ink);cursor:pointer;font-size:.85rem;
+  border-radius:9px;color:var(--ink);cursor:pointer;
+  display:grid;place-items:center;
 }
 .tn-menu-btn{
   display:grid;place-items:center;
@@ -238,9 +238,10 @@ html[data-theme="dark"] .sb-item.sb-logout .sb-icon{background:rgba(229,57,53,.1
   background:var(--sidebar-hover);
   border:1px solid var(--line);
   border-radius:9px;color:var(--ink);
-  cursor:pointer;font-size:.85rem;
+  cursor:pointer;
   transition:all .15s ease;
 }
+.tn-menu-btn .icon-svg{width:16px;height:16px}
 .tn-menu-btn:hover{
   background:var(--brand);border-color:var(--brand);color:#fff;
 }
@@ -253,6 +254,7 @@ html[data-theme="dark"] .sb-item.sb-logout .sb-icon{background:rgba(229,57,53,.1
   color:var(--muted);font-size:.83rem;cursor:pointer;
   transition:all .2s ease;font-family:inherit;
 }
+.tn-search .icon-svg{width:14px;height:14px}
 .tn-search:hover{
   border-color:var(--brand);color:var(--ink);
   box-shadow:0 4px 14px rgba(248,111,3,.06);
@@ -270,9 +272,10 @@ html[data-theme="dark"] .sb-item.sb-logout .sb-icon{background:rgba(229,57,53,.1
   display:grid;place-items:center;
   background:transparent;border:1px solid var(--line);
   border-radius:9px;color:var(--ink);
-  cursor:pointer;font-size:.85rem;
+  cursor:pointer;
   transition:all .15s ease;text-decoration:none;
 }
+.tn-btn .icon-svg{width:16px;height:16px}
 .tn-btn:hover{background:var(--brand);border-color:var(--brand);color:#fff}
 .tn-avatar{
   width:36px;height:36px;border-radius:50%;
@@ -289,9 +292,7 @@ html[data-theme="dark"] .sb-item.sb-logout .sb-icon{background:rgba(229,57,53,.1
   transition:margin-left .3s cubic-bezier(.4,0,.2,1);
   min-height:100vh;
 }
-html.sb-collapsed .new-wrapper{
-  margin-left:0;
-}
+html.sb-collapsed .new-wrapper{margin-left:0}
 
 .sb-overlay{
   position:fixed;inset:0;
@@ -316,7 +317,6 @@ html.sb-open .sb-overlay{opacity:1;pointer-events:auto}
 <script>
 (function(){
   try{
-    // ✅ Theme: DEFAULT DARK
     var t = localStorage.getItem('eis-theme');
     if(!t){
       t = 'dark';
@@ -324,11 +324,9 @@ html.sb-open .sb-overlay{opacity:1;pointer-events:auto}
     }
     document.documentElement.setAttribute('data-theme', t);
 
-    // ✅ Sidebar: login ke baad OPEN, navigate pe CLOSED
     var freshLogin = sessionStorage.getItem('eis-login-fresh');
     if (freshLogin === '1') {
       sessionStorage.removeItem('eis-login-fresh');
-      // Sidebar OPEN (default)
     } else {
       document.documentElement.classList.add('sb-collapsed');
     }
@@ -346,25 +344,27 @@ html.sb-open .sb-overlay{opacity:1;pointer-events:auto}
 
 <aside class="sidebar" id="sidebar">
   <div class="sb-head">
-    <div class="sb-logo"><i class="fa-solid fa-shield-halved"></i></div>
+    <div class="sb-logo">
+      <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    </div>
     <div class="sb-title">
       EIS Portal
       <small><%=m_strrole != null ? m_strrole : "Guest"%></small>
     </div>
     <button class="sb-collapse-btn" onclick="toggleSidebar()" title="Hide sidebar">
-      <i class="fa-solid fa-angles-left"></i>
+      <svg class="icon-svg" viewBox="0 0 24 24"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg>
     </button>
   </div>
 
   <!-- ✅ HOME BUTTON -->
   <a class="sb-home-btn" href="<%=ctx%>/userhomescreen.action" title="Go to Home">
-    <span class="icon"><i class="fa-solid fa-house"></i></span>
+    <svg class="icon-svg" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
     <span>Home</span>
   </a>
 
   <div class="sb-search">
     <div class="sb-search-box">
-      <i class="fa-solid fa-magnifying-glass"></i>
+      <svg class="icon-svg" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       <input type="text" id="searchbar" onkeyup="search_animal()" placeholder="Search..." autocomplete="off">
     </div>
   </div>
@@ -373,207 +373,265 @@ html.sb-open .sb-overlay{opacity:1;pointer-events:auto}
 
     <div class="sb-group">Dashboards</div>
     <a class="sb-item animals" href="<%=ctx%>/jsp/statMgmtDashboard.jsp" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>Strategic Mgmt. Status</span>
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>
+      <span>Strategic Mgmt. Status</span>
     </a>
     <a class="sb-item animals" href="<%=ctx%>/jsp/eisSbiDashboard.jsp" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>SBI Support Status</span>
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>
+      <span>SBI Support Status</span>
     </a>
     <a class="sb-item animals" href="<%=ctx%>/ErrorDashboard" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><i class="fa-solid fa-triangle-exclamation"></i></span><span>Error Dashboard</span>
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
+      <span>Error Dashboard</span>
     </a>
     <a class="sb-item animals" href="<%=ctx%>/jsp/CombinedServiceWise&HundreadPerFailure.jsp" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><i class="fa-solid fa-tower-broadcast"></i></span><span>EIS Command Center</span>
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M4.93 4.93a10 10 0 0 0 0 14.14M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M8.46 8.46a5 5 0 0 0 0 7.07M15.54 8.46a5 5 0 0 1 0 7.07"/><circle cx="12" cy="12" r="1.5"/></svg></span>
+      <span>EIS Command Center</span>
     </a>
     <a class="sb-item animals" href="<%=ctx%>/AtmCardServlet" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><i class="fa-solid fa-credit-card"></i></span><span>ATM IP Port Portal</span>
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></span>
+      <span>ATM IP Port Portal</span>
     </a>
     <a class="sb-item animals" href="<%=ctx%>/jsp/TransactionEndPointBank.jsp" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><i class="fa-solid fa-money-bill-transfer"></i></span><span>Transaction End Point</span>
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
+      <span>Transaction End Point</span>
     </a>
     <a class="sb-item animals" href="<%=ctx%>/jsp/AutoRefreshTxnEndpoint_New.jsp" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><i class="fa-solid fa-money-bill-transfer"></i></span><span>Txn End Point (Golden Gate)</span>
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></span>
+      <span>Txn End Point (Golden Gate)</span>
     </a>
     <a class="sb-item animals" href="<%=ctx%>/jsp/AutoRefreshExpSysServiceWise.jsp" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>EXP SYS Service Wise</span>
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>
+      <span>EXP SYS Service Wise</span>
     </a>
     <a class="sb-item animals" href="<%=ctx%>/jsp/A_EXP_SERVERWISE_COUNT_LDAP.jsp" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>LDAP EXP Server</span>
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>
+      <span>LDAP EXP Server</span>
     </a>
     <a class="sb-item animals" href="<%=ctx%>/jsp/A_SYS_SERVERWISE_COUNT_LDAP.jsp" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>LDAP SYS Server</span>
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>
+      <span>LDAP SYS Server</span>
     </a>
 
     <div class="sb-group">Deployments</div>
     <a class="sb-item animals" href="<%=ctx%>/DeploymentSheetServlet" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><i class="fa-solid fa-plus"></i></span><span>Add Deployment Sheet</span>
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span>
+      <span>Add Deployment Sheet</span>
     </a>
     <a class="sb-item animals" href="<%=ctx%>/ViewDeploymentSheetActionServ" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><i class="fa-solid fa-eye"></i></span><span>View Deployment Sheet</span>
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></span>
+      <span>View Deployment Sheet</span>
     </a>
     <a class="sb-item animals" href="<%=ctx%>/jsp/deployment_analysis.jsp" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><i class="fa-solid fa-chart-column"></i></span><span>Deployment Analysis</span>
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>
+      <span>Deployment Analysis</span>
     </a>
 
     <div class="sb-group">Logs &amp; Data</div>
     <a class="sb-item animals" href="<%=ctx%>/jsp/PortStatus.jsp" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><i class="fa-solid fa-signal"></i></span><span>Service Status</span>
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg></span>
+      <span>Service Status</span>
     </a>
     <a class="sb-item animals" href="<%=ctx%>/jsp/Dpg_Sys_Log.jsp" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><i class="fa-solid fa-file-lines"></i></span><span>SYS Logs</span>
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>
+      <span>SYS Logs</span>
     </a>
     <a class="sb-item animals" href="<%=ctx%>/jsp/Dpg_log.jsp" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><i class="fa-solid fa-file-lines"></i></span><span>DPG Logs</span>
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>
+      <span>DPG Logs</span>
     </a>
     <a class="sb-item animals" href="<%=ctx%>/jsp/ITSMDetailsBackup.jsp" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><i class="fa-solid fa-database"></i></span><span>ITSM Details</span>
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg></span>
+      <span>ITSM Details</span>
     </a>
     <a class="sb-item animals" href="<%=ctx%>/jsp/ThirdPartyExcel.jsp" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><i class="fa-solid fa-table"></i></span><span>Third Party Excel</span>
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg></span>
+      <span>Third Party Excel</span>
     </a>
     <a class="sb-item animals" href="<%=ctx%>/UploadExcelServlet" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><i class="fa-solid fa-certificate"></i></span><span>Source Certificate</span>
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="8" r="6"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg></span>
+      <span>Source Certificate</span>
     </a>
     <a class="sb-item animals" href="<%=ctx%>/jsp/Exp_Sys_Url_Mapper.jsp" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><i class="fa-solid fa-heart-pulse"></i></span><span>EXP &amp; SYS URL Mapper</span>
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></span>
+      <span>EXP &amp; SYS URL Mapper</span>
     </a>
     <a class="sb-item animals" href="<%=ctx%>/jsp/newChannelDestination.jsp?&role=<%=m_strrole%>" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><i class="fa-solid fa-heart-pulse"></i></span><span>Channel &amp; Destination</span>
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></span>
+      <span>Channel &amp; Destination</span>
     </a>
     <a class="sb-item animals" href="<%=ctx%>/TxnContactDetail" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><i class="fa-solid fa-heart-pulse"></i></span><span>TXN Contact Details</span>
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></span>
+      <span>TXN Contact Details</span>
     </a>
 
     <div class="sb-group">Reports</div>
     <a class="sb-item animals" href="<%=ctx%>/jsp/FlashReport.jsp" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><i class="fa-solid fa-bolt"></i></span><span>Flash Report</span>
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>
+      <span>Flash Report</span>
     </a>
     <a class="sb-item animals" href="<%=ctx%>/jsp/DailyStatisticsReport.jsp" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><i class="fa-solid fa-chart-pie"></i></span><span>Daily Statistics</span>
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></span>
+      <span>Daily Statistics</span>
     </a>
     <a class="sb-item animals" href="<%=ctx%>/jsp/TimeDefrenceAnalysisreport.jsp" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><i class="fa-solid fa-clock"></i></span><span>Time Difference Analysis</span>
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
+      <span>Time Difference Analysis</span>
     </a>
     <a class="sb-item animals" href="<%=ctx%>/jsp/SourceWiseTdSearch.jsp" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>Source Wise TD Failure</span>
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>
+      <span>Source Wise TD Failure</span>
     </a>
     <a class="sb-item animals" href="<%=ctx%>/jsp/TxnEndPointSearch.jsp" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>Txn End Point Manual</span>
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>
+      <span>Txn End Point Manual</span>
     </a>
     <a class="sb-item animals" href="<%=ctx%>/autocompleteapiwithtdbd.do" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>API Wise TD% BD%</span>
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>
+      <span>API Wise TD% BD%</span>
     </a>
 
     <div class="sb-group">Monitoring Tools</div>
     <a class="sb-item animals" href="<%=ctx%>/jsp/yonoGraph.jsp" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>YONO 2.0 Analytics</span>
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>
+      <span>YONO 2.0 Analytics</span>
     </a>
     <a class="sb-item animals" href="<%=ctx%>/jsp/dpg-carts.jsp" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>DMZ DPG Incoming</span>
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>
+      <span>DMZ DPG Incoming</span>
     </a>
     <a class="sb-item animals" href="<%=ctx%>/jsp/channelwisepresent&pastdata.jsp" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>Channel Wise Volume</span>
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>
+      <span>Channel Wise Volume</span>
     </a>
     <a class="sb-item animals" href="<%=ctx%>/jsp/monitoring_dashboard_morethan_30Per_fail.jsp" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>BD API Monitor</span>
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>
+      <span>BD API Monitor</span>
     </a>
     <a class="sb-item animals" href="<%=ctx%>/jsp/Source_Monitor.jsp" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>Source Monitor</span>
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>
+      <span>Source Monitor</span>
     </a>
     <a class="sb-item animals" href="<%=ctx%>/jsp/AtmPortWiseManualSearch.jsp" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><i class="fa-solid fa-heart-pulse"></i></span><span>Manual ATM Portal</span>
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></span>
+      <span>Manual ATM Portal</span>
     </a>
     <a class="sb-item animals" href="<%=ctx%>/jsp/BarFileReader.jsp" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>Java Source Extractor</span>
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>
+      <span>Java Source Extractor</span>
     </a>
     <a class="sb-item animals" href="<%=ctx%>/jsp/Centralized query storage User.jsp" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>Centralized Query</span>
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>
+      <span>Centralized Query</span>
     </a>
 
     <div class="sb-group">IBCE</div>
     <a class="sb-item animals" href="<%=ctx%>/CronController" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>IBCE DR PR Activity</span>
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>
+      <span>IBCE DR PR Activity</span>
     </a>
     <a class="sb-item animals" href="<%=ctx%>/IbceActionNew" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>IBCE DR PR Active Active</span>
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>
+      <span>IBCE DR PR Active Active</span>
     </a>
 
     <div class="sb-group">Checklists</div>
     <a class="sb-item animals" href="<%=ctx%>/jsp/DRChecklistHomePage.jsp" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><i class="fa-solid fa-list-check"></i></span><span>Module DR Checklist</span>
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
+      <span>Module DR Checklist</span>
     </a>
     <% if("Service Reporting Management".equals(m_strrole)){ %>
     <a class="sb-item animals" href="<%=ctx%>/ServletConn" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><i class="fa-solid fa-list-check"></i></span><span>Adhoc Checklist</span>
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
+      <span>Adhoc Checklist</span>
     </a>
     <% } else if("Service Desk".equals(m_strrole)) { %>
     <a class="sb-item animals" href="<%=ctx%>/jsp/userscorechecklist.jsp" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><i class="fa-solid fa-list-check"></i></span><span>SCORE Checklist</span>
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
+      <span>SCORE Checklist</span>
     </a>
     <% } else if("Event Management".equals(m_strrole)) { %>
     <a class="sb-item animals" href="<%=ctx%>/jsp/MonitoringChecklistUser.jsp" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><i class="fa-solid fa-list-check"></i></span><span>Monitoring Checklist</span>
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
+      <span>Monitoring Checklist</span>
     </a>
     <% } else if("Incident Management".equals(m_strrole)) { %>
     <a class="sb-item animals" href="<%=ctx%>/jsp/IssueMgmtEmployeemain.jsp" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><i class="fa-solid fa-list-check"></i></span><span>Mail's Checklist</span>
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
+      <span>Mail's Checklist</span>
     </a>
     <% } else if("Problem Management".equals(m_strrole)) { %>
     <a class="sb-item animals" href="<%=ctx%>/jsp/Problemuserchecklist.jsp" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><i class="fa-solid fa-list-check"></i></span><span>Problem Mgmt Checklist</span>
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
+      <span>Problem Mgmt Checklist</span>
     </a>
     <% } %>
     <a class="sb-item animals" href="<%=ctx%>/jsp/NightShiftUser.jsp" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><i class="fa-solid fa-moon"></i></span><span>Nightshift Checklist</span>
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span>
+      <span>Nightshift Checklist</span>
     </a>
     <a class="sb-item animals" href="<%=ctx%>/jsp/NightShiftCheckList_NEW.jsp" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><i class="fa-solid fa-moon"></i></span><span>New Nightshift Checklist</span>
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span>
+      <span>New Nightshift Checklist</span>
     </a>
     <a class="sb-item animals" href="<%=ctx%>/jsp/MailsNightShiftChecklist.jsp" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><i class="fa-solid fa-envelope"></i></span><span>Mail's Nightshift Checklist</span>
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></span>
+      <span>Mail's Nightshift Checklist</span>
     </a>
 
     <div class="sb-group">Team</div>
     <% if(("Manager".equals(m_strrole)) || ("Team Lead".equals(m_strrole))){ %>
     <a class="sb-item animals" href="<%=ctx%>/jsp/ExcelRoster.jsp?&role=<%=m_strrole%>" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><i class="fa-solid fa-calendar-days"></i></span><span>Roster</span>
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
+      <span>Roster</span>
     </a>
     <% } else { %>
     <a class="sb-item animals" href="<%=ctx%>/jsp/ExcelRoster_new.jsp?&role=<%=m_strrole%>" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><i class="fa-solid fa-calendar-days"></i></span><span>Roster</span>
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
+      <span>Roster</span>
     </a>
     <% } %>
     <a class="sb-item animals" href="<%=ctx%>/jsp/TicketHome.jsp?&role=<%=m_strrole%>" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><i class="fa-solid fa-ticket"></i></span><span>Ticketing Portal</span>
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M2 9a3 3 0 0 1 3-3h14a3 3 0 0 1 3 3v.5a2.5 2.5 0 0 0 0 5V15a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3v-.5a2.5 2.5 0 0 0 0-5z"/></svg></span>
+      <span>Ticketing Portal</span>
     </a>
 
     <div class="sb-group">Documentation</div>
     <a class="sb-item animals" href="<%=ctx%>/jsp/EISSOPDashboard.jsp?&role=<%=m_strrole%>" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><i class="fa-solid fa-book"></i></span><span>SOP Management</span>
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>
+      <span>SOP Management</span>
     </a>
     <a class="sb-item animals" href="<%=ctx%>/jsp/channel_journey.jsp?&role=<%=m_strrole%>" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><i class="fa-solid fa-route"></i></span><span>Channel Journeys</span>
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/></svg></span>
+      <span>Channel Journeys</span>
     </a>
     <a class="sb-item animals" href="<%=ctx%>/jsp/ProblemCET.jsp" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><i class="fa-solid fa-clipboard-list"></i></span><span>CET Portal</span>
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg></span>
+      <span>CET Portal</span>
     </a>
 
     <div class="sb-group">Search Tools</div>
     <a class="sb-item animals" href="<%=ctx%>/multiple.html" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><i class="fa-solid fa-magnifying-glass"></i></span><span>Search Gen5 Reference</span>
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
+      <span>Search Gen5 Reference</span>
     </a>
     <a class="sb-item animals" href="https://siapp1.sbi.co.in/LotusTransEnq/Home/About?" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><i class="fa-solid fa-magnifying-glass"></i></span><span>Search SI Reference</span>
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
+      <span>Search SI Reference</span>
     </a>
     <a class="sb-item animals" href="<%=ctx%>/jsp/query.jsp" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><i class="fa-solid fa-terminal"></i></span><span>EIS Query Console</span>
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg></span>
+      <span>EIS Query Console</span>
     </a>
     <a class="sb-item animals" href="<%=ctx%>/jsp/ipo-monitor.jsp" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><i class="fa-solid fa-desktop"></i></span><span>IPO Monitor</span>
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></span>
+      <span>IPO Monitor</span>
     </a>
 
     <div class="sb-group">Account</div>
     <a class="sb-item sb-logout" href="<%=ctx%>/login.action">
-      <span class="sb-icon"><i class="fa-solid fa-right-from-bracket"></i></span><span>Logout</span>
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span>
+      <span>Logout</span>
     </a>
 
   </nav>
@@ -583,28 +641,41 @@ html.sb-open .sb-overlay{opacity:1;pointer-events:auto}
 
 <header class="topnav">
   <button class="tn-toggle" onclick="document.documentElement.classList.toggle('sb-open')">
-    <i class="fa-solid fa-bars"></i>
+    <svg class="icon-svg" viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
   </button>
 
   <button class="tn-menu-btn" onclick="toggleSidebar()" title="Show sidebar">
-    <i class="fa-solid fa-bars"></i>
+    <svg class="icon-svg" viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
   </button>
 
   <button class="tn-search" onclick="focusSidebarSearch()">
-    <i class="fa-solid fa-magnifying-glass"></i>
+    <svg class="icon-svg" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
     <span>Search dashboards, reports, tools...</span>
     <span class="kbd">Ctrl K</span>
   </button>
 
   <div class="tn-right">
-    <button class="tn-btn" onclick="toggleTheme()" title="Toggle theme">
-      <i class="fa-solid fa-sun" id="themeIcon"></i>
+    <button class="tn-btn" onclick="toggleTheme()" title="Toggle theme" id="themeBtn">
+      <svg class="icon-svg" id="themeIconSun" viewBox="0 0 24 24" style="display:none;">
+        <circle cx="12" cy="12" r="5"/>
+        <line x1="12" y1="1" x2="12" y2="3"/>
+        <line x1="12" y1="21" x2="12" y2="23"/>
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+        <line x1="1" y1="12" x2="3" y2="12"/>
+        <line x1="21" y1="12" x2="23" y2="12"/>
+        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+      </svg>
+      <svg class="icon-svg" id="themeIconMoon" viewBox="0 0 24 24">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+      </svg>
     </button>
     <a class="tn-btn" href="<%=ctx%>/jsp/TicketHome.jsp?&role=<%=m_strrole%>" title="Ticketing" target="_blank" rel="noopener noreferrer">
-      <i class="fa-solid fa-ticket"></i>
+      <svg class="icon-svg" viewBox="0 0 24 24"><path d="M2 9a3 3 0 0 1 3-3h14a3 3 0 0 1 3 3v.5a2.5 2.5 0 0 0 0 5V15a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3v-.5a2.5 2.5 0 0 0 0-5z"/></svg>
     </a>
     <a class="tn-btn" href="<%=ctx%>/login.action" title="Logout">
-      <i class="fa-solid fa-right-from-bracket"></i>
+      <svg class="icon-svg" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
     </a>
     <div class="tn-avatar" title="<%=m_strrole%>">
       <%= (m_strrole != null && m_strrole.length() > 0) ? m_strrole.substring(0,1).toUpperCase() : "U" %>
@@ -622,9 +693,16 @@ function toggleTheme(){
 }
 function updateThemeIcon(){
   var t = document.documentElement.getAttribute('data-theme') || 'dark';
-  var icon = document.getElementById('themeIcon');
-  if(!icon) return;
-  icon.className = t === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+  var sun = document.getElementById('themeIconSun');
+  var moon = document.getElementById('themeIconMoon');
+  if(!sun || !moon) return;
+  if(t === 'dark'){
+    sun.style.display = 'block';
+    moon.style.display = 'none';
+  } else {
+    sun.style.display = 'none';
+    moon.style.display = 'block';
+  }
 }
 document.addEventListener('DOMContentLoaded', updateThemeIcon);
 updateThemeIcon();
