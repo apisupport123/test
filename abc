@@ -107,6 +107,15 @@
         color: #fff !important;
         border-radius: 4px;
     }
+    td.clickable.disabled {
+        cursor: not-allowed;
+        color: #bbb;
+        font-weight: 500;
+    }
+    td.clickable.disabled:hover {
+        background: transparent !important;
+        color: #bbb !important;
+    }
     td.td-col { color: #b8860b; font-weight: 700; }
     td.bd-col { color: #c0392b; font-weight: 700; }
     .no-data {
@@ -199,6 +208,7 @@
                         </thead>
                         <tbody>
                         <s:iterator value="m_lstFailureServicedetail" var="list">
+                            <s:set var="apiName" value="#list.m_strAPIName" />
                             <tr>
                                 <td><s:property value="#list.m_strAPIName" /></td>
                                 <td><s:property value="#list.m_strbroker_name" /></td>
@@ -206,34 +216,73 @@
                                 <td><s:property value="#list.m_strTOTAL_HITS" /></td>
                                 <td><s:property value="#list.m_strSUCCESS" /></td>
 
-                                <td class="clickable" onclick="showreferenceno('SI001','<s:property value="#list.m_strAPIName" />')">
+                                <!-- SI001 -->
+                                <s:set var="v" value="#list.m_str001" />
+                                <td class="clickable ${(v == null || v == '0' || v.trim() == '') ? 'disabled' : ''}"
+                                    onclick="showreferenceno('SI001','${apiName}','${v}')">
                                     <s:property value="#list.m_str001" />
                                 </td>
-                                <td class="clickable" onclick="showreferenceno('002','<s:property value="#list.m_strAPIName" />')">
+
+                                <!-- 002 -->
+                                <s:set var="v" value="#list.m_str002" />
+                                <td class="clickable ${(v == null || v == '0' || v.trim() == '') ? 'disabled' : ''}"
+                                    onclick="showreferenceno('002','${apiName}','${v}')">
                                     <s:property value="#list.m_str002" />
                                 </td>
-                                <td class="clickable" onclick="showreferenceno('SI002','<s:property value="#list.m_strAPIName" />')">
+
+                                <!-- SI002 -->
+                                <s:set var="v" value="#list.m_strSI002" />
+                                <td class="clickable ${(v == null || v == '0' || v.trim() == '') ? 'disabled' : ''}"
+                                    onclick="showreferenceno('SI002','${apiName}','${v}')">
                                     <s:property value="#list.m_strSI002" />
                                 </td>
-                                <td class="clickable" onclick="showreferenceno('SI007','<s:property value="#list.m_strAPIName" />')">
+
+                                <!-- SI007 -->
+                                <s:set var="v" value="#list.m_str007" />
+                                <td class="clickable ${(v == null || v == '0' || v.trim() == '') ? 'disabled' : ''}"
+                                    onclick="showreferenceno('SI007','${apiName}','${v}')">
                                     <s:property value="#list.m_str007" />
                                 </td>
-                                <td class="clickable" onclick="showreferenceno('SI051','<s:property value="#list.m_strAPIName" />')">
+
+                                <!-- SI051 -->
+                                <s:set var="v" value="#list.m_str051" />
+                                <td class="clickable ${(v == null || v == '0' || v.trim() == '') ? 'disabled' : ''}"
+                                    onclick="showreferenceno('SI051','${apiName}','${v}')">
                                     <s:property value="#list.m_str051" />
                                 </td>
-                                <td class="clickable" onclick="showreferenceno('014','<s:property value="#list.m_strAPIName" />')">
+
+                                <!-- 014 -->
+                                <s:set var="v" value="#list.m_str014" />
+                                <td class="clickable ${(v == null || v == '0' || v.trim() == '') ? 'disabled' : ''}"
+                                    onclick="showreferenceno('014','${apiName}','${v}')">
                                     <s:property value="#list.m_str014" />
                                 </td>
-                                <td class="clickable" onclick="showreferenceno('SI014','<s:property value="#list.m_strAPIName" />')">
+
+                                <!-- SI014 -->
+                                <s:set var="v" value="#list.m_strSI014" />
+                                <td class="clickable ${(v == null || v == '0' || v.trim() == '') ? 'disabled' : ''}"
+                                    onclick="showreferenceno('SI014','${apiName}','${v}')">
                                     <s:property value="#list.m_strSI014" />
                                 </td>
-                                <td class="clickable" onclick="showreferenceno('PARSING_EXCEPTION','<s:property value="#list.m_strAPIName" />')">
+
+                                <!-- PARSING EXCEPTION -->
+                                <s:set var="v" value="#list.m_strPARSINGEXCEPTION" />
+                                <td class="clickable ${(v == null || v == '0' || v.trim() == '') ? 'disabled' : ''}"
+                                    onclick="showreferenceno('PARSING_EXCEPTION','${apiName}','${v}')">
                                     <s:property value="#list.m_strPARSINGEXCEPTION" />
                                 </td>
-                                <td class="clickable" onclick="showreferenceno('SI569','<s:property value="#list.m_strAPIName" />')">
+
+                                <!-- SI569 -->
+                                <s:set var="v" value="#list.m_str569" />
+                                <td class="clickable ${(v == null || v == '0' || v.trim() == '') ? 'disabled' : ''}"
+                                    onclick="showreferenceno('SI569','${apiName}','${v}')">
                                     <s:property value="#list.m_str569" />
                                 </td>
-                                <td class="clickable" onclick="showreferenceno('SI570','<s:property value="#list.m_strAPIName" />')">
+
+                                <!-- SI570 -->
+                                <s:set var="v" value="#list.m_str570" />
+                                <td class="clickable ${(v == null || v == '0' || v.trim() == '') ? 'disabled' : ''}"
+                                    onclick="showreferenceno('SI570','${apiName}','${v}')">
                                     <s:property value="#list.m_str570" />
                                 </td>
 
@@ -255,7 +304,11 @@
 </div>
 
 <script>
-function showreferenceno(errorcode, apiname) {
+function showreferenceno(errorcode, apiname, cellValue) {
+    // Disable click if value is 0 / empty
+    if (cellValue === null || cellValue === undefined || cellValue === '' || cellValue === '0' || String(cellValue).trim() === '') {
+        return;
+    }
     var serviceCategory = document.getElementById("ServiceCategory").value;
     var url = '${pageContext.request.contextPath}/Multiple?action=showfailurerefernceno'
         + '&errorcode=' + encodeURIComponent(errorcode)
