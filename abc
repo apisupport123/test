@@ -1,647 +1,850 @@
-<%@page pageEncoding="UTF-8"%>
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>EIS · Navigation</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<script src="<%=request.getContextPath()%>/js/jquery.min.js"></script>
-<style>
-:root{
-  --brand:#F86F03;
-  --brand-2:#FF9A3D;
-  --brand-light:#FFF4EC;
-
-  --ink:#0A0A0A;
-  --muted:#6B7280;
-  --line:#EAEAEA;
-  --bg:#F7F7F5;
-  --card:#FFFFFF;
-  --sidebar-bg:#FFFFFF;
-  --sidebar-text:#4B5563;
-  --sidebar-text-hover:#0A0A0A;
-  --sidebar-hover:#F5F5F4;
-  --sidebar-active:#FFF4EC;
-  --topnav-bg:rgba(247,247,245,.85);
-  --hero-dark:#1A1A1A;
-  --hero-dark-2:#2A2A2A;
-
-  --topnav-h:64px;
-  --sidebar-w:260px;
-}
-html[data-theme="dark"]{
-  --ink:#F5F5F5;
-  --muted:#9CA3AF;
-  --line:#272727;
-  --bg:#0F0F0F;
-  --card:#161616;
-  --sidebar-bg:#131313;
-  --sidebar-text:#A1A1AA;
-  --sidebar-text-hover:#FFFFFF;
-  --sidebar-hover:#1F1F1F;
-  --sidebar-active:#1E1408;
-  --topnav-bg:rgba(15,15,15,.85);
-  --hero-dark:#0B0B0B;
-  --hero-dark-2:#1A1A1A;
-}
-
-*{margin:0;padding:0;box-sizing:border-box}
-html,body{height:100%}
-body{
-  font-family:'Inter',system-ui,sans-serif;
-  background:var(--bg);
-  color:var(--ink);
-  -webkit-font-smoothing:antialiased;
-  transition:background .3s ease,color .3s ease;
-}
-.primary-nav,.hamburger,.menu,.overflow-container{display:none!important}
-
-/* ============ SIDEBAR ============ */
-.sidebar{
-  position:fixed;top:0;left:0;bottom:0;
-  width:var(--sidebar-w);
-  background:var(--sidebar-bg);
-  border-right:1px solid var(--line);
-  z-index:60;
-  display:flex;flex-direction:column;
-  transition:transform .3s cubic-bezier(.4,0,.2,1),background .3s ease,border-color .3s ease;
-}
-html.sb-collapsed .sidebar{transform:translateX(-100%)}
-html.sb-collapsed .topnav{left:0}
-html.sb-collapsed .new-wrapper{margin-left:0}
-
-.sb-head{
-  padding:16px 16px 16px 20px;
-  height:var(--topnav-h);
-  display:flex;align-items:center;gap:11px;
-  border-bottom:1px solid var(--line);
-  flex-shrink:0;
-  transition:border-color .3s ease;
-}
-.sb-logo{
-  width:36px;height:36px;
-  background:linear-gradient(135deg,var(--brand),var(--brand-2));
-  border-radius:10px;
-  display:grid;place-items:center;color:#fff;font-size:.9rem;
-  box-shadow:0 6px 16px -6px var(--brand);
-  flex-shrink:0;
-}
-.sb-title{
-  font-weight:800;font-size:.95rem;
-  letter-spacing:-.3px;line-height:1.1;
-  flex:1;min-width:0;
-}
-.sb-title small{
-  display:block;font-size:.68rem;font-weight:500;
-  color:var(--muted);letter-spacing:.4px;text-transform:uppercase;margin-top:2px;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-}
-.sb-collapse-btn{
-  width:28px;height:28px;
-  display:grid;place-items:center;
-  background:transparent;
-  border:1px solid var(--line);
-  border-radius:7px;
-  color:var(--muted);
-  cursor:pointer;
-  font-size:.7rem;
-  transition:all .15s ease;
-  flex-shrink:0;
-}
-.sb-collapse-btn:hover{
-  background:var(--brand);
-  border-color:var(--brand);
-  color:#fff;
-}
-
-.sb-search{padding:14px 16px 8px;flex-shrink:0}
-.sb-search-box{position:relative;display:flex;align-items:center}
-.sb-search-box i{
-  position:absolute;left:12px;color:var(--muted);font-size:.8rem;pointer-events:none;
-}
-.sb-search-box input{
-  width:100%;padding:9px 12px 9px 34px;
-  background:var(--sidebar-hover);
-  border:1px solid transparent;
-  border-radius:9px;
-  color:var(--ink);
-  font-family:inherit;font-size:.82rem;font-weight:500;outline:none;
-  transition:all .2s ease;
-}
-.sb-search-box input::placeholder{color:var(--muted);opacity:.7}
-.sb-search-box input:focus{
-  background:var(--card);
-  border-color:var(--brand);
-  box-shadow:0 0 0 3px rgba(248,111,3,.12);
-}
-
-.sb-body{
-  flex:1;overflow-y:auto;padding:8px 12px 20px;
-}
-.sb-body::-webkit-scrollbar{width:6px}
-.sb-body::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px}
-
-.sb-group{
-  padding:14px 10px 6px;
-  font-size:.68rem;font-weight:700;
-  color:var(--muted);letter-spacing:.8px;text-transform:uppercase;
-}
-.sb-item{
-  display:flex;align-items:center;gap:11px;
-  padding:8px 10px;border-radius:8px;
-  font-size:.83rem;font-weight:500;
-  color:var(--sidebar-text);text-decoration:none;
-  transition:all .15s ease;cursor:pointer;line-height:1.35;
-}
-.sb-item:hover{
-  background:var(--sidebar-hover);
-  color:var(--sidebar-text-hover);
-}
-.sb-item .sb-icon{
-  width:26px;height:26px;
-  display:grid;place-items:center;
-  background:var(--sidebar-hover);
-  border-radius:7px;font-size:.72rem;
-  color:var(--sidebar-text);flex-shrink:0;
-  transition:all .15s ease;
-}
-.sb-item:hover .sb-icon{
-  background:var(--brand-light);color:var(--brand);
-}
-html[data-theme="dark"] .sb-item:hover .sb-icon{
-  background:rgba(248,111,3,.15);color:var(--brand);
-}
-.sb-item.sb-active{
-  background:var(--sidebar-active);
-  color:var(--brand);font-weight:600;
-}
-.sb-item.sb-active .sb-icon{background:var(--brand);color:#fff}
-.sb-item.sb-logout{color:#E53935;margin-top:6px}
-.sb-item.sb-logout .sb-icon{background:#FFEBEE;color:#E53935}
-.sb-item.sb-logout:hover{background:#FFEBEE;color:#C62828}
-.sb-item.sb-logout:hover .sb-icon{background:#E53935;color:#fff}
-html[data-theme="dark"] .sb-item.sb-logout{color:#FF6B6B}
-html[data-theme="dark"] .sb-item.sb-logout .sb-icon{background:rgba(229,57,53,.15);color:#FF6B6B}
-
-/* ============ TOPNAV ============ */
-.topnav{
-  position:fixed;top:0;left:var(--sidebar-w);right:0;
-  height:var(--topnav-h);
-  background:var(--topnav-bg);
-  backdrop-filter:blur(14px) saturate(180%);
-  -webkit-backdrop-filter:blur(14px) saturate(180%);
-  border-bottom:1px solid var(--line);
-  z-index:50;
-  display:flex;align-items:center;padding:0 24px;gap:16px;
-  transition:left .3s cubic-bezier(.4,0,.2,1),background .3s ease,border-color .3s ease;
-}
-.tn-toggle{
-  display:none;width:36px;height:36px;
-  background:transparent;border:1px solid var(--line);
-  border-radius:9px;color:var(--ink);cursor:pointer;font-size:.85rem;
-}
-.tn-menu-btn{
-  display:grid;place-items:center;
-  width:36px;height:36px;
-  background:var(--sidebar-hover);
-  border:1px solid var(--line);
-  border-radius:9px;color:var(--ink);
-  cursor:pointer;font-size:.85rem;
-  transition:all .15s ease;
-}
-.tn-menu-btn:hover{
-  background:var(--brand);border-color:var(--brand);color:#fff;
-}
-.tn-search{
-  flex:1;max-width:520px;height:40px;
-  background:var(--card);
-  border:1px solid var(--line);
-  border-radius:11px;padding:0 14px;
-  display:flex;align-items:center;gap:10px;
-  color:var(--muted);font-size:.83rem;cursor:pointer;
-  transition:all .2s ease;font-family:inherit;
-}
-.tn-search:hover{
-  border-color:var(--brand);color:var(--ink);
-  box-shadow:0 4px 14px rgba(248,111,3,.06);
-}
-.tn-search .kbd{
-  margin-left:auto;
-  display:inline-flex;align-items:center;
-  padding:3px 7px;background:var(--sidebar-hover);
-  border:1px solid var(--line);border-radius:6px;
-  font-size:.68rem;font-weight:600;color:var(--muted);
-}
-.tn-right{margin-left:auto;display:flex;align-items:center;gap:10px}
-.tn-btn{
-  width:36px;height:36px;
-  display:grid;place-items:center;
-  background:transparent;border:1px solid var(--line);
-  border-radius:9px;color:var(--ink);
-  cursor:pointer;font-size:.85rem;
-  transition:all .15s ease;text-decoration:none;
-}
-.tn-btn:hover{background:var(--brand);border-color:var(--brand);color:#fff}
-.tn-avatar{
-  width:36px;height:36px;border-radius:50%;
-  background:linear-gradient(135deg,var(--brand),var(--brand-2));
-  display:grid;place-items:center;color:#fff;
-  font-weight:700;font-size:.85rem;cursor:pointer;
-  border:2px solid var(--card);
-  box-shadow:0 2px 8px rgba(0,0,0,.08);
-}
-
-.new-wrapper{
-  margin-left:var(--sidebar-w);
-  padding-top:var(--topnav-h);
-  transition:margin-left .3s cubic-bezier(.4,0,.2,1);
-  min-height:100vh;
-}
-
-.sb-overlay{
-  position:fixed;inset:0;
-  background:rgba(10,10,10,.4);
-  backdrop-filter:blur(2px);
-  z-index:55;opacity:0;pointer-events:none;
-  transition:opacity .25s ease;
-}
-html.sb-open .sb-overlay{opacity:1;pointer-events:auto}
-
-@media (max-width:900px){
-  .sidebar{transform:translateX(-100%);box-shadow:0 0 40px rgba(0,0,0,.1)}
-  html.sb-open .sidebar{transform:translateX(0)}
-  .topnav{left:0}
-  .tn-toggle{display:grid;place-items:center}
-  .tn-menu-btn{display:none}
-  .new-wrapper{margin-left:0}
-  .sb-collapse-btn{display:none}
-}
-</style>
-<script>
-(function(){
-  try{
-    var t = localStorage.getItem('eis-theme') || 'light';
-    document.documentElement.setAttribute('data-theme', t);
-    var collapsed = localStorage.getItem('eis-sidebar-collapsed');
-    if(collapsed === 'true'){
-      document.documentElement.classList.add('sb-collapsed');
+<%@ page import="java.sql.*, java.util.*, java.text.*" %>
+<%@ page import="com.jdbc.DBUtilityAuto" %>
+<%@ page pageEncoding="UTF-8" %>
+<%
+    // Parse start/end – default to previous hour
+    String startParam = request.getParameter("start");
+    String endParam = request.getParameter("end");
+    String showQueries = request.getParameter("showQueries");
+    
+    java.util.Date startDate, endDate;
+    
+    if (startParam != null && !startParam.isEmpty() && endParam != null && !endParam.isEmpty()) {
+        try {
+            SimpleDateFormat iso = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm");
+            startDate = iso.parse(startParam);
+            endDate = iso.parse(endParam);
+        } catch (Exception e) {
+            Calendar defaultCal = Calendar.getInstance();
+            defaultCal.set(Calendar.MINUTE, 0);
+            defaultCal.set(Calendar.SECOND, 0);
+            defaultCal.set(Calendar.MILLISECOND, 0);
+            defaultCal.add(Calendar.HOUR_OF_DAY, -1);
+            startDate = defaultCal.getTime();
+            defaultCal.add(Calendar.HOUR_OF_DAY, 1);
+            endDate = defaultCal.getTime();
+        }
+    } else {
+        Calendar cal = Calendar.getInstance();
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+        cal.add(Calendar.HOUR_OF_DAY, -1);
+        startDate = cal.getTime();
+        cal.add(Calendar.HOUR_OF_DAY, 1);
+        endDate = cal.getTime();
     }
-  }catch(e){}
-})();
-</script>
+    
+    if (startDate == null || endDate == null) {
+        Calendar defaultCal = Calendar.getInstance();
+        defaultCal.set(Calendar.MINUTE, 0);
+        defaultCal.set(Calendar.SECOND, 0);
+        defaultCal.set(Calendar.MILLISECOND, 0);
+        defaultCal.add(Calendar.HOUR_OF_DAY, -1);
+        startDate = defaultCal.getTime();
+        defaultCal.add(Calendar.HOUR_OF_DAY, 1);
+        endDate = defaultCal.getTime();
+    }
+
+    SimpleDateFormat oracleFmt = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss");
+    String fromStr = oracleFmt.format(startDate).toUpperCase();
+    String toStr = oracleFmt.format(endDate).toUpperCase();
+    
+    SimpleDateFormat displayFmt = new SimpleDateFormat("dd-MMM-yyyy HH:mm");
+    String rangeDisplay = displayFmt.format(startDate) + " to " + displayFmt.format(endDate);
+    String startIso = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm").format(startDate);
+    String endIso = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm").format(endDate);
+
+    int selectedHour = startDate.getHours();
+
+    Calendar partCal = Calendar.getInstance();
+    partCal.setTime(startDate);
+    String[] months = {"JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"};
+    String partition = months[partCal.get(Calendar.MONTH)] + "_" + String.valueOf(partCal.get(Calendar.YEAR)).substring(2);
+
+    String[] tables = {
+        "EIS_TD_PERCENTAGE_HOURLY",
+        "MAJOR_DOWNSTREAM_HOURLY",
+        "CKYC_STATUS_HOURLY",
+        "PAN_STATUS_HOURLY",
+        "ACCOUNT_OPENING_HOURLY",
+        "YONO_STATUS_HOURLY",
+        "NON_YONO_STATUS_HOURLY",
+        "NPCI_STATUS_HOURLY"
+    };
+    String[] displayNames = {
+        "Overall EIS TD%",
+        "Major Downstream",
+        "CKYC Status",
+        "PAN Status",
+        "Account Opening",
+        "YONO",
+        "Non-YONO",
+        "NPCI"
+    };
+    String[] sourceDB = {
+        "IIB", "IIB", "IIB", "IIB", "IIB", "IIB", "IIB", "SIDB"
+    };
+
+    Map<String, List<Map<String, Object>>> tableData = new LinkedHashMap<>();
+    try (Connection conn = DBUtilityAuto.getReportDBConnection()) {
+        for (String tbl : tables) {
+            String sql = "SELECT * FROM " + tbl + " WHERE START_TIME >= ? AND START_TIME < ? ORDER BY START_TIME";
+            List<Map<String, Object>> rows = new ArrayList<>();
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setTimestamp(1, new java.sql.Timestamp(startDate.getTime()));
+                ps.setTimestamp(2, new java.sql.Timestamp(endDate.getTime()));
+                try (ResultSet rs = ps.executeQuery()) {
+                    ResultSetMetaData meta = rs.getMetaData();
+                    int colCount = meta.getColumnCount();
+                    while (rs.next()) {
+                        Map<String, Object> row = new LinkedHashMap<>();
+                        for (int i = 1; i <= colCount; i++) {
+                            row.put(meta.getColumnName(i).toUpperCase(), rs.getObject(i));
+                        }
+                        rows.add(row);
+                    }
+                }
+            } catch (SQLException e) {
+                System.err.println("Error fetching data for table: " + tbl);
+                e.printStackTrace();
+            }
+            tableData.put(tbl, rows);
+        }
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+
+    Set<String> hiddenCols = new HashSet<>(Arrays.asList("ID", "START_TIME", "END_TIME", "QUERY_DURATION_SEC"));
+
+    String queriesDisplay = "";
+    if ("true".equals(showQueries)) {
+        StringBuilder sb = new StringBuilder();
+        String part = " PARTITION(" + partition + ")";
+        String fromDate = fromStr;
+        String toDate = toStr;
+
+        sb.append("-- Query 0: Overall EIS TD%\n");
+        sb.append("SELECT /*+ PARALLEL(2) */ COUNT(*) AS TOTAL_COUNT,\n");
+        sb.append("COUNT(CASE WHEN ERROR_CODE IN ('SI002','SI014','SI001','SI051','SI007','SI569','SI570') THEN 1 END) AS TD_COUNT,\n");
+        sb.append("ROUND((COUNT(CASE WHEN ERROR_CODE IN ('SI002','SI014','SI001','SI051','SI007','SI569','SI570') THEN 1 END) * 100.0) / NULLIF(COUNT(*), 0), 2) AS TD_PERCENT\n");
+        sb.append("FROM EISAPP.api_log" + part + "\n");
+        sb.append("WHERE request_date_time BETWEEN TO_DATE('" + fromDate + "', 'DD-MON-YYYY HH24:MI:SS')\n");
+        sb.append("AND TO_DATE('" + toDate + "', 'DD-MON-YYYY HH24:MI:SS');\n\n");
+
+        sb.append("-- Query 1: Major Downstream\n");
+        sb.append("SELECT /*+ PARALLEL(2) */ txn_endpoint, COUNT(*) AS TOTAL_COUNT,\n");
+        sb.append("COUNT(CASE WHEN (ERROR_CODE IS NULL OR NVL(SUBSTR(error_code,3,3),'A') NOT IN ('001','002','007','051','014') OR error_code IN ('00014','70007','00017','CK001')) THEN 1 END) AS SUCCESS_COUNT,\n");
+        sb.append("ROUND((COUNT(CASE WHEN (ERROR_CODE IS NULL OR NVL(SUBSTR(error_code,3,3),'A') NOT IN ('001','002','007','051','014') OR error_code IN ('00014','70007','00017','CK001')) THEN 1 END) * 100.0) / NULLIF(COUNT(*), 0), 2) AS SUCCESS_PERCENT,\n");
+        sb.append("COUNT(CASE WHEN SUBSTR(error_code,3,3) IN ('001','002','007','051','014','111') AND error_code <> '00014' THEN 1 END) AS TD_COUNT,\n");
+        sb.append("ROUND((COUNT(CASE WHEN SUBSTR(error_code,3,3) IN ('001','002','007','051','014','111') AND error_code <> '00014' THEN 1 END) * 100.0) / NULLIF(COUNT(*), 0), 2) AS TD_PERCENT\n");
+        sb.append("FROM eisapp.BACKEND_LOG" + part + "\n");
+        sb.append("WHERE (txn_endpoint IN ('DCMS','Vault','NSDL','HRMS') AND request_date_time BETWEEN TO_DATE('" + fromDate + "', 'DD-MON-YYYY HH24:MI:SS') AND TO_DATE('" + toDate + "', 'DD-MON-YYYY HH24:MI:SS'))\n");
+        sb.append("OR (txn_endpoint = 'ATM' AND creation_date_time BETWEEN TO_DATE('" + fromDate + "', 'DD-MON-YYYY HH24:MI:SS') AND TO_DATE('" + toDate + "', 'DD-MON-YYYY HH24:MI:SS'))\n");
+        sb.append("GROUP BY txn_endpoint ORDER BY txn_endpoint;\n\n");
+
+        sb.append("-- Query 2: CKYC Status\n");
+        sb.append("SELECT /*+ PARALLEL(2) */ COUNT(*) AS TOTAL_COUNT,\n");
+        sb.append("COUNT(CASE WHEN ERROR_CODE IS NULL OR NVL(SUBSTR(error_code,3,3),'A') NOT IN ('001','002','007','051','014') OR error_code IN ('00014','70007','00017','CK001') THEN 1 END) AS SUCCESS_COUNT,\n");
+        sb.append("ROUND((COUNT(CASE WHEN ERROR_CODE IS NULL OR NVL(SUBSTR(error_code,3,3),'A') NOT IN ('001','002','007','051','014') OR error_code IN ('00014','70007','00017','CK001') THEN 1 END) * 100.0) / NULLIF(COUNT(*), 0), 2) AS SUCCESS_PERCENTAGE\n");
+        sb.append("FROM eisapp.BACKEND_LOG" + part + "\n");
+        sb.append("WHERE txn_endpoint='CKYC' AND request_date_time BETWEEN TO_DATE('" + fromDate + "', 'DD-MON-YYYY HH24:MI:SS') AND TO_DATE('" + toDate + "', 'DD-MON-YYYY HH24:MI:SS');\n\n");
+
+        sb.append("-- Query 3: PAN Status\n");
+        sb.append("SELECT /*+ PARALLEL(2) */ COUNT(*) AS TOTAL_COUNT,\n");
+        sb.append("COUNT(CASE WHEN error_code IS NULL AND response_status = '0' THEN 1 END) AS SUCCESS_COUNT,\n");
+        sb.append("COUNT(CASE WHEN (NVL(SUBSTR(error_code,3,3),'A') NOT IN ('001','002','007','051','014') OR error_code IN ('00014','70007')) AND RESPONSE_STATUS NOT IN ('0','SUCCESS') THEN 1 END) AS OTHER_COUNT,\n");
+        sb.append("ROUND((COUNT(CASE WHEN error_code IS NULL AND response_status = '0' THEN 1 END) + COUNT(CASE WHEN (NVL(SUBSTR(error_code,3,3),'A') NOT IN ('001','002','007','051','014') OR error_code IN ('00014','70007')) AND RESPONSE_STATUS NOT IN ('0','SUCCESS') THEN 1 END)) * 100.0 / NULLIF(COUNT(*), 0), 2) AS PAN_SUCCESS\n");
+        sb.append("FROM EISAPP.api_log" + part + "\n");
+        sb.append("WHERE url IN ('http://eispri.sbi.co.in:3002/dedupOn_bth/PANMobile/customers', 'http://eispri.sbi.co.in:3002/dedupOn/PANMobile/customers', 'http://eispri.sbi.co.in:3016/misc/PAN/Enquiry/details/misc', 'http://eispri.sbi.co.in:3013/misc/PAN/Details/misc', 'http://eispri.sbi.co.in:3013/misc/PAN_bth/Details/misc', 'http://eispri.sbi.co.in:3002/dedupOn_th/PANMobile/customers', 'http://eispri.sbi.co.in:3002/dedupOn_bth/PANMobileCheck/customers', 'http://eispri.sbi.co.in:3013/misc/PAN_th/Details/misc')\n");
+        sb.append("AND request_date_time BETWEEN TO_DATE('" + fromDate + "', 'DD-MON-YYYY HH24:MI:SS') AND TO_DATE('" + toDate + "', 'DD-MON-YYYY HH24:MI:SS');\n\n");
+
+        sb.append("-- Query 4: Account Opening\n");
+        sb.append("WITH urls AS (SELECT 'http://eispri.sbi.co.in:3002/personal/cifCreation/customers' AS url FROM DUAL UNION ALL SELECT 'http://eispri.sbi.co.in:3002/personal_th/cifCreation/customers' FROM DUAL UNION ALL SELECT 'http://eispri.sbi.co.in:3002/ckyc/Creation/customers' FROM DUAL UNION ALL SELECT 'http://eispri.sbi.co.in:3002/ckyc_th/Creation/customers' FROM DUAL UNION ALL SELECT 'http://eispri.sbi.co.in:3011/amlockName/acknowledgeDetails/misc' FROM DUAL UNION ALL SELECT 'http://eispri.sbi.co.in:3011/amlockName_th/acknowledgeDetails/misc' FROM DUAL UNION ALL SELECT 'http://eispri.sbi.co.in:3002/depositAccounts_th/opening/customers' FROM DUAL UNION ALL SELECT 'http://eispri.sbi.co.in:3002/depositAccounts/opening/customers' FROM DUAL UNION ALL SELECT 'http://eispri.sbi.co.in:3001/upload/signature/misc' FROM DUAL UNION ALL SELECT 'http://eispri.sbi.co.in:3001/upload_th/signature/misc' FROM DUAL UNION ALL SELECT 'http://eispri.sbi.co.in:3001/nominee/create/accounts' FROM DUAL UNION ALL SELECT 'http://eispri.sbi.co.in:3001/nominee_th/create/accounts' FROM DUAL)\n");
+        sb.append("SELECT COUNT(*) AS TOTAL_COUNT,\n");
+        sb.append("COUNT(CASE WHEN (SUBSTR(error_code,3,3) IN ('002','014') OR error_code IN ('SI001','SI007','SI051','SI569','SI570')) AND error_code <> '00014' THEN 1 END) AS TD_COUNT,\n");
+        sb.append("ROUND(COUNT(CASE WHEN (SUBSTR(error_code,3,3) IN ('002','014') OR error_code IN ('SI001','SI007','SI051','SI569','SI570')) AND error_code <> '00014' THEN 1 END) * 100.0 / NULLIF(COUNT(*), 0), 2) AS TD_PERCENT,\n");
+        sb.append("COUNT(CASE WHEN (NVL(SUBSTR(error_code,3,3),'A') NOT IN ('001','002','007','051','014') OR error_code IN ('00014','70007')) AND RESPONSE_STATUS NOT IN ('0','SUCCESS') THEN 1 END) AS BD_COUNT,\n");
+        sb.append("ROUND(COUNT(CASE WHEN (NVL(SUBSTR(error_code,3,3),'A') NOT IN ('001','002','007','051','014') OR error_code IN ('00014','70007')) AND RESPONSE_STATUS NOT IN ('0','SUCCESS') THEN 1 END) * 100.0 / NULLIF(COUNT(*), 0), 2) AS BD_PERCENT\n");
+        sb.append("FROM eisapp.api_log" + part + "\n");
+        sb.append("WHERE url IN (SELECT url FROM urls) AND request_date_time BETWEEN TO_DATE('" + fromDate + "', 'DD-MON-YYYY HH24:MI:SS') AND TO_DATE('" + toDate + "', 'DD-MON-YYYY HH24:MI:SS');\n\n");
+
+        sb.append("-- Query 5: YONO\n");
+        sb.append("SELECT /*+ PARALLEL(2) */ COUNT(*) AS TOTAL_COUNT,\n");
+        sb.append("COUNT(CASE WHEN (error_code IS NULL AND response_status IN ('0','SUCCESS')) OR SUBSTR(error_code,3,3) NOT IN ('001','002','007','051','014') THEN 1 END) AS SUCCESS_COUNT,\n");
+        sb.append("ROUND(COUNT(CASE WHEN (error_code IS NULL AND response_status IN ('0','SUCCESS')) OR SUBSTR(error_code,3,3) NOT IN ('001','002','007','051','014') THEN 1 END) * 100.0 / NULLIF(COUNT(*), 0), 2) AS SUCCESS_PERCENT,\n");
+        sb.append("COUNT(CASE WHEN error_code IS NOT NULL AND response_status NOT IN ('0','SUCCESS') THEN 1 END) AS FAILURE_COUNT\n");
+        sb.append("FROM eisapp.api_log" + part + "\n");
+        sb.append("WHERE source_id IN ('YA','YB') AND request_date_time BETWEEN TO_DATE('" + fromDate + "', 'DD-MON-YYYY HH24:MI:SS') AND TO_DATE('" + toDate + "', 'DD-MON-YYYY HH24:MI:SS');\n\n");
+
+        sb.append("-- Query 6: Non-YONO\n");
+        sb.append("SELECT /*+ PARALLEL(2) */ COUNT(*) AS TOTAL_COUNT,\n");
+        sb.append("COUNT(CASE WHEN (error_code IS NULL AND response_status IN ('0','SUCCESS')) OR SUBSTR(error_code,3,3) NOT IN ('001','002','007','051','014') THEN 1 END) AS SUCCESS_COUNT,\n");
+        sb.append("ROUND(COUNT(CASE WHEN (error_code IS NULL AND response_status IN ('0','SUCCESS')) OR SUBSTR(error_code,3,3) NOT IN ('001','002','007','051','014') THEN 1 END) * 100.0 / NULLIF(COUNT(*), 0), 2) AS SUCCESS_PERCENT,\n");
+        sb.append("COUNT(CASE WHEN error_code IS NOT NULL AND response_status NOT IN ('0','SUCCESS') THEN 1 END) AS FAILURE_COUNT\n");
+        sb.append("FROM eisapp.api_log" + part + "\n");
+        sb.append("WHERE source_id NOT IN ('YA','YB') AND request_date_time BETWEEN TO_DATE('" + fromDate + "', 'DD-MON-YYYY HH24:MI:SS') AND TO_DATE('" + toDate + "', 'DD-MON-YYYY HH24:MI:SS');\n\n");
+
+        sb.append("-- Query 7: NPCI\n");
+        sb.append("SELECT /*+ PARALLEL(2) */ COUNT(*) AS TOTAL_COUNT,\n");
+        sb.append("COUNT(CASE WHEN ERROR_CODE IS NULL OR error_code NOT IN ('SI207','SI392','SI001') THEN 1 END) AS SUCCESS_COUNT,\n");
+        sb.append("ROUND(COUNT(CASE WHEN ERROR_CODE IS NULL OR error_code NOT IN ('SI207','SI392','SI001') THEN 1 END) * 100.0 / NULLIF(COUNT(*), 0), 2) AS SUCCESS_PERCENT,\n");
+        sb.append("COUNT(CASE WHEN error_code IN ('SI207','SI392','SI001') THEN 1 END) AS TD_COUNT,\n");
+        sb.append("COUNT(CASE WHEN error_code IN ('SI207','SI392') THEN 1 END) AS SPECIFIC_TD_COUNT,\n");
+        sb.append("ROUND(COUNT(CASE WHEN error_code IN ('SI207','SI392') THEN 1 END) * 100.0 / NULLIF(COUNT(*), 0), 2) AS TD_PERCENT\n");
+        sb.append("FROM SBISI.EKYC_log\n");
+        sb.append("WHERE REQ_DATE_TIME BETWEEN TO_DATE('" + fromDate + "', 'DD-MON-YYYY HH24:MI:SS') AND TO_DATE('" + toDate + "', 'DD-MON-YYYY HH24:MI:SS');\n");
+
+        queriesDisplay = sb.toString();
+    }
+    
+    System.out.println("Stat Query:- "+ queriesDisplay);
+%>
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Stat Mgmt Dashboard</title>
+    <link href="<%=request.getContextPath()%>/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="<%=request.getContextPath()%>/css/all.min.css">
+
+    <style>
+    body {
+      background: var(--bg) !important;
+      color: var(--ink) !important;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      margin: 0;
+    }
+    .new-wrapper { padding: 0 !important; }
+    .page-container {
+      padding: 28px 32px 48px;
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+    .page-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 16px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+    .page-head .ttl {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 800;
+      font-size: 1.65rem;
+      letter-spacing: -0.6px;
+      color: var(--ink);
+      line-height: 1.1;
+      margin: 0;
+    }
+    .page-head .ttl .ttl-icon {
+      width: 44px; height: 44px;
+      display: grid; place-items: center;
+      background: var(--brand-light);
+      color: var(--brand);
+      border-radius: 12px;
+      font-size: 1.05rem;
+    }
+    html[data-theme="dark"] .page-head .ttl .ttl-icon {
+      background: rgba(248,111,3,.15);
+    }
+    .page-head .sub {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin: 6px 0 0 56px;
+      font-weight: 500;
+    }
+    .time-badge {
+      background: var(--card);
+      border: 1px solid var(--line);
+      padding: 10px 20px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      color: var(--ink);
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.03);
+    }
+    .time-badge i { color: var(--brand); }
+
+    .controls-card {
+      border-radius: 20px;
+      border: 1px solid var(--line) !important;
+      background: var(--card) !important;
+      padding: 24px;
+      box-shadow: 0 4px 20px rgba(0,0,0,.03);
+      margin-bottom: 28px;
+      transition: background .3s ease, border-color .3s ease;
+    }
+    html[data-theme="dark"] .controls-card {
+      box-shadow: 0 4px 20px rgba(0,0,0,.3);
+    }
+    .controls-card .form-label {
+      color: var(--ink);
+      font-weight: 600;
+      font-size: 0.82rem;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .controls-card .form-label i { color: var(--brand); }
+    .controls-card .form-control {
+      border-radius: 11px;
+      border: 1.5px solid var(--line);
+      background: var(--bg);
+      color: var(--ink);
+      padding: 10px 14px;
+      font-size: 0.88rem;
+      transition: all .15s ease;
+      font-family: inherit;
+    }
+    .controls-card .form-control:focus {
+      border-color: var(--brand);
+      background: var(--card);
+      box-shadow: 0 0 0 4px rgba(248,111,3,.12);
+      color: var(--ink);
+    }
+    .hour-btn {
+      min-width: 52px;
+      padding: 6px 11px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: var(--card);
+      font-size: 0.76rem;
+      font-weight: 600;
+      color: var(--muted);
+      transition: all .15s ease;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .hour-btn:hover {
+      background: var(--brand-light);
+      border-color: var(--brand);
+      color: var(--brand);
+    }
+    html[data-theme="dark"] .hour-btn:hover {
+      background: rgba(248,111,3,.15);
+    }
+    .hour-btn.active {
+      background: var(--brand);
+      color: #fff;
+      border-color: var(--brand);
+      box-shadow: 0 3px 10px rgba(248,111,3,.3);
+    }
+    .btn-fetch {
+      border-radius: 11px;
+      padding: 10px 24px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      background: var(--brand);
+      border: none;
+      color: #fff;
+      transition: all .2s ease;
+      box-shadow: 0 6px 18px -6px var(--brand);
+    }
+    .btn-fetch:hover {
+      background: var(--brand-2);
+      transform: translateY(-1px);
+      color: #fff;
+    }
+    .btn-now {
+      border-radius: 11px;
+      padding: 10px 24px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      border: 1px solid var(--line);
+      background: var(--card);
+      color: var(--ink);
+      transition: all .2s ease;
+    }
+    .btn-now:hover {
+      background: var(--bg);
+      border-color: var(--muted);
+      color: var(--ink);
+    }
+    .btn-queries {
+      border-radius: 11px;
+      padding: 10px 24px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      background: #805AD5;
+      border: none;
+      color: white;
+      transition: all .2s ease;
+    }
+    .btn-queries:hover {
+      background: #6B46C1;
+      color: #fff;
+      transform: translateY(-1px);
+    }
+    .hour-label {
+      color: var(--ink);
+      font-weight: 700;
+      font-size: 0.82rem;
+      letter-spacing: 0.3px;
+      margin-right: 8px;
+    }
+    .hour-label i { color: var(--brand); }
+
+    .card-dashboard {
+      border-radius: 18px;
+      border: 1px solid var(--line) !important;
+      background: var(--card) !important;
+      box-shadow: 0 2px 12px rgba(0,0,0,.03);
+      transition: all .25s ease;
+      height: 100%;
+      overflow: hidden;
+    }
+    .card-dashboard:hover {
+      border-color: var(--brand) !important;
+      transform: translateY(-2px);
+      box-shadow: 0 12px 32px -10px rgba(248,111,3,.18);
+    }
+    .card-header-custom {
+      background: var(--card);
+      border-bottom: 1px solid var(--line);
+      padding: 16px 20px;
+      font-weight: 700;
+      font-size: 0.92rem;
+      color: var(--ink);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+    .badge-db {
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 0.66rem;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+    }
+    .badge-db.iib  { background: #DBEAFE; color: #1D4ED8; }
+    .badge-db.sidb { background: #F3E8FF; color: #7E22CE; }
+    html[data-theme="dark"] .badge-db.iib  { background: rgba(29,78,216,.18); color: #60A5FA; }
+    html[data-theme="dark"] .badge-db.sidb { background: rgba(126,34,206,.18); color: #C084FC; }
+    .badge-count {
+      background: var(--bg);
+      color: var(--muted);
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.7rem;
+    }
+    html[data-theme="dark"] .badge-count { background: #222; color: #A1A1AA; }
+    .badge-duration {
+      background: var(--brand-light);
+      color: var(--brand);
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      font-weight: 600;
+    }
+    html[data-theme="dark"] .badge-duration {
+      background: rgba(248,111,3,.15);
+    }
+    .table-container {
+      max-height: 320px;
+      overflow-y: auto;
+    }
+    .table-container::-webkit-scrollbar { width: 6px; height: 6px; }
+    .table-container::-webkit-scrollbar-thumb {
+      background: var(--line);
+      border-radius: 3px;
+    }
+    .table-container table {
+      font-size: 0.78rem;
+      margin-bottom: 0;
+      color: var(--ink);
+    }
+    .table-container thead {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    .table-container thead th {
+      background: var(--bg);
+      color: var(--muted);
+      font-weight: 700;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      border-bottom: 1px solid var(--line);
+      padding: 10px 12px;
+      white-space: nowrap;
+    }
+    .table-container tbody td {
+      padding: 8px 12px;
+      vertical-align: middle;
+      border-bottom: 1px solid var(--line);
+      color: var(--ink);
+    }
+    html[data-theme="dark"] .table-container tbody td {
+      border-bottom-color: #1F1F1F;
+    }
+    .table-container tbody tr:hover {
+      background: var(--bg);
+    }
+    html[data-theme="dark"] .table-container tbody tr:hover {
+      background: #1F1F1F;
+    }
+    .no-data {
+      color: var(--muted);
+      font-style: italic;
+      padding: 24px 0;
+      text-align: center;
+      font-size: 0.85rem;
+    }
+    .queries-card {
+      border-radius: 18px;
+      border: 1px solid var(--line) !important;
+      background: var(--card) !important;
+      padding: 20px;
+      margin-bottom: 28px;
+    }
+    html[data-theme="dark"] .queries-card {
+      background: #0B0B0B !important;
+      border-color: #1F1F1F !important;
+    }
+    .queries-card .header-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .queries-card .queries-title {
+      color: var(--ink);
+      font-weight: 700;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .queries-card .queries-title i { color: var(--brand); }
+    .queries-card .close-btn {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      font-size: 1.4rem;
+      cursor: pointer;
+      padding: 0 8px;
+      border-radius: 6px;
+      transition: all .15s;
+    }
+    .queries-card .close-btn:hover {
+      color: var(--ink);
+      background: var(--bg);
+    }
+    html[data-theme="dark"] .queries-card .close-btn:hover {
+      background: #1F1F1F;
+    }
+    .query-block {
+      background: #F7F7F5;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      position: relative;
+    }
+    html[data-theme="dark"] .query-block {
+      background: #131313;
+      border-color: #1F1F1F;
+    }
+    .query-block pre {
+      margin: 0;
+      color: var(--ink);
+      font-size: 0.76rem;
+      white-space: pre-wrap;
+      word-break: break-all;
+      font-family: 'JetBrains Mono', Consolas, monospace;
+      line-height: 1.5;
+    }
+    .query-block .copy-query-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 4px 12px;
+      font-size: 0.68rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .query-block .copy-query-btn:hover {
+      background: var(--brand);
+      border-color: var(--brand);
+      color: #fff;
+    }
+    .queries-card .copy-all-btn {
+      background: var(--brand);
+      border: none;
+      color: white;
+      border-radius: 999px;
+      padding: 7px 18px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .queries-card .copy-all-btn:hover {
+      background: var(--brand-2);
+    }
+    @media (max-width: 900px) {
+      .page-container { padding: 20px 16px 32px; }
+      .page-head .ttl { font-size: 1.3rem; }
+      .page-head .ttl .ttl-icon { width: 38px; height: 38px; font-size: .9rem; }
+      .page-head .sub { margin-left: 50px; font-size: 0.82rem; }
+      .time-badge { padding: 8px 14px; font-size: 0.78rem; }
+    }
+    </style>
 </head>
 <body>
-<%
-  session = request.getSession(false);
-  String m_strrole = (String) session.getAttribute("role");
-  String ctx = request.getContextPath();
-%>
 
-<aside class="sidebar" id="sidebar">
-  <div class="sb-head">
-    <div class="sb-logo"><i class="fa-solid fa-shield-halved"></i></div>
-    <div class="sb-title">
-      EIS Portal
-      <small><%=m_strrole != null ? m_strrole : "Guest"%></small>
+<%@include file="../userheader.jsp"%>
+
+<div class="new-wrapper">
+  <div class="page-container">
+
+    <div class="page-head">
+      <div>
+        <h1 class="ttl">
+          <span class="ttl-icon"><i class="fas fa-chart-line"></i></span>
+          Stat Mgmt Dashboard
+        </h1>
+        <p class="sub">Hourly KPI data from cron jobs</p>
+      </div>
+      <span class="time-badge">
+        <i class="far fa-clock"></i><%= rangeDisplay %>
+      </span>
     </div>
-    <button class="sb-collapse-btn" onclick="toggleSidebar()" title="Hide sidebar">
-      <i class="fa-solid fa-angles-left"></i>
-    </button>
-  </div>
 
-  <div class="sb-search">
-    <div class="sb-search-box">
-      <i class="fa-solid fa-magnifying-glass"></i>
-      <input type="text" id="searchbar" onkeyup="search_animal()" placeholder="Search..." autocomplete="off">
+    <form method="get" class="controls-card" id="mainForm">
+      <div class="row g-3 align-items-end">
+        <div class="col-md-3">
+          <label for="start" class="form-label"><i class="far fa-calendar-alt"></i>Start</label>
+          <input type="datetime-local" class="form-control" id="start" name="start" value="<%= startIso %>">
+        </div>
+        <div class="col-md-3">
+          <label for="end" class="form-label"><i class="far fa-calendar-alt"></i>End</label>
+          <input type="datetime-local" class="form-control" id="end" name="end" value="<%= endIso %>">
+        </div>
+        <div class="col-md-2">
+          <button type="submit" class="btn btn-fetch w-100">
+            <i class="fas fa-sync-alt me-2"></i>Fetch
+          </button>
+        </div>
+        <div class="col-md-2">
+          <button type="button" class="btn btn-now w-100" onclick="setPrevHour()">
+            <i class="fas fa-undo me-1"></i>Now
+          </button>
+        </div>
+        <div class="col-md-2">
+          <button type="submit" name="showQueries" value="true" class="btn btn-queries w-100">
+            <i class="fas fa-code me-1"></i>Show Queries
+          </button>
+        </div>
+      </div>
+
+      <div class="row mt-3">
+        <div class="col-12">
+          <span class="hour-label"><i class="fas fa-clock me-1"></i>Hour shortcuts:</span>
+          <div class="d-flex flex-wrap gap-1 mt-2">
+            <% for (int h = 0; h < 24; h++) {
+                String label = String.format("%02d-%02d", h, (h+1)%24);
+                String activeClass = (h == selectedHour) ? "active" : "";
+            %>
+            <button type="button" class="hour-btn <%= activeClass %>" onclick="setHour(<%= h %>)"><%= label %></button>
+            <% } %>
+          </div>
+        </div>
+      </div>
+    </form>
+
+    <% if ("true".equals(showQueries) && !queriesDisplay.isEmpty()) { %>
+    <div class="queries-card" id="queriesPanel">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <span class="queries-title">
+          <i class="fas fa-database"></i>SQL Queries for this period
+        </span>
+        <div class="header-actions">
+          <button class="copy-all-btn" onclick="copyAllQueries()"><i class="far fa-copy me-1"></i>Copy All</button>
+          <button class="close-btn" onclick="closeQueries()">&times;</button>
+        </div>
+      </div>
+      <%
+          String[] queryBlocks = queriesDisplay.split("\n\n");
+          for (String block : queryBlocks) {
+              if (block.trim().isEmpty()) continue;
+              String escaped = block.replace("'", "\\'").replace("\"", "\\\"");
+      %>
+      <div class="query-block">
+        <button class="copy-query-btn" onclick="copyQuery('<%= escaped %>')"><i class="far fa-copy"></i> Copy</button>
+        <pre><%= block %></pre>
+      </div>
+      <% } %>
     </div>
-  </div>
-
-  <nav class="sb-body" id="list">
-
-    <div class="sb-group">Dashboards</div>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/statMgmtDashboard.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>Strategic Mgmt. Status</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/eisSbiDashboard.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>SBI Support Status</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/ErrorDashboard">
-      <span class="sb-icon"><i class="fa-solid fa-triangle-exclamation"></i></span><span>Error Dashboard</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/100PercentFailure.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-heart-pulse"></i></span><span>100% Failure Honeycomb</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/ServiceWiseFailure.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-heart-pulse"></i></span><span>Service-Wise Failure</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/PortStatus.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-signal"></i></span><span>Service Status</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/AtmCardServlet">
-      <span class="sb-icon"><i class="fa-solid fa-credit-card"></i></span><span>ATM IP Port Portal</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/TransactionEndPointBank.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-money-bill-transfer"></i></span><span>Transaction End Point</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/AutoRefreshTxnEndpoint_New.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-money-bill-transfer"></i></span><span>Txn End Point (Golden Gate)</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/AutoRefreshExpSysServiceWise.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>EXP SYS Service Wise</span>
-    </a>
-
-    <div class="sb-group">LDAP</div>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/A_EXP_SERVERWISE_COUNT_LDAP.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>LDAP EXP Server</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/A_SYS_SERVERWISE_COUNT_LDAP.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>LDAP SYS Server</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/ErrorDashboardLDAP">
-      <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>LDAP Error Dashboard</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/ServiceWiseFailure_LDAP.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>LDAP Service-Wise Failure</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/100PercentFailure_LDAP.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>LDAP 100% Failure</span>
-    </a>
-
-    <div class="sb-group">Deployments</div>
-    <a class="sb-item animals" href="<%=ctx%>/DeploymentSheetServlet">
-      <span class="sb-icon"><i class="fa-solid fa-plus"></i></span><span>Add Deployment Sheet</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/ViewDeploymentSheetActionServ">
-      <span class="sb-icon"><i class="fa-solid fa-eye"></i></span><span>View Deployment Sheet</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/deployment_analysis.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-chart-column"></i></span><span>Deployment Analysis</span>
-    </a>
-
-    <div class="sb-group">Logs &amp; Data</div>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/Dpg_Sys_Log.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-file-lines"></i></span><span>SYS Logs</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/Dpg_log.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-file-lines"></i></span><span>DPG Logs</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/ITSMDetailsBackup.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-database"></i></span><span>ITSM Details</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/ThirdPartyExcel.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-table"></i></span><span>Third Party Excel</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/UploadExcelServlet">
-      <span class="sb-icon"><i class="fa-solid fa-certificate"></i></span><span>Source Certificate</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/Exp_Sys_Url_Mapper.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-heart-pulse"></i></span><span>EXP &amp; SYS URL Mapper</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/newChannelDestination.jsp?&role=<%=m_strrole%>">
-      <span class="sb-icon"><i class="fa-solid fa-heart-pulse"></i></span><span>Channel &amp; Destination</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/TxnContactDetail">
-      <span class="sb-icon"><i class="fa-solid fa-heart-pulse"></i></span><span>TXN Contact Details</span>
-    </a>
-
-    <div class="sb-group">Reports</div>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/FlashReport.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-bolt"></i></span><span>Flash Report</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/DailyStatisticsReport.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-chart-pie"></i></span><span>Daily Statistics</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/TimeDefrenceAnalysisreport.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-clock"></i></span><span>Time Difference Analysis</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/CombinedServiceWise&HundreadPerFailure.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-tower-broadcast"></i></span><span>EIS Command Center</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/SourceWiseTdSearch.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>Source Wise TD Failure</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/TxnEndPointSearch.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>Txn End Point Manual</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/autocompleteapiwithtdbd.do">
-      <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>API Wise TD% BD%</span>
-    </a>
-
-    <div class="sb-group">Monitoring Tools</div>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/yonoGraph.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>YONO 2.0 Analytics</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/dpg-carts.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>DMZ DPG Incoming</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/channelwisepresent&pastdata.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>Channel Wise Volume</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/monitoring_dashboard_morethan_30Per_fail.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>BD API Monitor</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/Source_Monitor.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>Source Monitor</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/AtmPortWiseManualSearch.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-heart-pulse"></i></span><span>Manual ATM Portal</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/BarFileReader.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>Java Source Extractor</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/Centralized query storage User.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>Centralized Query</span>
-    </a>
-
-    <div class="sb-group">IBCE</div>
-    <a class="sb-item animals" href="<%=ctx%>/CronController">
-      <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>IBCE DR PR Activity</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/IbceActionNew">
-      <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>IBCE DR PR Active Active</span>
-    </a>
-
-    <div class="sb-group">Checklists</div>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/DRChecklistHomePage.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-list-check"></i></span><span>Module DR Checklist</span>
-    </a>
-    <% if("Service Reporting Management".equals(m_strrole)){ %>
-    <a class="sb-item animals" href="<%=ctx%>/ServletConn">
-      <span class="sb-icon"><i class="fa-solid fa-list-check"></i></span><span>Adhoc Checklist</span>
-    </a>
-    <% } else if("Service Desk".equals(m_strrole)) { %>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/userscorechecklist.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-list-check"></i></span><span>SCORE Checklist</span>
-    </a>
-    <% } else if("Event Management".equals(m_strrole)) { %>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/MonitoringChecklistUser.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-list-check"></i></span><span>Monitoring Checklist</span>
-    </a>
-    <% } else if("Incident Management".equals(m_strrole)) { %>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/IssueMgmtEmployeemain.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-list-check"></i></span><span>Mail's Checklist</span>
-    </a>
-    <% } else if("Problem Management".equals(m_strrole)) { %>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/Problemuserchecklist.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-list-check"></i></span><span>Problem Mgmt Checklist</span>
-    </a>
+    <script>
+      function closeQueries() {
+        var panel = document.getElementById('queriesPanel');
+        panel.style.display = 'none';
+        var url = new URL(window.location);
+        url.searchParams.delete('showQueries');
+        window.history.replaceState({}, '', url);
+      }
+      function copyQuery(text) {
+        navigator.clipboard.writeText(text).then(function() {
+          alert('Query copied to clipboard!');
+        }).catch(function() {
+          var ta = document.createElement('textarea');
+          ta.value = text;
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          ta.remove();
+          alert('Copied!');
+        });
+      }
+      function copyAllQueries() {
+        var texts = document.querySelectorAll('.query-block pre');
+        var full = '';
+        texts.forEach(function(pre) {
+          full += pre.innerText + '\n\n';
+        });
+        navigator.clipboard.writeText(full).then(function() {
+          alert('All queries copied to clipboard!');
+        }).catch(function() {
+          var ta = document.createElement('textarea');
+          ta.value = full;
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          ta.remove();
+          alert('Copied!');
+        });
+      }
+    </script>
     <% } %>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/NightShiftUser.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-moon"></i></span><span>Nightshift Checklist</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/NightShiftCheckList_NEW.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-moon"></i></span><span>New Nightshift Checklist</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/MailsNightShiftChecklist.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-envelope"></i></span><span>Mail's Nightshift Checklist</span>
-    </a>
 
-    <div class="sb-group">Team</div>
-    <% if(("Manager".equals(m_strrole)) || ("Team Lead".equals(m_strrole))){ %>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/ExcelRoster.jsp?&role=<%=m_strrole%>">
-      <span class="sb-icon"><i class="fa-solid fa-calendar-days"></i></span><span>Roster</span>
-    </a>
-    <% } else { %>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/ExcelRoster_new.jsp?&role=<%=m_strrole%>">
-      <span class="sb-icon"><i class="fa-solid fa-calendar-days"></i></span><span>Roster</span>
-    </a>
-    <% } %>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/TicketHome.jsp?&role=<%=m_strrole%>">
-      <span class="sb-icon"><i class="fa-solid fa-ticket"></i></span><span>Ticketing Portal</span>
-    </a>
-
-    <div class="sb-group">Documentation</div>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/EISSOPDashboard.jsp?&role=<%=m_strrole%>">
-      <span class="sb-icon"><i class="fa-solid fa-book"></i></span><span>SOP Management</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/channel_journey.jsp?&role=<%=m_strrole%>">
-      <span class="sb-icon"><i class="fa-solid fa-route"></i></span><span>Channel Journeys</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/ProblemCET.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-clipboard-list"></i></span><span>CET Portal</span>
-    </a>
-
-    <div class="sb-group">Search Tools</div>
-    <a class="sb-item animals" href="<%=ctx%>/multiple.html">
-      <span class="sb-icon"><i class="fa-solid fa-magnifying-glass"></i></span><span>Search Gen5 Reference</span>
-    </a>
-    <a class="sb-item animals" href="https://siapp1.sbi.co.in/LotusTransEnq/Home/About?">
-      <span class="sb-icon"><i class="fa-solid fa-magnifying-glass"></i></span><span>Search SI Reference</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/query.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-terminal"></i></span><span>EIS Query Console</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/ipo-monitor.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-desktop"></i></span><span>IPO Monitor</span>
-    </a>
-
-    <div class="sb-group">Account</div>
-    <a class="sb-item sb-logout" href="<%=ctx%>/login.action">
-      <span class="sb-icon"><i class="fa-solid fa-right-from-bracket"></i></span><span>Logout</span>
-    </a>
-
-  </nav>
-</aside>
-
-<div class="sb-overlay" onclick="document.documentElement.classList.remove('sb-open')"></div>
-
-<header class="topnav">
-  <button class="tn-toggle" onclick="document.documentElement.classList.toggle('sb-open')">
-    <i class="fa-solid fa-bars"></i>
-  </button>
-
-  <button class="tn-menu-btn" onclick="toggleSidebar()" title="Show sidebar">
-    <i class="fa-solid fa-bars"></i>
-  </button>
-
-  <button class="tn-search" onclick="focusSidebarSearch()">
-    <i class="fa-solid fa-magnifying-glass"></i>
-    <span>Search dashboards, reports, tools...</span>
-    <span class="kbd">Ctrl K</span>
-  </button>
-
-  <div class="tn-right">
-    <button class="tn-btn" onclick="toggleTheme()" title="Toggle theme">
-      <i class="fa-solid fa-moon" id="themeIcon"></i>
-    </button>
-    <a class="tn-btn" href="<%=ctx%>/jsp/TicketHome.jsp?&role=<%=m_strrole%>" title="Ticketing">
-      <i class="fa-solid fa-ticket"></i>
-    </a>
-    <a class="tn-btn" href="<%=ctx%>/login.action" title="Logout">
-      <i class="fa-solid fa-right-from-bracket"></i>
-    </a>
-    <div class="tn-avatar" title="<%=m_strrole%>">
-      <%= (m_strrole != null && m_strrole.length() > 0) ? m_strrole.substring(0,1).toUpperCase() : "U" %>
+    <div class="row">
+      <% for (int i = 0; i < tables.length; i++) {
+          String tbl = tables[i];
+          String display = displayNames[i];
+          String dbSource = sourceDB[i];
+          List<Map<String, Object>> rows = tableData.get(tbl);
+          if (rows == null) rows = new ArrayList<>();
+          int rowCount = rows.size();
+          double avgDur = 0.0;
+          if (rowCount > 0) {
+              for (Map<String, Object> row : rows) {
+                  Object dur = row.get("QUERY_DURATION_SEC");
+                  if (dur instanceof Number) avgDur += ((Number)dur).doubleValue();
+              }
+              avgDur = avgDur / rowCount;
+          }
+          String dbBadgeClass = dbSource.equalsIgnoreCase("IIB") ? "iib" : "sidb";
+      %>
+      <div class="col-xl-4 col-lg-6 col-md-12 mb-4">
+        <div class="card-dashboard">
+          <div class="card-header-custom">
+            <span><%= display %></span>
+            <span class="d-flex align-items-center gap-2">
+              <span class="badge-db <%= dbBadgeClass %>"><%= dbSource %></span>
+              <span class="badge-count"><%= rowCount %></span>
+              <span class="badge-duration"><i class="far fa-clock me-1"></i><%= String.format("%.2f", avgDur) %>s</span>
+            </span>
+          </div>
+          <div class="card-body p-3">
+            <% if (rowCount == 0) { %>
+              <div class="no-data">No data for this period.</div>
+            <% } else { %>
+              <div class="table-container">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <% for (String col : rows.get(0).keySet()) {
+                          if (hiddenCols.contains(col)) continue;
+                          String displayCol = col.equals("QUERY_DURATION_SEC") ? "Duration (sec)" : col;
+                      %>
+                        <th><%= displayCol %></th>
+                      <% } %>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% for (Map<String, Object> row : rows) { %>
+                      <tr>
+                        <% for (Map.Entry<String, Object> entry : row.entrySet()) {
+                            String col = entry.getKey();
+                            if (hiddenCols.contains(col)) continue;
+                            Object val = entry.getValue();
+                            String str = (val == null) ? "-" : val.toString();
+                            if (val instanceof Double || val instanceof Float) {
+                                str = String.format("%.2f", ((Number)val).doubleValue());
+                            }
+                        %>
+                          <td><%= str %></td>
+                        <% } %>
+                      </tr>
+                    <% } %>
+                  </tbody>
+                </table>
+              </div>
+            <% } %>
+          </div>
+        </div>
+      </div>
+      <% } %>
     </div>
+
   </div>
-</header>
+</div>
 
 <script>
-function toggleTheme(){
-  var cur = document.documentElement.getAttribute('data-theme') || 'light';
-  var next = cur === 'light' ? 'dark' : 'light';
-  document.documentElement.setAttribute('data-theme', next);
-  try{ localStorage.setItem('eis-theme', next); }catch(e){}
-  updateThemeIcon();
-}
-function updateThemeIcon(){
-  var t = document.documentElement.getAttribute('data-theme') || 'light';
-  var icon = document.getElementById('themeIcon');
-  if(!icon) return;
-  icon.className = t === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
-}
-document.addEventListener('DOMContentLoaded', updateThemeIcon);
-updateThemeIcon();
-
-function toggleSidebar(){
-  var root = document.documentElement;
-  if(window.innerWidth <= 900){
-    root.classList.toggle('sb-open');
-  } else {
-    root.classList.toggle('sb-collapsed');
-    try{
-      localStorage.setItem('eis-sidebar-collapsed', root.classList.contains('sb-collapsed'));
-    }catch(e){}
-  }
-}
-
-function search_animal() {
-  let input = document.getElementById('searchbar').value.toLowerCase();
-  let x = document.getElementsByClassName('animals');
-  let groups = document.querySelectorAll('.sb-group');
-  for (let i = 0; i < x.length; i++) {
-    if (!x[i].innerText.toLowerCase().includes(input)) {
-      x[i].style.display = "none";
-    } else {
-      x[i].style.display = "flex";
+    function setHour(h) {
+        let date = document.getElementById('start').value.substring(0,10);
+        let start = date + 'T' + String(h).padStart(2,'0') + ':00';
+        let endHour = (h+1) % 24;
+        let endDate = date;
+        if (h === 23) {
+            let d = new Date(date + 'T00:00:00');
+            d.setDate(d.getDate() + 1);
+            endDate = d.toISOString().split('T')[0];
+        }
+        let end = endDate + 'T' + String(endHour).padStart(2,'0') + ':00';
+        document.getElementById('start').value = start;
+        document.getElementById('end').value = end;
+        document.querySelector('form').submit();
     }
-  }
-  groups.forEach(g => {
-    let next = g.nextElementSibling;
-    let hasVisible = false;
-    while(next && !next.classList.contains('sb-group')){
-      if(next.classList.contains('animals') && next.style.display !== 'none'){ hasVisible = true; break; }
-      next = next.nextElementSibling;
+
+    function setPrevHour() {
+        let now = new Date();
+        now.setMinutes(0);
+        now.setSeconds(0);
+        now.setMilliseconds(0);
+        let end = new Date(now);
+        let start = new Date(now);
+        start.setHours(start.getHours() - 1);
+        const formatLocal = (d) => {
+            let year = d.getFullYear();
+            let month = String(d.getMonth()+1).padStart(2,'0');
+            let day = String(d.getDate()).padStart(2,'0');
+            let hours = String(d.getHours()).padStart(2,'0');
+            let mins = String(d.getMinutes()).padStart(2,'0');
+            return year + '-' + month + '-' + day + 'T' + hours + ':' + mins;
+        };
+        document.getElementById('start').value = formatLocal(start);
+        document.getElementById('end').value = formatLocal(end);
+        document.querySelector('form').submit();
     }
-    g.style.display = (hasVisible || input === '') ? 'block' : 'none';
-  });
-}
-function focusSidebarSearch(){
-  if(window.innerWidth <= 900){
-    document.documentElement.classList.add('sb-open');
-  } else if(document.documentElement.classList.contains('sb-collapsed')){
-    toggleSidebar();
-  }
-  setTimeout(()=>document.getElementById('searchbar').focus(), 150);
-}
-document.addEventListener('keydown', e => {
-  if((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k'){
-    e.preventDefault();
-    focusSidebarSearch();
-  }
-});
 </script>
+<script src="<%=request.getContextPath()%>/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
