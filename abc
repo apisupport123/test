@@ -1,136 +1,45 @@
-<%@ page language="java" contentType="text/html; charset=ISO-8859-1" pageEncoding="ISO-8859-1"%>
-<%@ taglib prefix="s" uri="/struts-tags" %>
-<%@ taglib prefix="c" uri="jakarta.tags.core" %>
-<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
+[DBConfig] Config file found: D:\AppConfig\db.properties
+[DBConfig] Config loaded successfully from: D:\AppConfig\db.properties
+Connected to PRIMARY DB 1
+Flag Status: PR, Location: HI
+getReportDBConnection - flagStatus: PR
+Connecting to Report PR Database
+Report PR Connected
+SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+==> [DEBUG] Entering ShowfailureServicesWiseAction.execute()
+==> [DEBUG] Entering displayServices()
+[DEBUG] Raw Input Parameters:
+        url          = [signatureUpload_orchDS]
+        server       = [null]
+        broker_Name  = [null]
+[DEBUG] ServiceCategory overridden from request: GEN-5
+[DEBUG] ENVLOCATION: null
+Connected to PRIMARY DB 1
+Flag Status: PR, Location: HI
+getIIBDBConnection - flagStatus: PR, DB_ENVLOCATION: HI
+In Mumbai Environment
+In Mumbai PR
+IIB Mumbai PR Connected: jdbc:oracle:thin:@10.176.0.107:1787/MIBDRCDB_SRV
+[DEBUG] Final SQL Query: SELECT trim(API_NAME), trim(broker_name), trim(broker_eg), COUNT(1) AS TOTAL_HITS, SUM(CASE WHEN RESPONSE_STATUS IN ('0','SUCCESS') THEN 1 ELSE 0 END) AS SUCCESS, SUM(CASE WHEN error_code ='SI001' THEN 1 ELSE 0 END) AS SI001, SUM(CASE WHEN substr(error_code,3,3) ='002' AND error_code <> 'SI002' THEN 1 ELSE 0 END) AS "002", SUM(CASE WHEN error_code = 'SI002' THEN 1 ELSE 0 END) AS SI002, SUM(CASE WHEN error_code = 'SI007' AND error_code <> '70007' THEN 1 ELSE 0 END) AS SI007, SUM(CASE WHEN error_code = 'SI051' THEN 1 ELSE 0 END) AS SI051, SUM(CASE WHEN substr(error_code,3,3) ='014' AND error_code NOT IN ('00014','SI014') THEN 1 ELSE 0 END) AS "014", SUM(CASE WHEN error_code = 'SI014' THEN 1 ELSE 0 END) AS SI014, SUM(CASE WHEN error_description = 'PARSING EXCEPTION' THEN 1 ELSE 0 END) AS PARSING_EXCEPTION, SUM(CASE WHEN error_code = 'SI569' THEN 1 ELSE 0 END) AS SI569, SUM(CASE WHEN error_code = 'SI570' THEN 1 ELSE 0 END) AS SI570, SUM(CASE WHEN (substr(error_code,3,3) IN ('002','014') OR error_code IN ('SI001','SI007','SI051','SI569','SI570')) AND error_code <> '00014' THEN 1 ELSE 0 END) AS TD, ROUND((SUM(CASE WHEN (substr(error_code,3,3) IN ('002','014') OR error_code IN ('SI001','SI007','SI051','SI569','SI570')) AND error_code <> '00014' THEN 1 ELSE 0 END) * 100) / COUNT(1), 2) AS TD_PERCENT, SUM(CASE WHEN (NVL(substr(error_code,3,3),'A') NOT IN ('001','002','007','051','014') OR error_code IN ('00014','70007')) AND RESPONSE_STATUS NOT IN ('0','SUCCESS') THEN 1 ELSE 0 END) AS BD, ROUND((SUM(CASE WHEN (NVL(substr(error_code,3,3),'A') NOT IN ('001','002','007','051','014') OR error_code IN ('00014','70007')) AND RESPONSE_STATUS NOT IN ('0','SUCCESS') THEN 1 ELSE 0 END) * 100) / COUNT(1), 2) AS BD_PERCENT FROM eisapp.api_log WHERE API_NAME = ? AND REQUEST_DATE_TIME >= SYSDATE - INTERVAL '20' MINUTE GROUP BY trim(API_NAME), trim(broker_name), trim(broker_eg) ORDER BY TD DESC
+[DEBUG] Bind Param (API Name): [signatureUpload_orchDS]
+[DEBUG] Row 1: signatureUpload_orchDS | MISC_EXP_CBSMS_01 | Misc_E_CBSMS_01
+[DEBUG] Total records loaded from DB: 1
+[DEBUG] loginForm.m_lstFailureServicedetail size: 1
+==> [DEBUG] Exiting displayServices()
+==> [DEBUG] Leaving ShowfailureServicesWiseAction.execute()
+----------------------------------------------------------------------
 
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="ISO-8859-1">
-<title>Failure Services</title>
-<script src="${pageContext.request.contextPath}/js/jquery-3.3.1.min.js"></script>
-<link rel="stylesheet" href="${pageContext.request.contextPath}/css/bootstrap.min.css">
-</head>
+UI
 
-<body>
-<s:form action="showFailureServicesWise" method="post">
-    <%-- Hidden fields to preserve request params across form submits --%>
-    <s:hidden name="ServiceCategory" id="ServiceCategory" value="%{ServiceCategory}" />
-    <s:hidden name="url"            id="url"            value="%{parameters.url}" />
-    <s:hidden name="server"         id="server"         value="%{m_strServer}" />
-    <s:hidden name="broker_Name"    id="broker_Name"    value="%{m_strbroker_name}" />
+Failure Services
+Debug Info:
+Server =
+Broker Name =
+ServiceCategory =
+API Name =
+DB_ENVLOCATION =
+Total records loaded:
 
-    <div class="card my-3">
-        <h5 class="card-header text-center">Failure Services</h5>
-        <div class="card-body">
-
-            <!-- Debug Output -->
-            <div class="alert alert-info">
-                <b>Debug Info:</b><br/>
-                Server = <strong><s:property value="m_strServer" /></strong><br/>
-                Broker Name = <strong><s:property value="m_strbroker_name" /></strong><br/>
-                ServiceCategory = <strong><s:property value="ServiceCategory" /></strong><br/>
-                API Name = <strong><s:property value="parameters.url" /></strong><br/>
-                DB_ENVLOCATION = <strong><s:property value="m_strENVLOCATION" /></strong><br/>
-            </div>
-
-            <!-- Show total records -->
-            <p>
-                Total records loaded:
-                <strong><s:property value="m_lstFailureServicedetail.size()" /></strong>
-            </p>
-
-            <s:if test="m_lstFailureServicedetail == null || m_lstFailureServicedetail.isEmpty()">
-                <div class="alert alert-warning">No failure service data available!</div>
-            </s:if>
-
-            <s:else>
-            <table class="table table-bordered table-sm table-hover">
-                <thead class="thead-light">
-                    <tr>
-                        <th>API NAME</th>
-                        <th>Broker Name</th>
-                        <th>BrokerEG</th>
-                        <th>Total Hits</th>
-                        <th>Success</th>
-                        <th>SI001</th>
-                        <th>002</th>
-                        <th>SI002</th>
-                        <th>SI007</th>
-                        <th>SI051</th>
-                        <th>014</th>
-                        <th>SI014</th>
-                        <th>PARSING EXCEPTION</th>
-                        <th>SI569</th>
-                        <th>SI570</th>
-                        <th>TD</th>
-                        <th>TD Percent</th>
-                        <th>BD</th>
-                        <th>BD Percent</th>
-                    </tr>
-                </thead>
-                <tbody>
-                <s:iterator value="m_lstFailureServicedetail" var="list">
-                    <tr>
-                        <td><s:property value="#list.m_strAPIName" /></td>
-                        <td><s:property value="#list.m_strbroker_name" /></td>
-                        <td><s:property value="#list.m_strbroker_eg" /></td>
-                        <td><s:property value="#list.m_strTOTAL_HITS" /></td>
-                        <td><s:property value="#list.m_strSUCCESS" /></td>
-                        <td style="cursor:pointer" onclick="showreferenceno('SI001','<s:property value="#list.m_strAPIName" />','<s:property value="#list.m_strexp_ip" />')">
-                            <s:property value="#list.m_str001" />
-                        </td>
-                        <td style="cursor:pointer" onclick="showreferenceno('002','<s:property value="#list.m_strAPIName" />','<s:property value="#list.m_strexp_ip" />')">
-                            <s:property value="#list.m_str002" />
-                        </td>
-                        <td style="cursor:pointer" onclick="showreferenceno('SI002','<s:property value="#list.m_strAPIName" />','<s:property value="#list.m_strexp_ip" />')">
-                            <s:property value="#list.m_strSI002" />
-                        </td>
-                        <td style="cursor:pointer" onclick="showreferenceno('SI007','<s:property value="#list.m_strAPIName" />','<s:property value="#list.m_strexp_ip" />')">
-                            <s:property value="#list.m_str007" />
-                        </td>
-                        <td style="cursor:pointer" onclick="showreferenceno('SI051','<s:property value="#list.m_strAPIName" />','<s:property value="#list.m_strexp_ip" />')">
-                            <s:property value="#list.m_str051" />
-                        </td>
-                        <td style="cursor:pointer" onclick="showreferenceno('014','<s:property value="#list.m_strAPIName" />','<s:property value="#list.m_strexp_ip" />')">
-                            <s:property value="#list.m_str014" />
-                        </td>
-                        <td style="cursor:pointer" onclick="showreferenceno('SI014','<s:property value="#list.m_strAPIName" />','<s:property value="#list.m_strexp_ip" />')">
-                            <s:property value="#list.m_strSI014" />
-                        </td>
-                        <td style="cursor:pointer" onclick="showreferenceno('PARSING_EXCEPTION','<s:property value="#list.m_strAPIName" />','<s:property value="#list.m_strexp_ip" />')">
-                            <s:property value="#list.m_strPARSINGEXCEPTION" />
-                        </td>
-                        <td style="cursor:pointer" onclick="showreferenceno('SI569','<s:property value="#list.m_strAPIName" />','<s:property value="#list.m_strexp_ip" />')">
-                            <s:property value="#list.m_str569" />
-                        </td>
-                        <td style="cursor:pointer" onclick="showreferenceno('SI570','<s:property value="#list.m_strAPIName" />','<s:property value="#list.m_strexp_ip" />')">
-                            <s:property value="#list.m_str570" />
-                        </td>
-                        <td><s:property value="#list.m_strTD" /></td>
-                        <td><s:property value="#list.m_strTD_PERCENT" /></td>
-                        <td><s:property value="#list.m_strBD" /></td>
-                        <td><s:property value="#list.m_strBD_PERCENT" /></td>
-                    </tr>
-                </s:iterator>
-                </tbody>
-            </table>
-            </s:else>
-        </div>
-    </div>
-</s:form>
-
-<script>
-function showreferenceno(errorcode, apiname, expip) {
-    var serviceCategory = document.getElementById("ServiceCategory").value;
-    var url = '${pageContext.request.contextPath}/Multiple?action=showfailurerefernceno'
-        + '&errorcode=' + encodeURIComponent(errorcode)
-        + '&apiname=' + encodeURIComponent(apiname)
-        + '&expip=' + encodeURIComponent(expip)
-        + '&ServiceCategory=' + encodeURIComponent(serviceCategory);
-    window.open(url, '_blank');
-}
-</script>
-
-</body>
-</html>
+No failure service data available!
