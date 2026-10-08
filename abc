@@ -1,312 +1,301 @@
-package com.action;
-
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.apache.struts2.ServletActionContext;
-import com.opensymphony.xwork2.ActionSupport;
-import com.opensymphony.xwork2.ModelDriven;
-
-import com.actionform.LoginForm;
-import com.jdbc.DBUtilityAuto;
-import com.jdbc.TrippleDes;
-
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
-
-@SuppressWarnings("serial")
-public class LoginAction extends ActionSupport implements ModelDriven<LoginForm> {
-
-    private LoginForm loginForm = new LoginForm();
-
-    // ✅ NEW: JSON response ke liye
-    private Map<String, Object> jsonData = new HashMap<>();
-
-    @Override
-    public LoginForm getModel() {
-        return loginForm;
-    }
-
-    public List<String> getRolelist() {
-        return loginForm.getRolelist();
-    }
-
-    // ✅ NEW: getter (Struts2 JSON plugin isko use karega)
-    public Map<String, Object> getJsonData() {
-        return jsonData;
-    }
-
-    @Override
-    public String execute() throws Exception {
-        System.out.println(">>> LoginAction.execute() called!");
-        this.getEISRole(loginForm);
-        System.out.println("Roles Loaded : " + loginForm.getRolelist());
-        return "success";
-    }
-
-    // ✅ UPDATED: usersign now returns JSON
-    public String usersign() throws Exception {
-        System.out.println(">>> usersign() called");
-        HttpServletRequest request = ServletActionContext.getRequest();
-
-        String username = request.getParameter("m_strUserName");
-        String password = request.getParameter("m_struserPassword");
-        String role     = request.getParameter("m_strRole");
-
-        if (username == null || username.trim().isEmpty()
-                || password == null || password.trim().isEmpty()
-                || role == null || role.trim().isEmpty()) {
-            jsonData.put("status", "error");
-            jsonData.put("message", "Please fill all fields");
-            return "jsonerror";
-        }
-
-        if (request.getParameter("m_struserPassword") != null) {
-            boolean hasRole = this.checkRole(loginForm, request);
-
-            if (hasRole) {
-                HttpSession session = request.getSession();
-                session.setAttribute("role", role);
-                session.setAttribute("username", username);
-
-                jsonData.put("status", "success");
-                if ("EIS Bank".equals(role)) {
-                    jsonData.put("redirectUrl", request.getContextPath() + "/bankerHome.action");
-                } else {
-                    jsonData.put("redirectUrl", request.getContextPath() + "/userhomescreen.action");
-                }
-                return "jsonsuccess";
-            } else {
-                jsonData.put("status", "error");
-                jsonData.put("message", "Invalid username, password or role");
-                return "jsonerror";
-            }
-        }
-
-        jsonData.put("status", "error");
-        jsonData.put("message", "Invalid request");
-        return "jsonerror";
-    }
-
-    // ✅ UPDATED: adminsign now returns JSON
-    public String adminsign() throws Exception {
-        System.out.println(">>> adminsign() called");
-        HttpServletRequest request = ServletActionContext.getRequest();
-
-        String m_stradminUserName = request.getParameter("m_stradminUserName");
-        String m_stradminPassword = request.getParameter("m_stradminPassword");
-
-        if (m_stradminUserName == null || m_stradminUserName.trim().isEmpty()
-                || m_stradminPassword == null || m_stradminPassword.trim().isEmpty()) {
-            jsonData.put("status", "error");
-            jsonData.put("message", "Please fill all fields");
-            return "jsonerror";
-        }
-
-        // Hardcoded Admin
-        if ("Admin".equalsIgnoreCase(m_stradminUserName) && "admin".equals(m_stradminPassword)) {
-            request.getSession().setAttribute("role", "Admin");
-            jsonData.put("status", "success");
-            jsonData.put("redirectUrl", request.getContextPath() + "/adminHome.action");
-            return "jsonsuccess";
-        }
-
-        // Module lead check
-        Connection con = null;
-        Statement stmt = null;
-        ResultSet rs = null;
-        String password = null;
-        try {
-            con = DBUtilityAuto.getReportDBConnection();
-            String query = "SELECT passwords FROM a_module_leads WHERE LOWER(username) = LOWER('"
-                            + m_stradminUserName.replace("'", "''") + "')";
-            stmt = con.createStatement();
-            rs = stmt.executeQuery(query);
-            if (rs.next()) password = rs.getString("passwords");
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            if (rs != null) try { rs.close(); } catch (Exception ignored) {}
-            if (stmt != null) try { stmt.close(); } catch (Exception ignored) {}
-            if (con != null) try { con.close(); } catch (Exception ignored) {}
-        }
-
-        if (password != null && password.equals(m_stradminPassword)) {
-            request.getSession().setAttribute("role", "ModuleLead");
-            jsonData.put("status", "success");
-            jsonData.put("redirectUrl", request.getContextPath() + "/moduleHome.action");
-            return "jsonsuccess";
-        }
-
-        jsonData.put("status", "error");
-        jsonData.put("message", "Invalid admin credentials");
-        return "jsonerror";
-    }
-
-    public String index() throws Exception {
-        return execute();
-    }
-
-    private boolean checkRole(LoginForm loginForm, HttpServletRequest request) throws SQLException {
-        Connection con = null;
-        Statement stmt = null;
-        ResultSet rs = null;
-        try {
-            TrippleDes td = new TrippleDes();
-            int count = 0;
-
-            String user = request.getParameter("m_strUserName").replace("'", "''");
-            String pass = td.encrypt(request.getParameter("m_struserPassword").trim());
-            String role = request.getParameter("m_strRole").replace("'", "''");
-
-            String query = "SELECT COUNT(1) FROM rolemst "
-                    + "WHERE username LIKE '%" + user + "%' "
-                    + "AND password='" + pass + "' "
-                    + "AND rolename='" + role + "'";
-
-            con = DBUtilityAuto.getReportDBConnection();
-            stmt = con.createStatement();
-            rs = stmt.executeQuery(query);
-            if (rs.next()) count = rs.getInt(1);
-            return count > 0;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        } finally {
-            if (rs != null) try { rs.close(); } catch (Exception ignored) {}
-            if (stmt != null) try { stmt.close(); } catch (Exception ignored) {}
-            if (con != null) try { con.close(); } catch (Exception ignored) {}
-        }
-    }
-
-    private void getEISRole(LoginForm loginForm) throws SQLException {
-        Connection con = null;
-        Statement stmt = null;
-        ResultSet rs = null;
-        try {
-            ArrayList<String> list = new ArrayList<>();
-            con = DBUtilityAuto.getReportDBConnection();
-            stmt = con.createStatement();
-            rs = stmt.executeQuery("SELECT rolename FROM rolemst");
-            while (rs.next()) list.add(rs.getString("rolename"));
-            loginForm.setRolelist(list);
-            System.out.println("Roles loaded: " + list);
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            if (rs != null) try { rs.close(); } catch (Exception ignored) {}
-            if (stmt != null) try { stmt.close(); } catch (Exception ignored) {}
-            if (con != null) try { con.close(); } catch (Exception ignored) {}
-        }
-    }
-}
-
-
-----------------------------------------------------------------------------
-
-<?xml version="1.0" encoding="UTF-8" ?>
-<!DOCTYPE struts PUBLIC
-    "-//Apache Software Foundation//DTD Struts Configuration 6.0//EN"
-    "https://struts.apache.org/dtds/struts-6.0.dtd">
-
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE struts PUBLIC "-//Apache Software Foundation//DTD Struts Configuration 6.0//EN" "../dtd/struts-6.0.dtd"> 
 <struts>
+      
+    <!-- Enable dynamic method invocation (DMI) -->
+    <constant name="struts.enable.DynamicMethodInvocation" value="true"/> <!-- // UPDATED -->
+    <constant name="struts.devMode" value="false"/>
 
-    <!-- ================= GLOBAL SETTINGS ================= -->
-    <constant name="struts.devMode" value="false" />
-    <constant name="struts.enable.DynamicMethodInvocation" value="true" />
-    <constant name="struts.action.extension" value="action,," />
-    <constant name="struts.i18n.encoding" value="UTF-8" />
+    <package name="default" namespace="/" extends="struts-default" strict-method-invocation="true"> <!-- // UPDATED -->
 
-    <!-- JSON plugin config -->
-    <constant name="struts.json.contentType" value="application/json" />
-
-    <!-- File upload (agar chahiye) -->
-    <constant name="struts.multipart.maxSize" value="10485760" />
-
-    <!-- ================= PACKAGES ================= -->
-    <package name="default" namespace="/" extends="struts-default,json-default">
-
-        <!-- ============ LOGIN ACTION ============ -->
-        <action name="login" class="com.action.LoginAction">
-
-            <!-- Default: load login.jsp with roles -->
-            <result name="success">/jsp/login.jsp</result>
-
-            <!-- ✅ AJAX JSON: user login success -->
-            <result name="jsonsuccess" type="json">
-                <param name="root">jsonData</param>
-                <param name="contentType">application/json</param>
-                <param name="ignoreHierarchy">false</param>
-                <param name="excludeNullProperties">true</param>
-            </result>
-
-            <!-- ✅ AJAX JSON: user login error -->
-            <result name="jsonerror" type="json">
-                <param name="root">jsonData</param>
-                <param name="contentType">application/json</param>
-                <param name="ignoreHierarchy">false</param>
-                <param name="excludeNullProperties">true</param>
-            </result>
-
-            <!-- Purane JSP forwards (agar kahin use ho rahe ho) -->
-            <result name="successbanker" type="redirectAction">
-                <param name="actionName">bankerHome</param>
-                <param name="namespace">/</param>
-            </result>
-            <result name="successuser" type="redirectAction">
-                <param name="actionName">userhomescreen</param>
-                <param name="namespace">/</param>
-            </result>
-            <result name="successadmin" type="redirectAction">
-                <param name="actionName">adminHome</param>
-                <param name="namespace">/</param>
-            </result>
-            <result name="successmodule" type="redirectAction">
-                <param name="actionName">moduleHome</param>
-                <param name="namespace">/</param>
-            </result>
-
-            <!-- Validation error case -->
-            <result name="input">/jsp/login.jsp</result>
-        </action>
-
-        <!-- ============ YAHAN TUMHARE BAAKI ACTIONS ADD KARO ============ -->
-        <!--
-        Example:
-
-        <action name="userhomescreen" class="com.action.UserHomeAction">
-            <result name="success">/jsp/userhomescreen.jsp</result>
-        </action>
-
-        <action name="bankerHome" class="com.action.BankerHomeAction">
-            <result name="success">/jsp/bankerHome.jsp</result>
-        </action>
-
-        <action name="adminHome" class="com.action.AdminHomeAction">
-            <result name="success">/jsp/adminHome.jsp</result>
-        </action>
-
-        <action name="moduleHome" class="com.action.ModuleHomeAction">
-            <result name="success">/jsp/moduleHome.jsp</result>
-        </action>
-
-        <action name="showregpage" class="com.action.EisRegistrationAction" method="showregpage">
-            <result name="success">/jsp/registration.jsp</result>
-        </action>
-        -->
-
-    </package>
-
-    <!-- ================= REST PACKAGE (agar tum REST use kar rahe ho) ================= -->
-    <!--
-    Agar tumhare paas pehle se rest-default package hai, toh use alag rakho.
-    Sirf ye ensure karo ki tumhara main package "struts-default,json-default" extend kare.
-    -->
-
+        <!-- Whitelist allowed methods globally -->
+        <global-allowed-methods>execute,usersign,adminsign,showeisissue,showregpage,displayServices</global-allowed-methods> <!-- // UPDATED -->
+   
+             
+      <action name="test">
+                    
+         <result>/debug.jsp</result>
+                
+      </action>
+             
+      <action name="login" class="com.action.LoginAction" method="execute">
+                    
+         <result name="success">/jsp/Eislogin.jsp</result>
+                    
+         <result name="successadmin">/jsp/header.jsp</result>
+                    
+         <result name="successmodule">/jsp/moduleHeader.jsp</result>
+                    
+         <result name="successbanker">/jsp/Bankheader.jsp</result>
+                    
+         <result name="successuser" type="redirectAction">userhomescreen</result>
+                
+      </action>
+      
+	 <action name="logout" class="com.action.LogoutAction" method="execute">
+                    
+         <result name="success" type="redirect">login.action</result>
+                
+      </action>
+             
+      <action name="userhomescreen" class="com.action.UserHomeScreenAction">
+                    
+         <result name="success">/jsp/UserHomeScreen.jsp</result>
+                    
+         <result name="session">/Sessionexpired.html</result>
+                
+      </action>
+             
+      <action name="eissop" class="com.action.SOPMasterAction">
+                    
+         <result name="success">/jsp/SopMaster.jsp</result>
+                
+      </action>
+      
+<!--        <action name="ExcelRosterAction" class="com.action.ExcelRosterAction">
+                    
+         <result name="success">/jsp/ExcelRoster.jsp</result>
+                
+      </action> -->
+             
+       <action name="role" class="com.action.RoleMasterAction">
+                    
+         <result name="success">/jsp/RoleMaster.jsp</result>
+                
+      </action> 
+             
+     <action name="rolesetting" class="com.action.RoleSettingMasterAction">
+                    
+         <result name="success">/jsp/RoleSettingMaster.jsp</result>
+                
+      </action>  
+             
+      <action name="showkpi" class="com.action.showkpi">
+                    
+         <result name="success">/jsp/KPI.jsp</result>
+                    
+         <result name="session">/Sessionexpired.html</result>
+                
+      </action>
+             
+      <action name="expmonitoring" class="com.action.EXPMonitorPortalAction">
+                    
+         <result name="success">/jsp/EXPMonitoringPortal.jsp</result>
+                
+      </action>
+             
+      <action name="sysmonitoring" class="com.action.SYSMonitorPortalAction">
+                    
+         <result name="success">/jsp/SYSMonitoringPortal.jsp</result>
+                
+      </action>
+             
+      <action name="top20service" class="com.action.Top20ServiceAction">
+                    
+         <result name="success">/jsp/Top20Service.jsp</result>
+                    
+         <result name="session">/Sessionexpired.html</result>
+                
+      </action>
+             
+      <action name="top20nongen5service" class="com.action.Top20NonGen5ServiceAction">
+                    
+         <result name="success">/jsp/Top20NonGen5Service.jsp</result>
+                    
+         <result name="session">/Sessionexpired.html</result>
+                
+      </action>
+             
+      <action name="TEST_Multithreding" class="com.action.TEST_Multithreding">
+                    
+         <result name="success">/jsp/Multithreding.jsp</result>
+                    
+         <result name="session">/Sessionexpired.html</result>
+                
+      </action>
+             
+      <action name="EpayVan" class="com.action.Epay_VANAction">
+                    
+         <result name="success">/jsp/EpayVan.jsp</result>
+                    
+         <result name="session">/Sessionexpired.html</result>
+                
+      </action>
+             
+      <action name="adharvault" class="com.action.AdharvaultAction">
+                    
+         <result name="success">/jsp/AdharVault.jsp</result>
+                    
+         <result name="session">/Sessionexpired.html</result>
+                
+      </action>
+             
+      <action name="HundreadPercentageFailureservices" class="com.action.HundreadPercentageFailureservicesAction">
+                    
+         <result name="success">/jsp/hundreadpercentagefailure.jsp</result>
+                    
+         <result name="session">/Sessionexpired.html</result>
+                
+      </action>
+             
+      <action name="eisappissue" class="com.action.EISAPPIssueAction" method="execute">
+                    
+         <result name="success">/jsp/EISAPPIssue.jsp</result>
+                    
+         <!-- <result name="session">/Sessionexpired.html</result> -->
+                
+      </action>
+             
+      <action name="eisusersop" class="com.action.UserSOPMasterAction">
+                    
+         <result name="success">/jsp/UserSopMaster.jsp</result>
+                    
+         <result name="successBank">/jsp/BankSopMaster.jsp</result>
+                    
+         <result name="session">/Sessionexpired.html</result>
+                
+      </action>
+             
+      <action name="showTop20Failureservices" class="com.action.ShowTop20failureServicesAction">
+                    
+         <result name="success">/jsp/showTop20failureservice.jsp</result>
+                
+      </action>
+             
+      <action name="showFailureServicesWise" class="com.action.ShowfailureServicesWiseAction">
+                    
+         <result name="success">/jsp/ShowfailureServiceWise.jsp</result>
+                
+      </action>
+             
+      <action name="showservices" class="com.action.ShowfailureServicesAction">
+                    
+         <result name="success">/jsp/showfailureservice.jsp</result>
+                
+      </action>
+             
+      <action name="monitoringwithdatetime" class="com.action.EXPMonitorPortalWithDateTimeAction">
+                    
+         <result name="success">/jsp/EXPMonitoringPortalwithDatetime.jsp</result>
+                
+      </action>
+             
+      <action name="dpginconsistancy" class="com.action.DpgInconsistancyAction">
+                    
+         <result name="success">/jsp/DpgInconsistancy.jsp</result>
+                    
+         <result name="session">/Sessionexpired.html</result>
+                
+      </action>
+             
+      <action name="yono" class="com.action.YonoDasboardAction">
+                    
+         <result name="success">/jsp/YonoDashboard.jsp</result>
+                    
+         <result name="session">/Sessionexpired.html</result>
+                
+      </action>
+             
+      <action name="apiwisenohitsonserver" class="com.action.ApiwisenohitsonserverAction">
+                    
+         <result name="success">/jsp/Apiwisenohitsserver.jsp</result>
+                    
+         <result name="session">/Sessionexpired.html</result>
+                
+      </action>
+             
+      <action name="apiwisehundreadpercfailonserver" class="com.action.ApiwisehundreadpercfailonserverAction">
+                    
+         <result name="success">/jsp/Apiwisehundreadpercfailonserver.jsp</result>
+                    
+         <result name="session">/Sessionexpired.html</result>
+                
+      </action>
+             
+      <action name="showErrorCodeWiseFailureservices" class="com.action.ShowErrorCodeWiseFailureServicesAction">
+                    
+         <result name="success">/jsp/showErrorCodewisefailureservice.jsp</result>
+                
+      </action>
+             
+      <action name="showNonGen5ErrorCodeWiseFailureservices" class="com.action.ShowNonGen5ErrorCodeWiseFailureServicesAction">
+                    
+         <result name="success">/jsp/showNonGen5ErrorCodeWiseFailureservices.jsp</result>
+                
+      </action>
+             
+      <action name="monitoringstatus" class="com.action.MonitoringStatusAction">
+                    
+         <result name="success">/jsp/MonitoringStatus.jsp</result>
+                    
+         <result name="session">/Sessionexpired.html</result>
+                
+      </action>
+             
+      <action name="autoRefreshApiwisehundreadpercfailonserver" class="com.action.AutoRefreshApiwisehundreadpercfailonserverAction">
+                    
+         <result name="success">/jsp/AutoRefreshApiwisehundreadpercfailonserver.jsp</result>
+                
+      </action>
+             
+      <action name="autoRefreshApiwisehundreadpercfailonservernongen5" class="com.action.AutoRefreshApiwisehundreadpercfailonNonGen5serverAction">
+                    
+         <result name="success">/jsp/AutoRefreshApiwisehundreadpercfailonNonGen5server.jsp</result>
+                
+      </action>
+             
+      <action name="autoRefreshApiwisenohitsserver" class="com.action.AutoRefreshApiwisenohitsserverAction">
+                    
+         <result name="success">/jsp/AutoRefreshApiwisenohitsserver.jsp</result>
+                
+      </action>
+             
+      <action name="multipleservicewisetdbdperc" class="com.action.MultipleServiceWiseTDBDPercAction">
+                    
+         <result name="success">/jsp/MultipleServiceWiseTDBDPer.jsp</result>
+                    
+         <result name="session">/Sessionexpired.html</result>
+                
+      </action>
+             
+       <action name="deploymentsheet" class="com.action.DeploymentsheetAction">
+                    
+         <result name="success">/jsp/Deploymentsheet.jsp</result>
+                    
+         <result name="session">/Sessionexpired.html</result>
+                
+      </action> 
+             
+      <action name="viewdeploymentsheet" class="com.action.ViewDeploymentsheetAction">
+                    
+         <result name="success">/jsp/ViewDeploymentsheet.jsp</result>
+                    
+         <result name="successbanker">/jsp/ViewDeploymentsheetBanker.jsp</result>
+                    
+         <result name="session">/Sessionexpired.html</result>
+                
+      </action>
+             
+      <action name="EisRegistration" class="com.action.EISRegistrationAction">
+                    
+         <result name="success">/jsp/EISRegistration.jsp</result>
+                    
+         <result name="thanks">/Thanks.html</result>
+                    
+         <result name="session">/Sessionexpired.html</result>
+                
+      </action>
+      
+      <action  name="ViewEisRegistrationDetails" class="com.action.ViewEISRegistrationDetailsAction">
+			<result name="success" >/jsp/ViewEISRegistrationDetails.jsp</result>
+			<!-- <result name="success" >/jsp/ViewEISRegistrationDetailsNew.jsp</result> -->
+			<result name="session" >/Sessionexpired.html</result>
+		</action>
+		
+		<!--  <action  name="ViewEisRegistrationDetailsNew" class="com.action.ViewEISRegistrationDetailsActionNew">
+			<result name="success" >/jsp/ViewEISRegistrationDetailsNew.jsp</result>
+			<result name="session" >/Sessionexpired.html</result>
+		</action> -->
+         
+   </package>
 </struts>
