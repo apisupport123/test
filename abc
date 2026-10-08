@@ -9,23 +9,11 @@
 <title>Transaction End Point</title>
 <script nonce="undefined" src="<%=request.getContextPath()%>/js/zingchart.min.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-<script type="text/javascript">
-function openPopup1() {
-    var width=800;
-    var height=600;
-    var left= (window.innerWidth - width) / 2;
-    var top= (window.innerHeight - height) / 2;
-    var popupWindow = window.open('TransactionEndPointDataBank.jsp', 'DataPopup', 'width='+ width +', height='+ height +', left='+ left +', top='+top);
-    popupWindow.focus();
-}
-
-document.addEventListener('DOMContentLoaded', function(){
-    document.getElementById('openPopup1').addEventListener('click', openPopup1);
-});
-</script>
 
 <style>
-/* ============ ORIGINAL STYLES — AS-IS ============ */
+/* ================================================================
+   ORIGINAL STYLES — AS-IS
+   ================================================================ */
 .chart--container {
     min-height: 620px;
     width: 100%;
@@ -54,7 +42,6 @@ document.addEventListener('DOMContentLoaded', function(){
     50% { opacity: 0; }
 }
 
-/* The Modal (background) */
 .modal {
     display: none;
     position: fixed;
@@ -65,10 +52,8 @@ document.addEventListener('DOMContentLoaded', function(){
     width: 100%;
     height: 100%;
     overflow: auto;
-    background-color: rgb(0,0,0);
     background-color: rgba(0,0,0,0.4);
 }
-
 .modal-content {
     position: relative;
     background-color: #fefefe;
@@ -77,68 +62,14 @@ document.addEventListener('DOMContentLoaded', function(){
     border: 1px solid #888;
     width: 80%;
     box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19);
-    -webkit-animation-name: animatetop;
-    -webkit-animation-duration: 0.4s;
-    animation-name: animatetop;
-    animation-duration: 0.4s
 }
-
-@-webkit-keyframes animatetop {
-    from {top:-300px; opacity:0}
-    to {top:0; opacity:1}
-}
-
-@keyframes animatetop {
-    from {top:-300px; opacity:0}
-    to {top:0; opacity:1}
-}
-
-.close {
-    color: white;
-    float: right;
-    font-size: 28px;
-    font-weight: bold;
-}
-
-.close:hover,
-.close:focus {
-    color: #000;
-    text-decoration: none;
-    cursor: pointer;
-}
-
 .modal-header {
     padding: 2px 16px;
     background-color: #AB5AF3;
     color: white;
 }
-
-.modal-body {
-    padding: 2px 16px;
-    font-size: large;
-}
-
-.modal-footer {
-    padding: 2px 16px;
-    background-color: #AB5AF3;
-    color: white;
-}
-
-table {
-    font-family: arial, sans-serif;
-    border-collapse: collapse;
-    width: 100%;
-}
-
-td, th {
-    border: 1px solid #dddddd;
-    text-align: left;
-    padding: 8px;
-}
-
-tr:nth-child(even) {
-    background-color: #dddddd;
-}
+.modal-body { padding: 2px 16px; font-size: large; }
+.modal-footer { padding: 2px 16px; background-color: #AB5AF3; color: white; }
 
 .timer {
     border: 5px solid white;
@@ -152,20 +83,11 @@ tr:nth-child(even) {
     text-decoration: none;
 }
 
-.wait {
-    font-family: arial;
-    font-size: 13px;
-    color: #ff0000;
-    font-weight: bold;
-    zoom: 10%;
-}
-
 .button-container {
     display: flex;
     justify-content: flex-end;
     margin-right: 10px;
 }
-
 .button {
     padding: 10px 20px;
     border: none;
@@ -174,33 +96,132 @@ tr:nth-child(even) {
     margin-right: 10px;
 }
 
-/* ✅ Sirf ye 2 lines add ki — topnav ke neeche content shift ho */
-.new-wrapper {
-    padding-top: 0 !important;
+/* ================================================================
+   SIDEBAR INTEGRATION — SIRF 3 CHEEZEIN
+   ================================================================ */
+
+/* 1. Body ka black bg — topnav aur sidebar ke saath match ho */
+body {
+    background-color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
 }
-.new-wrapper .page-wrap {
-    padding: 8px 16px 0 16px;
+
+/* 2. Topnav ko transparent/dark karo — page ka bg dikhe usme */
+.topnav {
+    background: rgba(0, 0, 0, 0.85) !important;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid rgba(255,255,255,.08) !important;
+}
+.topnav .tn-search {
+    background: rgba(255,255,255,.06) !important;
+    border-color: rgba(255,255,255,.1) !important;
+    color: #cbd5e1 !important;
+}
+.topnav .tn-search:hover {
+    border-color: var(--brand) !important;
+    color: #fff !important;
+    background: rgba(255,255,255,.1) !important;
+}
+.topnav .tn-search .kbd {
+    background: rgba(255,255,255,.08) !important;
+    border-color: rgba(255,255,255,.15) !important;
+    color: #94a3b8 !important;
+}
+.topnav .tn-menu-btn {
+    background: rgba(255,255,255,.06) !important;
+    border-color: rgba(255,255,255,.1) !important;
+    color: #fff !important;
+}
+.topnav .tn-menu-btn:hover {
+    background: var(--brand) !important;
+    border-color: var(--brand) !important;
+    color: #fff !important;
+}
+.topnav .tn-btn {
+    background: transparent !important;
+    border-color: rgba(255,255,255,.1) !important;
+    color: #fff !important;
+}
+.topnav .tn-btn:hover {
+    background: var(--brand) !important;
+    border-color: var(--brand) !important;
+}
+.topnav .tn-toggle {
+    border-color: rgba(255,255,255,.1) !important;
+    color: #fff !important;
+}
+
+/* 3. Content ko topnav ke neeche properly start karo */
+.new-wrapper {
+    padding-top: 64px !important;   /* topnav height */
+    margin-left: 260px !important;   /* sidebar width */
+    background-color: #000000;
+    min-height: 100vh;
+}
+html.sb-collapsed .new-wrapper {
+    margin-left: 0 !important;
+}
+
+/* Chart ke upar wali p (blink) ko proper spacing do */
+.new-wrapper .blink {
+    margin: 0 !important;
+    padding: 12px 20px 8px 20px !important;
+}
+
+/* Button container padding */
+.new-wrapper .button-container {
+    margin: 6px 20px 20px 20px !important;
+}
+
+/* Chart container — original margin-top hata do, kyunki new-wrapper me already space hai */
+.new-wrapper .chart--container {
+    margin-top: 20px !important;
+    padding: 0 20px !important;
+    height: 800px !important;
+    zoom: 85%;
+    position: relative;
+}
+
+/* Footer */
+.new-wrapper .footer {
+    margin-top: 20px;
+    padding-bottom: 20px;
+}
+.new-wrapper .footer p {
+    color: white !important;
 }
 </style>
 </head>
-<body onload="myFunction_Time()" bgcolor="#000000">
+<body>
 
 <%@include file="../userheader.jsp"%>
 
 <div class="new-wrapper">
-<div class="page-wrap">
 
-<p class="blink" style="font-size: 30px"> This Data get Auto Refresh after <span class="timer" id="ten-countdown"></span> Minutes
+<p class="blink" style="font-size: 30px;"> This Data get Auto Refresh after <span class="timer" id="ten-countdown"></span> Minutes
 </p>
 
 <div class="button-container">
     <input type="button" class="button" id="openPopup1" style="background-color: #008CBA; color: white;" value="View Logs">
 </div>
 
-<div id="myChart" style="margin-top: 150px; height: 800px; zoom:85%; position: relative;" class="chart--container">
-</div>
+<div id="myChart" class="chart--container"></div>
 
 <script>
+function openPopup1() {
+    var width=800;
+    var height=600;
+    var left= (window.innerWidth - width) / 2;
+    var top= (window.innerHeight - height) / 2;
+    var popupWindow = window.open('TransactionEndPointDataBank.jsp', 'DataPopup', 'width='+ width +', height='+ height +', left='+ left +', top='+top);
+    popupWindow.focus();
+}
+document.addEventListener('DOMContentLoaded', function(){
+    document.getElementById('openPopup1').addEventListener('click', openPopup1);
+});
+
 function myFunction_Time() {
     var x = document.lastModified;
     document.getElementById("demo").innerHTML = x;
@@ -287,9 +308,7 @@ let chartConfig = {
             fontSize: "30",
             offsetX: '-100px',
         },
-        item: {
-            'font-size': 30
-        },
+        item: { 'font-size': 30 },
         guide: {
             visible: true,
             'line-color': "black",
@@ -310,9 +329,7 @@ let chartConfig = {
             color: "red",
             fontSize: "30",
         },
-        item: {
-            'font-size': 30
-        },
+        item: { 'font-size': 30 },
         guide: {
             visible: true,
             'line-color': "black",
@@ -369,19 +386,13 @@ var modal = document.getElementById("myModal");
 var btn = document.getElementById("myBtn");
 var span = document.getElementsByClassName("close")[0];
 if(btn){
-    btn.onclick = function() {
-        modal.style.display = "block";
-    }
+    btn.onclick = function() { modal.style.display = "block"; }
 }
 if(span){
-    span.onclick = function() {
-        modal.style.display = "none";
-    }
+    span.onclick = function() { modal.style.display = "none"; }
 }
 window.onclick = function(event) {
-    if (event.target == modal) {
-        modal.style.display = "none";
-    }
+    if (event.target == modal) { modal.style.display = "none"; }
 }
 </script>
 
@@ -417,12 +428,10 @@ function countdown( elementName, minutes, seconds )
 countdown( "ten-countdown", 10, 0 );
 </script>
 
-<br> <br> <br>
 <div class="footer">
-    <p class="font-italic text-center text-bottom" style="position:relative; color: white; font-size: 15px; top: -50px; left: 5%">Designed by @Shubham Chaudhari & Developed by @Anil Gupta  </p>
+    <p class="font-italic text-center text-bottom" style="position:relative; color: white; font-size: 15px; top: -20px;">Designed by @Shubham Chaudhari &amp; Developed by @Anil Gupta</p>
 </div>
 
-</div>
 </div>
 </body>
 </html>
