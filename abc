@@ -1,215 +1,959 @@
-package com.action;
-
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.apache.struts2.ServletActionContext;
-import com.opensymphony.xwork2.ActionSupport;
-import com.opensymphony.xwork2.ModelDriven;
-
-import com.actionform.LoginForm;
-import com.jdbc.DBUtilityAuto;
-import com.jdbc.TrippleDes;
-
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
-
-@SuppressWarnings("serial")
-public class LoginAction extends ActionSupport implements ModelDriven<LoginForm> {
-
-    private LoginForm loginForm = new LoginForm();
-
-    // JSON response ke liye
-    private Map<String, Object> jsonData = new HashMap<>();
-
-    @Override
-    public LoginForm getModel() {
-        return loginForm;
-    }
-
-    public List<String> getRolelist() {
-        return loginForm.getRolelist();
-    }
-
-    // Struts2 JSON plugin is getter ko dhoondhta hai
-    public Map<String, Object> getJsonData() {
-        return jsonData;
-    }
-
-    // ==================== DEFAULT: LOAD LOGIN PAGE ====================
-    @Override
-    public String execute() throws Exception {
-        System.out.println(">>> LoginAction.execute() called");
-        this.getEISRole(loginForm);
-        System.out.println("Roles Loaded : " + loginForm.getRolelist());
-        return "success";
-    }
-
-    // ==================== USER LOGIN (AJAX JSON) ====================
-    public String usersign() throws Exception {
-        System.out.println(">>> usersign() called");
-        HttpServletRequest request = ServletActionContext.getRequest();
-
-        String username = request.getParameter("m_strUserName");
-        String password = request.getParameter("m_struserPassword");
-        String role     = request.getParameter("m_strRole");
-
-        if (username == null || username.trim().isEmpty()
-                || password == null || password.trim().isEmpty()
-                || role == null || role.trim().isEmpty()) {
-            jsonData.put("status", "error");
-            jsonData.put("message", "Please fill all fields");
-            return "jsonerror";
-        }
-
-        boolean hasRole = this.checkRole(loginForm, request);
-
-        if (hasRole) {
-            HttpSession session = request.getSession();
-            session.setAttribute("role", role);
-            session.setAttribute("username", username);
-
-            jsonData.put("status", "success");
-
-            if ("EIS Bank".equals(role)) {
-                // ✅ Banker → Bankheader.jsp (direct JSP, kyunki bankerHome action nahi hai)
-                jsonData.put("redirectUrl",
-                    request.getContextPath() + "/jsp/Bankheader.jsp");
-            } else {
-                // ✅ Normal user → userhomescreen action (exists in struts.xml)
-                jsonData.put("redirectUrl",
-                    request.getContextPath() + "/userhomescreen.action");
-            }
-            return "jsonsuccess";
-        } else {
-            jsonData.put("status", "error");
-            jsonData.put("message", "Invalid username, password or role");
-            return "jsonerror";
-        }
-    }
-
-    // ==================== ADMIN LOGIN (AJAX JSON) ====================
-    public String adminsign() throws Exception {
-        System.out.println(">>> adminsign() called");
-        HttpServletRequest request = ServletActionContext.getRequest();
-
-        String adminUser = request.getParameter("m_stradminUserName");
-        String adminPass = request.getParameter("m_stradminPassword");
-
-        if (adminUser == null || adminUser.trim().isEmpty()
-                || adminPass == null || adminPass.trim().isEmpty()) {
-            jsonData.put("status", "error");
-            jsonData.put("message", "Please fill all fields");
-            return "jsonerror";
-        }
-
-        // ---------- Hardcoded Admin ----------
-        if ("Admin".equalsIgnoreCase(adminUser) && "admin".equals(adminPass)) {
-            request.getSession().setAttribute("role", "Admin");
-            jsonData.put("status", "success");
-            // ✅ header.jsp — purane flow ke hisaab se (successadmin)
-            jsonData.put("redirectUrl",
-                request.getContextPath() + "/jsp/header.jsp");
-            return "jsonsuccess";
-        }
-
-        // ---------- Module Lead check ----------
-        Connection con = null;
-        Statement stmt = null;
-        ResultSet rs = null;
-        String password = null;
-        try {
-            con = DBUtilityAuto.getReportDBConnection();
-            String query = "SELECT passwords FROM a_module_leads WHERE LOWER(username) = LOWER('"
-                            + adminUser.replace("'", "''") + "')";
-            stmt = con.createStatement();
-            rs = stmt.executeQuery(query);
-            if (rs.next()) password = rs.getString("passwords");
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            if (rs != null) try { rs.close(); } catch (Exception ignored) {}
-            if (stmt != null) try { stmt.close(); } catch (Exception ignored) {}
-            if (con != null) try { con.close(); } catch (Exception ignored) {}
-        }
-
-        if (password != null && password.equals(adminPass)) {
-            request.getSession().setAttribute("role", "ModuleLead");
-            jsonData.put("status", "success");
-            // ✅ moduleHeader.jsp — purane flow ke hisaab se (successmodule)
-            jsonData.put("redirectUrl",
-                request.getContextPath() + "/jsp/moduleHeader.jsp");
-            return "jsonsuccess";
-        }
-
-        // ---------- Fail ----------
-        jsonData.put("status", "error");
-        jsonData.put("message", "Invalid admin credentials");
-        return "jsonerror";
-    }
-
-    // For REST plugin (agar use ho raha ho)
-    public String index() throws Exception {
-        return execute();
-    }
-
-    // ==================== HELPERS ====================
-    private boolean checkRole(LoginForm loginForm, HttpServletRequest request) throws SQLException {
-        Connection con = null;
-        Statement stmt = null;
-        ResultSet rs = null;
-        try {
-            TrippleDes td = new TrippleDes();
-            int count = 0;
-
-            String user = request.getParameter("m_strUserName").replace("'", "''");
-            String pass = td.encrypt(request.getParameter("m_struserPassword").trim());
-            String role = request.getParameter("m_strRole").replace("'", "''");
-
-            String query = "SELECT COUNT(1) FROM rolemst "
-                    + "WHERE username LIKE '%" + user + "%' "
-                    + "AND password='" + pass + "' "
-                    + "AND rolename='" + role + "'";
-
-            con = DBUtilityAuto.getReportDBConnection();
-            stmt = con.createStatement();
-            rs = stmt.executeQuery(query);
-            if (rs.next()) count = rs.getInt(1);
-            return count > 0;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        } finally {
-            if (rs != null) try { rs.close(); } catch (Exception ignored) {}
-            if (stmt != null) try { stmt.close(); } catch (Exception ignored) {}
-            if (con != null) try { con.close(); } catch (Exception ignored) {}
-        }
-    }
-
-    private void getEISRole(LoginForm loginForm) throws SQLException {
-        Connection con = null;
-        Statement stmt = null;
-        ResultSet rs = null;
-        try {
-            ArrayList<String> list = new ArrayList<>();
-            con = DBUtilityAuto.getReportDBConnection();
-            stmt = con.createStatement();
-            rs = stmt.executeQuery("SELECT rolename FROM rolemst");
-            while (rs.next()) list.add(rs.getString("rolename"));
-            loginForm.setRolelist(list);
-            System.out.println("Roles loaded: " + list);
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            if (rs != null) try { rs.close(); } catch (Exception ignored) {}
-            if (stmt != null) try { stmt.close(); } catch (Exception ignored) {}
-            if (con != null) try { con.close(); } catch (Exception ignored) {}
-        }
-    }
+<%@page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%
+ response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+ response.setHeader("Pragma", "no-cache");
+ response.setDateHeader("Expires", 0);
+%>
+<%@ taglib prefix="s" uri="/struts-tags" %>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>EIS Portal — Command Center</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+:root{
+  --brand:#FF8A00;
+  --brand-2:#FFB84D;
+  --brand-glow:rgba(255,138,0,.55);
+  --bg:#05070d;
+  --bg-2:#0a0e17;
+  --panel:rgba(15,20,32,.85);
+  --panel-border:rgba(255,138,0,.25);
+  --text:#e6edf7;
+  --muted:#6b7a90;
+  --green:#00ffa3;
+  --red:#ff4d6d;
+  --cyan:#00d9ff;
 }
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  font-family:'Inter',system-ui,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden;
+  position:relative;
+}
+
+/* ============ ANIMATED PERSPECTIVE GRID ============ */
+.grid-bg{
+  position:fixed;inset:0;z-index:0;
+  background-image:
+    linear-gradient(rgba(255,138,0,.15) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,138,0,.15) 1px, transparent 1px);
+  background-size:60px 60px;
+  transform:perspective(500px) rotateX(60deg) scale(2.5);
+  transform-origin:center bottom;
+  animation:gridMove 20s linear infinite;
+  opacity:.5;
+  pointer-events:none;
+}
+@keyframes gridMove{
+  from{background-position:0 0}
+  to{background-position:0 60px}
+}
+
+/* Radial glow overlays */
+.glow-1{
+  position:fixed;top:-200px;left:-200px;
+  width:700px;height:700px;border-radius:50%;
+  background:radial-gradient(circle, rgba(255,138,0,.35) 0%, transparent 60%);
+  filter:blur(60px);z-index:0;pointer-events:none;
+  animation:pulse 6s ease-in-out infinite;
+}
+.glow-2{
+  position:fixed;bottom:-250px;right:-250px;
+  width:800px;height:800px;border-radius:50%;
+  background:radial-gradient(circle, rgba(0,217,255,.22) 0%, transparent 60%);
+  filter:blur(70px);z-index:0;pointer-events:none;
+  animation:pulse 8s ease-in-out infinite reverse;
+}
+@keyframes pulse{
+  0%,100%{opacity:.8;transform:scale(1)}
+  50%{opacity:1;transform:scale(1.15)}
+}
+
+/* Scanlines */
+.scanlines{
+  position:fixed;inset:0;z-index:1;pointer-events:none;
+  background:repeating-linear-gradient(
+    0deg,
+    rgba(0,0,0,0) 0px,
+    rgba(0,0,0,0) 2px,
+    rgba(255,255,255,.015) 2px,
+    rgba(255,255,255,.015) 4px
+  );
+}
+
+/* ============ TOP STATUS BAR ============ */
+.status-bar{
+  position:fixed;top:0;left:0;right:0;z-index:5;
+  padding:10px 24px;
+  display:flex;justify-content:space-between;align-items:center;
+  font-family:'JetBrains Mono',monospace;
+  font-size:.72rem;letter-spacing:.5px;
+  color:var(--muted);
+  border-bottom:1px solid rgba(255,138,0,.15);
+  background:linear-gradient(180deg, rgba(5,7,13,.9) 0%, transparent 100%);
+  backdrop-filter:blur(10px);
+}
+.status-left,.status-right{display:flex;align-items:center;gap:20px}
+.status-dot{
+  width:8px;height:8px;border-radius:50%;
+  background:var(--green);
+  box-shadow:0 0 10px var(--green);
+  animation:blink 2s ease-in-out infinite;
+  display:inline-block;margin-right:6px;
+}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+.status-item{color:var(--muted)}
+.status-item b{color:var(--brand);font-weight:600}
+
+/* ============ MAIN SHELL ============ */
+.shell{
+  position:relative;z-index:3;
+  width:100%;max-width:1180px;
+  display:grid;grid-template-columns: 1fr 1.1fr;
+  gap:0;
+  background:var(--panel);
+  border:1px solid var(--panel-border);
+  border-radius:2px;
+  backdrop-filter:blur(20px);
+  box-shadow:
+    0 0 0 1px rgba(255,138,0,.05),
+    0 30px 80px rgba(0,0,0,.7),
+    0 0 100px -20px var(--brand-glow);
+  overflow:hidden;
+  min-height:620px;
+  /* Corner cut effect */
+  clip-path: polygon(
+    0 24px, 24px 0,
+    calc(100% - 24px) 0, 100% 24px,
+    100% calc(100% - 24px), calc(100% - 24px) 100%,
+    24px 100%, 0 calc(100% - 24px)
+  );
+}
+
+/* Corner accent marks */
+.shell::before,
+.shell::after{
+  content:"";position:absolute;
+  width:24px;height:24px;
+  border:2px solid var(--brand);
+  z-index:5;pointer-events:none;
+}
+.shell::before{
+  top:0;left:0;
+  border-right:none;border-bottom:none;
+}
+.shell::after{
+  bottom:0;right:0;
+  border-left:none;border-top:none;
+}
+
+/* ============ LEFT: INFO PANEL ============ */
+.info-panel{
+  position:relative;
+  padding:56px 44px 44px;
+  background:linear-gradient(160deg, rgba(255,138,0,.08) 0%, rgba(0,217,255,.04) 100%);
+  border-right:1px solid var(--panel-border);
+  display:flex;flex-direction:column;justify-content:space-between;
+  overflow:hidden;
+}
+.info-panel::before{
+  content:"";position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg, transparent, var(--brand), transparent);
+  animation:scan 3s ease-in-out infinite;
+}
+@keyframes scan{0%,100%{opacity:0;transform:translateY(0)}50%{opacity:1;transform:translateY(600px)}}
+
+.brand{
+  display:flex;align-items:center;gap:14px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:1rem;font-weight:700;letter-spacing:2px;
+  color:var(--brand);
+  text-transform:uppercase;
+}
+.brand-icon{
+  width:44px;height:44px;
+  display:grid;place-items:center;
+  border:1.5px solid var(--brand);
+  background:rgba(255,138,0,.08);
+  color:var(--brand);
+  font-size:1.1rem;
+  position:relative;
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+}
+.brand-icon::after{
+  content:"";position:absolute;inset:0;
+  border:1px solid var(--brand);
+  opacity:.3;
+  animation:ping 2s ease-out infinite;
+}
+@keyframes ping{0%{transform:scale(1);opacity:.5}100%{transform:scale(1.4);opacity:0}}
+
+.tagline{
+  margin-top:32px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:.72rem;
+  color:var(--muted);
+  letter-spacing:3px;
+  text-transform:uppercase;
+}
+.tagline b{color:var(--cyan)}
+
+.hero-title{
+  margin-top:12px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:2rem;
+  font-weight:700;
+  line-height:1.2;
+  color:#fff;
+  letter-spacing:-.5px;
+  min-height:2.6em;
+}
+.hero-title .cursor{
+  display:inline-block;
+  width:10px;height:1.1em;
+  background:var(--brand);
+  vertical-align:middle;
+  margin-left:4px;
+  animation:cursorBlink 1s steps(1) infinite;
+}
+@keyframes cursorBlink{0%,50%{opacity:1}51%,100%{opacity:0}}
+
+.hero-title .accent{color:var(--brand)}
+
+.hero-desc{
+  margin-top:20px;
+  color:var(--muted);
+  font-size:.92rem;
+  line-height:1.7;
+  max-width:400px;
+}
+
+/* System status strip */
+.sys-status{
+  margin-top:36px;
+  padding:16px;
+  border:1px solid rgba(255,138,0,.15);
+  background:rgba(0,0,0,.3);
+  font-family:'JetBrains Mono',monospace;
+  font-size:.72rem;
+  display:grid;gap:10px;
+  clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+}
+.sys-row{display:flex;justify-content:space-between;align-items:center}
+.sys-row span:first-child{color:var(--muted)}
+.sys-row .val{color:var(--green)}
+.sys-row .val.warn{color:var(--brand)}
+.bar{
+  flex:1;margin:0 12px;height:3px;
+  background:rgba(255,255,255,.08);
+  position:relative;overflow:hidden;
+}
+.bar::after{
+  content:"";position:absolute;left:0;top:0;bottom:0;
+  width:var(--w,60%);
+  background:linear-gradient(90deg, var(--green), var(--cyan));
+  animation:barPulse 3s ease-in-out infinite;
+}
+@keyframes barPulse{0%,100%{opacity:.7}50%{opacity:1}}
+
+.footer-info{
+  font-family:'JetBrains Mono',monospace;
+  font-size:.68rem;
+  color:var(--muted);
+  letter-spacing:1px;
+  margin-top:32px;
+}
+
+/* ============ RIGHT: FORM PANEL ============ */
+.form-panel{
+  padding:56px 48px 44px;
+  display:flex;flex-direction:column;justify-content:center;
+  position:relative;
+}
+
+.form-header{
+  margin-bottom:32px;
+}
+.form-header .step{
+  font-family:'JetBrains Mono',monospace;
+  font-size:.7rem;
+  color:var(--brand);
+  letter-spacing:3px;
+  margin-bottom:8px;
+}
+.form-header h2{
+  font-size:1.9rem;
+  font-weight:800;
+  letter-spacing:-.5px;
+  color:#fff;
+}
+.form-header p{
+  color:var(--muted);
+  font-size:.88rem;
+  margin-top:6px;
+}
+
+/* Tabs — terminal style */
+.tabs{
+  display:flex;gap:0;
+  margin-bottom:32px;
+  border:1px solid rgba(255,138,0,.2);
+  background:rgba(0,0,0,.25);
+  position:relative;
+}
+.tab{
+  flex:1;
+  padding:14px 20px;
+  background:transparent;
+  border:none;
+  color:var(--muted);
+  font-family:'JetBrains Mono',monospace;
+  font-size:.78rem;
+  letter-spacing:2px;
+  text-transform:uppercase;
+  font-weight:600;
+  cursor:pointer;
+  transition:all .25s ease;
+  position:relative;
+}
+.tab:hover{color:var(--brand)}
+.tab.active{
+  color:var(--bg);
+  background:linear-gradient(135deg, var(--brand) 0%, var(--brand-2) 100%);
+  box-shadow:0 0 30px -8px var(--brand-glow);
+}
+.tab:not(:last-child)::after{
+  content:"";position:absolute;right:0;top:20%;bottom:20%;
+  width:1px;background:rgba(255,138,0,.2);
+}
+.tab.active::after{background:transparent}
+
+/* Alerts */
+.alert{
+  display:none;
+  padding:12px 16px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:.78rem;
+  margin-bottom:18px;
+  align-items:center;gap:10px;
+  border-left:3px solid;
+  background:rgba(0,0,0,.3);
+}
+.alert.error{color:#ff8b9e;border-color:var(--red)}
+.alert.success{color:#7effc7;border-color:var(--green)}
+.alert.show{display:flex}
+
+/* Fields — terminal style */
+.field{
+  position:relative;
+  margin-bottom:18px;
+}
+.field-label{
+  font-family:'JetBrains Mono',monospace;
+  font-size:.68rem;
+  color:var(--muted);
+  letter-spacing:2px;
+  text-transform:uppercase;
+  margin-bottom:6px;
+  display:flex;justify-content:space-between;
+}
+.field-label .prompt{color:var(--brand)}
+.field-input-wrap{
+  position:relative;
+  display:flex;align-items:center;
+  border:1px solid rgba(255,138,0,.25);
+  background:rgba(0,0,0,.4);
+  transition:all .25s ease;
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+}
+.field-input-wrap:focus-within{
+  border-color:var(--brand);
+  background:rgba(255,138,0,.06);
+  box-shadow:
+    0 0 0 1px var(--brand),
+    0 0 30px -8px var(--brand-glow);
+}
+.field-icon{
+  color:var(--muted);
+  font-size:.9rem;
+  padding:0 14px;
+  transition:color .25s ease;
+}
+.field-input-wrap:focus-within .field-icon{color:var(--brand)}
+
+.field input,
+.field select{
+  flex:1;
+  padding:15px 16px 15px 0;
+  background:transparent;
+  border:none;
+  outline:none;
+  color:#fff;
+  font-family:'JetBrains Mono',monospace;
+  font-size:.9rem;
+  font-weight:500;
+  width:100%;
+}
+.field input::placeholder{color:var(--muted);opacity:.5}
+.field select{
+  cursor:pointer;
+  appearance:none;
+  padding-right:40px;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23FF8A00' stroke-width='3'><polyline points='6 9 12 15 18 9'/></svg>");
+  background-repeat:no-repeat;
+  background-position:right 16px center;
+}
+.field select option{
+  background:var(--bg-2);
+  color:#fff;
+}
+
+/* Password reveal */
+.pw-toggle{
+  background:transparent;border:none;
+  color:var(--muted);cursor:pointer;
+  padding:0 16px;
+  font-size:.9rem;
+  transition:color .25s ease;
+}
+.pw-toggle:hover{color:var(--brand)}
+
+/* Submit button */
+.btn-primary{
+  width:100%;
+  padding:16px;
+  margin-top:8px;
+  border:none;
+  background:linear-gradient(135deg, var(--brand) 0%, var(--brand-2) 100%);
+  color:var(--bg);
+  font-family:'JetBrains Mono',monospace;
+  font-weight:800;
+  font-size:.85rem;
+  letter-spacing:3px;
+  text-transform:uppercase;
+  cursor:pointer;
+  transition:all .25s ease;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  position:relative;
+  overflow:hidden;
+  clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+  box-shadow:0 0 40px -10px var(--brand-glow);
+}
+.btn-primary::before{
+  content:"";position:absolute;top:0;left:-100%;width:100%;height:100%;
+  background:linear-gradient(90deg, transparent, rgba(255,255,255,.35), transparent);
+  transition:left .6s ease;
+}
+.btn-primary:hover::before{left:100%}
+.btn-primary:hover{
+  transform:translateY(-2px);
+  box-shadow:0 0 60px -8px var(--brand-glow);
+}
+.btn-primary:active{transform:translateY(0)}
+.btn-primary:disabled{opacity:.6;cursor:not-allowed;transform:none}
+
+.spinner{
+  width:16px;height:16px;
+  border:2px solid rgba(0,0,0,.25);
+  border-top-color:var(--bg);
+  border-radius:50%;
+  animation:spin .7s linear infinite;
+  display:none;
+}
+.btn-primary.loading .spinner{display:block}
+.btn-primary.loading .btn-arrow{display:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Form switch animation */
+.form-view{display:none;animation:slideIn .35s ease}
+.form-view.active{display:block}
+@keyframes slideIn{
+  from{opacity:0;transform:translateX(20px)}
+  to{opacity:1;transform:translateX(0)}
+}
+
+/* ============ BOTTOM BAR ============ */
+.bottom-bar{
+  position:fixed;bottom:0;left:0;right:0;z-index:5;
+  padding:10px 24px;
+  display:flex;justify-content:space-between;align-items:center;
+  font-family:'JetBrains Mono',monospace;
+  font-size:.68rem;
+  color:var(--muted);
+  letter-spacing:1px;
+  border-top:1px solid rgba(255,138,0,.15);
+  background:linear-gradient(0deg, rgba(5,7,13,.9) 0%, transparent 100%);
+  backdrop-filter:blur(10px);
+}
+.bottom-bar .keys kbd{
+  display:inline-block;
+  padding:2px 6px;
+  border:1px solid rgba(255,138,0,.3);
+  color:var(--brand);
+  font-family:inherit;
+  font-size:.65rem;
+  margin:0 3px;
+  background:rgba(255,138,0,.08);
+}
+.bottom-bar .heart{color:var(--brand)}
+
+/* Quick links — floating row */
+.quick-links{
+  position:fixed;
+  bottom:60px;left:0;right:0;
+  z-index:4;
+  display:flex;flex-wrap:wrap;gap:6px;
+  justify-content:center;
+  padding:0 20px;
+  max-height:0;
+  overflow:hidden;
+  transition:max-height .35s ease;
+}
+.quick-links.open{max-height:200px}
+.quick-links a{
+  font-family:'JetBrains Mono',monospace;
+  font-size:.68rem;
+  color:var(--muted);
+  padding:6px 12px;
+  border:1px solid rgba(255,138,0,.2);
+  text-decoration:none;
+  cursor:pointer;
+  transition:all .2s ease;
+  letter-spacing:1px;
+  background:rgba(5,7,13,.7);
+  backdrop-filter:blur(6px);
+}
+.quick-links a:hover{
+  color:var(--brand);
+  border-color:var(--brand);
+  background:rgba(255,138,0,.1);
+  box-shadow:0 0 20px -6px var(--brand-glow);
+}
+
+.quick-toggle{
+  position:fixed;
+  bottom:44px;right:24px;
+  z-index:6;
+  width:44px;height:44px;
+  border:1px solid var(--brand);
+  background:rgba(5,7,13,.9);
+  color:var(--brand);
+  cursor:pointer;
+  display:grid;place-items:center;
+  transition:all .25s ease;
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+}
+.quick-toggle:hover{
+  background:var(--brand);
+  color:var(--bg);
+  box-shadow:0 0 30px -6px var(--brand-glow);
+}
+
+/* ============ RESPONSIVE ============ */
+@media (max-width: 980px){
+  body{overflow-y:auto;padding:60px 16px 80px}
+  .shell{
+    grid-template-columns:1fr;
+    max-width:560px;
+    min-height:auto;
+  }
+  .info-panel{
+    padding:40px 32px 32px;
+    border-right:none;
+    border-bottom:1px solid var(--panel-border);
+  }
+  .hero-title{font-size:1.6rem}
+  .sys-status{display:none}
+  .form-panel{padding:32px 28px 40px}
+}
+@media (max-width: 560px){
+  .status-bar{padding:8px 14px;font-size:.65rem}
+  .status-bar .status-item:nth-child(n+2){display:none}
+  .bottom-bar{padding:8px 14px;font-size:.6rem}
+  .bottom-bar .keys{display:none}
+  .hero-title{font-size:1.3rem}
+  .info-panel{padding:32px 24px 24px}
+  .form-panel{padding:24px 20px 32px}
+  .form-header h2{font-size:1.4rem}
+  .quick-toggle{bottom:56px;right:16px}
+}
+</style>
+</head>
+<body>
+
+<!-- Background layers -->
+<div class="grid-bg"></div>
+<div class="glow-1"></div>
+<div class="glow-2"></div>
+<div class="scanlines"></div>
+
+<!-- Top status bar -->
+<div class="status-bar">
+  <div class="status-left">
+    <span class="status-item"><span class="status-dot"></span><b>SYSTEM ONLINE</b></span>
+    <span class="status-item">NODE: <b>SBI-EIS-PRIMARY</b></span>
+  </div>
+  <div class="status-right">
+    <span class="status-item">UPTIME: <b id="uptime">99.98%</b></span>
+    <span class="status-item" id="clock">--:--:--</span>
+  </div>
+</div>
+
+<!-- Main shell -->
+<div class="shell">
+
+  <!-- LEFT: Info panel -->
+  <aside class="info-panel">
+    <div>
+      <div class="brand">
+        <div class="brand-icon"><i class="fa-solid fa-shield-halved"></i></div>
+        <span>EIS·PORTAL</span>
+      </div>
+
+      <div class="tagline">// <b>SECURE ACCESS TERMINAL</b></div>
+
+      <div class="hero-title" id="typewriter">
+        <span class="accent">></span> INITIALIZING<span class="cursor"></span>
+      </div>
+
+      <p class="hero-desc">
+        Enterprise Information Systems — unified command center for monitoring, reporting, and operations. Authorized personnel only.
+      </p>
+
+      <div class="sys-status">
+        <div class="sys-row">
+          <span>API_GATEWAY</span>
+          <div class="bar" style="--w:94%"></div>
+          <span class="val">94%</span>
+        </div>
+        <div class="sys-row">
+          <span>DB_CLUSTER</span>
+          <div class="bar" style="--w:87%"></div>
+          <span class="val">87%</span>
+        </div>
+        <div class="sys-row">
+          <span>MESSAGE_BUS</span>
+          <div class="bar" style="--w:99%"></div>
+          <span class="val">99%</span>
+        </div>
+        <div class="sys-row">
+          <span>THREAT_LEVEL</span>
+          <div class="bar" style="--w:12%"></div>
+          <span class="val warn">LOW</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-info">
+      © <%= java.time.Year.now() %> EIS PORTAL · BUILD v6.0.13 · INTERNAL USE ONLY
+    </div>
+  </aside>
+
+  <!-- RIGHT: Form panel -->
+  <main class="form-panel">
+
+    <div class="form-header">
+      <div class="step">// AUTHENTICATION_REQUIRED</div>
+      <h2 id="formTitle">Sign In</h2>
+      <p id="formSubtitle">Enter your credentials to access the system</p>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="user"><i class="fa-solid fa-user"></i>&nbsp; USER</button>
+      <button class="tab" data-tab="admin"><i class="fa-solid fa-user-shield"></i>&nbsp; ADMIN</button>
+    </div>
+
+    <s:form action="login" method="post" theme="simple" id="loginForm">
+
+      <!-- USER VIEW -->
+      <div class="form-view active" id="view-user">
+        <div class="alert error" id="userAlert"><i class="fa-solid fa-triangle-exclamation"></i><span></span></div>
+
+        <div class="field">
+          <div class="field-label">
+            <span><span class="prompt">$</span> USERNAME</span>
+            <span>REQUIRED</span>
+          </div>
+          <div class="field-input-wrap">
+            <i class="fa-solid fa-user field-icon"></i>
+            <input type="text" placeholder="enter_username" name="m_strUserName" id="m_strUserName" autocomplete="username" />
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="field-label">
+            <span><span class="prompt">$</span> PASSWORD</span>
+            <span>SECURE</span>
+          </div>
+          <div class="field-input-wrap">
+            <i class="fa-solid fa-key field-icon"></i>
+            <input type="password" placeholder="••••••••" name="m_struserPassword" id="m_struserPassword" autocomplete="current-password" />
+            <button type="button" class="pw-toggle" onclick="togglePw('m_struserPassword', this)"><i class="fa-solid fa-eye"></i></button>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="field-label">
+            <span><span class="prompt">$</span> ROLE</span>
+            <span>SELECT</span>
+          </div>
+          <div class="field-input-wrap">
+            <i class="fa-solid fa-user-tag field-icon"></i>
+            <s:select name="m_strRole" id="m_strRole" list="rolelist" headerKey="" headerValue="choose_role" theme="simple" />
+          </div>
+        </div>
+
+        <button type="button" class="btn-primary" id="btnUserLogin" onclick="usersign()">
+          <span class="spinner"></span>
+          <span class="btn-text">Authenticate</span>
+          <i class="fa-solid fa-arrow-right btn-arrow"></i>
+        </button>
+      </div>
+
+      <!-- ADMIN VIEW -->
+      <div class="form-view" id="view-admin">
+        <div class="alert error" id="adminAlert"><i class="fa-solid fa-triangle-exclamation"></i><span></span></div>
+
+        <div class="field">
+          <div class="field-label">
+            <span><span class="prompt">$</span> ADMIN_ID</span>
+            <span>REQUIRED</span>
+          </div>
+          <div class="field-input-wrap">
+            <i class="fa-solid fa-user-shield field-icon"></i>
+            <input type="text" placeholder="admin_username" name="m_stradminUserName" id="m_stradminUserName" autocomplete="username" />
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="field-label">
+            <span><span class="prompt">$</span> ADMIN_KEY</span>
+            <span>SECURE</span>
+          </div>
+          <div class="field-input-wrap">
+            <i class="fa-solid fa-key field-icon"></i>
+            <input type="password" placeholder="••••••••" name="m_stradminPassword" id="m_stradminPassword" autocomplete="current-password" />
+            <button type="button" class="pw-toggle" onclick="togglePw('m_stradminPassword', this)"><i class="fa-solid fa-eye"></i></button>
+          </div>
+        </div>
+
+        <button type="button" class="btn-primary" id="btnAdminLogin" onclick="adminsign()">
+          <span class="spinner"></span>
+          <span class="btn-text">Authenticate</span>
+          <i class="fa-solid fa-arrow-right btn-arrow"></i>
+        </button>
+      </div>
+
+    </s:form>
+  </main>
+</div>
+
+<!-- Quick links toggle -->
+<button class="quick-toggle" onclick="toggleQuick()" title="Quick Links">
+  <i class="fa-solid fa-bolt"></i>
+</button>
+
+<div class="quick-links" id="quickLinks">
+  <a onclick="openUrl('https://10.189.37.183/')">DYNATRACE</a>
+  <a onclick="openUrl('https://10.188.10.106:2443/login')">LB_WEB_UI</a>
+  <a onclick="openUrl('https://score.sbi/')">SCORE</a>
+  <a onclick="openUrl('https://nspm.sbi/algosec/suite/login.html')">NSPM_FAR</a>
+  <a onclick="openUrl('https://10.191.171.12:5443/EISPortal/jsp/FlashReport.jsp')">FLASH_REPORT</a>
+  <a onclick="openUrl('https://10.191.171.12:5443/EIS/port_monitoring/')">EIS_PORT_MON</a>
+  <a onclick="openUrl('https://10.191.171.12:5443/EIS/CBS_Connection/')">CBS_PORT_MON</a>
+  <a onclick="openUrl('https://10.191.171.12:5443/PyPortal/APISearch/')">API_WORKLOAD</a>
+  <a onclick="openUrl('https://10.191.171.12:5443/EISInfra/curlSearch/login.php/')">CURL_PORTAL</a>
+  <a onclick="openUrl('https://www.ultimatix.net/')">ULTIMATIX</a>
+</div>
+
+<!-- Bottom bar -->
+<div class="bottom-bar">
+  <div>SESSION: <b style="color:var(--brand)">ENCRYPTED · AES-256</b></div>
+  <div class="keys">
+    <kbd>Tab</kbd> navigate <kbd>Enter</kbd> submit <kbd>Esc</kbd> clear
+  </div>
+  <div>Made with <span class="heart">♥</span> for EIS</div>
+</div>
+
+<script>
+const CTX = '<%=request.getContextPath()%>';
+
+/* ============ LIVE CLOCK ============ */
+function updateClock(){
+  const d = new Date();
+  const pad = n => String(n).padStart(2,'0');
+  document.getElementById('clock').textContent =
+    pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+/* ============ TYPEWRITER EFFECT ============ */
+const phrases = [
+  'AUTHENTICATION_READY',
+  'WELCOME_OPERATOR',
+  'ACCESS_GRANTED',
+  'SYSTEM_STANDBY'
+];
+let pIdx = 0, cIdx = 0, deleting = false;
+const tw = document.getElementById('typewriter');
+function typeLoop(){
+  const phrase = phrases[pIdx];
+  if(!deleting){
+    cIdx++;
+    tw.innerHTML = '<span class="accent">></span> ' +
+      phrase.substring(0, cIdx) + '<span class="cursor"></span>';
+    if(cIdx === phrase.length){
+      deleting = true;
+      setTimeout(typeLoop, 2000);
+      return;
+    }
+    setTimeout(typeLoop, 80);
+  } else {
+    cIdx--;
+    tw.innerHTML = '<span class="accent">></span> ' +
+      phrase.substring(0, cIdx) + '<span class="cursor"></span>';
+    if(cIdx === 0){
+      deleting = false;
+      pIdx = (pIdx + 1) % phrases.length;
+      setTimeout(typeLoop, 400);
+      return;
+    }
+    setTimeout(typeLoop, 40);
+  }
+}
+typeLoop();
+
+/* ============ TAB SWITCHING ============ */
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.form-view').forEach(v => v.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('view-' + tab.dataset.tab).classList.add('active');
+
+    // Update header
+    const title = document.getElementById('formTitle');
+    const sub = document.getElementById('formSubtitle');
+    if(tab.dataset.tab === 'user'){
+      title.textContent = 'Sign In';
+      sub.textContent = 'Enter your credentials to access the system';
+    } else {
+      title.textContent = 'Admin Access';
+      sub.textContent = 'Restricted — authorized personnel only';
+    }
+  });
+});
+
+/* ============ HELPERS ============ */
+function showAlert(id, msg, type) {
+  const el = document.getElementById(id);
+  el.className = 'alert show ' + (type || 'error');
+  el.querySelector('span').textContent = msg;
+}
+function hideAlert(id) {
+  document.getElementById(id).className = 'alert error';
+}
+function setLoading(btnId, isLoading) {
+  const btn = document.getElementById(btnId);
+  btn.disabled = isLoading;
+  btn.classList.toggle('loading', isLoading);
+}
+function openUrl(url) { window.open(url, '_blank'); }
+function toggleQuick(){
+  document.getElementById('quickLinks').classList.toggle('open');
+}
+function togglePw(id, btn){
+  const inp = document.getElementById(id);
+  if(inp.type === 'password'){
+    inp.type = 'text';
+    btn.innerHTML = '<i class="fa-solid fa-eye-slash"></i>';
+  } else {
+    inp.type = 'password';
+    btn.innerHTML = '<i class="fa-solid fa-eye"></i>';
+  }
+}
+
+/* ============ AJAX LOGIN ============ */
+async function submitLogin(url, formEl, btnId, alertId) {
+  hideAlert(alertId);
+  setLoading(btnId, true);
+  try {
+    const fd = new FormData(formEl);
+    const res = await fetch(url, {
+      method: 'POST',
+      body: fd,
+      credentials: 'same-origin',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    });
+    const ct = res.headers.get('content-type') || '';
+    if (ct.includes('application/json')) {
+      const data = await res.json();
+      if (data.status === 'success') {
+        showAlert(alertId, 'ACCESS GRANTED — redirecting...', 'success');
+        setTimeout(() => {
+          window.location.href = data.redirectUrl || (CTX + '/userhomescreen.action');
+        }, 500);
+      } else {
+        showAlert(alertId, data.message || 'ACCESS DENIED', 'error');
+      }
+    } else {
+      formEl.action = url;
+      formEl.submit();
+    }
+  } catch (err) {
+    console.error(err);
+    showAlert(alertId, 'CONNECTION ERROR — retry', 'error');
+  } finally {
+    setLoading(btnId, false);
+  }
+}
+
+/* ============ USER LOGIN ============ */
+function usersign() {
+  const form = document.getElementById('loginForm');
+  const u = document.getElementById('m_strUserName').value.trim();
+  const p = document.getElementById('m_struserPassword').value;
+  const r = document.getElementById('m_strRole').value;
+  if (!u) { showAlert('userAlert', 'USERNAME required'); return; }
+  if (!p) { showAlert('userAlert', 'PASSWORD required'); return; }
+  if (!r || r === 'choose_role') { showAlert('userAlert', 'SELECT a role'); return; }
+  localStorage.clear();
+  sessionStorage.clear();
+  submitLogin(CTX + '/login!usersign.action', form, 'btnUserLogin', 'userAlert');
+}
+
+/* ============ ADMIN LOGIN ============ */
+function adminsign() {
+  const form = document.getElementById('loginForm');
+  const u = document.getElementById('m_stradminUserName').value.trim();
+  const p = document.getElementById('m_stradminPassword').value;
+  if (!u) { showAlert('adminAlert', 'ADMIN_ID required'); return; }
+  if (!p) { showAlert('adminAlert', 'ADMIN_KEY required'); return; }
+  submitLogin(CTX + '/login!adminsign.action', form, 'btnAdminLogin', 'adminAlert');
+}
+
+/* ============ KEYBOARD SHORTCUTS ============ */
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter'){
+    e.preventDefault();
+    const active = document.querySelector('.tab.active').dataset.tab;
+    active === 'user' ? usersign() : adminsign();
+  }
+  if (e.key === 'Escape'){
+    document.querySelectorAll('input').forEach(i => i.value = '');
+  }
+});
+</script>
+
+</body>
+</html>
