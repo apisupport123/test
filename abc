@@ -1,510 +1,1008 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE struts PUBLIC "-//Apache Software Foundation//DTD Struts Configuration 6.0//EN" "../dtd/struts-6.0.dtd"> 
-<struts>
-      
-    <!-- Enable dynamic method invocation (DMI) -->
-    <constant name="struts.enable.DynamicMethodInvocation" value="true"/>
-    <constant name="struts.devMode" value="false"/>
+UserHomeScreen.jsp
 
-    <!-- JSON plugin constants -->
-    <constant name="struts.json.contentType" value="application/json"/>
+<!------ Include the above in your HEAD tag ---------->
 
-    <package name="default" namespace="/" extends="struts-default,json-default" strict-method-invocation="true">
 
-        <!-- Whitelist allowed methods globally -->
-        <global-allowed-methods>execute,usersign,adminsign,showeisissue,showregpage,displayServices</global-allowed-methods>
-   
-             
-      <action name="test">
-                    
-         <result>/debug.jsp</result>
-                
-      </action>
-             
-      <action name="login" class="com.action.LoginAction" method="execute">
-                    
-         <result name="success">/jsp/Eislogin.jsp</result>
-                    
-         <result name="successadmin">/jsp/header.jsp</result>
-                    
-         <result name="successmodule">/jsp/moduleHeader.jsp</result>
-                    
-         <result name="successbanker">/jsp/Bankheader.jsp</result>
-                    
-         <result name="successuser" type="redirectAction">userhomescreen</result>
+<%@page contentType="text/html" pageEncoding="UTF-8"%>
 
-         <!-- ================= JSON RESULTS (AJAX) ================= -->
-         <result name="jsonsuccess" type="json">
-            <param name="root">jsonData</param>
-            <param name="contentType">application/json</param>
-            <param name="ignoreHierarchy">false</param>
-            <param name="excludeNullProperties">true</param>
-         </result>
 
-         <result name="jsonerror" type="json">
-            <param name="root">jsonData</param>
-            <param name="contentType">application/json</param>
-            <param name="ignoreHierarchy">false</param>
-            <param name="excludeNullProperties">true</param>
-         </result>
-         <!-- ======================================================= -->
-                
-      </action>
-      
-	 <action name="logout" class="com.action.LogoutAction" method="execute">
-                    
-         <result name="success" type="redirect">login.action</result>
-                
-      </action>
-             
-      <action name="userhomescreen" class="com.action.UserHomeScreenAction">
-                    
-         <result name="success">/jsp/UserHomeScreen.jsp</result>
-                    
-         <result name="session">/Sessionexpired.html</result>
-                
-      </action>
-             
-      <action name="eissop" class="com.action.SOPMasterAction">
-                    
-         <result name="success">/jsp/SopMaster.jsp</result>
-                
-      </action>
-      
-       <action name="role" class="com.action.RoleMasterAction">
-                    
-         <result name="success">/jsp/RoleMaster.jsp</result>
-                
-      </action> 
-             
-     <action name="rolesetting" class="com.action.RoleSettingMasterAction">
-                    
-         <result name="success">/jsp/RoleSettingMaster.jsp</result>
-                
-      </action>  
-             
-      <action name="showkpi" class="com.action.showkpi">
-                    
-         <result name="success">/jsp/KPI.jsp</result>
-                    
-         <result name="session">/Sessionexpired.html</result>
-                
-      </action>
-             
-      <action name="expmonitoring" class="com.action.EXPMonitorPortalAction">
-                    
-         <result name="success">/jsp/EXPMonitoringPortal.jsp</result>
-                
-      </action>
-             
-      <action name="sysmonitoring" class="com.action.SYSMonitorPortalAction">
-                    
-         <result name="success">/jsp/SYSMonitoringPortal.jsp</result>
-                
-      </action>
-             
-      <action name="top20service" class="com.action.Top20ServiceAction">
-                    
-         <result name="success">/jsp/Top20Service.jsp</result>
-                    
-         <result name="session">/Sessionexpired.html</result>
-                
-      </action>
-             
-      <action name="top20nongen5service" class="com.action.Top20NonGen5ServiceAction">
-                    
-         <result name="success">/jsp/Top20NonGen5Service.jsp</result>
-                    
-         <result name="session">/Sessionexpired.html</result>
-                
-      </action>
-             
-      <action name="TEST_Multithreding" class="com.action.TEST_Multithreding">
-                    
-         <result name="success">/jsp/Multithreding.jsp</result>
-                    
-         <result name="session">/Sessionexpired.html</result>
-                
-      </action>
-             
-      <action name="EpayVan" class="com.action.Epay_VANAction">
-                    
-         <result name="success">/jsp/EpayVan.jsp</result>
-                    
-         <result name="session">/Sessionexpired.html</result>
-                
-      </action>
-             
-      <action name="adharvault" class="com.action.AdharvaultAction">
-                    
-         <result name="success">/jsp/AdharVault.jsp</result>
-                    
-         <result name="session">/Sessionexpired.html</result>
-                
-      </action>
-             
-      <action name="HundreadPercentageFailureservices" class="com.action.HundreadPercentageFailureservicesAction">
-                    
-         <result name="success">/jsp/hundreadpercentagefailure.jsp</result>
-                    
-         <result name="session">/Sessionexpired.html</result>
-                
-      </action>
-             
-      <action name="eisappissue" class="com.action.EISAPPIssueAction" method="execute">
-                    
-         <result name="success">/jsp/EISAPPIssue.jsp</result>
-                
-      </action>
-             
-      <action name="eisusersop" class="com.action.UserSOPMasterAction">
-                    
-         <result name="success">/jsp/UserSopMaster.jsp</result>
-                    
-         <result name="successBank">/jsp/BankSopMaster.jsp</result>
-                    
-         <result name="session">/Sessionexpired.html</result>
-                
-      </action>
-             
-      <action name="showTop20Failureservices" class="com.action.ShowTop20failureServicesAction">
-                    
-         <result name="success">/jsp/showTop20failureservice.jsp</result>
-                
-      </action>
-             
-      <action name="showFailureServicesWise" class="com.action.ShowfailureServicesWiseAction">
-                    
-         <result name="success">/jsp/ShowfailureServiceWise.jsp</result>
-                
-      </action>
-             
-      <action name="showservices" class="com.action.ShowfailureServicesAction">
-                    
-         <result name="success">/jsp/showfailureservice.jsp</result>
-                
-      </action>
-             
-      <action name="monitoringwithdatetime" class="com.action.EXPMonitorPortalWithDateTimeAction">
-                    
-         <result name="success">/jsp/EXPMonitoringPortalwithDatetime.jsp</result>
-                
-      </action>
-             
-      <action name="dpginconsistancy" class="com.action.DpgInconsistancyAction">
-                    
-         <result name="success">/jsp/DpgInconsistancy.jsp</result>
-                    
-         <result name="session">/Sessionexpired.html</result>
-                
-      </action>
-             
-      <action name="yono" class="com.action.YonoDasboardAction">
-                    
-         <result name="success">/jsp/YonoDashboard.jsp</result>
-                    
-         <result name="session">/Sessionexpired.html</result>
-                
-      </action>
-             
-      <action name="apiwisenohitsonserver" class="com.action.ApiwisenohitsonserverAction">
-                    
-         <result name="success">/jsp/Apiwisenohitsserver.jsp</result>
-                    
-         <result name="session">/Sessionexpired.html</result>
-                
-      </action>
-             
-      <action name="apiwisehundreadpercfailonserver" class="com.action.ApiwisehundreadpercfailonserverAction">
-                    
-         <result name="success">/jsp/Apiwisehundreadpercfailonserver.jsp</result>
-                    
-         <result name="session">/Sessionexpired.html</result>
-                
-      </action>
-             
-      <action name="showErrorCodeWiseFailureservices" class="com.action.ShowErrorCodeWiseFailureServicesAction">
-                    
-         <result name="success">/jsp/showErrorCodewisefailureservice.jsp</result>
-                
-      </action>
-             
-      <action name="showNonGen5ErrorCodeWiseFailureservices" class="com.action.ShowNonGen5ErrorCodeWiseFailureServicesAction">
-                    
-         <result name="success">/jsp/showNonGen5ErrorCodeWiseFailureservices.jsp</result>
-                
-      </action>
-             
-      <action name="monitoringstatus" class="com.action.MonitoringStatusAction">
-                    
-         <result name="success">/jsp/MonitoringStatus.jsp</result>
-                    
-         <result name="session">/Sessionexpired.html</result>
-                
-      </action>
-             
-      <action name="autoRefreshApiwisehundreadpercfailonserver" class="com.action.AutoRefreshApiwisehundreadpercfailonserverAction">
-                    
-         <result name="success">/jsp/AutoRefreshApiwisehundreadpercfailonserver.jsp</result>
-                
-      </action>
-             
-      <action name="autoRefreshApiwisehundreadpercfailonNonGen5server" class="com.action.AutoRefreshApiwisehundreadpercfailonNonGen5serverAction">
-                    
-         <result name="success">/jsp/AutoRefreshApiwisehundreadpercfailonNonGen5server.jsp</result>
-                
-      </action>
-             
-      <action name="autoRefreshApiwisenohitsserver" class="com.action.AutoRefreshApiwisenohitsserverAction">
-                    
-         <result name="success">/jsp/AutoRefreshApiwisenohitsserver.jsp</result>
-                
-      </action>
-             
-      <action name="multipleservicewisetdbdperc" class="com.action.MultipleServiceWiseTDBDPercAction">
-                    
-         <result name="success">/jsp/MultipleServiceWiseTDBDPer.jsp</result>
-                    
-         <result name="session">/Sessionexpired.html</result>
-                
-      </action>
-             
-       <action name="deploymentsheet" class="com.action.DeploymentsheetAction">
-                    
-         <result name="success">/jsp/Deploymentsheet.jsp</result>
-                    
-         <result name="session">/Sessionexpired.html</result>
-                
-      </action> 
-             
-      <action name="viewdeploymentsheet" class="com.action.ViewDeploymentsheetAction">
-                    
-         <result name="success">/jsp/ViewDeploymentsheet.jsp</result>
-                    
-         <result name="successbanker">/jsp/ViewDeploymentsheetBanker.jsp</result>
-                    
-         <result name="session">/Sessionexpired.html</result>
-                
-      </action>
-             
-      <action name="EisRegistration" class="com.action.EISRegistrationAction">
-                    
-         <result name="success">/jsp/EISRegistration.jsp</result>
-                    
-         <result name="thanks">/Thanks.html</result>
-                    
-         <result name="session">/Sessionexpired.html</result>
-                
-      </action>
-      
-      <action  name="ViewEisRegistrationDetails" class="com.action.ViewEISRegistrationDetailsAction">
-			<result name="success" >/jsp/ViewEISRegistrationDetails.jsp</result>
-			<result name="session" >/Sessionexpired.html</result>
-		</action>
-         
-   </package>
-</struts>
 
-------------------------------------
+<!doctype html>
+<html lang="en">
+<head>
 
-package com.action;
-
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.apache.struts2.ServletActionContext;
-import com.opensymphony.xwork2.ActionSupport;
-import com.opensymphony.xwork2.ModelDriven;
-
-import com.actionform.LoginForm;
-import com.jdbc.DBUtilityAuto;
-import com.jdbc.TrippleDes;
-
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
-
-@SuppressWarnings("serial")
-public class LoginAction extends ActionSupport implements ModelDriven<LoginForm> {
-
-    private LoginForm loginForm = new LoginForm();
-
-    // JSON response ke liye — YE ZAROORI HAI
-    private Map<String, Object> jsonData = new HashMap<>();
-
-    @Override
-    public LoginForm getModel() {
-        return loginForm;
-    }
-
-    public List<String> getRolelist() {
-        return loginForm.getRolelist();
-    }
-
-    // Struts2 JSON plugin is getter ko dhoondhta hai
-    public Map<String, Object> getJsonData() {
-        return jsonData;
-    }
-
-    @Override
-    public String execute() throws Exception {
-        System.out.println(">>> LoginAction.execute() called");
-        this.getEISRole(loginForm);
-        System.out.println("Roles Loaded : " + loginForm.getRolelist());
-        return "success";
-    }
-
-    // ==================== USER LOGIN ====================
-    public String usersign() throws Exception {
-        System.out.println(">>> usersign() called");
-        HttpServletRequest request = ServletActionContext.getRequest();
-
-        String username = request.getParameter("m_strUserName");
-        String password = request.getParameter("m_struserPassword");
-        String role     = request.getParameter("m_strRole");
-
-        if (username == null || username.trim().isEmpty()
-                || password == null || password.trim().isEmpty()
-                || role == null || role.trim().isEmpty()) {
-            jsonData.put("status", "error");
-            jsonData.put("message", "Please fill all fields");
-            return "jsonerror";
-        }
-
-        boolean hasRole = this.checkRole(loginForm, request);
-
-        if (hasRole) {
-            HttpSession session = request.getSession();
-            session.setAttribute("role", role);
-            session.setAttribute("username", username);
-
-            jsonData.put("status", "success");
-            if ("EIS Bank".equals(role)) {
-                jsonData.put("redirectUrl", request.getContextPath() + "/bankerHome.action");
-            } else {
-                jsonData.put("redirectUrl", request.getContextPath() + "/userhomescreen.action");
-            }
-            return "jsonsuccess";
-        } else {
-            jsonData.put("status", "error");
-            jsonData.put("message", "Invalid username, password or role");
-            return "jsonerror";
-        }
-    }
-
-    // ==================== ADMIN LOGIN ====================
-    public String adminsign() throws Exception {
-        System.out.println(">>> adminsign() called");
-        HttpServletRequest request = ServletActionContext.getRequest();
-
-        String adminUser = request.getParameter("m_stradminUserName");
-        String adminPass = request.getParameter("m_stradminPassword");
-
-        if (adminUser == null || adminUser.trim().isEmpty()
-                || adminPass == null || adminPass.trim().isEmpty()) {
-            jsonData.put("status", "error");
-            jsonData.put("message", "Please fill all fields");
-            return "jsonerror";
-        }
-
-        if ("Admin".equalsIgnoreCase(adminUser) && "admin".equals(adminPass)) {
-            request.getSession().setAttribute("role", "Admin");
-            jsonData.put("status", "success");
-            jsonData.put("redirectUrl", request.getContextPath() + "/adminHome.action");
-            return "jsonsuccess";
-        }
-
-        Connection con = null;
-        Statement stmt = null;
-        ResultSet rs = null;
-        String password = null;
-        try {
-            con = DBUtilityAuto.getReportDBConnection();
-            String query = "SELECT passwords FROM a_module_leads WHERE LOWER(username) = LOWER('"
-                            + adminUser.replace("'", "''") + "')";
-            stmt = con.createStatement();
-            rs = stmt.executeQuery(query);
-            if (rs.next()) password = rs.getString("passwords");
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            if (rs != null) try { rs.close(); } catch (Exception ignored) {}
-            if (stmt != null) try { stmt.close(); } catch (Exception ignored) {}
-            if (con != null) try { con.close(); } catch (Exception ignored) {}
-        }
-
-        if (password != null && password.equals(adminPass)) {
-            request.getSession().setAttribute("role", "ModuleLead");
-            jsonData.put("status", "success");
-            jsonData.put("redirectUrl", request.getContextPath() + "/moduleHome.action");
-            return "jsonsuccess";
-        }
-
-        jsonData.put("status", "error");
-        jsonData.put("message", "Invalid admin credentials");
-        return "jsonerror";
-    }
-
-    public String index() throws Exception {
-        return execute();
-    }
-
-    // ==================== HELPERS ====================
-    private boolean checkRole(LoginForm loginForm, HttpServletRequest request) throws SQLException {
-        Connection con = null;
-        Statement stmt = null;
-        ResultSet rs = null;
-        try {
-            TrippleDes td = new TrippleDes();
-            int count = 0;
-
-            String user = request.getParameter("m_strUserName").replace("'", "''");
-            String pass = td.encrypt(request.getParameter("m_struserPassword").trim());
-            String role = request.getParameter("m_strRole").replace("'", "''");
-
-            String query = "SELECT COUNT(1) FROM rolemst "
-                    + "WHERE username LIKE '%" + user + "%' "
-                    + "AND password='" + pass + "' "
-                    + "AND rolename='" + role + "'";
-
-            con = DBUtilityAuto.getReportDBConnection();
-            stmt = con.createStatement();
-            rs = stmt.executeQuery(query);
-            if (rs.next()) count = rs.getInt(1);
-            return count > 0;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        } finally {
-            if (rs != null) try { rs.close(); } catch (Exception ignored) {}
-            if (stmt != null) try { stmt.close(); } catch (Exception ignored) {}
-            if (con != null) try { con.close(); } catch (Exception ignored) {}
-        }
-    }
-
-    private void getEISRole(LoginForm loginForm) throws SQLException {
-        Connection con = null;
-        Statement stmt = null;
-        ResultSet rs = null;
-        try {
-            ArrayList<String> list = new ArrayList<>();
-            con = DBUtilityAuto.getReportDBConnection();
-            stmt = con.createStatement();
-            rs = stmt.executeQuery("SELECT rolename FROM rolemst");
-            while (rs.next()) list.add(rs.getString("rolename"));
-            loginForm.setRolelist(list);
-            System.out.println("Roles loaded: " + list);
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            if (rs != null) try { rs.close(); } catch (Exception ignored) {}
-            if (stmt != null) try { stmt.close(); } catch (Exception ignored) {}
-            if (con != null) try { con.close(); } catch (Exception ignored) {}
-        }
-    }
+<meta charset="utf-8">
+<meta name="viewport"
+	content="width=device-width, initial-scale=1, shrink-to-fit=no">
+	<script type="text/javascript"
+	src="js/jquery.min.js"></script>
+	<style>
+	span{
+	margin: 0 15px;
+	line-height: .7;
+	text-shadow: 0 0 2px rgba(0, 0, 0, .45);
+	animation: span 3s ease-in infinite alternate;
+	color: white
 }
+.main{
+	display: flex;
+	justify-content: center;
+	align-items: flex-start;
+  
+  	
+	@media(max-width: 600px){ transform: scale(.65); }
+}
+.letter{
+	display: inline-flex;
+	height: 30px;
+	width: 27px;
+	/* border: 2.5px solid #FF1EAD; */
+	border: 2.35px solid white;
+	border-radius: 14px;
+	box-shadow:
+		0 0 2px rgba(0, 0, 0, .75),
+		inset 0 0 2px rgba(0, 0, 0, .45);
+
+	animation: letter 3s ease-in-out infinite alternate;
+}
+@keyframes span {
+	0%,30%{ margin: 0 15px; }
+	70%,100%{ margin: 0 5px; }
+}
+@keyframes letter {
+	0%,30%{ width: 27px; }
+	70%,100%{ width: 30vw; }
+}
+ 
+ 
+ 
+   .footer {
+   position: relative;
+   left: 0;
+   bottom: 0;
+   width: 100%;
+   color: white;
+   text-align: center;
+}
+
+
+.zoom {
+
+  transition: transform 1.5s;
+ 
+}
+
+.zoom:hover {
+  -ms-transform: scale(1.1); /* IE 9 */
+  -webkit-transform: scale(1.1); /* Safari 3-8 */
+  transform: scale(1.1); 
+}
+	</style>
+</head>
+<body style="background-color: black;">
+	<%@include file="./userheader.jsp"%>
+<div class="new-wrapper">
+
+	<div id="main">
+
+		<div id="main-contents">
+       <div class="main" style="font-size: 50px; margin-top: 0%; position: relative ;right: 400px; width: 200% ; ">
+	<span>W</span>
+	<span>E</span>
+	<span>L</span>
+	<span>C</span>
+	<span>O</span>
+	<span>M</span>
+	<span>E</span>
+	<span></span>
+	<span></span>
+	<div>
+	<span>T</span>
+	<span class="letter"></span>
+	<span>  </span>
+	<span>E</span>
+	<span>I</span>
+	<span>S</span>
+	<span> </span>
+	<span>P</span>
+	<span>O</span>
+	<span>R</span>
+	<span>T</span>
+	<span>A</span>
+	<span>L</span>
+	</div>
+	
+	<div>
+	
+	</div>
+</div>
+
+<center>
+<div class="zoom" style="margin-top: 15%; width: 550px ">
+<img src="./images/Cybersecurity.png">
+ </div>
+ </center>
+	
+
+    <div class="footer">
+    <p class="font-italic text-center text-bottom" style="position:relative;  font-size: 15px; margin-top: 0%; font-weight: bolder; top: 120px ">Designed and Developed by EIS AUTOMATION TEAM  </p>
+    </div>
+
+       
+			
+		</div>
+
+	</div>
+
+</div>
+
+</body>
+</html>
+
+
+
+-------------------------------------------------------------------------------------------------------------------------------------------
+userheader.jsp
+
+
+<!------ Include the above in your HEAD tag ---------->
+<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<!doctype html>
+<html lang="en">
+   <head>
+      <meta charset="utf-8">
+      <meta name="viewport"
+         content="width=device-width, initial-scale=1, shrink-to-fit=no">
+      <link
+         href="https://maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css"
+         rel="stylesheet">
+      </script>
+      <script>
+         $(document).ready(function () {
+          
+          $('.nav-toggle').click(function(e) {
+         	
+         	  e.preventDefault();
+         	  $("html").toggleClass("openNav");
+         	  $(".nav-toggle").toggleClass("active");
+         
+         	});
+         });
+         
+      </script>
+      <style type="text/css">
+         body {
+         font-family: 'Work Sans', sans-serif;
+         margin: 0;
+         }
+         /* Layout */
+         #container {
+         padding: 0;
+         margin: 0;
+         background-color: #fff;
+         }
+         #main {
+         padding: 4% 1.5em;
+         max-width: 55em;
+         margin: 0 auto;
+         }
+         #header {
+         padding: 1.5em;
+         margin: 0 0 1em 0;
+         background-color: #eee;
+         }
+         #footer {
+         padding: 1.5em;
+         margin: 2em 0 0 0;
+         background-color: #eee;
+         }
+         /* Menu Styles */
+         .primary-nav {
+         position: fixed;
+         z-index: 999;
+         top: -15PX;
+         }
+         .menu {
+         position: relative;
+         }
+         .menu ul {
+         margin: 0;
+         padding: 0;
+         list-style: none;
+         }
+         .open-panel {
+         border: none;
+         background-color: #fff;
+         padding: 0;
+         }
+         .hamburger {
+         background: #fff;
+         position: relative;
+         display: block;
+         text-align: center;
+         padding: 13px 0;
+         width: 50px;
+         height: 73px;
+         left: 0;
+         top: 0;
+         z-index: 1000;
+         cursor: pointer;
+         }
+         .hamburger:before {
+         content: "\2630"; /* hamburger icon */
+         display: block;
+         color: #000;
+         line-height: 32px;
+         font-size: 16px;
+         }
+         .openNav .hamburger:before {
+         content: "\2715"; /* close icon */
+         display: block;
+         color: #000;
+         line-height: 32px;
+         font-size: 16px;
+         }
+         .hamburger:hover:before {
+         color: #777;
+         }
+         .primary-nav .menu li {
+         position: relative;
+         }
+         .menu .icon {
+         position: absolute;
+         top: 12px;
+         right: 10px;
+         pointer-events: none;
+         width: 24px;
+         height: 24px;
+         color: #fff;
+         }
+         .menu, .menu a, .menu a:visited {
+         color: #aaa;
+         text-decoration: none !important;
+         position: relative;
+         }
+         .menu a {
+         display: block;
+         white-space: nowrap;
+         padding: 1em;
+         font-size: 14px;
+         }
+         .menu a:hover {
+         color: #fff;
+         }
+         .menu {
+         margin-bottom: 3em;
+         }
+         .menu-dropdown li .icon {
+         color: #777;
+         }
+         .menu-dropdown li:hover .icon {
+         color: #fff;
+         }
+         .menu label {
+         margin-bottom: 0;
+         display: block;
+         }
+         .menu label:hover {
+         cursor: pointer;
+         }
+         .menu input[type="checkbox"] {
+         display: none;
+         }
+         input#menu[type="checkbox"] {
+         display: none;
+         }
+         .sub-menu-dropdown {
+         display: none;
+         }
+         .new-wrapper {
+         position: absolute;
+         left: 50px;
+         width: calc(100% - 50px);
+         transition: transform .45s cubic-bezier(0.77, 0, 0.175, 1);
+         }
+         #menu:checked+ul.menu-dropdown {
+         left: 0;
+         -webkit-animation: all .45s cubic-bezier(0.77, 0, 0.175, 1);
+         animation: all .45s cubic-bezier(0.77, 0, 0.175, 1);
+         }
+         .sub-menu-checkbox:checked+ul.sub-menu-dropdown {
+         display: block !important;
+         -webkit-animation: grow .45s cubic-bezier(0.77, 0, 0.175, 1);
+         animation: grow .45s cubic-bezier(0.77, 0, 0.175, 1);
+         }
+         .openNav .new-wrapper {
+         position: absolute;
+         transform: translate3d(200px, 0, 0);
+         width: calc(100% - 250px);
+         transition: transform .45s cubic-bezier(0.77, 0, 0.175, 1);
+         }
+         .downarrow {
+         background: transparent;
+         position: absolute;
+         right: 50px;
+         top: 12px;
+         color: #777;
+         width: 24px;
+         height: 24px;
+         text-align: center;
+         display: block;
+         }
+         .downarrow:hover {
+         color: #fff;
+         }
+         .menu {
+         position: absolute;
+         display: block;
+         left: -200px;
+         top: 0;
+         width: 250px;
+         transition: all 0.45s cubic-bezier(0.77, 0, 0.175, 1);
+         background-color: #000;
+         z-index: 999;
+         }
+         .menu-dropdown {
+         top: 0;
+         overflow-y: auto;
+         }
+         .overflow-container {
+         position: relative;
+         height: calc(100vh - 73px) !important;
+         overflow-y: auto;
+         border-top: 73px solid #fff;
+         z-index: -1;
+         display: block;
+         }
+         .menu a.logotype {
+         position: absolute !important;
+         top: 11px;
+         left: 55px;
+         display: block;
+         font-family: 'Work Sans', sans-serif;
+         text-transform: uppercase;
+         font-weight: 800;
+         color: #000;
+         font-size: 21px;
+         padding: 10px;
+         }
+         .menu a.logotype span {
+         font-weight: 400;
+         }
+         .menu a.logotype:hover {
+         color: #777;
+         }
+         .sub-menu-dropdown {
+         background-color: #333;
+         }
+         .menu:hover {
+         position: absolute;
+         left: 0;
+         top: 0;
+         }
+         .openNav .menu:hover {
+         position: absolute;
+         left: -200px;
+         top
+         73px;
+         }
+         .openNav .menu {top 73px;
+         transform: translate3d(200px, 0, 0);
+         transition: transform .45s cubic-bezier(0.77, 0, 0.175, 1);
+         }
+         /* label.hamburger {
+         display: none;
+         } */
+         /* look and feel only, not needed for core menu*/
+         @
+         -webkit-keyframes grow { 0% {
+         display: none;
+         opacity: 0;
+         }
+         50%
+         {
+         display
+         :
+         block
+         ;
+         opacity
+         :
+         0
+         .5
+         ;
+         }
+         100%
+         {
+         opacity
+         :
+         1;
+         }
+         }
+         @
+         keyframes grow { 0% {
+         display: none;
+         opacity: 0;
+         }
+         50%
+         {
+         display
+         :
+         block
+         ;
+         opacity
+         :
+         0
+         .5
+         ;
+         }
+         100%
+         {
+         opacity
+         :
+         1
+         }
+         }
+         /* Text meant only for screen readers. */
+         .screen-reader-text {
+         clip: rect(1px, 1px, 1px, 1px);
+         position: absolute !important;
+         height: 1px;
+         width: 1px;
+         overflow: hidden;
+         }
+         .screen-reader-text:focus {
+         background-color: #f1f1f1;
+         border-radius: 3px;
+         -webkit-box-shadow: 0 0 2px 2px rgba(0, 0, 0, 0.6);
+         box-shadow: 0 0 2px 2px rgba(0, 0, 0, 0.6);
+         clip: auto !important;
+         color: #21759b;
+         display: block;
+         font-size: 14px;
+         font-size: 0.875rem;
+         font-weight: bold;
+         height: auto;
+         left: 5px;
+         line-height: normal;
+         padding: 15px 23px 14px;
+         text-decoration: none;
+         top: 5px;
+         width: auto;
+         z-index: 100000;
+         /* Above WP toolbar. */
+         }
+         /* Resposive Typography */
+         body, button, input, select, optgroup, textarea {
+         color: #000;
+         font-size: 1em;
+         line-height: 1.5;
+         font-weight: 300;
+         }
+         h1, h2, h3, h4, h5, h6 {
+         clear: both;
+         font-weight: 800;
+         }
+         dfn, cite, em, i {
+         font-style: italic;
+         }
+         blockquote {
+         margin: 0 1.5em;
+         }
+         address {
+         margin: 0 0 1.5em;
+         }
+         pre {
+         background: #eee;
+         font-family: "Courier 10 Pitch", Courier, monospace;
+         font-size: 15px;
+         font-size: 0.9375rem;
+         line-height: 1.6;
+         margin-bottom: 1.6em;
+         max-width: 100%;
+         overflow: auto;
+         padding: 1.6em;
+         }
+         code, kbd, tt, var {
+         font-family: Monaco, Consolas, "Andale Mono", "DejaVu Sans Mono",
+         monospace;
+         font-size: 15px;
+         font-size: 0.9375rem;
+         }
+         abbr, acronym {
+         border-bottom: 1px dotted #666;
+         cursor: help;
+         }
+         mark, ins {
+         background: #fff9c0;
+         text-decoration: none;
+         }
+         big {
+         font-size: 125%;
+         }
+         .light {
+         color: #ddd;
+         }
+         strong {
+         font-weight: 600;
+         }
+         cite, em, i {
+         font-style: italic;
+         }
+         p.big {
+         font-size: 140%;
+         line-height: 1.3em;
+         }
+         p.small {
+         font-size: 80%;
+         }
+         blockquote {
+         display: block;
+         margin: 1em 20px;
+         padding: 0 1em;
+         position: relative;
+         }
+         blockquote:before {
+         }
+         blockquote cite, blockquote em, blockquote i {
+         font-style: italic;
+         }
+         abbr, acronym {
+         border-bottom: 1px dotted #666;
+         cursor: help;
+         }
+         sup, sub {
+         height: 0;
+         line-height: 1;
+         vertical-align: baseline;
+         position: relative;
+         }
+         sup {
+         bottom: 1ex;
+         }
+         sub {
+         top: .5ex;
+         }
+         p {
+         font-size: 1em;
+         margin: 0 0 2em 0;
+         }
+         article:last-of-type, p:last-of-type {
+         margin-bottom: 0;
+         }
+         p.intro {
+         font-size: 1.25em;
+         line-height: 1.5;
+         font-weight: 300;
+         margin: 0 0 1.5em 0;
+         }
+         h1, h2 {
+         letter-spacing: -1px;
+         }
+         h1, .h1, h2, .h2, h3, .h3, h4, .h4 {
+         margin: 0 0 0.5em 0;
+         line-height: 1.1;
+         }
+         h1, .h1 {
+         font-size: 2.074em;
+         }
+         h2, .h2 {
+         font-size: 1.728em;
+         }
+         h3, .h3 {
+         font-size: 1.44em;
+         }
+         h4, .h4 {
+         font-size: 1.2em;
+         }
+         /* Medium Screen Typography - Scale: 1.333 Perfect Fourth (thanks http://type-scale.com/)  */
+         @media screen and (min-width: 42em) {
+         h1, .h1 {
+         letter-spacing: -2px;
+         }
+         h1, .h1 {
+         font-size: 3.157em;
+         }
+         h2, .h2 {
+         font-size: 2.369em;
+         }
+         h3, .h3 {
+         font-size: 1.777em;
+         }
+         h4, .h4 {
+         font-size: 1.333em;
+         }
+         p {
+         font-size: 1.0625em;
+         }
+         p.intro {
+         font-size: 1.3em;
+         }
+         }
+         /* Large Screen Typography  - Scale: 1.414 Augmented Fourth (thanks http://type-scale.com/)  */
+         @media screen and (min-width: 72em) {
+         h1 {
+         letter-spacing: -3px;
+         }
+         h1, .h1 {
+         margin-bottom: 0.35em;
+         font-size: 3.998em;
+         }
+         h2, .h2 {
+         font-size: 2.827em;
+         }
+         h3, .h3 {
+         font-size: 1.999em;
+         }
+         h4, .h4 {
+         font-size: 1.414em;
+         }
+         p {
+         font-size: 1.125em;
+         }
+         p.intro {
+         font-size: 1.4em;
+         }
+         }
+         @font-face {
+         font-family: 'Titillium Web';
+         font-style: normal;
+         font-weight: 300;
+         src: local('Titillium WebLight'), local('TitilliumWeb-Light'), url(../fonts/anMUvcNT0H1YN4FII8wpr24bNCNEoFTpS2BTjF6FB5E.woff) format('woff');
+         }
+         #searchbar {
+         margin: 10px;
+         padding: 10px;
+         border-radius: 5px;
+         width: 50%;
+         box-sizing: border-box;
+         }
+         #list {
+         list-style: none;
+         padding: 0;
+         margin: 0;
+         }
+         .animals {
+         font-size: 1.2em;
+         padding: 10px;
+         border-bottom: 1px solid #ccc;
+         animation: fadeIn 0.5s ease-in-out;
+         }
+         .animals:last-child {
+         border-bottom: none;
+         }
+         @keyframes fadeIn {
+         from {
+         opacity: 0;
+         transform: translateY(-10px);
+         }
+         to {
+         opacity: 1;
+         transform: translateY(0);
+         }
+         }
+      </style>
+      <script>
+         function search_animal() {
+         	  let input = document.getElementById('searchbar').value
+         	  input = input.toLowerCase();
+         	  let x = document.getElementsByClassName('animals');
+         	 
+         	  for (i = 0; i < x.length; i++) {
+         	    if (!x[i].innerHTML.toLowerCase().includes(input)) {
+         	      x[i].style.display = "none";
+         	    }
+         	    else {
+         	      x[i].style.display = "list-item";
+         	    }
+         	  }
+         	}
+      </script>
+   </head>
+   <body>
+<%
+                     session = request.getSession(false);
+                     String m_strrole = (String) session.getAttribute("role");
+                     System.out.println("Role: " + m_strrole);
+%>   
+      <div class="primary-nav">
+         <button href="#" class="hamburger open-panel nav-toggle">
+         <span class="screen-reader-text">Menu</span>
+         </button>
+         <nav role="navigation" class="menu">
+            <div class="overflow-container">
+               <input style="width: 200px" id="searchbar"
+                  onkeyup="search_animal()"
+                  type="text" name="search" autoComplete='nope'
+                  placeholder="Search Dashboard">
+               <ul class="menu-dropdown" id='list'>
+               
+           <!-- Main Portals Start -->
+                 
+               <!-- STATUS Portals Start -->
+               
+               <li class="animals"><a href="<%=request.getContextPath() + "/jsp/statMgmtDashboard.jsp"%>">EIS STRATEGIC MGMT.<br>STATUS (Report-DB)</a><span class="icon"><i
+								class="fa fa-dashboard"></i></span></li>
+				<li class="animals"><a href="<%=request.getContextPath() + "/jsp/eisSbiDashboard.jsp"%>">EIS SBI SUPPORT <br>STATUS (Report-DB) </a><span class="icon"><i
+								class="fa fa-dashboard"></i></span></li>
+               
+                <%--   <li class="animals"><a href="<%=request.getContextPath() + "/jsp/Eis_Strategic_Mgmt_Status.jsp"%>">EIS STRATEGIC MGMT.<br>STATUS NEW</a><span class="icon"><i
+                     class="fa fa-dashboard"></i></span></li>
+                  <li class="animals"><a href="<%=request.getContextPath() + "/jsp/EIS_SBI_STATUS.jsp"%>">EIS SBI SUPPORT STATUS<br>NEW</a><span class="icon"><i
+                     class="fa fa-dashboard"></i></span></li> --%>
+                     
+                <!-- STATUS Portals Start -->
+                  
+                <!-- AutoRefresh Portals Start --> 
+                  
+                  <li class="animals"><a href="<%=request.getContextPath() + "/jsp/100PercentFailure.jsp"%>">100% FAILURE HONEYCOMB</a><span class="icon"><i
+                     class="fa fa-heart"></i></span></li>   
+				  <li class="animals"><a
+                     href="<%=request.getContextPath() + "/jsp/ServiceWiseFailure.jsp"%>">SERVICE-WISE FAILURE<br>HONEYCOMB
+                     </a><span class="icon"><i class="fa fa-heart"></i></span>
+                  </li>
+                   <li class="animals"><a href="<%=request.getContextPath() + "/ErrorDashboard"%>">ERROR DASHBOARD</a><span class="icon"><i
+                     class="fa fa-heart"></i></span></li>
+				 <%--  <li class="animals"><a
+                     href="<%=request.getContextPath() + "/jsp/ExpServerBrokerWiseMonitoring_New.jsp"%>">EXP SERVER BROKER WISE<br>DASHBOARD
+                     </a><span class="icon"><i class="fa fa-heart"></i></span>
+                  </li>
+                  <li class="animals"><a
+                     href="<%=request.getContextPath() + "/jsp/SysServerBrokerWiseMonitoring_New.jsp"%>">SYS SERVER BROKER WISE<br>DASHBOARD
+                     </a><span class="icon"><i class="fa fa-heart"></i></span>
+                  </li> --%>
+                  
+                  <li class="animals"><a
+						href="<%=request.getContextPath() + "/jsp/A_EXP_SERVERWISE_COUNT_LDAP.jsp"%>">LDAP EXP Server Broker Wise <br> Dashboard
+					</a><span class="icon"><i class="fa fa-dashboard"></i></span></li>	
+				
+				<li class="animals"><a
+						href="<%=request.getContextPath() + "/jsp/A_SYS_SERVERWISE_COUNT_LDAP.jsp"%>">LDAP SYS Server Broker Wise <br> Dashboard
+					</a><span class="icon"><i class="fa fa-dashboard"></i></span></li>	
+					
+                  <li class="animals"><a href="<%=request.getContextPath() + "/AtmCardServlet"%>">ATM IP PORT WISE PORTAL</a><span class="icon"><i
+                     class="fa fa-heart"></i></span></li>
+                  <li class="animals"><a href="<%=request.getContextPath() + "/jsp/TransactionEndPointBank.jsp"%>">TRANSACTION END POINT</a><span class="icon"><i
+                     class="fa fa-heart"></i></span></li>
+                  <li class="animals"><a href="<%=request.getContextPath() + "/jsp/AutoRefreshTxnEndpoint_New.jsp"%>">TRANSACTION END POINT<br>(FOR GOLDEN GATE)</a><span class="icon"><i
+                     class="fa fa-heart"></i></span></li>
+                     
+                  <li class="animals"><a href="<%=request.getContextPath() + "/jsp/AutoRefreshExpSysServiceWise.jsp"%>">EXP SYS Service Wise Failure</a><span class="icon"><i
+								class="fa fa-dashboard"></i></span></li>   
+                     
+                 <!-- AutoRefresh Portals End -->   
+                  
+             <!-- Main Portals End -->  
+             
+             
+            <!-- Deployments Portals Start -->  
+                   
+                     <%-- <li class="animals"><a
+                        href="<%=request.getContextPath() + "/deploymentsheet.action"%>">ADD DEPLOYMENT<br>SHEET
+                        </a><span class="icon"><i class="fa fa-dashboard"></i></span> --%>
+                     </li>
+                     <li class="animals"><a
+                        href="<%=request.getContextPath() + "/DeploymentSheetServlet"%>">ADD DEPLOYMENT_Serv<br>SHEET
+                        </a><span class="icon"><i class="fa fa-dashboard"></i></span>
+                     </li>
+                     <%-- <li class="animals"><a
+                        href="<%=request.getContextPath() + "/viewdeploymentsheet.action"%>">VIEW DEPLOYMENT<br>SHEET
+                        </a><span class="icon"><i class="fa fa-dashboard"></i></span>
+                     </li> --%>
+                     
+                     <li class="animals"><a
+                        href="<%=request.getContextPath() + "/ViewDeploymentSheetActionServ"%>">VIEW DEPLOYMENT_Serv<br>SHEET
+                        </a><span class="icon"><i class="fa fa-dashboard"></i></span>
+                     </li>
+ 
+                    <li class="animals"><a href="<%=request.getContextPath() + "/jsp/deployment_analysis.jsp"%>">DEPLOYMENT ANALYSIS<br>DASHBOARD</a><span class="icon"><i
+                     class="fa fa-dashboard"></i></span></li>
+                  
+           <!-- Deployments Portals End -->       
+           
+            
+           <!-- Data Related Portals Start --> 
+           	     
+           	       <li class="animals"><a href="<%=request.getContextPath() + "/jsp/Dpg_Sys_Log.jsp"%>">SYS LOG'S</a><span class="icon"><i
+                     class="fa fa-heart"></i></span></li>
+                  <li class="animals"><a href="<%=request.getContextPath() + "/jsp/Dpg_log.jsp"%>">DPG LOG'S</a><span class="icon"><i
+                     class="fa fa-heart"></i></span></li>
+                  <li class="animals"><a href="<%=request.getContextPath() + "/jsp/Exp_Sys_Url_Mapper.jsp"%>">EXP & SYS URL MAPPER</a><span class="icon"><i
+                     class="fa fa-heart"></i></span></li>   
+                  <li class="animals"><a href="<%=request.getContextPath() + "/jsp/PortStatus.jsp"%>"> SERVICE STATUS<br>DASHBOARD</a><span class="icon"><i
+                     class="fa fa-heart"></i></span></li>   
+                  <li class="animals"><a href="<%=request.getContextPath() + "/UploadExcelServlet"%>"> SOURCE CERTIFICATE<br>DASHBOARD</a><span class="icon"><i
+                     class="fa fa-heart"></i></span></li>   
+                  <li class="animals"><a href="<%=request.getContextPath() + "/jsp/ITSMDetailsBackup.jsp"%>">ITSM DETAILS</a><span class="icon"><i
+                     class="fa fa-heart"></i></span></li>      
+           	      <li class="animals"><a href="<%=request.getContextPath() + "/jsp/ThirdPartyExcel.jsp"%>">THIRD PARTY EXCEL</a><span class="icon"><i
+                     class="fa fa-heart"></i></span></li>
+           	      <li class="animals"><a href="<%=request.getContextPath() + "/jsp/newChannelDestination.jsp?&role="%><%=m_strrole%>">CHANNEL & DESTINATION<br>CONTACT DETAIL'S</a><span class="icon"><i
+                     class="fa fa-heart"></i></span></li>
+                  <li class="animals"><a href="<%=request.getContextPath() + "/TxnContactDetail"%>">TXN CONTACT DETAIL'S</a><span class="icon"><i
+                     class="fa fa-heart"></i></span></li>
+                  <% 
+                     if(!"Manager".equals(m_strrole))
+                     {
+                     %>								
+                  <li class="animals"><a href="<%=request.getContextPath() + "/jsp/EISSOPDashboard.jsp?&role="%><%=m_strrole%>">SOP MANAGEMENT SYSTEM</a><span class="icon"><i
+                     class="fa fa-dashboard"></i></span></li>
+                  <li class="animals"><a href="<%=request.getContextPath() + "/jsp/channel_journey.jsp?&role="%><%=m_strrole%>">CHANNEL JOURNEY'S</a><span class="icon"><i
+                     class="fa fa-dashboard"></i></span></li>
+                  <%} 
+                     else
+                     {
+                     %>
+                  <li class="animals"><a href="<%=request.getContextPath() + "/jsp/EISSOPDashboard.jsp?&role="%><%=m_strrole%>">SOP MANAGEMENT SYSTEM</a><span class="icon"><i
+                     class="fa fa-dashboard"></i></span></li>
+                  <li class="animals"><a href="<%=request.getContextPath() + "/jsp/channel_journey.jsp?&role="%><%=m_strrole%>">CHANNEL JOURNEY'S</a><span class="icon"><i
+                     class="fa fa-dashboard"></i></span></li>
+                  <%
+                     }
+                   %>   
+                     
+           	     
+           <!-- Data Related Portals End --> 
+            
+            
+		   <!-- Others Portals Start --> 
+		   
+                  <li class="animals"><a href="<%=request.getContextPath() + "/jsp/TicketHome.jsp?&role="%><%=m_strrole%>">EIS TICKETING PORTAL</a><span class="icon"><i
+                     class="fa fa-heart"></i></span></li>
+                  <li class="animals"><a href="<%=request.getContextPath() + "/jsp/ProblemCET.jsp"%>">CET PORTAL</a><span class="icon"><i
+                     class="fa fa-heart"></i></span></li>
+                  <li class="animals"><a href="<%=request.getContextPath() + "/jsp/FlashReport.jsp"%>">FLASH REPORT</a><span class="icon"><i
+                     class="fa fa-heart"></i></span></li>
+					<li class="animals"><a href="<%=request.getContextPath() + "/SourceWiseTdCron"%>">Source Wise TD Failure Using Cron</a><span class="icon"><i
+							class="fa fa-dashboard"></i></span></li>
+					<li class="animals"><a href="<%=request.getContextPath() + "/jsp/SourceWiseTdSearch.jsp"%>">Source Wise TD Failure Manual</a><span class="icon"><i
+							class="fa fa-dashboard"></i></span></li>
+					<li class="animals"><a href="<%=request.getContextPath() + "/jsp/TxnEndPointSearch.jsp"%>">Txn End Point Manual</a><span class="icon"><i
+							class="fa fa-dashboard"></i></span></li>
+
+					<li class="animals"><a href="<%=request.getContextPath() + "/jsp/CombinedServiceWise&HundreadPerFailure.jsp"%>">EIS COMMAND Service<br>Monitoring Center</a><span 
+						    class="icon"><i class="fa fa-dashboard"></i></span></li>
+
+					<li class="animals"><a href="<%=request.getContextPath() + "/jsp/Exp_Sys_Url_Mapper.jsp"%>">EXP & SYS URL Mapper</a><span class="icon"><i
+							 class="fa fa-dashboard"></i></span></li>
+					<li class="animals"><a href="<%=request.getContextPath() + "/autocompleteapiwithtdbd.do"%>">API WISE <br> TD% BD%
+							</a><span class="icon"><i class="fa fa-dashboard"></i></span></li>
+					<li class="animals"><a
+						href="<%=request.getContextPath() + "/jsp/AtmPortWiseManualSearch.jsp"%>">
+							Manual ATM IP Port Wise Portal </a><span class="icon"><i
+							class="fa fa-heart"></i></span></li>
+					<li class="animals"><a
+						href="<%=request.getContextPath() + "/ErrorDashboardLDAP"%>">LDAP
+							Error Dashboard</a><span class="icon"><i
+							class="fa fa-dashboard"></i></span></li>
+					<li class="animals"><a
+						href="<%=request.getContextPath() + "/jsp/ServiceWiseFailure_LDAP.jsp"%>">LDAP
+							Service-Wise Failure <br> Dashboard
+					</a><span class="icon"><i class="fa fa-dashboard"></i></span></li>
+					<li class="animals"><a
+						href="<%=request.getContextPath() + "/jsp/yonoGraph.jsp"%>">YONO
+							2.0 ANALYTICS<br>DASHBOARD
+					</a><span class="icon"><i class="fa fa-dashboard"></i></span></li>
+					<li class="animals"><a
+						href="<%=request.getContextPath() + "/jsp/100PercentFailure_LDAP.jsp"%>">LDAP
+							100% Failure Honeycomb</a><span class="icon"><i
+							class="fa fa-dashboard"></i></span></li>
+					<li class="animals"><a
+						href="<%=request.getContextPath() + "/jsp/dpg-carts.jsp"%>">DMZ
+							DPG Incoming <br> Transaction Monitoring
+					</a><span class="icon"><i class="fa fa-dashboard"></i></span></li>
+
+					<li class="animals"><a
+						href="<%=request.getContextPath() + "/jsp/channelwisepresent&pastdata.jsp"%>">Channel
+							Wise Volume Change<br>DASHBOARD
+					</a><span class="icon"><i class="fa fa-dashboard"></i></span></li>
+
+					<li class="animals"><a
+						href="<%=request.getContextPath() + "/jsp/BarFileReader.jsp"%>">Java
+							Source Code Extractor <br> Dashboard
+					</a><span class="icon"><i class="fa fa-dashboard"></i></span></li>
+
+					<li class="animals"><a
+						href="<%=request.getContextPath() + "/jsp/Centralized query storage User.jsp"%>">Centralized
+							query storage User <br> Dashboard
+					</a><span class="icon"><i class="fa fa-dashboard"></i></span></li>
+
+					<li class="animals"><a
+						href="<%=request.getContextPath() + "/jsp/monitoring_dashboard_morethan_30Per_fail.jsp"%>">BD
+							API Monitor <br> Dashboard
+					</a><span class="icon"><i class="fa fa-dashboard"></i></span></li>
+
+					<li class="animals"><a
+						href="<%=request.getContextPath() + "/jsp/Source_Monitor.jsp"%>">Source
+							Monitor <br> Dashboard
+					</a><span class="icon"><i class="fa fa-dashboard"></i></span></li>
+
+					<!-- Others Portals End -->  
+            
+           <!-- IBCE Portal Start -->  
+           	<li class="animals"><a href="<%=request.getContextPath() + "/CronController"%>">IBCE DR PR Activity</a><span class="icon"><i
+			class="fa fa-dashboard"></i></span></li>
+
+			<li class="animals"><a href="<%=request.getContextPath() + "/IbceActionNew"%>">IBCE DR PR Activity Active Active</a><span class="icon"><i
+			class="fa fa-dashboard"></i></span></li>      
+            <!-- IBCE Portal End -->     
+           <!-- NightShift Reports Start -->
+                 
+                  <li class="animals"><a href="<%=request.getContextPath() + "/jsp/TimeDefrenceAnalysisreport.jsp"%>">TIME DIFFRANCE ANALYSIS<br>REPORT</a><span class="icon"><i
+                     class="fa fa-dashboard"></i></span></li>
+                  <li class="animals"><a href="<%=request.getContextPath() + "/jsp/DailyStatisticsReport.jsp"%>">DAILY SATATISTICS REPORT</a><span class="icon"><i
+                     class="fa fa-dashboard"></i></span></li>
+                     
+           <!-- NightShift Reports End -->
+                 
+                  
+           <!-- Roster Start -->
+                  
+                   <% if(("Manager".equals(m_strrole)) || ("Team Lead".equals(m_strrole))){ %>
+                  <li class="animals"><a href="<%=request.getContextPath() + "/jsp/ExcelRoster.jsp?&role="%><%=m_strrole%>">ROSTER</a><span class="icon"><i
+                     class="fa fa-heart"></i></span></li>
+                  <%} else { %>			
+                  <li class="animals"><a href="<%=request.getContextPath() + "/jsp/ExcelRoster_new.jsp?&role="%><%=m_strrole%>">ROSTER</a><span class="icon"><i
+                     class="fa fa-heart"></i></span></li>
+                  <%} %>
+                  
+           <!-- Roster End -->
+                  
+                     
+           <!-- Checklist Start -->
+           
+                  <li class="animals"><a href="<%=request.getContextPath() + "/jsp/DRChecklistHomePage.jsp"%>">Module DR Checklist</a><span class="icon"><i
+						class="fa fa-dashboard"></i></span></li>
+						
+				<%   if("Service Reporting Management".equals(m_strrole)){	%>	
+                  <li class="animals"><a href="<%=request.getContextPath() + "/ServletConn"%>">ADHOC CHECKLIST</a><span class="icon"><i
+                        class="fa fa-dashboard"></i></span></li>
+                <%   } else if("Service Desk".equals(m_strrole)) {   %>
+                  <li class="animals"><a href="<%=request.getContextPath() + "/jsp/userscorechecklist.jsp"%>">SCORE CHECKLIST</a><span class="icon"><i
+                        class="fa fa-dashboard"></i></span></li>
+                   <%  } else if("Event Management".equals(m_strrole))  {  %>     
+                  <li class="animals"><a href="<%=request.getContextPath() + "/jsp/MonitoringChecklistUser.jsp"%>">MONITORING CHECKLIST</a><span class="icon"><i
+                        class="fa fa-dashboard"></i></span></li>
+                   <%  } else if("Incident Management".equals(m_strrole))  {  %>      
+                  <li class="animals"><a href="<%=request.getContextPath() + "/jsp/IssueMgmtEmployeemain.jsp"%>">MAIL'S CHECKLIST</a><span class="icon"><i
+                        class="fa fa-dashboard"></i></span></li>
+                    <%  } else if("Problem Management".equals(m_strrole))  {  %>     
+                  <li class="animals"><a href="<%=request.getContextPath() + "/jsp/Problemuserchecklist.jsp"%>">PROBLEM MANAGEMENT<br>CHECKLIST</a><span class="icon"><i
+                        class="fa fa-dashboard"></i></span></li>
+                        
+                    <%  }   %>     
+                  <li class="animals"><a href="<%=request.getContextPath() + "/jsp/NightShiftUser.jsp"%>">NIGHTSHIFT CHECKLIST</a><span class="icon"><i
+                     class="fa fa-dashboard"></i></span></li>
+                     
+                      
+                  <li class="animals"><a href="<%=request.getContextPath() + "/jsp/NightShiftCheckList_NEW.jsp"%>"> New NightShift Checklist </a><span class="icon"><i
+					class="fa fa-heart"></i></span></li>   
+					 
+                  <li class="animals"><a href="<%=request.getContextPath() + "/jsp/MailsNightShiftChecklist.jsp"%>">MAIL'S NIGHTSHIFT<br>CHECKLIST</a><span class="icon"><i
+                     class="fa fa-dashboard"></i></span></li>
+                       
+                       
+           <!-- Checklist End -->   
+           
+           <!-- Search Start -->  
+           <li class="animals"><a href="multiple.html">Search Gen5 Reference no</a><span
+							class="icon"><i class="fa fa-dashboard"></i></span></li>
+			<li class="animals"><a href="https://siapp1.sbi.co.in/LotusTransEnq/Home/About?">Search SI Reference <br>no</a><span class="icon"><i
+								class="fa fa-dashboard"></i></span></li>
+								
+			 <!-- Search End --> 					
+				<li class="animals"><a href="<%=request.getContextPath() + "/jsp/query.jsp"%>">EIS Query Console <br></a><span 
+						class="icon"><i class="fa fa-dashboard"></i></span></li>
+						
+				<li class="animals"><a href="<%=request.getContextPath() + "/jsp/ipo-monitor.jsp"%>">IPO Monitor <br></a><span 
+						class="icon"><i class="fa fa-dashboard"></i></span></li>										        
+                  
+            <!-- Logout Start -->
+                  <li class="animals"><a href="<%=request.getContextPath() + "/login.action"%>">LOGOUT</a><span class="icon"><i
+                     class="fa fa-heart"></i></span></li>  
+            <!-- Logout End -->     
+               </ul>
+            </div>
+         </nav>
+      </div>
+   </body>
+</html>
