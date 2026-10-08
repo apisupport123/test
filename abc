@@ -10,441 +10,228 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>EIS Portal — Sign In</title>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<title>EIS Portal — Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
 :root{
-  --brand:#F86F03;
-  --brand-dark:#E85D00;
-  --brand-light:#FFF4EC;
-  --text:#0A0A0A;
-  --muted:#6B7280;
-  --line:#E5E7EB;
-  --bg:#FAFAFA;
+  --brand:#F86F03; --brand-2:#FFA41B;
+  --text:#0f172a; --muted:#64748b; --ring:rgba(248,111,3,.25);
 }
-*{margin:0;padding:0;box-sizing:border-box}
-html,body{height:100%}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',system-ui,sans-serif}
 body{
-  font-family:'Plus Jakarta Sans',system-ui,sans-serif;
-  background:var(--bg);
-  color:var(--text);
-  display:flex;
   min-height:100vh;
-  -webkit-font-smoothing:antialiased;
+  background:
+    radial-gradient(1200px 600px at 10% -10%, #ffb06633, transparent 60%),
+    radial-gradient(900px 500px at 110% 10%, #f86f0333, transparent 60%),
+    linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  display:flex; align-items:center; justify-content:center;
+  padding:24px; overflow-x:hidden;
 }
+.blob{position:fixed;border-radius:50%;filter:blur(80px);opacity:.45;z-index:0;animation:float 12s ease-in-out infinite}
+.blob.b1{width:420px;height:420px;background:#F86F03;top:-120px;left:-120px}
+.blob.b2{width:380px;height:380px;background:#FFA41B;bottom:-140px;right:-100px;animation-delay:-4s}
+.blob.b3{width:300px;height:300px;background:#ff5e7e;top:40%;right:30%;animation-delay:-8s;opacity:.25}
+@keyframes float{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(30px,-40px) scale(1.1)}}
 
-/* =============== LEFT: BRAND PANEL =============== */
-.brand-side{
-  flex:1;
-  background:linear-gradient(135deg, #F86F03 0%, #FF9A3D 100%);
-  padding:48px;
-  display:flex;
-  flex-direction:column;
-  justify-content:space-between;
-  position:relative;
-  overflow:hidden;
-  color:#fff;
+.shell{
+  position:relative;z-index:2;width:100%;max-width:1080px;
+  background:rgba(255,255,255,.98);border-radius:24px;
+  box-shadow:0 30px 80px rgba(0,0,0,.35);
+  display:grid;grid-template-columns:1.05fr 1fr;
+  overflow:hidden;min-height:640px;
 }
-.brand-side::before{
-  content:"";
-  position:absolute;
-  top:-100px;right:-100px;
-  width:400px;height:400px;
-  border-radius:50%;
-  background:rgba(255,255,255,.08);
+.brand-panel{
+  background:
+    radial-gradient(600px 300px at 20% 10%, #ffb06655, transparent 60%),
+    linear-gradient(160deg,#F86F03 0%,#FFA41B 100%);
+  color:#fff;padding:48px 44px;
+  display:flex;flex-direction:column;justify-content:space-between;
+  position:relative;overflow:hidden;
 }
-.brand-side::after{
-  content:"";
-  position:absolute;
-  bottom:-150px;left:-80px;
-  width:350px;height:350px;
-  border-radius:50%;
-  background:rgba(255,255,255,.06);
-}
+.brand-panel::after{content:"";position:absolute;inset:auto -60px -60px auto;width:280px;height:280px;border-radius:50%;background:rgba(255,255,255,.12)}
+.brand-panel::before{content:"";position:absolute;top:-80px;left:-80px;width:220px;height:220px;border-radius:50%;background:rgba(255,255,255,.10)}
+.brand-logo{display:flex;align-items:center;gap:12px;font-weight:800;letter-spacing:.5px;font-size:1.15rem}
+.brand-logo i{background:rgba(255,255,255,.2);width:42px;height:42px;display:grid;place-items:center;border-radius:12px;font-size:1.1rem;backdrop-filter:blur(6px)}
+.brand-hero h1{font-size:2.4rem;line-height:1.15;font-weight:800;margin-bottom:14px;letter-spacing:-.5px}
+.brand-hero p{opacity:.92;font-size:1rem;line-height:1.6;max-width:380px}
+.brand-stats{display:flex;gap:24px;margin-top:26px}
+.stat{background:rgba(255,255,255,.15);padding:12px 18px;border-radius:14px;backdrop-filter:blur(6px)}
+.stat b{display:block;font-size:1.3rem}
+.stat span{font-size:.75rem;opacity:.9}
 
-.brand-logo{
-  display:flex;align-items:center;gap:12px;
-  font-weight:800;font-size:1.15rem;
-  letter-spacing:-.3px;
-  position:relative;z-index:2;
+.form-panel{padding:48px 44px;display:flex;flex-direction:column;justify-content:center;position:relative}
+.tabs{display:flex;gap:8px;background:#f1f5f9;padding:6px;border-radius:14px;margin-bottom:28px}
+.tab{flex:1;text-align:center;padding:12px 14px;border-radius:10px;font-weight:600;font-size:.92rem;color:var(--muted);cursor:pointer;transition:all .25s ease;border:none;background:transparent}
+.tab.active{background:#fff;color:var(--brand);box-shadow:0 4px 14px rgba(15,23,42,.08)}
+.form-title{font-size:1.6rem;font-weight:800;color:var(--text);letter-spacing:-.4px}
+.form-sub{color:var(--muted);font-size:.9rem;margin:6px 0 24px}
+.field{position:relative;margin-bottom:16px}
+.field i{position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:.95rem;pointer-events:none;z-index:1}
+.field input,.field select{
+  width:100%;padding:15px 16px 15px 46px;
+  background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;
+  font-size:.95rem;color:var(--text);outline:none;
+  transition:all .2s ease;font-weight:500;
 }
-.brand-logo-mark{
-  width:40px;height:40px;
-  background:#fff;
-  color:var(--brand);
-  display:grid;place-items:center;
-  border-radius:10px;
-  font-size:1.05rem;
-  box-shadow:0 8px 24px rgba(0,0,0,.15);
+.field select{cursor:pointer;appearance:none;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='3'><polyline points='6 9 12 15 18 9'/></svg>");
+  background-repeat:no-repeat;background-position:right 16px center;
 }
-
-.brand-content{
-  position:relative;z-index:2;
-  max-width:440px;
-}
-.brand-content h1{
-  font-size:2.6rem;
-  font-weight:800;
-  line-height:1.15;
-  letter-spacing:-1px;
-  margin-bottom:20px;
-}
-.brand-content p{
-  font-size:1rem;
-  line-height:1.7;
-  opacity:.92;
-  font-weight:400;
-}
-
-.brand-features{
-  display:flex;
-  flex-direction:column;
-  gap:14px;
-  margin-top:32px;
-}
-.feature{
-  display:flex;align-items:center;gap:12px;
-  font-size:.9rem;
-  font-weight:500;
-  opacity:.95;
-}
-.feature i{
-  width:24px;height:24px;
-  display:grid;place-items:center;
-  background:rgba(255,255,255,.18);
-  border-radius:6px;
-  font-size:.7rem;
-}
-
-.brand-footer{
-  position:relative;z-index:2;
-  font-size:.8rem;
-  opacity:.85;
-  font-weight:500;
-}
-
-/* =============== RIGHT: FORM PANEL =============== */
-.form-side{
-  flex:1;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding:48px;
-  background:#fff;
-}
-.form-wrap{
-  width:100%;
-  max-width:400px;
-}
-
-.form-head h2{
-  font-size:1.85rem;
-  font-weight:800;
-  letter-spacing:-.6px;
-  margin-bottom:8px;
-}
-.form-head p{
-  color:var(--muted);
-  font-size:.92rem;
-  margin-bottom:32px;
-}
-
-/* Tabs */
-.tabs{
-  display:flex;
-  gap:4px;
-  background:#F3F4F6;
-  padding:4px;
-  border-radius:12px;
-  margin-bottom:28px;
-}
-.tab{
-  flex:1;
-  padding:10px;
-  border:none;
-  background:transparent;
-  color:var(--muted);
-  font-family:inherit;
-  font-size:.85rem;
-  font-weight:600;
-  border-radius:8px;
-  cursor:pointer;
-  transition:all .2s ease;
-}
-.tab.active{
-  background:#fff;
-  color:var(--brand);
-  box-shadow:0 2px 8px rgba(0,0,0,.06);
-}
-
-/* Fields */
-.field{margin-bottom:18px}
-.field label{
-  display:block;
-  font-size:.82rem;
-  font-weight:600;
-  color:var(--text);
-  margin-bottom:8px;
-}
-.input-box{
-  position:relative;
-  display:flex;align-items:center;
-  border:1.5px solid var(--line);
-  background:#FAFAFA;
-  border-radius:11px;
-  transition:all .2s ease;
-}
-.input-box:focus-within{
-  border-color:var(--brand);
-  background:#fff;
-  box-shadow:0 0 0 4px var(--brand-light);
-}
-.input-box i{
-  color:var(--muted);
-  padding:0 14px;
-  font-size:.9rem;
-  transition:color .2s ease;
-}
-.input-box:focus-within i{color:var(--brand)}
-.input-box input,
-.input-box select{
-  flex:1;
-  padding:14px 16px 14px 0;
-  background:transparent;
-  border:none;
-  outline:none;
-  font-family:inherit;
-  font-size:.92rem;
-  font-weight:500;
-  color:var(--text);
-  width:100%;
-}
-.input-box select{
-  cursor:pointer;
-  appearance:none;
-  padding-right:40px;
-  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
-  background-repeat:no-repeat;
-  background-position:right 16px center;
-}
-.input-box input::placeholder{color:#9CA3AF;font-weight:400}
-
-.pw-toggle{
-  background:transparent;border:none;
-  color:var(--muted);
-  padding:0 16px;
-  cursor:pointer;
-  font-size:.9rem;
-  transition:color .2s ease;
-}
-.pw-toggle:hover{color:var(--brand)}
-
-/* Alert */
-.alert{
-  display:none;
-  padding:12px 16px;
-  border-radius:10px;
-  font-size:.85rem;
-  font-weight:500;
-  margin-bottom:18px;
-  align-items:center;gap:10px;
-}
-.alert.error{display:flex;background:#FEF2F2;color:#B91C1C;border:1px solid #FECACA}
-.alert.success{display:flex;background:#F0FDF4;color:#15803D;border:1px solid #BBF7D0}
-
-/* Button */
+.field input:focus,.field select:focus{border-color:var(--brand);background:#fff;box-shadow:0 0 0 4px var(--ring)}
 .btn-primary{
-  width:100%;
-  padding:15px;
-  border:none;
-  border-radius:11px;
-  background:var(--brand);
-  color:#fff;
-  font-family:inherit;
-  font-weight:700;
-  font-size:.95rem;
-  letter-spacing:.2px;
-  cursor:pointer;
-  transition:all .2s ease;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:10px;
-  box-shadow:0 4px 14px rgba(248,111,3,.35);
+  width:100%;padding:15px;border:none;border-radius:12px;
+  background:linear-gradient(135deg,#F86F03 0%,#FFA41B 100%);
+  color:#fff;font-weight:700;font-size:1rem;letter-spacing:.3px;
+  cursor:pointer;transition:all .25s ease;
+  box-shadow:0 10px 24px -8px var(--brand);
+  display:flex;align-items:center;justify-content:center;gap:10px;
 }
-.btn-primary:hover{
-  background:var(--brand-dark);
-  transform:translateY(-1px);
-  box-shadow:0 6px 20px rgba(248,111,3,.45);
-}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 14px 30px -8px var(--brand)}
 .btn-primary:active{transform:translateY(0)}
-.btn-primary:disabled{opacity:.65;cursor:not-allowed;transform:none}
+.btn-primary:disabled{opacity:.7;cursor:not-allowed;transform:none}
 
-.spinner{
-  width:16px;height:16px;
-  border:2px solid rgba(255,255,255,.35);
-  border-top-color:#fff;
-  border-radius:50%;
-  animation:spin .7s linear infinite;
-  display:none;
-}
+.alert{display:none;padding:12px 14px;border-radius:10px;font-size:.88rem;font-weight:500;margin-bottom:16px;align-items:center;gap:10px}
+.alert.error{background:#fef2f2;color:#b91c1c;border:1px solid #fecaca}
+.alert.success{background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0}
+.alert.show{display:flex}
+
+.form-view{display:none;animation:fadeIn .35s ease}
+.form-view.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+.spinner{width:18px;height:18px;border:2.5px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:none}
 .btn-primary.loading .spinner{display:block}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-.form-view{display:none;animation:fadeIn .3s ease}
-.form-view.active{display:block}
-@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.quick-bar{position:relative;z-index:3;margin-top:22px;display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.quick-bar a{color:#cbd5e1;background:rgba(255,255,255,.06);padding:8px 14px;border-radius:999px;font-size:.8rem;font-weight:500;text-decoration:none;border:1px solid rgba(255,255,255,.08);transition:all .2s ease;cursor:pointer}
+.quick-bar a:hover{background:var(--brand);color:#fff;border-color:var(--brand)}
 
-/* Footer note */
-.foot-note{
-  margin-top:32px;
-  text-align:center;
-  font-size:.8rem;
-  color:var(--muted);
-}
-.foot-note a{
-  color:var(--brand);
-  text-decoration:none;
-  font-weight:600;
-}
+.footer-note{position:fixed;bottom:14px;left:0;right:0;text-align:center;color:#94a3b8;font-size:.78rem;z-index:2}
 
-/* =============== RESPONSIVE =============== */
-@media (max-width: 900px){
-  body{flex-direction:column;overflow-y:auto}
-  .brand-side{
-    flex:none;
-    padding:36px 28px;
-    min-height:auto;
-  }
-  .brand-content h1{font-size:1.9rem}
-  .brand-features{display:none}
-  .brand-content p{font-size:.9rem}
-  .form-side{padding:36px 24px;min-height:auto}
+@media (max-width:900px){
+  .shell{grid-template-columns:1fr;max-width:520px;min-height:auto}
+  .brand-panel{padding:32px 28px}
+  .brand-hero h1{font-size:1.7rem}
+  .brand-stats{display:none}
+  .form-panel{padding:32px 28px}
 }
-@media (max-width: 480px){
-  .brand-side{padding:28px 22px}
-  .brand-content h1{font-size:1.5rem}
-  .form-side{padding:28px 20px}
-  .form-head h2{font-size:1.5rem}
+@media (max-width:480px){
+  body{padding:12px}
+  .brand-hero p{display:none}
+  .form-panel{padding:24px 20px}
 }
 </style>
 </head>
 <body>
 
-<!-- LEFT: Brand panel -->
-<aside class="brand-side">
-  <div class="brand-logo">
-    <div class="brand-logo-mark"><i class="fa-solid fa-shield-halved"></i></div>
-    <span>EIS Portal</span>
-  </div>
+<div class="blob b1"></div>
+<div class="blob b2"></div>
+<div class="blob b3"></div>
 
-  <div class="brand-content">
-    <h1>Enterprise Information Systems</h1>
-    <p>One secure gateway to dashboards, monitoring, reports and operational tools — designed for the EIS team.</p>
-
-    <div class="brand-features">
-      <div class="feature"><i class="fa-solid fa-check"></i> Single sign-on access</div>
-      <div class="feature"><i class="fa-solid fa-check"></i> Real-time monitoring dashboards</div>
-      <div class="feature"><i class="fa-solid fa-check"></i> Enterprise-grade security</div>
-    </div>
-  </div>
-
-  <div class="brand-footer">
-    © <%= java.time.Year.now() %> EIS Portal · Internal use only
-  </div>
-</aside>
-
-<!-- RIGHT: Form panel -->
-<main class="form-side">
-  <div class="form-wrap">
-
-    <div class="form-head">
-      <h2 id="formTitle">Welcome back</h2>
-      <p id="formSubtitle">Sign in to continue to your workspace</p>
-    </div>
-
-    <div class="tabs">
-      <button class="tab active" data-tab="user">User</button>
-      <button class="tab" data-tab="admin">Admin</button>
-    </div>
-
-    <s:form action="login" method="post" theme="simple" id="loginForm">
-
-      <!-- USER FORM -->
-      <div class="form-view active" id="view-user">
-        <div class="alert error" id="userAlert"><i class="fa-solid fa-circle-exclamation"></i><span></span></div>
-
-        <div class="field">
-          <label>Username</label>
-          <div class="input-box">
-            <i class="fa-regular fa-user"></i>
-            <input type="text" placeholder="Enter your username" name="m_strUserName" id="m_strUserName" autocomplete="username" />
-          </div>
+<div>
+  <div class="shell">
+    <aside class="brand-panel">
+      <div class="brand-logo">
+        <i class="fa-solid fa-shield-halved"></i>
+        <span>EIS PORTAL</span>
+      </div>
+      <div class="brand-hero">
+        <h1>Welcome back to your workspace.</h1>
+        <p>Secure single sign-on for Enterprise Information Systems. Access dashboards, monitoring tools, and reports — all in one place.</p>
+        <div class="brand-stats">
+          <div class="stat"><b>24×7</b><span>Uptime</span></div>
+          <div class="stat"><b>100+</b><span>Services</span></div>
+          <div class="stat"><b>Secure</b><span>Access</span></div>
         </div>
+      </div>
+      <div style="font-size:.8rem;opacity:.85;">© <%= java.time.Year.now() %> EIS Portal · Internal Use Only</div>
+    </aside>
 
-        <div class="field">
-          <label>Password</label>
-          <div class="input-box">
+    <main class="form-panel">
+      <div class="tabs">
+        <button class="tab active" data-tab="user">User Login</button>
+        <button class="tab" data-tab="admin">Admin Login</button>
+      </div>
+
+      <s:form action="login" method="post" theme="simple" id="loginForm">
+        <div class="form-view active" id="view-user">
+          <h2 class="form-title">Sign in</h2>
+          <p class="form-sub">Enter your credentials to continue</p>
+
+          <div class="alert error" id="userAlert"><i class="fa-solid fa-circle-exclamation"></i><span></span></div>
+
+          <div class="field">
+            <i class="fa-solid fa-user"></i>
+            <input type="text" placeholder="Username" name="m_strUserName" id="m_strUserName" autocomplete="username" />
+          </div>
+
+          <div class="field">
             <i class="fa-solid fa-lock"></i>
-            <input type="password" placeholder="Enter your password" name="m_struserPassword" id="m_struserPassword" autocomplete="current-password" />
-            <button type="button" class="pw-toggle" onclick="togglePw('m_struserPassword', this)">
-              <i class="fa-regular fa-eye"></i>
-            </button>
+            <input type="password" placeholder="Password" name="m_struserPassword" id="m_struserPassword" autocomplete="current-password" />
           </div>
-        </div>
 
-        <div class="field">
-          <label>Role</label>
-          <div class="input-box">
+          <div class="field">
             <i class="fa-solid fa-user-tag"></i>
-            <s:select name="m_strRole" id="m_strRole" list="rolelist" headerKey="" headerValue="Select your role" theme="simple" />
+            <s:select
+              name="m_strRole"
+              id="m_strRole"
+              list="rolelist"
+              headerKey=""
+              headerValue="Select Role"
+              theme="simple"
+            />
           </div>
+
+          <button type="button" class="btn-primary" id="btnUserLogin" onclick="usersign()">
+            <span class="spinner"></span>
+            <span class="btn-text">Sign In</span>
+            <i class="fa-solid fa-arrow-right"></i>
+          </button>
         </div>
 
-        <button type="button" class="btn-primary" id="btnUserLogin" onclick="usersign()">
-          <span class="spinner"></span>
-          <span class="btn-text">Sign In</span>
-        </button>
-      </div>
+        <div class="form-view" id="view-admin">
+          <h2 class="form-title">Admin Login</h2>
+          <p class="form-sub">Restricted access — admins only</p>
 
-      <!-- ADMIN FORM -->
-      <div class="form-view" id="view-admin">
-        <div class="alert error" id="adminAlert"><i class="fa-solid fa-circle-exclamation"></i><span></span></div>
+          <div class="alert error" id="adminAlert"><i class="fa-solid fa-circle-exclamation"></i><span></span></div>
 
-        <div class="field">
-          <label>Admin Username</label>
-          <div class="input-box">
+          <div class="field">
             <i class="fa-solid fa-user-shield"></i>
-            <input type="text" placeholder="Enter admin username" name="m_stradminUserName" id="m_stradminUserName" autocomplete="username" />
+            <input type="text" placeholder="Admin Username" name="m_stradminUserName" id="m_stradminUserName" autocomplete="username" />
           </div>
-        </div>
 
-        <div class="field">
-          <label>Admin Password</label>
-          <div class="input-box">
+          <div class="field">
             <i class="fa-solid fa-lock"></i>
-            <input type="password" placeholder="Enter admin password" name="m_stradminPassword" id="m_stradminPassword" autocomplete="current-password" />
-            <button type="button" class="pw-toggle" onclick="togglePw('m_stradminPassword', this)">
-              <i class="fa-regular fa-eye"></i>
-            </button>
+            <input type="password" placeholder="Admin Password" name="m_stradminPassword" id="m_stradminPassword" autocomplete="current-password" />
           </div>
+
+          <button type="button" class="btn-primary" id="btnAdminLogin" onclick="adminsign()">
+            <span class="spinner"></span>
+            <span class="btn-text">Sign In as Admin</span>
+            <i class="fa-solid fa-arrow-right"></i>
+          </button>
         </div>
-
-        <button type="button" class="btn-primary" id="btnAdminLogin" onclick="adminsign()">
-          <span class="spinner"></span>
-          <span class="btn-text">Sign In as Admin</span>
-        </button>
-      </div>
-
-    </s:form>
-
-    <div class="foot-note">
-      Having trouble? <a href="javascript:void(0)" onclick="openUrl('https://www.ultimatix.net/')">Contact support</a>
-    </div>
-
+      </s:form>
+    </main>
   </div>
-</main>
+
+  <div class="quick-bar">
+    <a onclick="openUrl('https://10.189.37.183/')">Dynatrace</a>
+    <a onclick="openUrl('https://10.188.10.106:2443/login')">LB Web UI</a>
+    <a onclick="openUrl('https://score.sbi/')">SCORE</a>
+    <a onclick="openUrl('https://nspm.sbi/algosec/suite/login.html')">NSPM (FAR)</a>
+    <a onclick="openUrl('https://10.191.171.12:5443/EISPortal/jsp/FlashReport.jsp')">Flash Report</a>
+    <a onclick="openUrl('https://10.191.171.12:5443/EIS/port_monitoring/')">EIS Port Monitor</a>
+    <a onclick="openUrl('https://10.191.171.12:5443/EIS/CBS_Connection/')">CBS Port Monitor</a>
+    <a onclick="openUrl('https://10.191.171.12:5443/PyPortal/APISearch/')">API Workload</a>
+    <a onclick="openUrl('https://10.191.171.12:5443/EISInfra/curlSearch/login.php/')">Curl Portal</a>
+    <a onclick="openUrl('https://www.ultimatix.net/')">Ultimatix</a>
+  </div>
+</div>
+
+<div class="footer-note">Made with <span style="color:#F86F03;">♥</span> for EIS Team</div>
 
 <script>
 const CTX = '<%=request.getContextPath()%>';
@@ -456,27 +243,18 @@ document.querySelectorAll('.tab').forEach(tab => {
     document.querySelectorAll('.form-view').forEach(v => v.classList.remove('active'));
     tab.classList.add('active');
     document.getElementById('view-' + tab.dataset.tab).classList.add('active');
-
-    const title = document.getElementById('formTitle');
-    const sub = document.getElementById('formSubtitle');
-    if (tab.dataset.tab === 'user') {
-      title.textContent = 'Welcome back';
-      sub.textContent = 'Sign in to continue to your workspace';
-    } else {
-      title.textContent = 'Admin access';
-      sub.textContent = 'Restricted access — authorized personnel only';
-    }
   });
 });
 
 /* ---------- Helpers ---------- */
 function showAlert(id, msg, type) {
   const el = document.getElementById(id);
-  el.className = 'alert ' + (type || 'error');
+  el.className = 'alert show ' + (type || 'error');
   el.querySelector('span').textContent = msg;
 }
 function hideAlert(id) {
-  document.getElementById(id).className = 'alert';
+  const el = document.getElementById(id);
+  el.className = 'alert error';
 }
 function setLoading(btnId, isLoading) {
   const btn = document.getElementById(btnId);
@@ -484,41 +262,36 @@ function setLoading(btnId, isLoading) {
   btn.classList.toggle('loading', isLoading);
 }
 function openUrl(url) { window.open(url, '_blank'); }
-function togglePw(id, btn){
-  const inp = document.getElementById(id);
-  if(inp.type === 'password'){
-    inp.type = 'text';
-    btn.innerHTML = '<i class="fa-regular fa-eye-slash"></i>';
-  } else {
-    inp.type = 'password';
-    btn.innerHTML = '<i class="fa-regular fa-eye"></i>';
-  }
-}
 
 /* ---------- AJAX Login ---------- */
 async function submitLogin(url, formEl, btnId, alertId) {
   hideAlert(alertId);
   setLoading(btnId, true);
+
   try {
     const fd = new FormData(formEl);
+    fd.append('struts.enableJSONValidation', 'true');
+
     const res = await fetch(url, {
       method: 'POST',
       body: fd,
       credentials: 'same-origin',
       headers: { 'X-Requested-With': 'XMLHttpRequest' }
     });
+
     const ct = res.headers.get('content-type') || '';
     if (ct.includes('application/json')) {
       const data = await res.json();
       if (data.status === 'success') {
-        showAlert(alertId, 'Login successful — redirecting...', 'success');
+        showAlert(alertId, 'Login successful, redirecting...', 'success');
         setTimeout(() => {
           window.location.href = data.redirectUrl || (CTX + '/userhomescreen.action');
-        }, 400);
+        }, 500);
       } else {
         showAlert(alertId, data.message || 'Invalid credentials', 'error');
       }
     } else {
+      // Fallback: agar JSON nahi mila, toh normally submit karo
       formEl.action = url;
       formEl.submit();
     }
@@ -536,11 +309,14 @@ function usersign() {
   const u = document.getElementById('m_strUserName').value.trim();
   const p = document.getElementById('m_struserPassword').value;
   const r = document.getElementById('m_strRole').value;
+
   if (!u) { showAlert('userAlert', 'Please enter username'); return; }
   if (!p) { showAlert('userAlert', 'Please enter password'); return; }
-  if (!r || r === 'Select your role') { showAlert('userAlert', 'Please select a role'); return; }
+  if (!r || r === 'Select Role') { showAlert('userAlert', 'Please select a role'); return; }
+
   localStorage.clear();
   sessionStorage.clear();
+
   submitLogin(CTX + '/login!usersign.action', form, 'btnUserLogin', 'userAlert');
 }
 
@@ -549,17 +325,19 @@ function adminsign() {
   const form = document.getElementById('loginForm');
   const u = document.getElementById('m_stradminUserName').value.trim();
   const p = document.getElementById('m_stradminPassword').value;
+
   if (!u) { showAlert('adminAlert', 'Please enter admin username'); return; }
   if (!p) { showAlert('adminAlert', 'Please enter admin password'); return; }
+
   submitLogin(CTX + '/login!adminsign.action', form, 'btnAdminLogin', 'adminAlert');
 }
 
-/* ---------- Enter key submit ---------- */
+/* ---------- Enter key ---------- */
 document.getElementById('loginForm').addEventListener('keydown', e => {
   if (e.key === 'Enter') {
     e.preventDefault();
-    const active = document.querySelector('.tab.active').dataset.tab;
-    active === 'user' ? usersign() : adminsign();
+    const activeTab = document.querySelector('.tab.active').dataset.tab;
+    activeTab === 'user' ? usersign() : adminsign();
   }
 });
 </script>
