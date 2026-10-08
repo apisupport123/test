@@ -7,14 +7,13 @@
 <title>EIS · Navigation</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<script src="js/jquery.min.js"></script>
+<script src="<%=request.getContextPath()%>/js/jquery.min.js"></script>
 <style>
 :root{
   --brand:#F86F03;
   --brand-2:#FF9A3D;
   --brand-light:#FFF4EC;
 
-  /* LIGHT */
   --ink:#0A0A0A;
   --muted:#6B7280;
   --line:#EAEAEA;
@@ -31,6 +30,7 @@
 
   --topnav-h:64px;
   --sidebar-w:260px;
+  --sidebar-w-collapsed:0px;
 }
 html[data-theme="dark"]{
   --ink:#F5F5F5;
@@ -44,8 +44,8 @@ html[data-theme="dark"]{
   --sidebar-hover:#1F1F1F;
   --sidebar-active:#1E1408;
   --topnav-bg:rgba(15,15,15,.85);
-  --hero-dark:#1A1A1A;
-  --hero-dark-2:#242424;
+  --hero-dark:#0B0B0B;
+  --hero-dark-2:#1A1A1A;
 }
 
 *{margin:0;padding:0;box-sizing:border-box}
@@ -67,10 +67,22 @@ body{
   border-right:1px solid var(--line);
   z-index:60;
   display:flex;flex-direction:column;
-  transition:transform .3s cubic-bezier(.4,0,.2,1),background .3s ease,border-color .3s ease;
+  transition:transform .3s cubic-bezier(.4,0,.2,1),background .3s ease,border-color .3s ease,width .3s ease;
 }
+
+/* ✅ COLLAPSED STATE (desktop) */
+html.sb-collapsed .sidebar{
+  transform:translateX(-100%);
+}
+html.sb-collapsed .topnav{
+  left:0;
+}
+html.sb-collapsed .new-wrapper{
+  margin-left:0;
+}
+
 .sb-head{
-  padding:16px 20px;
+  padding:16px 16px 16px 20px;
   height:var(--topnav-h);
   display:flex;align-items:center;gap:11px;
   border-bottom:1px solid var(--line);
@@ -88,11 +100,31 @@ body{
 .sb-title{
   font-weight:800;font-size:.95rem;
   letter-spacing:-.3px;line-height:1.1;
+  flex:1;min-width:0;
 }
 .sb-title small{
   display:block;font-size:.68rem;font-weight:500;
   color:var(--muted);letter-spacing:.4px;text-transform:uppercase;margin-top:2px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
+.sb-collapse-btn{
+  width:28px;height:28px;
+  display:grid;place-items:center;
+  background:transparent;
+  border:1px solid var(--line);
+  border-radius:7px;
+  color:var(--muted);
+  cursor:pointer;
+  font-size:.7rem;
+  transition:all .15s ease;
+  flex-shrink:0;
+}
+.sb-collapse-btn:hover{
+  background:var(--brand);
+  border-color:var(--brand);
+  color:#fff;
+}
+
 .sb-search{padding:14px 16px 8px;flex-shrink:0}
 .sb-search-box{position:relative;display:flex;align-items:center}
 .sb-search-box i{
@@ -113,6 +145,7 @@ body{
   border-color:var(--brand);
   box-shadow:0 0 0 3px rgba(248,111,3,.12);
 }
+
 .sb-body{
   flex:1;overflow-y:auto;padding:8px 12px 20px;
 }
@@ -160,7 +193,6 @@ html[data-theme="dark"] .sb-item:hover .sb-icon{
 .sb-item.sb-logout:hover .sb-icon{background:#E53935;color:#fff}
 html[data-theme="dark"] .sb-item.sb-logout{color:#FF6B6B}
 html[data-theme="dark"] .sb-item.sb-logout .sb-icon{background:rgba(229,57,53,.15);color:#FF6B6B}
-html[data-theme="dark"] .sb-item.sb-logout:hover{background:rgba(229,57,53,.2)}
 
 /* ============ TOPNAV ============ */
 .topnav{
@@ -179,6 +211,18 @@ html[data-theme="dark"] .sb-item.sb-logout:hover{background:rgba(229,57,53,.2)}
   background:transparent;border:1px solid var(--line);
   border-radius:9px;color:var(--ink);cursor:pointer;font-size:.85rem;
 }
+.tn-menu-btn{
+  display:grid;place-items:center;
+  width:36px;height:36px;
+  background:var(--sidebar-hover);
+  border:1px solid var(--line);
+  border-radius:9px;color:var(--ink);
+  cursor:pointer;font-size:.85rem;
+  transition:all .15s ease;
+}
+.tn-menu-btn:hover{
+  background:var(--brand);border-color:var(--brand);color:#fff;
+}
 .tn-search{
   flex:1;max-width:520px;height:40px;
   background:var(--card);
@@ -189,8 +233,7 @@ html[data-theme="dark"] .sb-item.sb-logout:hover{background:rgba(229,57,53,.2)}
   transition:all .2s ease;font-family:inherit;
 }
 .tn-search:hover{
-  border-color:var(--brand);
-  color:var(--ink);
+  border-color:var(--brand);color:var(--ink);
   box-shadow:0 4px 14px rgba(248,111,3,.06);
 }
 .tn-search .kbd{
@@ -210,15 +253,6 @@ html[data-theme="dark"] .sb-item.sb-logout:hover{background:rgba(229,57,53,.2)}
   transition:all .15s ease;text-decoration:none;
 }
 .tn-btn:hover{background:var(--brand);border-color:var(--brand);color:#fff}
-.tn-btn.tn-theme{
-  background:var(--sidebar-hover);
-  border-color:var(--line);
-}
-.tn-btn.tn-theme:hover{
-  background:var(--brand);
-  border-color:var(--brand);
-  color:#fff;
-}
 .tn-avatar{
   width:36px;height:36px;border-radius:50%;
   background:linear-gradient(135deg,var(--brand),var(--brand-2));
@@ -228,7 +262,15 @@ html[data-theme="dark"] .sb-item.sb-logout:hover{background:rgba(229,57,53,.2)}
   box-shadow:0 2px 8px rgba(0,0,0,.08);
 }
 
-/* Mobile */
+/* ============ WRAPPER ============ */
+.new-wrapper{
+  margin-left:var(--sidebar-w);
+  padding-top:var(--topnav-h);
+  transition:margin-left .3s cubic-bezier(.4,0,.2,1);
+  min-height:100vh;
+}
+
+/* ============ MOBILE OVERLAY ============ */
 .sb-overlay{
   position:fixed;inset:0;
   background:rgba(10,10,10,.4);
@@ -237,20 +279,29 @@ html[data-theme="dark"] .sb-item.sb-logout:hover{background:rgba(229,57,53,.2)}
   transition:opacity .25s ease;
 }
 html.sb-open .sb-overlay{opacity:1;pointer-events:auto}
+
 @media (max-width:900px){
   .sidebar{transform:translateX(-100%);box-shadow:0 0 40px rgba(0,0,0,.1)}
   html.sb-open .sidebar{transform:translateX(0)}
   .topnav{left:0}
   .tn-toggle{display:grid;place-items:center}
+  .tn-menu-btn{display:none}
   .new-wrapper{margin-left:0}
+  .sb-collapse-btn{display:none}
 }
 </style>
 <script>
-/* Theme boot — flash-free */
+/* Theme + sidebar state boot — flash-free */
 (function(){
   try{
     var t = localStorage.getItem('eis-theme') || 'light';
     document.documentElement.setAttribute('data-theme', t);
+
+    // ✅ Sidebar collapsed state remember (desktop)
+    var collapsed = localStorage.getItem('eis-sidebar-collapsed');
+    if(collapsed === 'true'){
+      document.documentElement.classList.add('sb-collapsed');
+    }
   }catch(e){}
 })();
 </script>
@@ -259,7 +310,7 @@ html.sb-open .sb-overlay{opacity:1;pointer-events:auto}
 <%
   session = request.getSession(false);
   String m_strrole = (String) session.getAttribute("role");
-  System.out.println("Role: " + m_strrole);
+  String ctx = request.getContextPath();
 %>
 
 <aside class="sidebar" id="sidebar">
@@ -269,6 +320,10 @@ html.sb-open .sb-overlay{opacity:1;pointer-events:auto}
       EIS Portal
       <small><%=m_strrole != null ? m_strrole : "Guest"%></small>
     </div>
+    <!-- ✅ Hide/collapse button -->
+    <button class="sb-collapse-btn" onclick="toggleSidebar()" title="Hide sidebar">
+      <i class="fa-solid fa-angles-left"></i>
+    </button>
   </div>
 
   <div class="sb-search">
@@ -281,224 +336,224 @@ html.sb-open .sb-overlay{opacity:1;pointer-events:auto}
   <nav class="sb-body" id="list">
 
     <div class="sb-group">Dashboards</div>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/jsp/statMgmtDashboard.jsp">
+    <a class="sb-item animals" href="<%=ctx%>/jsp/statMgmtDashboard.jsp">
       <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>Strategic Mgmt. Status</span>
     </a>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/jsp/eisSbiDashboard.jsp">
+    <a class="sb-item animals" href="<%=ctx%>/jsp/eisSbiDashboard.jsp">
       <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>SBI Support Status</span>
     </a>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/ErrorDashboard">
+    <a class="sb-item animals" href="<%=ctx%>/ErrorDashboard">
       <span class="sb-icon"><i class="fa-solid fa-triangle-exclamation"></i></span><span>Error Dashboard</span>
     </a>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/jsp/100PercentFailure.jsp">
+    <a class="sb-item animals" href="<%=ctx%>/jsp/100PercentFailure.jsp">
       <span class="sb-icon"><i class="fa-solid fa-heart-pulse"></i></span><span>100% Failure Honeycomb</span>
     </a>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/jsp/ServiceWiseFailure.jsp">
+    <a class="sb-item animals" href="<%=ctx%>/jsp/ServiceWiseFailure.jsp">
       <span class="sb-icon"><i class="fa-solid fa-heart-pulse"></i></span><span>Service-Wise Failure</span>
     </a>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/jsp/PortStatus.jsp">
+    <a class="sb-item animals" href="<%=ctx%>/jsp/PortStatus.jsp">
       <span class="sb-icon"><i class="fa-solid fa-signal"></i></span><span>Service Status</span>
     </a>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/AtmCardServlet">
+    <a class="sb-item animals" href="<%=ctx%>/AtmCardServlet">
       <span class="sb-icon"><i class="fa-solid fa-credit-card"></i></span><span>ATM IP Port Portal</span>
     </a>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/jsp/TransactionEndPointBank.jsp">
+    <a class="sb-item animals" href="<%=ctx%>/jsp/TransactionEndPointBank.jsp">
       <span class="sb-icon"><i class="fa-solid fa-money-bill-transfer"></i></span><span>Transaction End Point</span>
     </a>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/jsp/AutoRefreshTxnEndpoint_New.jsp">
+    <a class="sb-item animals" href="<%=ctx%>/jsp/AutoRefreshTxnEndpoint_New.jsp">
       <span class="sb-icon"><i class="fa-solid fa-money-bill-transfer"></i></span><span>Txn End Point (Golden Gate)</span>
     </a>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/jsp/AutoRefreshExpSysServiceWise.jsp">
+    <a class="sb-item animals" href="<%=ctx%>/jsp/AutoRefreshExpSysServiceWise.jsp">
       <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>EXP SYS Service Wise</span>
     </a>
 
     <div class="sb-group">LDAP</div>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/jsp/A_EXP_SERVERWISE_COUNT_LDAP.jsp">
+    <a class="sb-item animals" href="<%=ctx%>/jsp/A_EXP_SERVERWISE_COUNT_LDAP.jsp">
       <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>LDAP EXP Server</span>
     </a>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/jsp/A_SYS_SERVERWISE_COUNT_LDAP.jsp">
+    <a class="sb-item animals" href="<%=ctx%>/jsp/A_SYS_SERVERWISE_COUNT_LDAP.jsp">
       <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>LDAP SYS Server</span>
     </a>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/ErrorDashboardLDAP">
+    <a class="sb-item animals" href="<%=ctx%>/ErrorDashboardLDAP">
       <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>LDAP Error Dashboard</span>
     </a>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/jsp/ServiceWiseFailure_LDAP.jsp">
+    <a class="sb-item animals" href="<%=ctx%>/jsp/ServiceWiseFailure_LDAP.jsp">
       <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>LDAP Service-Wise Failure</span>
     </a>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/jsp/100PercentFailure_LDAP.jsp">
+    <a class="sb-item animals" href="<%=ctx%>/jsp/100PercentFailure_LDAP.jsp">
       <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>LDAP 100% Failure</span>
     </a>
 
     <div class="sb-group">Deployments</div>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/DeploymentSheetServlet">
+    <a class="sb-item animals" href="<%=ctx%>/DeploymentSheetServlet">
       <span class="sb-icon"><i class="fa-solid fa-plus"></i></span><span>Add Deployment Sheet</span>
     </a>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/ViewDeploymentSheetActionServ">
+    <a class="sb-item animals" href="<%=ctx%>/ViewDeploymentSheetActionServ">
       <span class="sb-icon"><i class="fa-solid fa-eye"></i></span><span>View Deployment Sheet</span>
     </a>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/jsp/deployment_analysis.jsp">
+    <a class="sb-item animals" href="<%=ctx%>/jsp/deployment_analysis.jsp">
       <span class="sb-icon"><i class="fa-solid fa-chart-column"></i></span><span>Deployment Analysis</span>
     </a>
 
     <div class="sb-group">Logs &amp; Data</div>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/jsp/Dpg_Sys_Log.jsp">
+    <a class="sb-item animals" href="<%=ctx%>/jsp/Dpg_Sys_Log.jsp">
       <span class="sb-icon"><i class="fa-solid fa-file-lines"></i></span><span>SYS Logs</span>
     </a>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/jsp/Dpg_log.jsp">
+    <a class="sb-item animals" href="<%=ctx%>/jsp/Dpg_log.jsp">
       <span class="sb-icon"><i class="fa-solid fa-file-lines"></i></span><span>DPG Logs</span>
     </a>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/jsp/ITSMDetailsBackup.jsp">
+    <a class="sb-item animals" href="<%=ctx%>/jsp/ITSMDetailsBackup.jsp">
       <span class="sb-icon"><i class="fa-solid fa-database"></i></span><span>ITSM Details</span>
     </a>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/jsp/ThirdPartyExcel.jsp">
+    <a class="sb-item animals" href="<%=ctx%>/jsp/ThirdPartyExcel.jsp">
       <span class="sb-icon"><i class="fa-solid fa-table"></i></span><span>Third Party Excel</span>
     </a>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/UploadExcelServlet">
+    <a class="sb-item animals" href="<%=ctx%>/UploadExcelServlet">
       <span class="sb-icon"><i class="fa-solid fa-certificate"></i></span><span>Source Certificate</span>
     </a>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/jsp/Exp_Sys_Url_Mapper.jsp">
+    <a class="sb-item animals" href="<%=ctx%>/jsp/Exp_Sys_Url_Mapper.jsp">
       <span class="sb-icon"><i class="fa-solid fa-heart-pulse"></i></span><span>EXP &amp; SYS URL Mapper</span>
     </a>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/jsp/newChannelDestination.jsp?&role=<%=m_strrole%>">
+    <a class="sb-item animals" href="<%=ctx%>/jsp/newChannelDestination.jsp?&role=<%=m_strrole%>">
       <span class="sb-icon"><i class="fa-solid fa-heart-pulse"></i></span><span>Channel &amp; Destination</span>
     </a>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/TxnContactDetail">
+    <a class="sb-item animals" href="<%=ctx%>/TxnContactDetail">
       <span class="sb-icon"><i class="fa-solid fa-heart-pulse"></i></span><span>TXN Contact Details</span>
     </a>
 
     <div class="sb-group">Reports</div>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/jsp/FlashReport.jsp">
+    <a class="sb-item animals" href="<%=ctx%>/jsp/FlashReport.jsp">
       <span class="sb-icon"><i class="fa-solid fa-bolt"></i></span><span>Flash Report</span>
     </a>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/jsp/DailyStatisticsReport.jsp">
+    <a class="sb-item animals" href="<%=ctx%>/jsp/DailyStatisticsReport.jsp">
       <span class="sb-icon"><i class="fa-solid fa-chart-pie"></i></span><span>Daily Statistics</span>
     </a>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/jsp/TimeDefrenceAnalysisreport.jsp">
+    <a class="sb-item animals" href="<%=ctx%>/jsp/TimeDefrenceAnalysisreport.jsp">
       <span class="sb-icon"><i class="fa-solid fa-clock"></i></span><span>Time Difference Analysis</span>
     </a>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/jsp/CombinedServiceWise&HundreadPerFailure.jsp">
+    <a class="sb-item animals" href="<%=ctx%>/jsp/CombinedServiceWise&HundreadPerFailure.jsp">
       <span class="sb-icon"><i class="fa-solid fa-tower-broadcast"></i></span><span>EIS Command Center</span>
     </a>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/jsp/SourceWiseTdSearch.jsp">
+    <a class="sb-item animals" href="<%=ctx%>/jsp/SourceWiseTdSearch.jsp">
       <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>Source Wise TD Failure</span>
     </a>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/jsp/TxnEndPointSearch.jsp">
+    <a class="sb-item animals" href="<%=ctx%>/jsp/TxnEndPointSearch.jsp">
       <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>Txn End Point Manual</span>
     </a>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/autocompleteapiwithtdbd.do">
+    <a class="sb-item animals" href="<%=ctx%>/autocompleteapiwithtdbd.do">
       <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>API Wise TD% BD%</span>
     </a>
 
     <div class="sb-group">Monitoring Tools</div>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/jsp/yonoGraph.jsp">
+    <a class="sb-item animals" href="<%=ctx%>/jsp/yonoGraph.jsp">
       <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>YONO 2.0 Analytics</span>
     </a>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/jsp/dpg-carts.jsp">
+    <a class="sb-item animals" href="<%=ctx%>/jsp/dpg-carts.jsp">
       <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>DMZ DPG Incoming</span>
     </a>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/jsp/channelwisepresent&pastdata.jsp">
+    <a class="sb-item animals" href="<%=ctx%>/jsp/channelwisepresent&pastdata.jsp">
       <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>Channel Wise Volume</span>
     </a>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/jsp/monitoring_dashboard_morethan_30Per_fail.jsp">
+    <a class="sb-item animals" href="<%=ctx%>/jsp/monitoring_dashboard_morethan_30Per_fail.jsp">
       <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>BD API Monitor</span>
     </a>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/jsp/Source_Monitor.jsp">
+    <a class="sb-item animals" href="<%=ctx%>/jsp/Source_Monitor.jsp">
       <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>Source Monitor</span>
     </a>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/jsp/AtmPortWiseManualSearch.jsp">
+    <a class="sb-item animals" href="<%=ctx%>/jsp/AtmPortWiseManualSearch.jsp">
       <span class="sb-icon"><i class="fa-solid fa-heart-pulse"></i></span><span>Manual ATM Portal</span>
     </a>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/jsp/BarFileReader.jsp">
+    <a class="sb-item animals" href="<%=ctx%>/jsp/BarFileReader.jsp">
       <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>Java Source Extractor</span>
     </a>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/jsp/Centralized query storage User.jsp">
+    <a class="sb-item animals" href="<%=ctx%>/jsp/Centralized query storage User.jsp">
       <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>Centralized Query</span>
     </a>
 
     <div class="sb-group">IBCE</div>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/CronController">
+    <a class="sb-item animals" href="<%=ctx%>/CronController">
       <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>IBCE DR PR Activity</span>
     </a>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/IbceActionNew">
+    <a class="sb-item animals" href="<%=ctx%>/IbceActionNew">
       <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>IBCE DR PR Active Active</span>
     </a>
 
     <div class="sb-group">Checklists</div>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/jsp/DRChecklistHomePage.jsp">
+    <a class="sb-item animals" href="<%=ctx%>/jsp/DRChecklistHomePage.jsp">
       <span class="sb-icon"><i class="fa-solid fa-list-check"></i></span><span>Module DR Checklist</span>
     </a>
     <% if("Service Reporting Management".equals(m_strrole)){ %>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/ServletConn">
+    <a class="sb-item animals" href="<%=ctx%>/ServletConn">
       <span class="sb-icon"><i class="fa-solid fa-list-check"></i></span><span>Adhoc Checklist</span>
     </a>
     <% } else if("Service Desk".equals(m_strrole)) { %>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/jsp/userscorechecklist.jsp">
+    <a class="sb-item animals" href="<%=ctx%>/jsp/userscorechecklist.jsp">
       <span class="sb-icon"><i class="fa-solid fa-list-check"></i></span><span>SCORE Checklist</span>
     </a>
     <% } else if("Event Management".equals(m_strrole)) { %>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/jsp/MonitoringChecklistUser.jsp">
+    <a class="sb-item animals" href="<%=ctx%>/jsp/MonitoringChecklistUser.jsp">
       <span class="sb-icon"><i class="fa-solid fa-list-check"></i></span><span>Monitoring Checklist</span>
     </a>
     <% } else if("Incident Management".equals(m_strrole)) { %>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/jsp/IssueMgmtEmployeemain.jsp">
+    <a class="sb-item animals" href="<%=ctx%>/jsp/IssueMgmtEmployeemain.jsp">
       <span class="sb-icon"><i class="fa-solid fa-list-check"></i></span><span>Mail's Checklist</span>
     </a>
     <% } else if("Problem Management".equals(m_strrole)) { %>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/jsp/Problemuserchecklist.jsp">
+    <a class="sb-item animals" href="<%=ctx%>/jsp/Problemuserchecklist.jsp">
       <span class="sb-icon"><i class="fa-solid fa-list-check"></i></span><span>Problem Mgmt Checklist</span>
     </a>
     <% } %>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/jsp/NightShiftUser.jsp">
+    <a class="sb-item animals" href="<%=ctx%>/jsp/NightShiftUser.jsp">
       <span class="sb-icon"><i class="fa-solid fa-moon"></i></span><span>Nightshift Checklist</span>
     </a>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/jsp/NightShiftCheckList_NEW.jsp">
+    <a class="sb-item animals" href="<%=ctx%>/jsp/NightShiftCheckList_NEW.jsp">
       <span class="sb-icon"><i class="fa-solid fa-moon"></i></span><span>New Nightshift Checklist</span>
     </a>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/jsp/MailsNightShiftChecklist.jsp">
+    <a class="sb-item animals" href="<%=ctx%>/jsp/MailsNightShiftChecklist.jsp">
       <span class="sb-icon"><i class="fa-solid fa-envelope"></i></span><span>Mail's Nightshift Checklist</span>
     </a>
 
     <div class="sb-group">Team</div>
     <% if(("Manager".equals(m_strrole)) || ("Team Lead".equals(m_strrole))){ %>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/jsp/ExcelRoster.jsp?&role=<%=m_strrole%>">
+    <a class="sb-item animals" href="<%=ctx%>/jsp/ExcelRoster.jsp?&role=<%=m_strrole%>">
       <span class="sb-icon"><i class="fa-solid fa-calendar-days"></i></span><span>Roster</span>
     </a>
     <% } else { %>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/jsp/ExcelRoster_new.jsp?&role=<%=m_strrole%>">
+    <a class="sb-item animals" href="<%=ctx%>/jsp/ExcelRoster_new.jsp?&role=<%=m_strrole%>">
       <span class="sb-icon"><i class="fa-solid fa-calendar-days"></i></span><span>Roster</span>
     </a>
     <% } %>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/jsp/TicketHome.jsp?&role=<%=m_strrole%>">
+    <a class="sb-item animals" href="<%=ctx%>/jsp/TicketHome.jsp?&role=<%=m_strrole%>">
       <span class="sb-icon"><i class="fa-solid fa-ticket"></i></span><span>Ticketing Portal</span>
     </a>
 
     <div class="sb-group">Documentation</div>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/jsp/EISSOPDashboard.jsp?&role=<%=m_strrole%>">
+    <a class="sb-item animals" href="<%=ctx%>/jsp/EISSOPDashboard.jsp?&role=<%=m_strrole%>">
       <span class="sb-icon"><i class="fa-solid fa-book"></i></span><span>SOP Management</span>
     </a>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/jsp/channel_journey.jsp?&role=<%=m_strrole%>">
+    <a class="sb-item animals" href="<%=ctx%>/jsp/channel_journey.jsp?&role=<%=m_strrole%>">
       <span class="sb-icon"><i class="fa-solid fa-route"></i></span><span>Channel Journeys</span>
     </a>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/jsp/ProblemCET.jsp">
+    <a class="sb-item animals" href="<%=ctx%>/jsp/ProblemCET.jsp">
       <span class="sb-icon"><i class="fa-solid fa-clipboard-list"></i></span><span>CET Portal</span>
     </a>
 
     <div class="sb-group">Search Tools</div>
-    <a class="sb-item animals" href="multiple.html">
+    <a class="sb-item animals" href="<%=ctx%>/multiple.html">
       <span class="sb-icon"><i class="fa-solid fa-magnifying-glass"></i></span><span>Search Gen5 Reference</span>
     </a>
     <a class="sb-item animals" href="https://siapp1.sbi.co.in/LotusTransEnq/Home/About?">
       <span class="sb-icon"><i class="fa-solid fa-magnifying-glass"></i></span><span>Search SI Reference</span>
     </a>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/jsp/query.jsp">
+    <a class="sb-item animals" href="<%=ctx%>/jsp/query.jsp">
       <span class="sb-icon"><i class="fa-solid fa-terminal"></i></span><span>EIS Query Console</span>
     </a>
-    <a class="sb-item animals" href="<%=request.getContextPath()%>/jsp/ipo-monitor.jsp">
+    <a class="sb-item animals" href="<%=ctx%>/jsp/ipo-monitor.jsp">
       <span class="sb-icon"><i class="fa-solid fa-desktop"></i></span><span>IPO Monitor</span>
     </a>
 
     <div class="sb-group">Account</div>
-    <a class="sb-item sb-logout" href="<%=request.getContextPath()%>/login.action">
+    <a class="sb-item sb-logout" href="<%=ctx%>/login.action">
       <span class="sb-icon"><i class="fa-solid fa-right-from-bracket"></i></span><span>Logout</span>
     </a>
 
@@ -512,6 +567,11 @@ html.sb-open .sb-overlay{opacity:1;pointer-events:auto}
     <i class="fa-solid fa-bars"></i>
   </button>
 
+  <!-- ✅ Show sidebar button (jab collapsed ho) -->
+  <button class="tn-menu-btn" onclick="toggleSidebar()" title="Show sidebar">
+    <i class="fa-solid fa-bars"></i>
+  </button>
+
   <button class="tn-search" onclick="focusSidebarSearch()">
     <i class="fa-solid fa-magnifying-glass"></i>
     <span>Search dashboards, reports, tools...</span>
@@ -519,13 +579,13 @@ html.sb-open .sb-overlay{opacity:1;pointer-events:auto}
   </button>
 
   <div class="tn-right">
-    <button class="tn-btn tn-theme" onclick="toggleTheme()" title="Toggle theme" id="themeBtn">
+    <button class="tn-btn" onclick="toggleTheme()" title="Toggle theme" id="themeBtn">
       <i class="fa-solid fa-moon" id="themeIcon"></i>
     </button>
-    <a class="tn-btn" href="<%=request.getContextPath()%>/jsp/TicketHome.jsp?&role=<%=m_strrole%>" title="Ticketing">
+    <a class="tn-btn" href="<%=ctx%>/jsp/TicketHome.jsp?&role=<%=m_strrole%>" title="Ticketing">
       <i class="fa-solid fa-ticket"></i>
     </a>
-    <a class="tn-btn" href="<%=request.getContextPath()%>/login.action" title="Logout">
+    <a class="tn-btn" href="<%=ctx%>/login.action" title="Logout">
       <i class="fa-solid fa-right-from-bracket"></i>
     </a>
     <div class="tn-avatar" title="<%=m_strrole%>">
@@ -535,7 +595,7 @@ html.sb-open .sb-overlay{opacity:1;pointer-events:auto}
 </header>
 
 <script>
-/* Theme toggle */
+/* Theme */
 function toggleTheme(){
   var cur = document.documentElement.getAttribute('data-theme') || 'light';
   var next = cur === 'light' ? 'dark' : 'light';
@@ -552,7 +612,20 @@ function updateThemeIcon(){
 document.addEventListener('DOMContentLoaded', updateThemeIcon);
 updateThemeIcon();
 
-/* Sidebar search */
+/* ✅ Sidebar hide/show (desktop) */
+function toggleSidebar(){
+  var root = document.documentElement;
+  if(window.innerWidth <= 900){
+    root.classList.toggle('sb-open');
+  } else {
+    root.classList.toggle('sb-collapsed');
+    try{
+      localStorage.setItem('eis-sidebar-collapsed', root.classList.contains('sb-collapsed'));
+    }catch(e){}
+  }
+}
+
+/* Search filter */
 function search_animal() {
   let input = document.getElementById('searchbar').value.toLowerCase();
   let x = document.getElementsByClassName('animals');
@@ -577,6 +650,8 @@ function search_animal() {
 function focusSidebarSearch(){
   if(window.innerWidth <= 900){
     document.documentElement.classList.add('sb-open');
+  } else if(document.documentElement.classList.contains('sb-collapsed')){
+    toggleSidebar(); // auto-expand
   }
   setTimeout(()=>document.getElementById('searchbar').focus(), 150);
 }
@@ -587,696 +662,5 @@ document.addEventListener('keydown', e => {
   }
 });
 </script>
-</body>
-</html>
-
-
----------------------------------------------------------------------------------------
-
-<%@page contentType="text/html" pageEncoding="UTF-8"%>
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>EIS Portal — Home</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<script src="js/jquery.min.js"></script>
-<script>
-/* Theme boot — same key as header, so no flash */
-(function(){
-  try{
-    var t = localStorage.getItem('eis-theme') || 'light';
-    document.documentElement.setAttribute('data-theme', t);
-  }catch(e){}
-})();
-</script>
-<style>
-:root{
-  --brand:#F86F03;
-  --brand-2:#FF9A3D;
-  --brand-light:#FFF4EC;
-
-  --ink:#0A0A0A;
-  --muted:#6B7280;
-  --line:#EAEAEA;
-  --bg:#F7F7F5;
-  --card:#FFFFFF;
-  --hero-dark:#1A1A1A;
-  --hero-dark-2:#2A2A2A;
-  --tile-gradient-soft:linear-gradient(135deg,#FFF8F2 0%,#FFFDFB 100%);
-
-  --sidebar-w:260px;
-  --topnav-h:64px;
-}
-html[data-theme="dark"]{
-  --ink:#F5F5F5;
-  --muted:#9CA3AF;
-  --line:#272727;
-  --bg:#0F0F0F;
-  --card:#161616;
-  --hero-dark:#0B0B0B;
-  --hero-dark-2:#1A1A1A;
-  --tile-gradient-soft:linear-gradient(135deg,#1F1408 0%,#1A1A1A 100%);
-}
-*{margin:0;padding:0;box-sizing:border-box}
-html,body{height:100%}
-body{
-  font-family:'Inter',system-ui,sans-serif;
-  background:var(--bg);
-  color:var(--ink);
-  -webkit-font-smoothing:antialiased;
-  min-height:100vh;
-  transition:background .3s ease,color .3s ease;
-}
-a{color:inherit;text-decoration:none}
-
-.new-wrapper{
-  margin-left:var(--sidebar-w);
-  padding-top:var(--topnav-h);
-  transition:margin-left .3s cubic-bezier(.4,0,.2,1);
-}
-.bento-wrap{
-  max-width:1400px;
-  margin:0 auto;
-  padding:32px 28px 60px;
-}
-
-/* ============ HERO ============ */
-.hero{
-  background:linear-gradient(135deg, var(--hero-dark) 0%, var(--hero-dark-2) 100%);
-  border-radius:22px;
-  padding:44px 40px;
-  color:#fff;
-  position:relative;
-  overflow:hidden;
-  margin-bottom:24px;
-  display:grid;
-  grid-template-columns:1.5fr 1fr;
-  gap:24px;
-  align-items:center;
-  min-height:240px;
-  border:1px solid rgba(248,111,3,.08);
-}
-.hero::before{
-  content:"";position:absolute;top:-120px;right:-120px;
-  width:400px;height:400px;border-radius:50%;
-  background:radial-gradient(circle,rgba(248,111,3,.28) 0%,transparent 70%);
-}
-.hero::after{
-  content:"";position:absolute;bottom:-140px;left:20%;
-  width:280px;height:280px;border-radius:50%;
-  background:radial-gradient(circle,rgba(255,154,61,.14) 0%,transparent 70%);
-}
-.hero-content{position:relative;z-index:2}
-.hero-eyebrow{
-  display:inline-flex;align-items:center;gap:8px;
-  padding:6px 12px;
-  background:rgba(255,255,255,.08);
-  border:1px solid rgba(255,255,255,.12);
-  border-radius:999px;
-  font-size:.72rem;font-weight:600;margin-bottom:18px;
-}
-.hero-eyebrow .pulse{
-  width:6px;height:6px;border-radius:50%;
-  background:#4ADE80;box-shadow:0 0 8px #4ADE80;
-  animation:pulse 2s ease-in-out infinite;
-}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-.hero h1{
-  font-size:2.5rem;font-weight:800;
-  letter-spacing:-1.2px;line-height:1.1;margin-bottom:12px;
-}
-.hero h1 .grad{
-  background:linear-gradient(135deg,var(--brand) 0%,var(--brand-2) 100%);
-  -webkit-background-clip:text;background-clip:text;color:transparent;
-}
-.hero p{
-  font-size:.95rem;line-height:1.6;
-  color:rgba(255,255,255,.72);
-  max-width:480px;
-}
-.hero-actions{display:flex;gap:12px;margin-top:24px;flex-wrap:wrap}
-.hero-btn{
-  padding:11px 18px;border-radius:11px;
-  font-size:.85rem;font-weight:600;cursor:pointer;
-  border:none;font-family:inherit;
-  display:inline-flex;align-items:center;gap:8px;
-  transition:all .2s ease;
-}
-.hero-btn.primary{
-  background:var(--brand);color:#fff;
-  box-shadow:0 8px 20px -6px rgba(248,111,3,.5);
-}
-.hero-btn.primary:hover{background:var(--brand-2);transform:translateY(-1px)}
-.hero-btn.ghost{
-  background:rgba(255,255,255,.08);color:#fff;
-  border:1px solid rgba(255,255,255,.12);
-}
-.hero-btn.ghost:hover{background:rgba(255,255,255,.15)}
-
-.hero-visual{
-  position:relative;z-index:2;
-  display:flex;flex-direction:column;gap:14px;
-  align-items:flex-end;
-}
-.hero-mini{
-  width:100%;max-width:280px;
-  background:rgba(255,255,255,.06);
-  border:1px solid rgba(255,255,255,.1);
-  border-radius:14px;
-  padding:14px 16px;
-  display:flex;align-items:center;gap:12px;
-  backdrop-filter:blur(8px);
-}
-.hero-mini .mi{
-  width:34px;height:34px;border-radius:9px;
-  display:grid;place-items:center;
-  background:rgba(248,111,3,.2);
-  color:var(--brand);
-  font-size:.85rem;flex-shrink:0;
-}
-.hero-mini .mt{
-  font-size:.85rem;font-weight:700;color:#fff;line-height:1.2;
-}
-.hero-mini .ms{
-  font-size:.72rem;color:rgba(255,255,255,.6);margin-top:2px;
-}
-.hero-mini.green .mi{background:rgba(74,222,128,.15);color:#4ADE80}
-.hero-mini.green .mt{color:#4ADE80}
-
-/* ============ STATS ============ */
-.stats{
-  display:grid;grid-template-columns:repeat(4,1fr);
-  gap:16px;margin-bottom:36px;
-}
-.stat{
-  background:var(--card);
-  border:1px solid var(--line);
-  border-radius:16px;padding:20px;
-  display:flex;flex-direction:column;gap:8px;
-  transition:all .2s ease;
-  position:relative;overflow:hidden;
-}
-.stat::before{
-  content:"";position:absolute;top:0;left:0;
-  width:3px;height:100%;
-  background:var(--brand);
-  opacity:0;transition:opacity .2s ease;
-}
-.stat:hover{
-  border-color:var(--brand);transform:translateY(-2px);
-  box-shadow:0 10px 28px -10px rgba(248,111,3,.18);
-}
-.stat:hover::before{opacity:1}
-.stat .sicon{
-  width:36px;height:36px;
-  display:grid;place-items:center;
-  background:var(--brand-light);
-  color:var(--brand);
-  border-radius:10px;font-size:.85rem;
-  transition:all .2s ease;
-}
-html[data-theme="dark"] .stat .sicon{
-  background:rgba(248,111,3,.15);
-}
-.stat .snum{
-  font-size:1.55rem;font-weight:800;
-  letter-spacing:-.8px;line-height:1;
-}
-.stat .slabel{
-  font-size:.78rem;color:var(--muted);font-weight:500;
-}
-.stat .strend{
-  position:absolute;top:20px;right:20px;
-  font-size:.68rem;font-weight:700;
-  padding:3px 8px;border-radius:999px;
-  background:rgba(74,222,128,.12);
-  color:#16A34A;
-}
-.stat .strend.warn{background:rgba(248,111,3,.12);color:var(--brand)}
-
-/* ============ SECTION HEADER ============ */
-.sec-head{
-  display:flex;align-items:center;justify-content:space-between;
-  margin:0 0 18px;
-}
-.sec-head h2{
-  font-size:1.1rem;font-weight:700;
-  letter-spacing:-.4px;
-  display:flex;align-items:center;gap:10px;
-}
-.sec-head h2 i{color:var(--brand);font-size:.85rem}
-.sec-head .hint{
-  font-size:.76rem;color:var(--muted);font-weight:500;
-}
-.sec-head .hint b{color:var(--ink);font-weight:700}
-.sec-head .filter-tabs{
-  display:flex;gap:4px;
-  background:var(--card);
-  border:1px solid var(--line);
-  padding:3px;border-radius:10px;
-}
-.sec-head .ftab{
-  padding:6px 12px;border:none;background:transparent;
-  font-family:inherit;font-size:.75rem;font-weight:600;
-  color:var(--muted);border-radius:7px;
-  cursor:pointer;transition:all .15s ease;
-}
-.sec-head .ftab.active{
-  background:var(--brand);color:#fff;
-}
-
-/* ============ BENTO ============ */
-.bento{
-  display:grid;
-  grid-template-columns:repeat(4,1fr);
-  gap:16px;
-  margin-bottom:32px;
-}
-.bento-item{
-  background:var(--card);
-  border:1px solid var(--line);
-  border-radius:18px;
-  padding:22px;
-  display:flex;flex-direction:column;justify-content:space-between;
-  cursor:pointer;transition:all .25s ease;
-  position:relative;overflow:hidden;
-  min-height:160px;
-}
-.bento-item:hover{
-  border-color:var(--brand);transform:translateY(-3px);
-  box-shadow:0 16px 40px -12px rgba(248,111,3,.22);
-}
-.bento-item:hover .bicon{
-  background:var(--brand);color:#fff;transform:scale(1.08);
-}
-.bento-item:hover .bgo{opacity:1;color:var(--brand)}
-.bhead{
-  display:flex;justify-content:space-between;align-items:flex-start;
-  gap:10px;
-}
-.bicon{
-  width:44px;height:44px;
-  display:grid;place-items:center;
-  background:var(--brand-light);
-  color:var(--brand);border-radius:12px;
-  font-size:.95rem;transition:all .25s ease;flex-shrink:0;
-}
-html[data-theme="dark"] .bicon{
-  background:rgba(248,111,3,.15);
-}
-.bgo{
-  color:var(--muted);font-size:.75rem;
-  opacity:0;transition:opacity .25s ease;
-}
-.btitle{
-  font-size:.98rem;font-weight:700;
-  letter-spacing:-.2px;margin-top:18px;line-height:1.3;
-}
-.bsub{
-  font-size:.76rem;color:var(--muted);
-  font-weight:500;margin-top:5px;
-}
-.btags{
-  display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;
-}
-.btag{
-  font-size:.65rem;font-weight:700;
-  padding:3px 8px;border-radius:999px;
-  background:var(--brand-light);
-  color:var(--brand);
-  text-transform:uppercase;letter-spacing:.3px;
-}
-html[data-theme="dark"] .btag{
-  background:rgba(248,111,3,.15);
-}
-.btag.gray{
-  background:var(--sidebar-hover,#F5F5F4);
-  color:var(--muted);
-}
-html[data-theme="dark"] .btag.gray{
-  background:#222;color:#9CA3AF;
-}
-
-/* Featured large */
-.bento-item.lg{
-  grid-column:span 2;grid-row:span 2;
-  padding:30px;
-  background:linear-gradient(135deg,var(--hero-dark) 0%,var(--hero-dark-2) 100%);
-  color:#fff;border-color:transparent;
-}
-.bento-item.lg::before{
-  content:"";position:absolute;inset:auto -80px -80px auto;
-  width:300px;height:300px;border-radius:50%;
-  background:radial-gradient(circle,rgba(248,111,3,.25) 0%,transparent 70%);
-}
-.bento-item.lg:hover{
-  border-color:transparent;
-  box-shadow:0 24px 60px -12px rgba(248,111,3,.35);
-}
-.bento-item.lg .bicon{
-  background:rgba(248,111,3,.15);color:var(--brand);
-  width:54px;height:54px;font-size:1.2rem;
-}
-.bento-item.lg .btitle{
-  font-size:1.4rem;font-weight:800;
-  letter-spacing:-.5px;margin-top:auto;
-  position:relative;z-index:2;
-}
-.bento-item.lg .bsub{
-  color:rgba(255,255,255,.65);
-  font-size:.85rem;margin-top:8px;
-  position:relative;z-index:2;
-}
-.bento-item.lg .bgo{color:rgba(255,255,255,.5)}
-.bento-item.lg:hover .bgo{color:var(--brand)}
-.bento-item.lg .btag{
-  background:rgba(255,255,255,.1);
-  color:#fff;
-}
-
-/* Alert orange */
-.bento-item.alert{
-  background:linear-gradient(135deg,var(--brand) 0%,var(--brand-2) 100%);
-  color:#fff;border-color:transparent;
-}
-.bento-item.alert .bicon{
-  background:rgba(255,255,255,.2);color:#fff;
-}
-.bento-item.alert .bsub{color:rgba(255,255,255,.9)}
-.bento-item.alert .bgo{color:rgba(255,255,255,.7)}
-.bento-item.alert .btag{
-  background:rgba(255,255,255,.2);color:#fff;
-}
-
-/* Medium wide */
-.bento-item.md{
-  grid-column:span 2;
-}
-
-/* ============ FOOTER ============ */
-.foot{
-  margin-top:48px;padding-top:24px;
-  border-top:1px solid var(--line);
-  display:flex;justify-content:space-between;align-items:center;
-  font-size:.8rem;color:var(--muted);
-}
-.foot .brandline b{color:var(--brand)}
-
-/* Responsive */
-@media (max-width:1100px){
-  .bento{grid-template-columns:repeat(3,1fr)}
-  .bento-item.lg{grid-column:span 2;grid-row:span 1}
-  .bento-item.md{grid-column:span 2}
-  .stats{grid-template-columns:repeat(2,1fr)}
-}
-@media (max-width:800px){
-  .new-wrapper{margin-left:0}
-  .hero{grid-template-columns:1fr;padding:32px 28px}
-  .hero h1{font-size:1.8rem}
-  .hero-visual{display:none}
-  .bento{grid-template-columns:repeat(2,1fr)}
-  .bento-item.lg{grid-column:span 2}
-  .bento-item.md{grid-column:span 2}
-}
-@media (max-width:520px){
-  .bento-wrap{padding:20px 16px 40px}
-  .hero h1{font-size:1.5rem}
-  .bento{grid-template-columns:1fr}
-  .bento-item.lg,.bento-item.md{grid-column:span 1}
-  .stats{grid-template-columns:1fr 1fr}
-  .foot{flex-direction:column;gap:8px;text-align:center}
-  .sec-head{flex-direction:column;align-items:flex-start;gap:10px}
-}
-</style>
-</head>
-<body>
-
-<%@include file="./userheader.jsp"%>
-
-<%
-  String roleForDisplay = (String) session.getAttribute("role");
-%>
-
-<div class="new-wrapper">
-<div class="bento-wrap">
-
-  <!-- HERO -->
-  <section class="hero">
-    <div class="hero-content">
-      <div class="hero-eyebrow">
-        <span class="pulse"></span>
-        All Systems Operational
-      </div>
-      <h1>Welcome back,<br><span class="grad"><%= roleForDisplay != null ? roleForDisplay : "Operator" %></span></h1>
-      <p>Your command center for enterprise monitoring, deployments, incident management and operational dashboards — all in one place.</p>
-
-      <div class="hero-actions">
-        <button class="hero-btn primary" onclick="focusSidebarSearch()">
-          <i class="fa-solid fa-magnifying-glass"></i>
-          Search Dashboards
-        </button>
-        <a class="hero-btn ghost" href="<%=request.getContextPath()%>/jsp/TicketHome.jsp?&role=<%=roleForDisplay%>">
-          <i class="fa-solid fa-ticket"></i>
-          Raise Ticket
-        </a>
-      </div>
-    </div>
-
-    <div class="hero-visual">
-      <div class="hero-mini">
-        <div class="mi"><i class="fa-solid fa-shield-halved"></i></div>
-        <div>
-          <div class="mt">Secure Session</div>
-          <div class="ms">Encrypted connection</div>
-        </div>
-      </div>
-      <div class="hero-mini green">
-        <div class="mi"><i class="fa-solid fa-circle-check"></i></div>
-        <div>
-          <div class="mt">99.98% Uptime</div>
-          <div class="ms">Last 30 days</div>
-        </div>
-      </div>
-      <div class="hero-mini">
-        <div class="mi"><i class="fa-solid fa-bolt"></i></div>
-        <div>
-          <div class="mt">Live Monitoring</div>
-          <div class="ms">Real-time alerts active</div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- STATS -->
-  <section class="stats">
-    <div class="stat">
-      <div class="sicon"><i class="fa-solid fa-chart-line"></i></div>
-      <div class="snum">24×7</div>
-      <div class="slabel">Monitoring active</div>
-      <div class="strend">LIVE</div>
-    </div>
-    <div class="stat">
-      <div class="sicon"><i class="fa-solid fa-server"></i></div>
-      <div class="snum">100+</div>
-      <div class="slabel">Services tracked</div>
-      <div class="strend">+12</div>
-    </div>
-    <div class="stat">
-      <div class="sicon"><i class="fa-solid fa-bolt"></i></div>
-      <div class="snum">&lt; 2s</div>
-      <div class="slabel">Alert response time</div>
-      <div class="strend">FAST</div>
-    </div>
-    <div class="stat">
-      <div class="sicon"><i class="fa-solid fa-clock-rotate-left"></i></div>
-      <div class="snum">365d</div>
-      <div class="slabel">Data retention</div>
-      <div class="strend warn">ARCHIVE</div>
-    </div>
-  </section>
-
-  <!-- QUICK ACCESS -->
-  <div class="sec-head">
-    <h2><i class="fa-solid fa-bolt"></i> Quick Access</h2>
-    <div class="filter-tabs">
-      <button class="ftab active" onclick="filterBento(this,'all')">All</button>
-      <button class="ftab" onclick="filterBento(this,'monitor')">Monitoring</button>
-      <button class="ftab" onclick="filterBento(this,'ops')">Ops</button>
-      <button class="ftab" onclick="filterBento(this,'tools')">Tools</button>
-    </div>
-  </div>
-
-  <section class="bento" id="bentoGrid">
-
-    <a class="bento-item lg" data-cat="monitor" href="<%=request.getContextPath()%>/jsp/CombinedServiceWise&HundreadPerFailure.jsp">
-      <div class="bhead">
-        <div class="bicon"><i class="fa-solid fa-tower-broadcast"></i></div>
-        <i class="fa-solid fa-arrow-up-right-from-square bgo"></i>
-      </div>
-      <div>
-        <div class="btitle">EIS Command Center</div>
-        <div class="bsub">Combined service-wise &amp; 100% failure monitoring</div>
-        <div class="btags">
-          <span class="btag">Featured</span>
-          <span class="btag">Real-time</span>
-        </div>
-      </div>
-    </a>
-
-    <a class="bento-item alert" data-cat="monitor" href="<%=request.getContextPath()%>/ErrorDashboard">
-      <div class="bhead">
-        <div class="bicon"><i class="fa-solid fa-triangle-exclamation"></i></div>
-        <i class="fa-solid fa-arrow-up-right-from-square bgo"></i>
-      </div>
-      <div>
-        <div class="btitle">Error Dashboard</div>
-        <div class="bsub">Live error tracking</div>
-        <div class="btags"><span class="btag">Critical</span></div>
-      </div>
-    </a>
-
-    <a class="bento-item md" data-cat="monitor" href="<%=request.getContextPath()%>/jsp/100PercentFailure.jsp">
-      <div class="bhead">
-        <div class="bicon"><i class="fa-solid fa-heart-pulse"></i></div>
-        <i class="fa-solid fa-arrow-up-right-from-square bgo"></i>
-      </div>
-      <div>
-        <div class="btitle">100% Failure Honeycomb</div>
-        <div class="bsub">Auto-refresh live view of all failing services</div>
-        <div class="btags">
-          <span class="btag">Live</span>
-          <span class="btag gray">Auto Refresh</span>
-        </div>
-      </div>
-    </a>
-
-    <a class="bento-item" data-cat="monitor" href="<%=request.getContextPath()%>/jsp/ServiceWiseFailure.jsp">
-      <div class="bhead">
-        <div class="bicon"><i class="fa-solid fa-heart-pulse"></i></div>
-        <i class="fa-solid fa-arrow-up-right-from-square bgo"></i>
-      </div>
-      <div>
-        <div class="btitle">Service-Wise Failure</div>
-        <div class="bsub">Honeycomb view</div>
-      </div>
-    </a>
-
-    <a class="bento-item" data-cat="monitor" href="<%=request.getContextPath()%>/jsp/PortStatus.jsp">
-      <div class="bhead">
-        <div class="bicon"><i class="fa-solid fa-signal"></i></div>
-        <i class="fa-solid fa-arrow-up-right-from-square bgo"></i>
-      </div>
-      <div>
-        <div class="btitle">Service Status</div>
-        <div class="bsub">Port monitoring</div>
-      </div>
-    </a>
-
-    <a class="bento-item" data-cat="monitor" href="<%=request.getContextPath()%>/jsp/TransactionEndPointBank.jsp">
-      <div class="bhead">
-        <div class="bicon"><i class="fa-solid fa-money-bill-transfer"></i></div>
-        <i class="fa-solid fa-arrow-up-right-from-square bgo"></i>
-      </div>
-      <div>
-        <div class="btitle">Transaction End Point</div>
-        <div class="bsub">Live Txn monitoring</div>
-      </div>
-    </a>
-
-    <a class="bento-item" data-cat="ops" href="<%=request.getContextPath()%>/jsp/DRChecklistHomePage.jsp">
-      <div class="bhead">
-        <div class="bicon"><i class="fa-solid fa-list-check"></i></div>
-        <i class="fa-solid fa-arrow-up-right-from-square bgo"></i>
-      </div>
-      <div>
-        <div class="btitle">DR Checklist</div>
-        <div class="bsub">Module checklist</div>
-      </div>
-    </a>
-
-    <a class="bento-item" data-cat="ops" href="<%=request.getContextPath()%>/jsp/TicketHome.jsp?&role=<%=roleForDisplay%>">
-      <div class="bhead">
-        <div class="bicon"><i class="fa-solid fa-ticket"></i></div>
-        <i class="fa-solid fa-arrow-up-right-from-square bgo"></i>
-      </div>
-      <div>
-        <div class="btitle">Ticketing Portal</div>
-        <div class="bsub">Raise / track tickets</div>
-      </div>
-    </a>
-
-    <a class="bento-item" data-cat="ops" href="<%=request.getContextPath()%>/DeploymentSheetServlet">
-      <div class="bhead">
-        <div class="bicon"><i class="fa-solid fa-rocket"></i></div>
-        <i class="fa-solid fa-arrow-up-right-from-square bgo"></i>
-      </div>
-      <div>
-        <div class="btitle">Add Deployment</div>
-        <div class="bsub">Log new deployment</div>
-      </div>
-    </a>
-
-    <a class="bento-item" data-cat="ops" href="<%=request.getContextPath()%>/jsp/DailyStatisticsReport.jsp">
-      <div class="bhead">
-        <div class="bicon"><i class="fa-solid fa-chart-pie"></i></div>
-        <i class="fa-solid fa-arrow-up-right-from-square bgo"></i>
-      </div>
-      <div>
-        <div class="btitle">Daily Statistics</div>
-        <div class="bsub">Night shift report</div>
-      </div>
-    </a>
-
-    <a class="bento-item" data-cat="tools" href="<%=request.getContextPath()%>/jsp/query.jsp">
-      <div class="bhead">
-        <div class="bicon"><i class="fa-solid fa-terminal"></i></div>
-        <i class="fa-solid fa-arrow-up-right-from-square bgo"></i>
-      </div>
-      <div>
-        <div class="btitle">Query Console</div>
-        <div class="bsub">Run DB queries</div>
-      </div>
-    </a>
-
-    <a class="bento-item" data-cat="tools" href="<%=request.getContextPath()%>/jsp/FlashReport.jsp">
-      <div class="bhead">
-        <div class="bicon"><i class="fa-solid fa-bolt"></i></div>
-        <i class="fa-solid fa-arrow-up-right-from-square bgo"></i>
-      </div>
-      <div>
-        <div class="btitle">Flash Report</div>
-        <div class="bsub">Quick summary</div>
-      </div>
-    </a>
-
-  </section>
-
-  <footer class="foot">
-    <div class="brandline"><b>EIS Portal</b> · Internal use only</div>
-    <div>Designed &amp; Developed by EIS Automation Team</div>
-  </footer>
-
-</div>
-</div>
-
-<script>
-/* Bento filter */
-function filterBento(btn, cat){
-  document.querySelectorAll('.sec-head .ftab').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  document.querySelectorAll('#bentoGrid .bento-item').forEach(it => {
-    var c = it.getAttribute('data-cat') || '';
-    if(cat === 'all' || c === cat){
-      it.style.display = '';
-    } else {
-      it.style.display = 'none';
-    }
-  });
-}
-</script>
-
 </body>
 </html>
