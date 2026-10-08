@@ -1,893 +1,572 @@
-<%@ page import="java.sql.*, java.util.*, java.text.*" %>
-<%@ page import="com.jdbc.DBUtilityAuto" %>
-<%@ page pageEncoding="UTF-8" %>
-<%
-    // Parse start/end – default to previous hour
-    String startParam = request.getParameter("start");
-    String endParam = request.getParameter("end");
-    String showQueries = request.getParameter("showQueries");
-    
-    java.util.Date startDate, endDate;
-    
-    if (startParam != null && !startParam.isEmpty() && endParam != null && !endParam.isEmpty()) {
-        try {
-            SimpleDateFormat iso = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm");
-            startDate = iso.parse(startParam);
-            endDate = iso.parse(endParam);
-        } catch (Exception e) {
-            Calendar defaultCal = Calendar.getInstance();
-            defaultCal.set(Calendar.MINUTE, 0);
-            defaultCal.set(Calendar.SECOND, 0);
-            defaultCal.set(Calendar.MILLISECOND, 0);
-            defaultCal.add(Calendar.HOUR_OF_DAY, -1);
-            startDate = defaultCal.getTime();
-            defaultCal.add(Calendar.HOUR_OF_DAY, 1);
-            endDate = defaultCal.getTime();
-        }
-    } else {
-        Calendar cal = Calendar.getInstance();
-        cal.set(Calendar.MINUTE, 0);
-        cal.set(Calendar.SECOND, 0);
-        cal.set(Calendar.MILLISECOND, 0);
-        cal.add(Calendar.HOUR_OF_DAY, -1);
-        startDate = cal.getTime();
-        cal.add(Calendar.HOUR_OF_DAY, 1);
-        endDate = cal.getTime();
-    }
-    
-    if (startDate == null || endDate == null) {
-        Calendar defaultCal = Calendar.getInstance();
-        defaultCal.set(Calendar.MINUTE, 0);
-        defaultCal.set(Calendar.SECOND, 0);
-        defaultCal.set(Calendar.MILLISECOND, 0);
-        defaultCal.add(Calendar.HOUR_OF_DAY, -1);
-        startDate = defaultCal.getTime();
-        defaultCal.add(Calendar.HOUR_OF_DAY, 1);
-        endDate = defaultCal.getTime();
-    }
+<%@page contentType="text/html" pageEncoding="UTF-8"%>
 
-    SimpleDateFormat oracleFmt = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss");
-    String fromStr = oracleFmt.format(startDate).toUpperCase();
-    String toStr = oracleFmt.format(endDate).toUpperCase();
-    
-    SimpleDateFormat displayFmt = new SimpleDateFormat("dd-MMM-yyyy HH:mm");
-    String rangeDisplay = displayFmt.format(startDate) + " to " + displayFmt.format(endDate);
-    String startIso = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm").format(startDate);
-    String endIso = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm").format(endDate);
 
-    int selectedHour = startDate.getHours();
 
-    Calendar partCal = Calendar.getInstance();
-    partCal.setTime(startDate);
-    String[] months = {"JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"};
-    String partition = months[partCal.get(Calendar.MONTH)] + "_" + String.valueOf(partCal.get(Calendar.YEAR)).substring(2);
-
-    /* ✅ PMJJBY_HOURLY & PMSBY_HOURLY REMOVED */
-    String[] tables = {
-        "ADHARVAULT_HOURLY",
-        "PANVALIDATION_HOURLY",
-        "CKYC_HOURLY",
-        "AMLOCK_HOURLY",
-        "SBI_CAPS_HOURLY",
-        "IVR_HOURLY",
-        "DMZ_HOURLY",
-        "DMZ_OUTBOUND_HOURLY",
-        "DEAF_LOGGING_HOURLY",
-        "DEAF_AUDIT_HOURLY",
-        "EIS_INACTIVE_HOURLY",
-        "EKYC_HOURLY"
-    };
-    String[] displayNames = {
-        "Aadhar Vault",
-        "PAN Validation",
-        "CKYC (New)",
-        "AMLOCK",
-        "SBI CAPS",
-        "IVR",
-        "DMZ",
-        "DMZ Outbound",
-        "Deaf Logging",
-        "Deaf Audit",
-        "EIS Inactive",
-        "EKYC"
-    };
-    String[] sourceDB = {
-        "IIB", "IIB", "IIB", "IIB", "IIB", "IIB", "IIB", "IIB", "IIB", "IIB", "IIB", "SIDB"
-    };
-
-    Map<String, List<Map<String, Object>>> tableData = new LinkedHashMap<>();
-    try (Connection conn = DBUtilityAuto.getReportDBConnection()) {
-        for (String tbl : tables) {
-            String sql = "SELECT * FROM " + tbl + " WHERE START_TIME >= ? AND START_TIME < ? ORDER BY START_TIME";
-            List<Map<String, Object>> rows = new ArrayList<>();
-            try (PreparedStatement ps = conn.prepareStatement(sql)) {
-                ps.setTimestamp(1, new java.sql.Timestamp(startDate.getTime()));
-                ps.setTimestamp(2, new java.sql.Timestamp(endDate.getTime()));
-                try (ResultSet rs = ps.executeQuery()) {
-                    ResultSetMetaData meta = rs.getMetaData();
-                    int colCount = meta.getColumnCount();
-                    while (rs.next()) {
-                        Map<String, Object> row = new LinkedHashMap<>();
-                        for (int i = 1; i <= colCount; i++) {
-                            row.put(meta.getColumnName(i).toUpperCase(), rs.getObject(i));
-                        }
-                        rows.add(row);
-                    }
-                }
-            } catch (SQLException e) {
-                System.err.println("Error fetching data for table: " + tbl);
-                e.printStackTrace();
-            }
-            tableData.put(tbl, rows);
-        }
-    } catch (Exception e) {
-        e.printStackTrace();
-    }
-
-    Set<String> hiddenCols = new HashSet<>(Arrays.asList("ID", "START_TIME", "END_TIME", "QUERY_DURATION_SEC"));
-
-    String queriesDisplay = "";
-    if ("true".equals(showQueries)) {
-        StringBuilder sb = new StringBuilder();
-        String part = " PARTITION(" + partition + ")";
-        String fromDate = fromStr;
-        String toDate = toStr;
-
-        sb.append("-- Query 0: Aadhar Vault\n");
-        sb.append("SELECT /*+ PARALLEL(4) */ COUNT(*) AS TOTAL_HITS,\n");
-        sb.append("SUM(CASE WHEN ERROR_CODE IS NULL THEN 1 ELSE 0 END) AS SUCCESS,\n");
-        sb.append("SUM(CASE WHEN ERROR_CODE IN ('SI002','SI014','SI001','SI051') THEN 1 ELSE 0 END) AS FAILURE,\n");
-        sb.append("ROUND(AVG(EXTRACT(SECOND FROM (response_date_time - request_date_time))), 4) AS Avg_response_end_to_end\n");
-        sb.append("FROM EISAPP.api_log" + part + "\n");
-        sb.append("WHERE url IN ('http://eispri.sbi.co.in:3113/aadharVault/refKeyEnq/misc', 'http://eispri.sbi.co.in:3113/aadharVault/storeData/misc', 'http://eispri.sbi.co.in:3113/aadharVault/fetchAadhar/misc')\n");
-        sb.append("AND request_date_time BETWEEN TO_DATE('" + fromDate + "', 'DD-MON-YYYY HH24:MI:SS') AND TO_DATE('" + toDate + "', 'DD-MON-YYYY HH24:MI:SS');\n\n");
-
-        sb.append("-- Query 1: PAN Validation\n");
-        sb.append("SELECT /*+ PARALLEL(4) */ COUNT(*) AS TOTAL_HITS,\n");
-        sb.append("SUM(CASE WHEN ERROR_CODE IS NULL THEN 1 ELSE 0 END) AS SUCCESS,\n");
-        sb.append("SUM(CASE WHEN ERROR_CODE IN ('SI002','SI014','SI001','SI051') THEN 1 ELSE 0 END) AS TD,\n");
-        sb.append("SUM(CASE WHEN ERROR_CODE NOT IN ('SI002','SI014','SI001','SI051') THEN 1 ELSE 0 END) AS BD\n");
-        sb.append("FROM EISAPP.api_log" + part + "\n");
-        sb.append("WHERE url = 'http://eispri.sbi.co.in:3013/PANMatchingDetails/misc'\n");
-        sb.append("AND request_date_time BETWEEN TO_DATE('" + fromDate + "', 'DD-MON-YYYY HH24:MI:SS') AND TO_DATE('" + toDate + "', 'DD-MON-YYYY HH24:MI:SS');\n\n");
-
-        sb.append("-- Query 2: CKYC (New)\n");
-        sb.append("SELECT /*+ PARALLEL(4) */\n");
-        sb.append("ROUND(SUM(CASE WHEN ERROR_CODE IN ('SI001','SI002','SI007','SI014','SI017','SI569','SI570') THEN 1 ELSE 0 END) * 100 / NULLIF(COUNT(*), 0), 2) AS EIS_TD_PERCENT,\n");
-        sb.append("ROUND(SUM(CASE WHEN ERROR_CODE IN ('CK002','CK014') THEN 1 ELSE 0 END) * 100 / NULLIF(COUNT(*), 0), 2) AS DEST_TD_PERCENT\n");
-        sb.append("FROM EISAPP.api_log" + part + "\n");
-        sb.append("WHERE source_id IN ('CK','LP','YB','YA','IN','FA')\n");
-        sb.append("AND url IN ('http://eispri.sbi.co.in:3002/ckyc/Creation/customers', 'http://eispri.sbi.co.in:3002/ckycPersonalDetails_th/update/customers', 'http://eispri.sbi.co.in:3002/ckycPersonalDetails_th/enquiry/customers')\n");
-        sb.append("AND request_date_time BETWEEN TO_DATE('" + fromDate + "', 'DD-MON-YYYY HH24:MI:SS') AND TO_DATE('" + toDate + "', 'DD-MON-YYYY HH24:MI:SS');\n\n");
-
-        sb.append("-- Query 3: AMLOCK\n");
-        sb.append("SELECT /*+ PARALLEL(4) */\n");
-        sb.append("ROUND(SUM(CASE WHEN ERROR_CODE IN ('SI001','SI002','SI007','SI014','SI017','SI569','SI570') THEN 1 ELSE 0 END) * 100 / NULLIF(COUNT(*), 0), 2) AS EIS_TD_PERCENT,\n");
-        sb.append("ROUND(SUM(CASE WHEN SUBSTR(ERROR_CODE, 3, 3) IN ('002','014') THEN 1 ELSE 0 END) * 100 / NULLIF(COUNT(*), 0), 2) AS DEST_TD_PERCENT\n");
-        sb.append("FROM EISAPP.api_log" + part + "\n");
-        sb.append("WHERE URL IN ('http://eispri.sbi.co.in:3021/amlockName/CCSID/ScreeningDetails/customers', 'http://eispri.sbi.co.in:3011/amlockName/acknowledgeDetails/misc')\n");
-        sb.append("AND REQUEST_DATE_TIME BETWEEN TO_DATE('" + fromDate + "', 'DD-MON-YYYY HH24:MI:SS') AND TO_DATE('" + toDate + "', 'DD-MON-YYYY HH24:MI:SS');\n\n");
-
-        sb.append("-- Query 4: SBI CAPS\n");
-        sb.append("SELECT /*+ PARALLEL(4) */ COUNT(*) AS TOTAL_HITS,\n");
-        sb.append("SUM(CASE WHEN RESPONSE_STATUS IN ('0','SUCCESS') THEN 1 ELSE 0 END) AS SUCCESS,\n");
-        sb.append("ROUND(SUM(CASE WHEN ERROR_CODE IN ('SI002','SI014','SI001','SI051','SI007','SI569','SI570') THEN 1 ELSE 0 END) * 100 / NULLIF(COUNT(*), 0), 2) AS TD_PERCENT\n");
-        sb.append("FROM EISAPP.api_log" + part + "\n");
-        sb.append("WHERE SUBSTR(URN, 4, 2) = 'SA'\n");
-        sb.append("AND REQUEST_DATE_TIME BETWEEN TO_DATE('" + fromDate + "', 'DD-MON-YYYY HH24:MI:SS') AND TO_DATE('" + toDate + "', 'DD-MON-YYYY HH24:MI:SS');\n\n");
-
-        sb.append("-- Query 5: IVR\n");
-        sb.append("SELECT /*+ PARALLEL(4) */ COUNT(*) AS TOTAL_HITS,\n");
-        sb.append("SUM(CASE WHEN RESPONSE_STATUS IN ('0','SUCCESS') THEN 1 ELSE 0 END) AS SUCCESS,\n");
-        sb.append("ROUND(SUM(CASE WHEN ERROR_CODE IN ('SI002','SI014','SI001','SI051','SI007','SI569','SI570') THEN 1 ELSE 0 END) * 100 / NULLIF(COUNT(*), 0), 2) AS TD_PERCENT\n");
-        sb.append("FROM EISAPP.api_log" + part + "\n");
-        sb.append("WHERE BROKER_NAME = 'IVR_EXP'\n");
-        sb.append("AND REQUEST_DATE_TIME BETWEEN TO_DATE('" + fromDate + "', 'DD-MON-YYYY HH24:MI:SS') AND TO_DATE('" + toDate + "', 'DD-MON-YYYY HH24:MI:SS');\n\n");
-
-        sb.append("-- Query 6: DMZ (dynamic)\n");
-        sb.append("SELECT /*+ PARALLEL(4) */ dpg_ip AS IP, COUNT(*) AS COUNT\n");
-        sb.append("FROM EISAPP.api_log" + part + "\n");
-        sb.append("WHERE REQUEST_DATE_TIME BETWEEN TO_DATE('" + fromDate + "', 'DD-MON-YYYY HH24:MI:SS') AND TO_DATE('" + toDate + "', 'DD-MON-YYYY HH24:MI:SS')\n");
-        sb.append("AND dpg_ip IS NOT NULL\n");
-        sb.append("GROUP BY dpg_ip;\n\n");
-
-        sb.append("-- Query 7: DMZ Outbound\n");
-        sb.append("SELECT /*+ PARALLEL(4) */ COUNT(*) AS Total_hits\n");
-        sb.append("FROM EISAPP.backend_log" + part + "\n");
-        sb.append("WHERE END_POINT_PORT = '7443'\n");
-        sb.append("AND REQUEST_DATE_TIME BETWEEN TO_DATE('" + fromDate + "', 'DD-MON-YYYY HH24:MI:SS') AND TO_DATE('" + toDate + "', 'DD-MON-YYYY HH24:MI:SS');\n\n");
-
-        sb.append("-- Query 8: Deaf Logging\n");
-        sb.append("SELECT /*+ PARALLEL(4) */ COUNT(*) AS TOTAL_HITS\n");
-        sb.append("FROM EISAPP.deaf_logging\n");
-        sb.append("WHERE CREATION_DATE_TIME BETWEEN TO_DATE('" + fromDate + "', 'DD-MON-YYYY HH24:MI:SS') AND TO_DATE('" + toDate + "', 'DD-MON-YYYY HH24:MI:SS');\n\n");
-
-        sb.append("-- Query 9: Deaf Audit\n");
-        sb.append("SELECT /*+ PARALLEL(4) */ COUNT(*) AS TOTAL_HITS\n");
-        sb.append("FROM EISAPP.deaf_audit\n");
-        sb.append("WHERE CREATION_DATE_TIME BETWEEN TO_DATE('" + fromDate + "', 'DD-MON-YYYY HH24:MI:SS') AND TO_DATE('" + toDate + "', 'DD-MON-YYYY HH24:MI:SS');\n\n");
-
-        sb.append("-- Query 10: EIS Inactive\n");
-        sb.append("SELECT /*+ PARALLEL(4) */ 'EIS Application In Active' AS Application_InActive, COUNT(*) AS COUNT\n");
-        sb.append("FROM EISAPP.api_log" + part + "\n");
-        sb.append("WHERE ERROR_CODE = 'SI002' AND LOWER(ERROR_DESCRIPTION) LIKE '%eis application inactive%'\n");
-        sb.append("AND REQUEST_DATE_TIME BETWEEN TO_DATE('" + fromDate + "', 'DD-MON-YYYY HH24:MI:SS') AND TO_DATE('" + toDate + "', 'DD-MON-YYYY HH24:MI:SS')\n");
-        sb.append("GROUP BY 'EIS Application In Active';\n\n");
-
-        sb.append("-- Query 11: EKYC\n");
-        sb.append("SELECT /*+ PARALLEL(4) */ COUNT(1) AS TOTAL_HITS,\n");
-        sb.append("SUM(CASE WHEN ERROR_CODE IS NULL THEN 1 ELSE 0 END) AS SUCCESS,\n");
-        sb.append("ROUND((SUM(CASE WHEN ERROR_CODE IN ('SI392','SI207') THEN 1 ELSE 0 END)/NULLIF(COUNT(1), 0))*100, 2) AS TD_PERCENT\n");
-        sb.append("FROM SBISI.EKYC_log\n");
-        sb.append("WHERE REQ_DATE_TIME BETWEEN TO_DATE('" + fromDate + "', 'DD-MON-YYYY HH24:MI:SS') AND TO_DATE('" + toDate + "', 'DD-MON-YYYY HH24:MI:SS');\n");
-
-        /* ✅ PMJJBY & PMSBY queries REMOVED */
-
-        queriesDisplay = sb.toString();
-    }
-%>
+    <%@page import="java.util.*"%>
+<%@page import="java.sql.*"%>
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
-    <title>EIS SBI Dashboard</title>
-    <link href="<%=request.getContextPath()%>/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="<%=request.getContextPath()%>/css/all.min.css">
+<meta charset="ISO-8859-1">
+<meta http-equiv="refresh" content="600">
+ <title>ErrorDashboard</title>
+  <style>
+   .ag-format-container {
+  width: auto;
+  margin: 0 ;
+  position: relative;
+  top: -100px;
+}
 
-    <style>
-    /* ============ PAGE BASE ============ */
-    body {
-      background: var(--bg) !important;
-      color: var(--ink) !important;
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      margin: 0 !important;
-      padding: 0 !important;
-    }
 
-    .page-container {
-      padding: 32px 32px 48px;
-      max-width: 1600px;
-      margin: 0 auto;
-    }
-
-    /* ============ PAGE HEADER ============ */
-    .page-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 16px;
-      margin-bottom: 28px;
-      flex-wrap: wrap;
-    }
-    .page-head .ttl {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      font-weight: 800;
-      font-size: 1.65rem;
-      letter-spacing: -0.6px;
-      color: var(--ink);
-      line-height: 1.2;
-      margin: 0;
-    }
-    .page-head .ttl .ttl-icon {
-      width: 44px; height: 44px;
-      display: grid; place-items: center;
-      background: var(--brand-light);
-      color: var(--brand);
-      border-radius: 12px;
-      font-size: 1.05rem;
-      flex-shrink: 0;
-    }
-    html[data-theme="dark"] .page-head .ttl .ttl-icon {
-      background: rgba(248,111,3,.15);
-    }
-    .page-head .sub {
-      color: var(--muted);
-      font-size: 0.9rem;
-      margin: 6px 0 0 56px;
-      font-weight: 500;
-    }
-    .time-badge {
-      background: var(--card);
-      border: 1px solid var(--line);
-      padding: 10px 20px;
-      border-radius: 999px;
-      font-size: 0.85rem;
-      color: var(--ink);
-      font-weight: 600;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,.03);
-      white-space: nowrap;
-    }
-    .time-badge i { color: var(--brand); }
-
-    /* ============ CONTROLS ============ */
-    .controls-card {
-      border-radius: 20px;
-      border: 1px solid var(--line) !important;
-      background: var(--card) !important;
-      padding: 24px;
-      box-shadow: 0 4px 20px rgba(0,0,0,.03);
-      margin-bottom: 28px;
-      transition: background .3s ease, border-color .3s ease;
-    }
-    html[data-theme="dark"] .controls-card {
-      box-shadow: 0 4px 20px rgba(0,0,0,.3);
-    }
-    .controls-card .form-label {
-      color: var(--ink);
-      font-weight: 600;
-      font-size: 0.82rem;
-      margin-bottom: 6px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .controls-card .form-label i { color: var(--brand); }
-    .controls-card .form-control {
-      border-radius: 11px;
-      border: 1.5px solid var(--line);
-      background: var(--bg);
-      color: var(--ink);
-      padding: 10px 14px;
-      font-size: 0.88rem;
-      transition: all .15s ease;
-      font-family: inherit;
-    }
-    .controls-card .form-control:focus {
-      border-color: var(--brand);
-      background: var(--card);
-      box-shadow: 0 0 0 4px rgba(248,111,3,.12);
-      color: var(--ink);
-    }
-    .hour-btn {
-      min-width: 52px;
-      padding: 6px 11px;
-      border-radius: 999px;
-      border: 1px solid var(--line);
-      background: var(--card);
-      font-size: 0.76rem;
-      font-weight: 600;
-      color: var(--muted);
-      transition: all .15s ease;
-      cursor: pointer;
-      font-family: inherit;
-    }
-    .hour-btn:hover {
-      background: var(--brand-light);
-      border-color: var(--brand);
-      color: var(--brand);
-    }
-    html[data-theme="dark"] .hour-btn:hover {
-      background: rgba(248,111,3,.15);
-    }
-    .hour-btn.active {
-      background: var(--brand);
-      color: #fff;
-      border-color: var(--brand);
-      box-shadow: 0 3px 10px rgba(248,111,3,.3);
-    }
-    .btn-fetch {
-      border-radius: 11px;
-      padding: 10px 24px;
-      font-weight: 600;
-      font-size: 0.85rem;
-      background: var(--brand);
-      border: none;
-      color: #fff;
-      transition: all .2s ease;
-      box-shadow: 0 6px 18px -6px var(--brand);
-    }
-    .btn-fetch:hover {
-      background: var(--brand-2);
-      transform: translateY(-1px);
-      color: #fff;
-    }
-    .btn-now {
-      border-radius: 11px;
-      padding: 10px 24px;
-      font-weight: 600;
-      font-size: 0.85rem;
-      border: 1px solid var(--line);
-      background: var(--card);
-      color: var(--ink);
-      transition: all .2s ease;
-    }
-    .btn-now:hover {
-      background: var(--bg);
-      border-color: var(--muted);
-      color: var(--ink);
-    }
-    .btn-queries {
-      border-radius: 11px;
-      padding: 10px 24px;
-      font-weight: 600;
-      font-size: 0.85rem;
-      background: #805AD5;
-      border: none;
-      color: white;
-      transition: all .2s ease;
-    }
-    .btn-queries:hover {
-      background: #6B46C1;
-      color: #fff;
-      transform: translateY(-1px);
-    }
-    .hour-label {
-      color: var(--ink);
-      font-weight: 700;
-      font-size: 0.82rem;
-      letter-spacing: 0.3px;
-      margin-right: 8px;
-    }
-    .hour-label i { color: var(--brand); }
-
-    /* ============ DASHBOARD CARDS ============ */
-    .card-dashboard {
-      border-radius: 18px;
-      border: 1px solid var(--line) !important;
-      background: var(--card) !important;
-      box-shadow: 0 2px 12px rgba(0,0,0,.03);
-      transition: all .25s ease;
-      height: 100%;
-      overflow: hidden;
-    }
-    .card-dashboard:hover {
-      border-color: var(--brand) !important;
-      transform: translateY(-2px);
-      box-shadow: 0 12px 32px -10px rgba(248,111,3,.18);
-    }
-    .card-header-custom {
-      background: var(--card);
-      border-bottom: 1px solid var(--line);
-      padding: 16px 20px;
-      font-weight: 700;
-      font-size: 0.92rem;
-      color: var(--ink);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
-    }
-    .badge-db {
-      padding: 4px 12px;
-      border-radius: 999px;
-      font-size: 0.66rem;
-      font-weight: 700;
-      letter-spacing: 0.4px;
-      text-transform: uppercase;
-    }
-    .badge-db.iib  { background: #DBEAFE; color: #1D4ED8; }
-    .badge-db.sidb { background: #F3E8FF; color: #7E22CE; }
-    html[data-theme="dark"] .badge-db.iib  { background: rgba(29,78,216,.18); color: #60A5FA; }
-    html[data-theme="dark"] .badge-db.sidb { background: rgba(126,34,206,.18); color: #C084FC; }
-    .badge-count {
-      background: var(--bg);
-      color: var(--muted);
-      font-weight: 600;
-      padding: 4px 10px;
-      border-radius: 999px;
-      font-size: 0.7rem;
-    }
-    html[data-theme="dark"] .badge-count { background: #222; color: #A1A1AA; }
-    .badge-duration {
-      background: var(--brand-light);
-      color: var(--brand);
-      padding: 4px 10px;
-      border-radius: 999px;
-      font-size: 0.7rem;
-      font-weight: 600;
-    }
-    html[data-theme="dark"] .badge-duration {
-      background: rgba(248,111,3,.15);
-    }
-    .table-container {
-      max-height: 320px;
-      overflow-y: auto;
-    }
-    .table-container::-webkit-scrollbar { width: 6px; height: 6px; }
-    .table-container::-webkit-scrollbar-thumb {
-      background: var(--line);
-      border-radius: 3px;
-    }
-    .table-container table {
-      font-size: 0.78rem;
-      margin-bottom: 0;
-      color: var(--ink);
-    }
-    .table-container thead {
-      position: sticky;
-      top: 0;
-      z-index: 1;
-    }
-    .table-container thead th {
-      background: var(--bg);
-      color: var(--muted);
-      font-weight: 700;
-      font-size: 0.72rem;
-      text-transform: uppercase;
-      letter-spacing: 0.4px;
-      border-bottom: 1px solid var(--line);
-      padding: 10px 12px;
-      white-space: nowrap;
-    }
-    .table-container tbody td {
-      padding: 8px 12px;
-      vertical-align: middle;
-      border-bottom: 1px solid var(--line);
-      color: var(--ink);
-    }
-    html[data-theme="dark"] .table-container tbody td {
-      border-bottom-color: #1F1F1F;
-    }
-    .table-container tbody tr:hover {
-      background: var(--bg);
-    }
-    html[data-theme="dark"] .table-container tbody tr:hover {
-      background: #1F1F1F;
-    }
-    .no-data {
-      color: var(--muted);
-      font-style: italic;
-      padding: 24px 0;
-      text-align: center;
-      font-size: 0.85rem;
-    }
-
-    /* ============ QUERIES PANEL ============ */
-    .queries-card {
-      border-radius: 18px;
-      border: 1px solid var(--line) !important;
-      background: var(--card) !important;
-      padding: 20px;
-      margin-bottom: 28px;
-    }
-    html[data-theme="dark"] .queries-card {
-      background: #0B0B0B !important;
-      border-color: #1F1F1F !important;
-    }
-    .queries-card .header-actions {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-    }
-    .queries-card .queries-title {
-      color: var(--ink);
-      font-weight: 700;
-      font-size: 0.9rem;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .queries-card .queries-title i { color: var(--brand); }
-    .queries-card .close-btn {
-      background: transparent;
-      border: none;
-      color: var(--muted);
-      font-size: 1.4rem;
-      cursor: pointer;
-      padding: 0 8px;
-      border-radius: 6px;
-      transition: all .15s;
-    }
-    .queries-card .close-btn:hover {
-      color: var(--ink);
-      background: var(--bg);
-    }
-    html[data-theme="dark"] .queries-card .close-btn:hover {
-      background: #1F1F1F;
-    }
-    .query-block {
-      background: #F7F7F5;
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      padding: 14px 16px;
-      margin-bottom: 10px;
+body {
+  background-color: #000;
+}
+.ag-courses_box {
+  
+      width: 100%;
+      background-color: black;
       position: relative;
+      float: left;
+      margin: 1%;
+
+  padding: 50px 0;
+}
+.ag-courses_item {
+  -ms-flex-preferred-size: calc(3.33333% - 30px);
+  flex-basis: calc(33.33333% - 30px);
+
+  margin: 0 15px 30px;
+
+  overflow: hidden;
+
+  border-radius: 28px;
+}
+.ag-courses-item_link {
+  display: block;
+  padding: 30px 20px;
+  background-color: white;
+
+  overflow: hidden;
+
+  position: relative;
+}
+
+.ag-courses-item_link1 {
+  display: block;
+  padding: 30px 20px;
+  background-color: red;
+
+  overflow: hidden;
+
+  position: relative;
+}
+.ag-courses-item_link:hover,
+.ag-courses-item_link:hover .ag-courses-item_date {
+  text-decoration: none;
+  color: #FFF;
+}
+.ag-courses-item_link:hover .ag-courses-item_bg {
+  -webkit-transform: scale(10);
+  -ms-transform: scale(10);
+  transform: scale(10);
+}
+
+.ag-courses-item_link:hover .ag-courses-item_bg1 {
+  -webkit-transform: scale(10);
+  -ms-transform: scale(10);
+  transform: scale(10);
+}
+
+.ag-courses-item_link:hover .ag-courses-item_bg2 {
+  -webkit-transform: scale(10);
+  -ms-transform: scale(10);
+  transform: scale(10);
+}
+.ag-courses-item_title {
+  min-height: 87px;
+  margin: 0 0 25px;
+  overflow: hidden;
+  font-weight: bold;
+  font-size: 30px;
+  color: black;
+  z-index: 2;
+  position: relative;
+}
+.ag-courses-item_date-box {
+  font-size: 18px;
+  color: black;
+
+  z-index: 2;
+  position: relative;
+}
+.ag-courses-item_date {
+  font-weight: bold;
+  color: #f9b234;
+
+  -webkit-transition: color .5s ease;
+  -o-transition: color .5s ease;
+  transition: color .5s ease
+}
+.ag-courses-item_bg {
+  height: 158px;
+  width: 158px;
+  background-color: #f9b234;
+
+  z-index: 1;
+  position: absolute;
+  top: -75px;
+  right: -75px;
+
+  border-radius: 50%;
+
+  -webkit-transition: all .5s ease;
+  -o-transition: all .5s ease;
+  transition: all .5s ease;
+}
+
+.ag-courses-item_bg1 {
+  height: 158px;
+  width: 158px;
+  background-color: green;
+
+  z-index: 1;
+  position: absolute;
+  top: -75px;
+  right: -75px;
+
+  border-radius: 50%;
+
+  -webkit-transition: all .5s ease;
+  -o-transition: all .5s ease;
+  transition: all .5s ease;
+}
+
+.ag-courses-item_bg2 {
+  height: 158px;
+  width: 158px;
+  background-color: skyblue;
+
+  z-index: 1;
+  position: absolute;
+  top: -75px;
+  right: -75px;
+
+  border-radius: 50%;
+
+  -webkit-transition: all .5s ease;
+  -o-transition: all .5s ease;
+  transition: all .5s ease;
+}
+
+
+
+
+@media only screen and (max-width: 979px) {
+  .ag-courses_item {
+    -ms-flex-preferred-size: calc(50% - 30px);
+    flex-basis: calc(50% - 30px);
+  }
+  .ag-courses-item_title {
+    font-size: 24px;
+  }
+}
+
+@media only screen and (max-width: 767px) {
+  .ag-format-container {
+    width: 96%;
+  }
+
+}
+@media only screen and (max-width: 639px) {
+  .ag-courses_item {
+    -ms-flex-preferred-size: 100%;
+    flex-basis: 100%;
+  }
+  .ag-courses-item_title {
+    min-height: 72px;
+    line-height: 1;
+
+    font-size: 24px;
+  }
+  .ag-courses-item_link {
+    padding: 22px 40px;
+  }
+  .ag-courses-item_date-box {
+    font-size: 16px;
+  }
+}
+    .card {
+
+      transition: 0.3s;
+      width: 18%;
+      background-color: white;
+      position: relative;
+      float: left;
+      margin: 1%;
     }
-    html[data-theme="dark"] .query-block {
-      background: #131313;
-      border-color: #1F1F1F;
+    .container {
+      padding: 2px 16px;
     }
-    .query-block pre {
-      margin: 0;
-      color: var(--ink);
-      font-size: 0.76rem;
-      white-space: pre-wrap;
-      word-break: break-all;
-      font-family: 'JetBrains Mono', Consolas, monospace;
-      line-height: 1.5;
+
+
+    .card:hover {
+      -ms-transform: scale(1.1);
+      /* IE 9 */
+      -webkit-transform: scale(1.1);
+      /* Safari 3-8 */
+      transform: scale(1.1);
     }
-    .query-block .copy-query-btn {
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      background: var(--card);
-      border: 1px solid var(--line);
-      color: var(--muted);
-      border-radius: 999px;
-      padding: 4px 12px;
-      font-size: 0.68rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all .15s;
-    }
-    .query-block .copy-query-btn:hover {
-      background: var(--brand);
-      border-color: var(--brand);
-      color: #fff;
-    }
-    .queries-card .copy-all-btn {
-      background: var(--brand);
-      border: none;
+
+    
+
+
+    .timer {
+      /* text-align: center; */
+      border: 2px solid white;
+      display: inline;
+      padding: 5px;
       color: white;
-      border-radius: 999px;
-      padding: 7px 18px;
-      font-size: 0.78rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all .15s;
-    }
-    .queries-card .copy-all-btn:hover {
-      background: var(--brand-2);
+      font-family: Verdana, sans-serif, Arial;
+      font-size: 20px;
+      height: 50px;
+      font-weight: bold;
+      text-decoration: none;
     }
 
-    /* ============ RESPONSIVE ============ */
-    @media (max-width: 900px) {
-      .page-container { padding: 20px 16px 32px; }
-      .page-head { flex-direction: column; align-items: flex-start; }
-      .page-head .ttl { font-size: 1.3rem; }
-      .page-head .ttl .ttl-icon { width: 38px; height: 38px; font-size: .9rem; }
-      .page-head .sub { margin-left: 50px; font-size: 0.82rem; }
-      .time-badge { padding: 8px 14px; font-size: 0.78rem; }
-    }
-    </style>
-</head>
-<body>
+   
 
-<%@include file="../userheader.jsp"%>
 
-<div class="new-wrapper">
-  <div class="page-container">
+  .footer {
+	   position: fixed;
+	   left: 0;
+	   bottom: 0;
+	   width: 100%;
+	   color: white;
+	   text-align: center;
+	}
 
-    <!-- ============ PAGE HEADER ============ -->
-    <div class="page-head">
-      <div>
-        <h1 class="ttl">
-          <span class="ttl-icon"><i class="fas fa-database"></i></span>
-          EIS SBI Dashboard
-        </h1>
-        <p class="sub">Hourly internal EIS KPI data from cron jobs</p>
-      </div>
-      <span class="time-badge">
-        <i class="far fa-clock"></i><%= rangeDisplay %>
-      </span>
-    </div>
+    
+    /* Float four columns side by side */
+.column {
+  float: left;
+  width: 25%;
+  padding: 0 10px;
+}
 
-    <!-- ============ CONTROLS ============ -->
-    <form method="get" class="controls-card" id="mainForm">
-      <div class="row g-3 align-items-end">
-        <div class="col-md-3">
-          <label for="start" class="form-label"><i class="far fa-calendar-alt"></i>Start</label>
-          <input type="datetime-local" class="form-control" id="start" name="start" value="<%= startIso %>">
-        </div>
-        <div class="col-md-3">
-          <label for="end" class="form-label"><i class="far fa-calendar-alt"></i>End</label>
-          <input type="datetime-local" class="form-control" id="end" name="end" value="<%= endIso %>">
-        </div>
-        <div class="col-md-2">
-          <button type="submit" class="btn btn-fetch w-100">
-            <i class="fas fa-sync-alt me-2"></i>Fetch
-          </button>
-        </div>
-        <div class="col-md-2">
-          <button type="button" class="btn btn-now w-100" onclick="setPrevHour()">
-            <i class="fas fa-undo me-1"></i>Now
-          </button>
-        </div>
-        <div class="col-md-2">
-          <button type="submit" name="showQueries" value="true" class="btn btn-queries w-100">
-            <i class="fas fa-code me-1"></i>Show Queries
-          </button>
-        </div>
-      </div>
+/* Remove extra left and right margins, due to padding */
+.row {margin: 0 500px;}
 
-      <div class="row mt-3">
-        <div class="col-12">
-          <span class="hour-label"><i class="fas fa-clock me-1"></i>Hour shortcuts:</span>
-          <div class="d-flex flex-wrap gap-1 mt-2">
-            <% for (int h = 0; h < 24; h++) {
-                String label = String.format("%02d-%02d", h, (h+1)%24);
-                String activeClass = (h == selectedHour) ? "active" : "";
-            %>
-            <button type="button" class="hour-btn <%= activeClass %>" onclick="setHour(<%= h %>)"><%= label %></button>
-            <% } %>
-          </div>
-        </div>
-      </div>
-    </form>
+/* Clear floats after the columns */
+.row:after {
+  content: "";
+  display: table;
+  clear: both;
+}
 
-    <!-- ============ QUERIES PANEL ============ -->
-    <% if ("true".equals(showQueries) && !queriesDisplay.isEmpty()) { %>
-    <div class="queries-card" id="queriesPanel">
-      <div class="d-flex justify-content-between align-items-center mb-3">
-        <span class="queries-title">
-          <i class="fas fa-database"></i>SQL Queries for this period
-        </span>
-        <div class="header-actions">
-          <button class="copy-all-btn" onclick="copyAllQueries()"><i class="far fa-copy me-1"></i>Copy All</button>
-          <button class="close-btn" onclick="closeQueries()">&times;</button>
-        </div>
-      </div>
-      <%
-          String[] queryBlocks = queriesDisplay.split("\n\n");
-          for (String block : queryBlocks) {
-              if (block.trim().isEmpty()) continue;
-              String escaped = block.replace("'", "\\'").replace("\"", "\\\"");
-      %>
-      <div class="query-block">
-        <button class="copy-query-btn" onclick="copyQuery('<%= escaped %>')"><i class="far fa-copy"></i> Copy</button>
-        <pre><%= block %></pre>
-      </div>
-      <% } %>
-    </div>
-    <script>
-      function closeQueries() {
-        var panel = document.getElementById('queriesPanel');
-        panel.style.display = 'none';
-        var url = new URL(window.location);
-        url.searchParams.delete('showQueries');
-        window.history.replaceState({}, '', url);
-      }
-      function copyQuery(text) {
-        navigator.clipboard.writeText(text).then(function() {
-          alert('Query copied to clipboard!');
-        }).catch(function() {
-          var ta = document.createElement('textarea');
-          ta.value = text;
-          document.body.appendChild(ta);
-          ta.select();
-          document.execCommand('copy');
-          ta.remove();
-          alert('Copied!');
-        });
-      }
-      function copyAllQueries() {
-        var texts = document.querySelectorAll('.query-block pre');
-        var full = '';
-        texts.forEach(function(pre) {
-          full += pre.innerText + '\n\n';
-        });
-        navigator.clipboard.writeText(full).then(function() {
-          alert('All queries copied to clipboard!');
-        }).catch(function() {
-          var ta = document.createElement('textarea');
-          ta.value = full;
-          document.body.appendChild(ta);
-          ta.select();
-          document.execCommand('copy');
-          ta.remove();
-          alert('Copied!');
-        });
-      }
-    </script>
-    <% } %>
+/* Responsive columns */
+@media screen and (max-width: 600px) {
+  .column {
+    width: 100%;
+    display: block;
+    margin-bottom: auto;
+  }
+}
 
-    <!-- ============ DASHBOARD CARDS ============ -->
-    <div class="row">
-      <% for (int i = 0; i < tables.length; i++) {
-          String tbl = tables[i];
-          String display = displayNames[i];
-          String dbSource = sourceDB[i];
-          List<Map<String, Object>> rows = tableData.get(tbl);
-          if (rows == null) rows = new ArrayList<>();
-          int rowCount = rows.size();
-          double avgDur = 0.0;
-          if (rowCount > 0) {
-              for (Map<String, Object> row : rows) {
-                  Object dur = row.get("QUERY_DURATION_SEC");
-                  if (dur instanceof Number) avgDur += ((Number)dur).doubleValue();
-              }
-              avgDur = avgDur / rowCount;
-          }
-          String dbBadgeClass = dbSource.equalsIgnoreCase("IIB") ? "iib" : "sidb";
-      %>
-      <div class="col-xl-4 col-lg-6 col-md-12 mb-4">
-        <div class="card-dashboard">
-          <div class="card-header-custom">
-            <span><%= display %></span>
-            <span class="d-flex align-items-center gap-2">
-              <span class="badge-db <%= dbBadgeClass %>"><%= dbSource %></span>
-              <span class="badge-count"><%= rowCount %></span>
-              <span class="badge-duration"><i class="far fa-clock me-1"></i><%= String.format("%.2f", avgDur) %>s</span>
-            </span>
-          </div>
-          <div class="card-body p-3">
-            <% if (rowCount == 0) { %>
-              <div class="no-data">No data for this period.</div>
-            <% } else { %>
-              <div class="table-container">
-                <table class="table">
-                  <thead>
-                    <tr>
-                      <% for (String col : rows.get(0).keySet()) {
-                          if (hiddenCols.contains(col)) continue;
-                          String displayCol = col.equals("QUERY_DURATION_SEC") ? "Duration (sec)" : col;
-                      %>
-                        <th><%= displayCol %></th>
-                      <% } %>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <% for (Map<String, Object> row : rows) { %>
-                      <tr>
-                        <% for (Map.Entry<String, Object> entry : row.entrySet()) {
-                            String col = entry.getKey();
-                            if (hiddenCols.contains(col)) continue;
-                            Object val = entry.getValue();
-                            String str = (val == null) ? "-" : val.toString();
-                            if (val instanceof Double || val instanceof Float) {
-                                str = String.format("%.2f", ((Number)val).doubleValue());
-                            }
-                        %>
-                          <td><%= str %></td>
-                        <% } %>
-                      </tr>
-                    <% } %>
-                  </tbody>
-                </table>
-              </div>
-            <% } %>
-          </div>
-        </div>
-      </div>
-      <% } %>
-    </div>
-
-  </div>
-</div>
-
-<script>
-    function setHour(h) {
-        let date = document.getElementById('start').value.substring(0,10);
-        let start = date + 'T' + String(h).padStart(2,'0') + ':00';
-        let endHour = (h+1) % 24;
-        let endDate = date;
-        if (h === 23) {
-            let d = new Date(date + 'T00:00:00');
-            d.setDate(d.getDate() + 1);
-            endDate = d.toISOString().split('T')[0];
+/* Style the counter cards */
+.card1 {
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+  padding: 5px;
+  text-align: center;
+  background-color: #f1f1f1;
+}
+.blinkbox {
+         
+            animation: animate 
+                7.5s linear infinite;
         }
-        let end = endDate + 'T' + String(endHour).padStart(2,'0') + ':00';
-        document.getElementById('start').value = start;
-        document.getElementById('end').value = end;
-        document.querySelector('form').submit();
+  
+        @keyframes animate {
+            0% {
+                opacity: 0;
+            }
+  
+            50% {
+                opacity: 1;
+            }
+  
+            100% {
+                opacity: 0;
+            }
+        }
+  </style>
+  <script type="text/javascript">
+  function showerrorcodegen(errorcodegen) {
+	  var a = '<%=request.getContextPath() + "/ErrorDashboardServises?&errorcodegen="%>'+errorcodegen;
+    	window.open(a,'_blank');
+}
+  
+  function showerrorcodenon(errorcodenon) {
+	  var a = '<%=request.getContextPath() + "/ErrorDashboardServises?&errorcodenon="%>'+errorcodenon;
+  	window.open(a,'_blank');
+  	/* alert(errorcodenon); */
+}
+  function showerrorcodeSI(errorcodeSI) {
+	  var a = '<%=request.getContextPath() + "/ErrorDashboardServises?&errorcodeSI="%>'+errorcodeSI;
+  	window.open(a,'_blank');
+  /* 	alert(errorcodeSI); */
+}
+  
+  </script>
+</head>
+	  <%@include file="./DRPRHeader.jsp"%>
+
+<body style="background-color: black; zoom: 95%;">
+<%
+List<String> error_code=(List<String>) request.getAttribute("error_code");
+List<Integer> error_code_count=(List<Integer>)request.getAttribute("error_code_count");
+List<Double> error_per=(List<Double>)request.getAttribute("error_per");
+/* List<String> non_error_code=(List<String>) request.getAttribute("non_error_code");
+List<Integer> non_error_code_count=(List<Integer>)request.getAttribute("non_error_code_count");
+List<Double> non_error_per=(List<Double>)request.getAttribute("non_error_per"); */
+List<String> ERROR_CODE_SIDB=(List<String>) request.getAttribute("ERROR_CODE_SIDB");
+List<Integer> ERROR_CODE_COUNT_SIDB=(List<Integer>)request.getAttribute("ERROR_CODE_COUNT_SIDB");
+List<Double> ERROR_PERCENT_SIDB=(List<Double>)request.getAttribute("ERROR_PERCENT_SIDB");
+%>
+
+
+  <h1
+    style="text-align: center; color: white; font-size: 40px; font-weight: bolder; position: relative; margin-top: 1px;">
+    Error Code Dashboard <span class="blink" style="font-size: 25px; color: white; text-align: center;"> This Data get
+      Auto Refresh after <span class="timer" id="ten-countdown"></span> Minutes
+    </span></h1>
+ <div class="row" style="position: relative; left: 8%;">
+    <div class="column"  >
+      <div class="card1" style="height: 80px; width: 150px; background-color: #f9b234; border-radius: 5%; color: black; font-size: 30px;position: center;">
+        <p style="position: relative; margin-top: -20px;"><h2>GEN 5</h2> </p>
+        
+      </div>
+    </div>
+  
+    <div class="column">
+      <div class="card1" style="height: 80px; width: 250px; background-color: green;  border-radius: 5%; color: white; font-size: 30px; position: relative; ; right: 45px">
+        <p style="position: relative; margin-top: -20px;"><h2>NON-GEN 5</h2></p>
+        
+      </div>
+    </div>
+    
+    <div class="column">
+      <div class="card1" style="height: 80px; width: 150px; background-color: skyblue;  border-radius: 5%; color: black; font-size: 30px;">
+        <p style="position: relative; margin-top: -20px;"><h2>SI</h2></p>
+      </div>
+    </div>
+  </div>
+  
+   <div>
+    <div class="ag-format-container" style="position: relative; top: 10px;">
+        <div class="ag-courses_box" >
+         
+             <%
+             if (error_code != null && error_code.size()>0) {
+	for (int i = 0; i < error_code.size(); i++) { 
+	%>
+         <%   if(error_per.get(i)>=1){%>
+          <div class="ag-courses_item card " onclick="showerrorcodegen('<%=error_code.get(i)%>')">
+          <a href="#" class="ag-courses-item_link1" style="width: auto; height: 140px; text-decoration: none;">
+          <%} else{ %>
+           <div class="ag-courses_item card" onclick="showerrorcodegen('<%=error_code.get(i)%>')">
+            <a href="#" class="ag-courses-item_link" style="width: auto; height: 140px; text-decoration: none;">
+           <%} %>
+        <!--    <div class="ag-courses_item card" onclick="showerrorcodegen('<%=error_code.get(i)%>')" >-->
+           
+              <div class="ag-courses-item_bg"></div>
+      
+              <div class="ag-courses-item_title">
+                <div style="width: 200px; height: 150px; background-color: transparent;">
+                    <div class="container">
+                        <h5 style="position: relative; top: -45px;"><b>ERROR CODE: <%=error_code.get(i)%></b></h5>
+                           <p style="color: black; position: relative; top: -65px; font-size: 20px;">COUNT: <%=error_code_count.get(i)%></p>
+                        <p style="color: black; position: relative; top: -77px; font-size: 20px;">Percentage: <%=error_per.get(i)%></p>
+                        </div>
+                        </div>
+              </div>
+      
+              <div class="ag-courses-item_date-box" style="position: relative; top: -35px; text-align: center;">
+               
+                <span class="ag-courses-item_date">
+                  Gen-5 Error Code
+                </span>
+              </div>
+            </a>
+          </div>
+          
+          
+                 <%} }%>
+        
+          <%--  <%
+           if (non_error_code != null && non_error_code.size()>0) {
+	for (int i = 0; i < non_error_code.size(); i++) {
+	%>
+        <%   if(non_error_per.get(i)>=1){%>
+          <div class="ag-courses_item card" onclick="showerrorcodenon('<%=non_error_code.get(i)%>')">
+          <a href="#" class="ag-courses-item_link1" style="width: auto; height: 140px; text-decoration: none;">
+          <%} else{ %>
+           <div class="ag-courses_item card" onclick="showerrorcodenon('<%=non_error_code.get(i)%>')">
+           <a href="#" class="ag-courses-item_link" style="width: auto; height: 140px; text-decoration: none;">
+           <%} %>
+              <div class="ag-courses-item_bg1"></div>
+      
+              <div class="ag-courses-item_title">
+                <div style="width: 200px; height: 150px; background-color: transparent;">
+                    <div class="container">
+                        <h5 style="position: relative; top: -45px;"><b>ERROR CODE: <%=non_error_code.get(i)%> </b></h5>
+                         <p style="color: black; position: relative; top: -65px; font-size: 20px;">COUNT: <%=non_error_code_count.get(i)%></p>
+                        <p style="color: black; position: relative; top: -77px; font-size: 20px;">Percentage: <%=non_error_per.get(i)%></p>
+                        </div>
+                        </div>
+              </div>      
+              <div class="ag-courses-item_date-box" style="position: relative; top: -35px; text-align: center;">
+               
+                <span class="ag-courses-item_date">
+                  Non Gen-5 Error Code
+                </span>
+              </div>
+            </a>
+          </div>
+          
+                      <%} }%> --%>
+        
+          <%
+          if (ERROR_CODE_SIDB != null && ERROR_CODE_SIDB.size()>0) {
+	for (int i = 0; i < ERROR_CODE_SIDB.size(); i++) {
+	%>
+	      <%   if(ERROR_PERCENT_SIDB.get(i)>1){%>
+          <div class="ag-courses_item card" onclick="showerrorcodeSI('<%=ERROR_CODE_SIDB.get(i)%>')">
+           <a href="#" class="ag-courses-item_link1" style="width: auto; height: 140px; text-decoration: none;">
+          <%} else{ %>
+           <div class="ag-courses_item card" onclick="showerrorcodeSI('<%=ERROR_CODE_SIDB.get(i)%>')">
+           <a href="#" class="ag-courses-item_link" style="width: auto; height: 140px; text-decoration: none;	">
+           <%} %>
+         <!--   <div class="ag-courses_item card" onclick="showerrorcodeSI('<%=ERROR_CODE_SIDB.get(i)%>')">-->
+            
+              <div class="ag-courses-item_bg2"></div>
+      
+              <div class="ag-courses-item_title">
+                <div style="width: 200px; height: 150px; background-color: transparent;">
+                    <div class="container">
+                        <h5 style="position: relative; top: -45px;"><b>ERROR CODE: <%=ERROR_CODE_SIDB.get(i)%></b></h5>
+                         <p style="color: black; position: relative; top: -65px; font-size: 20px;">COUNT: <%=ERROR_CODE_COUNT_SIDB.get(i)%></p>
+                        <p style="color: black; position: relative; top: -77px; font-size: 20px;">Percentage: <%=ERROR_PERCENT_SIDB.get(i)%></p>
+                        </div>
+                        </div>
+              </div>
+      
+              <div class="ag-courses-item_date-box" style="position: relative; top: -35px; text-align: center;">
+               
+                <span class="ag-courses-item_date">
+                  SI Error Code
+                </span>
+              </div>
+            </a>
+          </div>
+          <%} } %>
+          
+        </div>
+      </div>
+</div> 
+  
+  
+  
+  
+  
+  <%-- 
+  <div style="position: relative; margin-top: -100px;">
+      <%
+	for (int i = 0; i < error_code.size(); i++) {
+	%>
+    <div class="card" style="background-color: rgb(223, 107, 107); font-weight: 800; " onclick="showerrorcodegen('<%=error_code.get(i)%>')">
+    
+
+	
+    
+      <div class="container">    
+        <h4><b> <span style="font-weight: bolder;">Error Code: </span> <%=error_code.get(i)%></b></h4>
+        <p> <span style="font-weight: bolder;">Error Count: </span><%=error_code_count.get(i)%></p>
+        <p> <span style="font-weight: bolder;">Error Percentage: </span><%=error_per.get(i)%></p>
+      </div>
+  
+    </div>
+        <%} %>
+        
+           <%
+	for (int i = 0; i < non_error_code.size(); i++) {
+	%>
+    <div class="card" style="background-color:orange ; font-weight: 800; " onclick="showerrorcodenon('<%=non_error_code.get(i)%>')">
+    
+
+	
+    
+      <div class="container">    
+        <h4><b> <span style="font-weight: bolder;">Error Code: </span> <%=non_error_code.get(i)%></b></h4>
+        <p> <span style="font-weight: bolder;">Error Count: </span><%=non_error_code_count.get(i)%></p>
+        <p> <span style="font-weight: bolder;">Error Percentage: </span><%=non_error_per.get(i)%></p>
+      </div>
+  
+    </div>
+        <%} %>
+        
+          <%
+	for (int i = 0; i < ERROR_CODE_SIDB.size(); i++) {
+	%>
+    <div class="card" style="background-color:yellow ; font-weight: 800; " onclick="showerrorcodeSI('<%=ERROR_CODE_SIDB.get(i)%>')">
+    
+
+	
+    
+      <div class="container">    
+        <h4><b> <span style="font-weight: bolder;">Error Code: </span> <%=ERROR_CODE_SIDB.get(i)%></b></h4>
+        <p> <span style="font-weight: bolder;">Error Count: </span><%=ERROR_CODE_COUNT_SIDB.get(i)%></p>
+        <p> <span style="font-weight: bolder;">Error Percentage: </span><%=ERROR_PERCENT_SIDB.get(i)%></p>
+      </div>
+  
+    </div>
+        <%} %>
+  </div> --%>
+
+  <script>
+    function countdown(elementName, minutes, seconds) {
+      var element, endTime, hours, mins, msLeft, time;
+
+      function twoDigits(n) {
+        return (n <= 9 ? "0" + n : n);
+      }
+
+      function updateTimer() {
+        msLeft = endTime - (+new Date);
+        if (msLeft < 1000) {
+          element.innerHTML = "Please Wait Fetching the Latest Data!";
+        } else {
+          time = new Date(msLeft);
+          hours = time.getUTCHours();
+          mins = time.getUTCMinutes();
+          element.innerHTML = (hours ? hours + ':' + twoDigits(mins) : mins) + ':' + twoDigits(time.getUTCSeconds());
+          setTimeout(updateTimer, time.getUTCMilliseconds() + 500);
+        }
+      }
+
+      element = document.getElementById(elementName);
+      endTime = (+new Date) + 1000 * (60 * minutes + seconds) + 500;
+      updateTimer();
     }
 
-    function setPrevHour() {
-        let now = new Date();
-        now.setMinutes(0);
-        now.setSeconds(0);
-        now.setMilliseconds(0);
-        let end = new Date(now);
-        let start = new Date(now);
-        start.setHours(start.getHours() - 1);
-        const formatLocal = (d) => {
-            let year = d.getFullYear();
-            let month = String(d.getMonth()+1).padStart(2,'0');
-            let day = String(d.getDate()).padStart(2,'0');
-            let hours = String(d.getHours()).padStart(2,'0');
-            let mins = String(d.getMinutes()).padStart(2,'0');
-            return year + '-' + month + '-' + day + 'T' + hours + ':' + mins;
-        };
-        document.getElementById('start').value = formatLocal(start);
-        document.getElementById('end').value = formatLocal(end);
-        document.querySelector('form').submit();
-    }
-</script>
-<script src="<%=request.getContextPath()%>/js/bootstrap.bundle.min.js"></script>
+    countdown("ten-countdown", 10, 0);
+
+  </script>
+
+
+	 <div class="footer">
+    <p class="font-italic text-center text-bottom" style="color: white; font-size: 18px">Designed & Developed by @Shubham Chaudhari  </p>
+    </div>
+
 </body>
 </html>
