@@ -10,830 +10,446 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>EIS Portal — Command Center</title>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<title>EIS Portal — Sign In</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
 :root{
-  --brand:#FF8A00;
-  --brand-2:#FFB84D;
-  --brand-glow:rgba(255,138,0,.55);
-  --bg:#05070d;
-  --bg-2:#0a0e17;
-  --panel:rgba(15,20,32,.85);
-  --panel-border:rgba(255,138,0,.25);
-  --text:#e6edf7;
-  --muted:#6b7a90;
-  --green:#00ffa3;
-  --red:#ff4d6d;
-  --cyan:#00d9ff;
+  --brand:#F86F03;
+  --brand-dark:#E85D00;
+  --brand-light:#FFF4EC;
+  --text:#0A0A0A;
+  --muted:#6B7280;
+  --line:#E5E7EB;
+  --bg:#FAFAFA;
 }
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{height:100%}
 body{
-  font-family:'Inter',system-ui,sans-serif;
+  font-family:'Plus Jakarta Sans',system-ui,sans-serif;
   background:var(--bg);
   color:var(--text);
+  display:flex;
   min-height:100vh;
-  display:flex;align-items:center;justify-content:center;
-  overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* =============== LEFT: BRAND PANEL =============== */
+.brand-side{
+  flex:1;
+  background:linear-gradient(135deg, #F86F03 0%, #FF9A3D 100%);
+  padding:48px;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
   position:relative;
-}
-
-/* ============ ANIMATED PERSPECTIVE GRID ============ */
-.grid-bg{
-  position:fixed;inset:0;z-index:0;
-  background-image:
-    linear-gradient(rgba(255,138,0,.15) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,138,0,.15) 1px, transparent 1px);
-  background-size:60px 60px;
-  transform:perspective(500px) rotateX(60deg) scale(2.5);
-  transform-origin:center bottom;
-  animation:gridMove 20s linear infinite;
-  opacity:.5;
-  pointer-events:none;
-}
-@keyframes gridMove{
-  from{background-position:0 0}
-  to{background-position:0 60px}
-}
-
-/* Radial glow overlays */
-.glow-1{
-  position:fixed;top:-200px;left:-200px;
-  width:700px;height:700px;border-radius:50%;
-  background:radial-gradient(circle, rgba(255,138,0,.35) 0%, transparent 60%);
-  filter:blur(60px);z-index:0;pointer-events:none;
-  animation:pulse 6s ease-in-out infinite;
-}
-.glow-2{
-  position:fixed;bottom:-250px;right:-250px;
-  width:800px;height:800px;border-radius:50%;
-  background:radial-gradient(circle, rgba(0,217,255,.22) 0%, transparent 60%);
-  filter:blur(70px);z-index:0;pointer-events:none;
-  animation:pulse 8s ease-in-out infinite reverse;
-}
-@keyframes pulse{
-  0%,100%{opacity:.8;transform:scale(1)}
-  50%{opacity:1;transform:scale(1.15)}
-}
-
-/* Scanlines */
-.scanlines{
-  position:fixed;inset:0;z-index:1;pointer-events:none;
-  background:repeating-linear-gradient(
-    0deg,
-    rgba(0,0,0,0) 0px,
-    rgba(0,0,0,0) 2px,
-    rgba(255,255,255,.015) 2px,
-    rgba(255,255,255,.015) 4px
-  );
-}
-
-/* ============ TOP STATUS BAR ============ */
-.status-bar{
-  position:fixed;top:0;left:0;right:0;z-index:5;
-  padding:10px 24px;
-  display:flex;justify-content:space-between;align-items:center;
-  font-family:'JetBrains Mono',monospace;
-  font-size:.72rem;letter-spacing:.5px;
-  color:var(--muted);
-  border-bottom:1px solid rgba(255,138,0,.15);
-  background:linear-gradient(180deg, rgba(5,7,13,.9) 0%, transparent 100%);
-  backdrop-filter:blur(10px);
-}
-.status-left,.status-right{display:flex;align-items:center;gap:20px}
-.status-dot{
-  width:8px;height:8px;border-radius:50%;
-  background:var(--green);
-  box-shadow:0 0 10px var(--green);
-  animation:blink 2s ease-in-out infinite;
-  display:inline-block;margin-right:6px;
-}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
-.status-item{color:var(--muted)}
-.status-item b{color:var(--brand);font-weight:600}
-
-/* ============ MAIN SHELL ============ */
-.shell{
-  position:relative;z-index:3;
-  width:100%;max-width:1180px;
-  display:grid;grid-template-columns: 1fr 1.1fr;
-  gap:0;
-  background:var(--panel);
-  border:1px solid var(--panel-border);
-  border-radius:2px;
-  backdrop-filter:blur(20px);
-  box-shadow:
-    0 0 0 1px rgba(255,138,0,.05),
-    0 30px 80px rgba(0,0,0,.7),
-    0 0 100px -20px var(--brand-glow);
   overflow:hidden;
-  min-height:620px;
-  /* Corner cut effect */
-  clip-path: polygon(
-    0 24px, 24px 0,
-    calc(100% - 24px) 0, 100% 24px,
-    100% calc(100% - 24px), calc(100% - 24px) 100%,
-    24px 100%, 0 calc(100% - 24px)
-  );
-}
-
-/* Corner accent marks */
-.shell::before,
-.shell::after{
-  content:"";position:absolute;
-  width:24px;height:24px;
-  border:2px solid var(--brand);
-  z-index:5;pointer-events:none;
-}
-.shell::before{
-  top:0;left:0;
-  border-right:none;border-bottom:none;
-}
-.shell::after{
-  bottom:0;right:0;
-  border-left:none;border-top:none;
-}
-
-/* ============ LEFT: INFO PANEL ============ */
-.info-panel{
-  position:relative;
-  padding:56px 44px 44px;
-  background:linear-gradient(160deg, rgba(255,138,0,.08) 0%, rgba(0,217,255,.04) 100%);
-  border-right:1px solid var(--panel-border);
-  display:flex;flex-direction:column;justify-content:space-between;
-  overflow:hidden;
-}
-.info-panel::before{
-  content:"";position:absolute;top:0;left:0;right:0;height:1px;
-  background:linear-gradient(90deg, transparent, var(--brand), transparent);
-  animation:scan 3s ease-in-out infinite;
-}
-@keyframes scan{0%,100%{opacity:0;transform:translateY(0)}50%{opacity:1;transform:translateY(600px)}}
-
-.brand{
-  display:flex;align-items:center;gap:14px;
-  font-family:'JetBrains Mono',monospace;
-  font-size:1rem;font-weight:700;letter-spacing:2px;
-  color:var(--brand);
-  text-transform:uppercase;
-}
-.brand-icon{
-  width:44px;height:44px;
-  display:grid;place-items:center;
-  border:1.5px solid var(--brand);
-  background:rgba(255,138,0,.08);
-  color:var(--brand);
-  font-size:1.1rem;
-  position:relative;
-  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
-}
-.brand-icon::after{
-  content:"";position:absolute;inset:0;
-  border:1px solid var(--brand);
-  opacity:.3;
-  animation:ping 2s ease-out infinite;
-}
-@keyframes ping{0%{transform:scale(1);opacity:.5}100%{transform:scale(1.4);opacity:0}}
-
-.tagline{
-  margin-top:32px;
-  font-family:'JetBrains Mono',monospace;
-  font-size:.72rem;
-  color:var(--muted);
-  letter-spacing:3px;
-  text-transform:uppercase;
-}
-.tagline b{color:var(--cyan)}
-
-.hero-title{
-  margin-top:12px;
-  font-family:'JetBrains Mono',monospace;
-  font-size:2rem;
-  font-weight:700;
-  line-height:1.2;
   color:#fff;
-  letter-spacing:-.5px;
-  min-height:2.6em;
 }
-.hero-title .cursor{
-  display:inline-block;
-  width:10px;height:1.1em;
-  background:var(--brand);
-  vertical-align:middle;
-  margin-left:4px;
-  animation:cursorBlink 1s steps(1) infinite;
+.brand-side::before{
+  content:"";
+  position:absolute;
+  top:-100px;right:-100px;
+  width:400px;height:400px;
+  border-radius:50%;
+  background:rgba(255,255,255,.08);
 }
-@keyframes cursorBlink{0%,50%{opacity:1}51%,100%{opacity:0}}
+.brand-side::after{
+  content:"";
+  position:absolute;
+  bottom:-150px;left:-80px;
+  width:350px;height:350px;
+  border-radius:50%;
+  background:rgba(255,255,255,.06);
+}
 
-.hero-title .accent{color:var(--brand)}
+.brand-logo{
+  display:flex;align-items:center;gap:12px;
+  font-weight:800;font-size:1.15rem;
+  letter-spacing:-.3px;
+  position:relative;z-index:2;
+}
+.brand-logo-mark{
+  width:40px;height:40px;
+  background:#fff;
+  color:var(--brand);
+  display:grid;place-items:center;
+  border-radius:10px;
+  font-size:1.05rem;
+  box-shadow:0 8px 24px rgba(0,0,0,.15);
+}
 
-.hero-desc{
-  margin-top:20px;
-  color:var(--muted);
-  font-size:.92rem;
+.brand-content{
+  position:relative;z-index:2;
+  max-width:440px;
+}
+.brand-content h1{
+  font-size:2.6rem;
+  font-weight:800;
+  line-height:1.15;
+  letter-spacing:-1px;
+  margin-bottom:20px;
+}
+.brand-content p{
+  font-size:1rem;
   line-height:1.7;
+  opacity:.92;
+  font-weight:400;
+}
+
+.brand-features{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  margin-top:32px;
+}
+.feature{
+  display:flex;align-items:center;gap:12px;
+  font-size:.9rem;
+  font-weight:500;
+  opacity:.95;
+}
+.feature i{
+  width:24px;height:24px;
+  display:grid;place-items:center;
+  background:rgba(255,255,255,.18);
+  border-radius:6px;
+  font-size:.7rem;
+}
+
+.brand-footer{
+  position:relative;z-index:2;
+  font-size:.8rem;
+  opacity:.85;
+  font-weight:500;
+}
+
+/* =============== RIGHT: FORM PANEL =============== */
+.form-side{
+  flex:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:48px;
+  background:#fff;
+}
+.form-wrap{
+  width:100%;
   max-width:400px;
 }
 
-/* System status strip */
-.sys-status{
-  margin-top:36px;
-  padding:16px;
-  border:1px solid rgba(255,138,0,.15);
-  background:rgba(0,0,0,.3);
-  font-family:'JetBrains Mono',monospace;
-  font-size:.72rem;
-  display:grid;gap:10px;
-  clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
-}
-.sys-row{display:flex;justify-content:space-between;align-items:center}
-.sys-row span:first-child{color:var(--muted)}
-.sys-row .val{color:var(--green)}
-.sys-row .val.warn{color:var(--brand)}
-.bar{
-  flex:1;margin:0 12px;height:3px;
-  background:rgba(255,255,255,.08);
-  position:relative;overflow:hidden;
-}
-.bar::after{
-  content:"";position:absolute;left:0;top:0;bottom:0;
-  width:var(--w,60%);
-  background:linear-gradient(90deg, var(--green), var(--cyan));
-  animation:barPulse 3s ease-in-out infinite;
-}
-@keyframes barPulse{0%,100%{opacity:.7}50%{opacity:1}}
-
-.footer-info{
-  font-family:'JetBrains Mono',monospace;
-  font-size:.68rem;
-  color:var(--muted);
-  letter-spacing:1px;
-  margin-top:32px;
-}
-
-/* ============ RIGHT: FORM PANEL ============ */
-.form-panel{
-  padding:56px 48px 44px;
-  display:flex;flex-direction:column;justify-content:center;
-  position:relative;
-}
-
-.form-header{
-  margin-bottom:32px;
-}
-.form-header .step{
-  font-family:'JetBrains Mono',monospace;
-  font-size:.7rem;
-  color:var(--brand);
-  letter-spacing:3px;
+.form-head h2{
+  font-size:1.85rem;
+  font-weight:800;
+  letter-spacing:-.6px;
   margin-bottom:8px;
 }
-.form-header h2{
-  font-size:1.9rem;
-  font-weight:800;
-  letter-spacing:-.5px;
-  color:#fff;
-}
-.form-header p{
+.form-head p{
   color:var(--muted);
-  font-size:.88rem;
-  margin-top:6px;
+  font-size:.92rem;
+  margin-bottom:32px;
 }
 
-/* Tabs — terminal style */
+/* Tabs */
 .tabs{
-  display:flex;gap:0;
-  margin-bottom:32px;
-  border:1px solid rgba(255,138,0,.2);
-  background:rgba(0,0,0,.25);
-  position:relative;
+  display:flex;
+  gap:4px;
+  background:#F3F4F6;
+  padding:4px;
+  border-radius:12px;
+  margin-bottom:28px;
 }
 .tab{
   flex:1;
-  padding:14px 20px;
-  background:transparent;
+  padding:10px;
   border:none;
+  background:transparent;
   color:var(--muted);
-  font-family:'JetBrains Mono',monospace;
-  font-size:.78rem;
-  letter-spacing:2px;
-  text-transform:uppercase;
+  font-family:inherit;
+  font-size:.85rem;
   font-weight:600;
+  border-radius:8px;
   cursor:pointer;
-  transition:all .25s ease;
-  position:relative;
+  transition:all .2s ease;
 }
-.tab:hover{color:var(--brand)}
 .tab.active{
-  color:var(--bg);
-  background:linear-gradient(135deg, var(--brand) 0%, var(--brand-2) 100%);
-  box-shadow:0 0 30px -8px var(--brand-glow);
+  background:#fff;
+  color:var(--brand);
+  box-shadow:0 2px 8px rgba(0,0,0,.06);
 }
-.tab:not(:last-child)::after{
-  content:"";position:absolute;right:0;top:20%;bottom:20%;
-  width:1px;background:rgba(255,138,0,.2);
-}
-.tab.active::after{background:transparent}
 
-/* Alerts */
-.alert{
-  display:none;
-  padding:12px 16px;
-  font-family:'JetBrains Mono',monospace;
-  font-size:.78rem;
-  margin-bottom:18px;
-  align-items:center;gap:10px;
-  border-left:3px solid;
-  background:rgba(0,0,0,.3);
+/* Fields */
+.field{margin-bottom:18px}
+.field label{
+  display:block;
+  font-size:.82rem;
+  font-weight:600;
+  color:var(--text);
+  margin-bottom:8px;
 }
-.alert.error{color:#ff8b9e;border-color:var(--red)}
-.alert.success{color:#7effc7;border-color:var(--green)}
-.alert.show{display:flex}
-
-/* Fields — terminal style */
-.field{
-  position:relative;
-  margin-bottom:18px;
-}
-.field-label{
-  font-family:'JetBrains Mono',monospace;
-  font-size:.68rem;
-  color:var(--muted);
-  letter-spacing:2px;
-  text-transform:uppercase;
-  margin-bottom:6px;
-  display:flex;justify-content:space-between;
-}
-.field-label .prompt{color:var(--brand)}
-.field-input-wrap{
+.input-box{
   position:relative;
   display:flex;align-items:center;
-  border:1px solid rgba(255,138,0,.25);
-  background:rgba(0,0,0,.4);
-  transition:all .25s ease;
-  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  border:1.5px solid var(--line);
+  background:#FAFAFA;
+  border-radius:11px;
+  transition:all .2s ease;
 }
-.field-input-wrap:focus-within{
+.input-box:focus-within{
   border-color:var(--brand);
-  background:rgba(255,138,0,.06);
-  box-shadow:
-    0 0 0 1px var(--brand),
-    0 0 30px -8px var(--brand-glow);
+  background:#fff;
+  box-shadow:0 0 0 4px var(--brand-light);
 }
-.field-icon{
+.input-box i{
   color:var(--muted);
-  font-size:.9rem;
   padding:0 14px;
-  transition:color .25s ease;
+  font-size:.9rem;
+  transition:color .2s ease;
 }
-.field-input-wrap:focus-within .field-icon{color:var(--brand)}
-
-.field input,
-.field select{
+.input-box:focus-within i{color:var(--brand)}
+.input-box input,
+.input-box select{
   flex:1;
-  padding:15px 16px 15px 0;
+  padding:14px 16px 14px 0;
   background:transparent;
   border:none;
   outline:none;
-  color:#fff;
-  font-family:'JetBrains Mono',monospace;
-  font-size:.9rem;
+  font-family:inherit;
+  font-size:.92rem;
   font-weight:500;
+  color:var(--text);
   width:100%;
 }
-.field input::placeholder{color:var(--muted);opacity:.5}
-.field select{
+.input-box select{
   cursor:pointer;
   appearance:none;
   padding-right:40px;
-  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23FF8A00' stroke-width='3'><polyline points='6 9 12 15 18 9'/></svg>");
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
   background-repeat:no-repeat;
   background-position:right 16px center;
 }
-.field select option{
-  background:var(--bg-2);
-  color:#fff;
-}
+.input-box input::placeholder{color:#9CA3AF;font-weight:400}
 
-/* Password reveal */
 .pw-toggle{
   background:transparent;border:none;
-  color:var(--muted);cursor:pointer;
+  color:var(--muted);
   padding:0 16px;
+  cursor:pointer;
   font-size:.9rem;
-  transition:color .25s ease;
+  transition:color .2s ease;
 }
 .pw-toggle:hover{color:var(--brand)}
 
-/* Submit button */
+/* Alert */
+.alert{
+  display:none;
+  padding:12px 16px;
+  border-radius:10px;
+  font-size:.85rem;
+  font-weight:500;
+  margin-bottom:18px;
+  align-items:center;gap:10px;
+}
+.alert.error{display:flex;background:#FEF2F2;color:#B91C1C;border:1px solid #FECACA}
+.alert.success{display:flex;background:#F0FDF4;color:#15803D;border:1px solid #BBF7D0}
+
+/* Button */
 .btn-primary{
   width:100%;
-  padding:16px;
-  margin-top:8px;
+  padding:15px;
   border:none;
-  background:linear-gradient(135deg, var(--brand) 0%, var(--brand-2) 100%);
-  color:var(--bg);
-  font-family:'JetBrains Mono',monospace;
-  font-weight:800;
-  font-size:.85rem;
-  letter-spacing:3px;
-  text-transform:uppercase;
+  border-radius:11px;
+  background:var(--brand);
+  color:#fff;
+  font-family:inherit;
+  font-weight:700;
+  font-size:.95rem;
+  letter-spacing:.2px;
   cursor:pointer;
-  transition:all .25s ease;
-  display:flex;align-items:center;justify-content:center;gap:12px;
-  position:relative;
-  overflow:hidden;
-  clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
-  box-shadow:0 0 40px -10px var(--brand-glow);
+  transition:all .2s ease;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  box-shadow:0 4px 14px rgba(248,111,3,.35);
 }
-.btn-primary::before{
-  content:"";position:absolute;top:0;left:-100%;width:100%;height:100%;
-  background:linear-gradient(90deg, transparent, rgba(255,255,255,.35), transparent);
-  transition:left .6s ease;
-}
-.btn-primary:hover::before{left:100%}
 .btn-primary:hover{
-  transform:translateY(-2px);
-  box-shadow:0 0 60px -8px var(--brand-glow);
+  background:var(--brand-dark);
+  transform:translateY(-1px);
+  box-shadow:0 6px 20px rgba(248,111,3,.45);
 }
 .btn-primary:active{transform:translateY(0)}
-.btn-primary:disabled{opacity:.6;cursor:not-allowed;transform:none}
+.btn-primary:disabled{opacity:.65;cursor:not-allowed;transform:none}
 
 .spinner{
   width:16px;height:16px;
-  border:2px solid rgba(0,0,0,.25);
-  border-top-color:var(--bg);
+  border:2px solid rgba(255,255,255,.35);
+  border-top-color:#fff;
   border-radius:50%;
   animation:spin .7s linear infinite;
   display:none;
 }
 .btn-primary.loading .spinner{display:block}
-.btn-primary.loading .btn-arrow{display:none}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* Form switch animation */
-.form-view{display:none;animation:slideIn .35s ease}
+.form-view{display:none;animation:fadeIn .3s ease}
 .form-view.active{display:block}
-@keyframes slideIn{
-  from{opacity:0;transform:translateX(20px)}
-  to{opacity:1;transform:translateX(0)}
-}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 
-/* ============ BOTTOM BAR ============ */
-.bottom-bar{
-  position:fixed;bottom:0;left:0;right:0;z-index:5;
-  padding:10px 24px;
-  display:flex;justify-content:space-between;align-items:center;
-  font-family:'JetBrains Mono',monospace;
-  font-size:.68rem;
+/* Footer note */
+.foot-note{
+  margin-top:32px;
+  text-align:center;
+  font-size:.8rem;
   color:var(--muted);
-  letter-spacing:1px;
-  border-top:1px solid rgba(255,138,0,.15);
-  background:linear-gradient(0deg, rgba(5,7,13,.9) 0%, transparent 100%);
-  backdrop-filter:blur(10px);
 }
-.bottom-bar .keys kbd{
-  display:inline-block;
-  padding:2px 6px;
-  border:1px solid rgba(255,138,0,.3);
+.foot-note a{
   color:var(--brand);
-  font-family:inherit;
-  font-size:.65rem;
-  margin:0 3px;
-  background:rgba(255,138,0,.08);
-}
-.bottom-bar .heart{color:var(--brand)}
-
-/* Quick links — floating row */
-.quick-links{
-  position:fixed;
-  bottom:60px;left:0;right:0;
-  z-index:4;
-  display:flex;flex-wrap:wrap;gap:6px;
-  justify-content:center;
-  padding:0 20px;
-  max-height:0;
-  overflow:hidden;
-  transition:max-height .35s ease;
-}
-.quick-links.open{max-height:200px}
-.quick-links a{
-  font-family:'JetBrains Mono',monospace;
-  font-size:.68rem;
-  color:var(--muted);
-  padding:6px 12px;
-  border:1px solid rgba(255,138,0,.2);
   text-decoration:none;
-  cursor:pointer;
-  transition:all .2s ease;
-  letter-spacing:1px;
-  background:rgba(5,7,13,.7);
-  backdrop-filter:blur(6px);
-}
-.quick-links a:hover{
-  color:var(--brand);
-  border-color:var(--brand);
-  background:rgba(255,138,0,.1);
-  box-shadow:0 0 20px -6px var(--brand-glow);
+  font-weight:600;
 }
 
-.quick-toggle{
-  position:fixed;
-  bottom:44px;right:24px;
-  z-index:6;
-  width:44px;height:44px;
-  border:1px solid var(--brand);
-  background:rgba(5,7,13,.9);
-  color:var(--brand);
-  cursor:pointer;
-  display:grid;place-items:center;
-  transition:all .25s ease;
-  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
-}
-.quick-toggle:hover{
-  background:var(--brand);
-  color:var(--bg);
-  box-shadow:0 0 30px -6px var(--brand-glow);
-}
-
-/* ============ RESPONSIVE ============ */
-@media (max-width: 980px){
-  body{overflow-y:auto;padding:60px 16px 80px}
-  .shell{
-    grid-template-columns:1fr;
-    max-width:560px;
+/* =============== RESPONSIVE =============== */
+@media (max-width: 900px){
+  body{flex-direction:column;overflow-y:auto}
+  .brand-side{
+    flex:none;
+    padding:36px 28px;
     min-height:auto;
   }
-  .info-panel{
-    padding:40px 32px 32px;
-    border-right:none;
-    border-bottom:1px solid var(--panel-border);
-  }
-  .hero-title{font-size:1.6rem}
-  .sys-status{display:none}
-  .form-panel{padding:32px 28px 40px}
+  .brand-content h1{font-size:1.9rem}
+  .brand-features{display:none}
+  .brand-content p{font-size:.9rem}
+  .form-side{padding:36px 24px;min-height:auto}
 }
-@media (max-width: 560px){
-  .status-bar{padding:8px 14px;font-size:.65rem}
-  .status-bar .status-item:nth-child(n+2){display:none}
-  .bottom-bar{padding:8px 14px;font-size:.6rem}
-  .bottom-bar .keys{display:none}
-  .hero-title{font-size:1.3rem}
-  .info-panel{padding:32px 24px 24px}
-  .form-panel{padding:24px 20px 32px}
-  .form-header h2{font-size:1.4rem}
-  .quick-toggle{bottom:56px;right:16px}
+@media (max-width: 480px){
+  .brand-side{padding:28px 22px}
+  .brand-content h1{font-size:1.5rem}
+  .form-side{padding:28px 20px}
+  .form-head h2{font-size:1.5rem}
 }
 </style>
 </head>
 <body>
 
-<!-- Background layers -->
-<div class="grid-bg"></div>
-<div class="glow-1"></div>
-<div class="glow-2"></div>
-<div class="scanlines"></div>
-
-<!-- Top status bar -->
-<div class="status-bar">
-  <div class="status-left">
-    <span class="status-item"><span class="status-dot"></span><b>SYSTEM ONLINE</b></span>
-    <span class="status-item">NODE: <b>SBI-EIS-PRIMARY</b></span>
+<!-- LEFT: Brand panel -->
+<aside class="brand-side">
+  <div class="brand-logo">
+    <div class="brand-logo-mark"><i class="fa-solid fa-shield-halved"></i></div>
+    <span>EIS Portal</span>
   </div>
-  <div class="status-right">
-    <span class="status-item">UPTIME: <b id="uptime">99.98%</b></span>
-    <span class="status-item" id="clock">--:--:--</span>
+
+  <div class="brand-content">
+    <h1>Enterprise Information Systems</h1>
+    <p>One secure gateway to dashboards, monitoring, reports and operational tools — designed for the EIS team.</p>
+
+    <div class="brand-features">
+      <div class="feature"><i class="fa-solid fa-check"></i> Single sign-on access</div>
+      <div class="feature"><i class="fa-solid fa-check"></i> Real-time monitoring dashboards</div>
+      <div class="feature"><i class="fa-solid fa-check"></i> Enterprise-grade security</div>
+    </div>
   </div>
-</div>
 
-<!-- Main shell -->
-<div class="shell">
+  <div class="brand-footer">
+    © <%= java.time.Year.now() %> EIS Portal · Internal use only
+  </div>
+</aside>
 
-  <!-- LEFT: Info panel -->
-  <aside class="info-panel">
-    <div>
-      <div class="brand">
-        <div class="brand-icon"><i class="fa-solid fa-shield-halved"></i></div>
-        <span>EIS·PORTAL</span>
-      </div>
+<!-- RIGHT: Form panel -->
+<main class="form-side">
+  <div class="form-wrap">
 
-      <div class="tagline">// <b>SECURE ACCESS TERMINAL</b></div>
-
-      <div class="hero-title" id="typewriter">
-        <span class="accent">></span> INITIALIZING<span class="cursor"></span>
-      </div>
-
-      <p class="hero-desc">
-        Enterprise Information Systems — unified command center for monitoring, reporting, and operations. Authorized personnel only.
-      </p>
-
-      <div class="sys-status">
-        <div class="sys-row">
-          <span>API_GATEWAY</span>
-          <div class="bar" style="--w:94%"></div>
-          <span class="val">94%</span>
-        </div>
-        <div class="sys-row">
-          <span>DB_CLUSTER</span>
-          <div class="bar" style="--w:87%"></div>
-          <span class="val">87%</span>
-        </div>
-        <div class="sys-row">
-          <span>MESSAGE_BUS</span>
-          <div class="bar" style="--w:99%"></div>
-          <span class="val">99%</span>
-        </div>
-        <div class="sys-row">
-          <span>THREAT_LEVEL</span>
-          <div class="bar" style="--w:12%"></div>
-          <span class="val warn">LOW</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="footer-info">
-      © <%= java.time.Year.now() %> EIS PORTAL · BUILD v6.0.13 · INTERNAL USE ONLY
-    </div>
-  </aside>
-
-  <!-- RIGHT: Form panel -->
-  <main class="form-panel">
-
-    <div class="form-header">
-      <div class="step">// AUTHENTICATION_REQUIRED</div>
-      <h2 id="formTitle">Sign In</h2>
-      <p id="formSubtitle">Enter your credentials to access the system</p>
+    <div class="form-head">
+      <h2 id="formTitle">Welcome back</h2>
+      <p id="formSubtitle">Sign in to continue to your workspace</p>
     </div>
 
     <div class="tabs">
-      <button class="tab active" data-tab="user"><i class="fa-solid fa-user"></i>&nbsp; USER</button>
-      <button class="tab" data-tab="admin"><i class="fa-solid fa-user-shield"></i>&nbsp; ADMIN</button>
+      <button class="tab active" data-tab="user">User</button>
+      <button class="tab" data-tab="admin">Admin</button>
     </div>
 
     <s:form action="login" method="post" theme="simple" id="loginForm">
 
-      <!-- USER VIEW -->
+      <!-- USER FORM -->
       <div class="form-view active" id="view-user">
-        <div class="alert error" id="userAlert"><i class="fa-solid fa-triangle-exclamation"></i><span></span></div>
+        <div class="alert error" id="userAlert"><i class="fa-solid fa-circle-exclamation"></i><span></span></div>
 
         <div class="field">
-          <div class="field-label">
-            <span><span class="prompt">$</span> USERNAME</span>
-            <span>REQUIRED</span>
-          </div>
-          <div class="field-input-wrap">
-            <i class="fa-solid fa-user field-icon"></i>
-            <input type="text" placeholder="enter_username" name="m_strUserName" id="m_strUserName" autocomplete="username" />
+          <label>Username</label>
+          <div class="input-box">
+            <i class="fa-regular fa-user"></i>
+            <input type="text" placeholder="Enter your username" name="m_strUserName" id="m_strUserName" autocomplete="username" />
           </div>
         </div>
 
         <div class="field">
-          <div class="field-label">
-            <span><span class="prompt">$</span> PASSWORD</span>
-            <span>SECURE</span>
-          </div>
-          <div class="field-input-wrap">
-            <i class="fa-solid fa-key field-icon"></i>
-            <input type="password" placeholder="••••••••" name="m_struserPassword" id="m_struserPassword" autocomplete="current-password" />
-            <button type="button" class="pw-toggle" onclick="togglePw('m_struserPassword', this)"><i class="fa-solid fa-eye"></i></button>
+          <label>Password</label>
+          <div class="input-box">
+            <i class="fa-solid fa-lock"></i>
+            <input type="password" placeholder="Enter your password" name="m_struserPassword" id="m_struserPassword" autocomplete="current-password" />
+            <button type="button" class="pw-toggle" onclick="togglePw('m_struserPassword', this)">
+              <i class="fa-regular fa-eye"></i>
+            </button>
           </div>
         </div>
 
         <div class="field">
-          <div class="field-label">
-            <span><span class="prompt">$</span> ROLE</span>
-            <span>SELECT</span>
-          </div>
-          <div class="field-input-wrap">
-            <i class="fa-solid fa-user-tag field-icon"></i>
-            <s:select name="m_strRole" id="m_strRole" list="rolelist" headerKey="" headerValue="choose_role" theme="simple" />
+          <label>Role</label>
+          <div class="input-box">
+            <i class="fa-solid fa-user-tag"></i>
+            <s:select name="m_strRole" id="m_strRole" list="rolelist" headerKey="" headerValue="Select your role" theme="simple" />
           </div>
         </div>
 
         <button type="button" class="btn-primary" id="btnUserLogin" onclick="usersign()">
           <span class="spinner"></span>
-          <span class="btn-text">Authenticate</span>
-          <i class="fa-solid fa-arrow-right btn-arrow"></i>
+          <span class="btn-text">Sign In</span>
         </button>
       </div>
 
-      <!-- ADMIN VIEW -->
+      <!-- ADMIN FORM -->
       <div class="form-view" id="view-admin">
-        <div class="alert error" id="adminAlert"><i class="fa-solid fa-triangle-exclamation"></i><span></span></div>
+        <div class="alert error" id="adminAlert"><i class="fa-solid fa-circle-exclamation"></i><span></span></div>
 
         <div class="field">
-          <div class="field-label">
-            <span><span class="prompt">$</span> ADMIN_ID</span>
-            <span>REQUIRED</span>
-          </div>
-          <div class="field-input-wrap">
-            <i class="fa-solid fa-user-shield field-icon"></i>
-            <input type="text" placeholder="admin_username" name="m_stradminUserName" id="m_stradminUserName" autocomplete="username" />
+          <label>Admin Username</label>
+          <div class="input-box">
+            <i class="fa-solid fa-user-shield"></i>
+            <input type="text" placeholder="Enter admin username" name="m_stradminUserName" id="m_stradminUserName" autocomplete="username" />
           </div>
         </div>
 
         <div class="field">
-          <div class="field-label">
-            <span><span class="prompt">$</span> ADMIN_KEY</span>
-            <span>SECURE</span>
-          </div>
-          <div class="field-input-wrap">
-            <i class="fa-solid fa-key field-icon"></i>
-            <input type="password" placeholder="••••••••" name="m_stradminPassword" id="m_stradminPassword" autocomplete="current-password" />
-            <button type="button" class="pw-toggle" onclick="togglePw('m_stradminPassword', this)"><i class="fa-solid fa-eye"></i></button>
+          <label>Admin Password</label>
+          <div class="input-box">
+            <i class="fa-solid fa-lock"></i>
+            <input type="password" placeholder="Enter admin password" name="m_stradminPassword" id="m_stradminPassword" autocomplete="current-password" />
+            <button type="button" class="pw-toggle" onclick="togglePw('m_stradminPassword', this)">
+              <i class="fa-regular fa-eye"></i>
+            </button>
           </div>
         </div>
 
         <button type="button" class="btn-primary" id="btnAdminLogin" onclick="adminsign()">
           <span class="spinner"></span>
-          <span class="btn-text">Authenticate</span>
-          <i class="fa-solid fa-arrow-right btn-arrow"></i>
+          <span class="btn-text">Sign In as Admin</span>
         </button>
       </div>
 
     </s:form>
-  </main>
-</div>
 
-<!-- Quick links toggle -->
-<button class="quick-toggle" onclick="toggleQuick()" title="Quick Links">
-  <i class="fa-solid fa-bolt"></i>
-</button>
+    <div class="foot-note">
+      Having trouble? <a href="javascript:void(0)" onclick="openUrl('https://www.ultimatix.net/')">Contact support</a>
+    </div>
 
-<div class="quick-links" id="quickLinks">
-  <a onclick="openUrl('https://10.189.37.183/')">DYNATRACE</a>
-  <a onclick="openUrl('https://10.188.10.106:2443/login')">LB_WEB_UI</a>
-  <a onclick="openUrl('https://score.sbi/')">SCORE</a>
-  <a onclick="openUrl('https://nspm.sbi/algosec/suite/login.html')">NSPM_FAR</a>
-  <a onclick="openUrl('https://10.191.171.12:5443/EISPortal/jsp/FlashReport.jsp')">FLASH_REPORT</a>
-  <a onclick="openUrl('https://10.191.171.12:5443/EIS/port_monitoring/')">EIS_PORT_MON</a>
-  <a onclick="openUrl('https://10.191.171.12:5443/EIS/CBS_Connection/')">CBS_PORT_MON</a>
-  <a onclick="openUrl('https://10.191.171.12:5443/PyPortal/APISearch/')">API_WORKLOAD</a>
-  <a onclick="openUrl('https://10.191.171.12:5443/EISInfra/curlSearch/login.php/')">CURL_PORTAL</a>
-  <a onclick="openUrl('https://www.ultimatix.net/')">ULTIMATIX</a>
-</div>
-
-<!-- Bottom bar -->
-<div class="bottom-bar">
-  <div>SESSION: <b style="color:var(--brand)">ENCRYPTED · AES-256</b></div>
-  <div class="keys">
-    <kbd>Tab</kbd> navigate <kbd>Enter</kbd> submit <kbd>Esc</kbd> clear
   </div>
-  <div>Made with <span class="heart">♥</span> for EIS</div>
-</div>
+</main>
 
 <script>
 const CTX = '<%=request.getContextPath()%>';
 
-/* ============ LIVE CLOCK ============ */
-function updateClock(){
-  const d = new Date();
-  const pad = n => String(n).padStart(2,'0');
-  document.getElementById('clock').textContent =
-    pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
-}
-setInterval(updateClock, 1000);
-updateClock();
-
-/* ============ TYPEWRITER EFFECT ============ */
-const phrases = [
-  'AUTHENTICATION_READY',
-  'WELCOME_OPERATOR',
-  'ACCESS_GRANTED',
-  'SYSTEM_STANDBY'
-];
-let pIdx = 0, cIdx = 0, deleting = false;
-const tw = document.getElementById('typewriter');
-function typeLoop(){
-  const phrase = phrases[pIdx];
-  if(!deleting){
-    cIdx++;
-    tw.innerHTML = '<span class="accent">></span> ' +
-      phrase.substring(0, cIdx) + '<span class="cursor"></span>';
-    if(cIdx === phrase.length){
-      deleting = true;
-      setTimeout(typeLoop, 2000);
-      return;
-    }
-    setTimeout(typeLoop, 80);
-  } else {
-    cIdx--;
-    tw.innerHTML = '<span class="accent">></span> ' +
-      phrase.substring(0, cIdx) + '<span class="cursor"></span>';
-    if(cIdx === 0){
-      deleting = false;
-      pIdx = (pIdx + 1) % phrases.length;
-      setTimeout(typeLoop, 400);
-      return;
-    }
-    setTimeout(typeLoop, 40);
-  }
-}
-typeLoop();
-
-/* ============ TAB SWITCHING ============ */
+/* ---------- Tab Switching ---------- */
 document.querySelectorAll('.tab').forEach(tab => {
   tab.addEventListener('click', () => {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -841,27 +457,26 @@ document.querySelectorAll('.tab').forEach(tab => {
     tab.classList.add('active');
     document.getElementById('view-' + tab.dataset.tab).classList.add('active');
 
-    // Update header
     const title = document.getElementById('formTitle');
     const sub = document.getElementById('formSubtitle');
-    if(tab.dataset.tab === 'user'){
-      title.textContent = 'Sign In';
-      sub.textContent = 'Enter your credentials to access the system';
+    if (tab.dataset.tab === 'user') {
+      title.textContent = 'Welcome back';
+      sub.textContent = 'Sign in to continue to your workspace';
     } else {
-      title.textContent = 'Admin Access';
-      sub.textContent = 'Restricted — authorized personnel only';
+      title.textContent = 'Admin access';
+      sub.textContent = 'Restricted access — authorized personnel only';
     }
   });
 });
 
-/* ============ HELPERS ============ */
+/* ---------- Helpers ---------- */
 function showAlert(id, msg, type) {
   const el = document.getElementById(id);
-  el.className = 'alert show ' + (type || 'error');
+  el.className = 'alert ' + (type || 'error');
   el.querySelector('span').textContent = msg;
 }
 function hideAlert(id) {
-  document.getElementById(id).className = 'alert error';
+  document.getElementById(id).className = 'alert';
 }
 function setLoading(btnId, isLoading) {
   const btn = document.getElementById(btnId);
@@ -869,21 +484,18 @@ function setLoading(btnId, isLoading) {
   btn.classList.toggle('loading', isLoading);
 }
 function openUrl(url) { window.open(url, '_blank'); }
-function toggleQuick(){
-  document.getElementById('quickLinks').classList.toggle('open');
-}
 function togglePw(id, btn){
   const inp = document.getElementById(id);
   if(inp.type === 'password'){
     inp.type = 'text';
-    btn.innerHTML = '<i class="fa-solid fa-eye-slash"></i>';
+    btn.innerHTML = '<i class="fa-regular fa-eye-slash"></i>';
   } else {
     inp.type = 'password';
-    btn.innerHTML = '<i class="fa-solid fa-eye"></i>';
+    btn.innerHTML = '<i class="fa-regular fa-eye"></i>';
   }
 }
 
-/* ============ AJAX LOGIN ============ */
+/* ---------- AJAX Login ---------- */
 async function submitLogin(url, formEl, btnId, alertId) {
   hideAlert(alertId);
   setLoading(btnId, true);
@@ -899,12 +511,12 @@ async function submitLogin(url, formEl, btnId, alertId) {
     if (ct.includes('application/json')) {
       const data = await res.json();
       if (data.status === 'success') {
-        showAlert(alertId, 'ACCESS GRANTED — redirecting...', 'success');
+        showAlert(alertId, 'Login successful — redirecting...', 'success');
         setTimeout(() => {
           window.location.href = data.redirectUrl || (CTX + '/userhomescreen.action');
-        }, 500);
+        }, 400);
       } else {
-        showAlert(alertId, data.message || 'ACCESS DENIED', 'error');
+        showAlert(alertId, data.message || 'Invalid credentials', 'error');
       }
     } else {
       formEl.action = url;
@@ -912,45 +524,42 @@ async function submitLogin(url, formEl, btnId, alertId) {
     }
   } catch (err) {
     console.error(err);
-    showAlert(alertId, 'CONNECTION ERROR — retry', 'error');
+    showAlert(alertId, 'Network error. Please try again.', 'error');
   } finally {
     setLoading(btnId, false);
   }
 }
 
-/* ============ USER LOGIN ============ */
+/* ---------- User Login ---------- */
 function usersign() {
   const form = document.getElementById('loginForm');
   const u = document.getElementById('m_strUserName').value.trim();
   const p = document.getElementById('m_struserPassword').value;
   const r = document.getElementById('m_strRole').value;
-  if (!u) { showAlert('userAlert', 'USERNAME required'); return; }
-  if (!p) { showAlert('userAlert', 'PASSWORD required'); return; }
-  if (!r || r === 'choose_role') { showAlert('userAlert', 'SELECT a role'); return; }
+  if (!u) { showAlert('userAlert', 'Please enter username'); return; }
+  if (!p) { showAlert('userAlert', 'Please enter password'); return; }
+  if (!r || r === 'Select your role') { showAlert('userAlert', 'Please select a role'); return; }
   localStorage.clear();
   sessionStorage.clear();
   submitLogin(CTX + '/login!usersign.action', form, 'btnUserLogin', 'userAlert');
 }
 
-/* ============ ADMIN LOGIN ============ */
+/* ---------- Admin Login ---------- */
 function adminsign() {
   const form = document.getElementById('loginForm');
   const u = document.getElementById('m_stradminUserName').value.trim();
   const p = document.getElementById('m_stradminPassword').value;
-  if (!u) { showAlert('adminAlert', 'ADMIN_ID required'); return; }
-  if (!p) { showAlert('adminAlert', 'ADMIN_KEY required'); return; }
+  if (!u) { showAlert('adminAlert', 'Please enter admin username'); return; }
+  if (!p) { showAlert('adminAlert', 'Please enter admin password'); return; }
   submitLogin(CTX + '/login!adminsign.action', form, 'btnAdminLogin', 'adminAlert');
 }
 
-/* ============ KEYBOARD SHORTCUTS ============ */
-document.addEventListener('keydown', e => {
-  if (e.key === 'Enter'){
+/* ---------- Enter key submit ---------- */
+document.getElementById('loginForm').addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
     e.preventDefault();
     const active = document.querySelector('.tab.active').dataset.tab;
     active === 'user' ? usersign() : adminsign();
-  }
-  if (e.key === 'Escape'){
-    document.querySelectorAll('input').forEach(i => i.value = '');
   }
 });
 </script>
