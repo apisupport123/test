@@ -35,8 +35,23 @@ html, body {
 body {
     display: flex;
     flex-direction: column;
-    padding: 5px;
     position: relative;
+}
+
+/* Content wrapper — topnav + sidebar ke adjust */
+.new-wrapper {
+    position: absolute;
+    top: 64px;
+    left: 260px;
+    right: 0;
+    bottom: 0;
+    padding: 5px;
+    display: flex;
+    flex-direction: column;
+    transition: left .3s cubic-bezier(.4,0,.2,1), background .3s ease;
+}
+html.sb-collapsed .new-wrapper {
+    left: 0;
 }
 
 .header-info {
@@ -48,13 +63,16 @@ body {
     align-items: center;
     justify-content: center;
     position: relative;
+    flex-shrink: 0;
 }
 
 .dashboard-container {
     display: flex;
     flex-direction: column;
-    height: 92vh;
+    flex: 1;
     gap: 5px;
+    min-height: 0;
+    overflow: hidden;
 }
 
 .chart-wrapper {
@@ -78,12 +96,14 @@ body {
     align-items: center;
     justify-content: center;
     gap: 10px;
+    flex-shrink: 0;
 }
 
 .chart--container {
     flex: 1;
     width: 100%;
     min-height: 0;
+    position: relative;
 }
 
 .loading-indicator {
@@ -187,22 +207,21 @@ html[data-theme="dark"] .timer {
 }
 
 /* ================================================================
-   LEGEND — theme-aware
+   LEGEND — top-right corner of the new-wrapper
    ================================================================ */
 .dashboard-legend {
-    position: fixed;
-    top: 74px;
-    right: 15px;
+    position: absolute;
+    top: 8px;
+    right: 12px;
     background-color: var(--card);
     border: 1px solid var(--line);
     border-radius: 8px;
-    padding: 10px 15px;
+    padding: 10px 14px;
     z-index: 40;
     font-family: Arial, sans-serif;
     font-size: 12px;
     color: var(--ink);
     box-shadow: 0 2px 10px rgba(0,0,0,0.15);
-    backdrop-filter: blur(5px);
 }
 .dashboard-legend h4 {
     margin: 0 0 8px 0;
@@ -234,7 +253,7 @@ html[data-theme="dark"] .timer {
 }
 
 /* ================================================================
-   THEME-AWARE OVERRIDES — Topnav + Wrapper
+   TOPNAV THEME OVERRIDE
    ================================================================ */
 .topnav {
     background: var(--topnav-bg) !important;
@@ -278,50 +297,15 @@ html[data-theme="dark"] .timer {
     border-color: var(--line) !important;
     color: var(--ink) !important;
 }
-
-/* ✅ Page wrapper — topnav aur sidebar ke saath fit */
-.new-wrapper {
-    position: fixed;
-    top: 64px;
-    left: 260px;
-    right: 0;
-    bottom: 0;
-    background-color: var(--bg);
-    overflow: hidden;
-    transition: left .3s cubic-bezier(.4,0,.2,1), background .3s ease;
-}
-html.sb-collapsed .new-wrapper {
-    left: 0;
-}
-
-/* Full height inside wrapper */
-.new-wrapper .dash-shell {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    padding: 5px;
-}
-
-/* Legend adjust for new layout */
-.new-wrapper .dashboard-legend {
-    position: absolute;
-    top: 5px;
-    right: 10px;
-    z-index: 40;
-}
 </style>
 </head>
 <body>
 
 <%!
 public String formatAPINameWithLineBreaks(String apiName) {
-    if (apiName == null || apiName.isEmpty()) {
-        return "";
-    }
+    if (apiName == null || apiName.isEmpty()) return "";
     apiName = apiName.replace("_", " ");
-    if (apiName.length() <= 16) {
-        return apiName;
-    }
+    if (apiName.length() <= 16) return apiName;
     StringBuilder formatted = new StringBuilder();
     for (int i = 0; i < apiName.length(); i += 16) {
         if (i > 0) {
@@ -364,7 +348,6 @@ class SysDataHolder {
 final ExpDataHolder expHolder = new ExpDataHolder();
 final SysDataHolder sysHolder = new SysDataHolder();
 
-/* ============ EXP Query Thread ============ */
 Thread expThread = new Thread(new Runnable() {
     public void run() {
         try {
@@ -379,16 +362,10 @@ Thread expThread = new Thread(new Runnable() {
                     flagStatus = rs.getString("FLAG");
                     if (flagStatus == null) flagStatus = "DR";
                 }
-            } catch(Exception e) {
-                flagStatus = "DR";
-            }
+            } catch(Exception e) { flagStatus = "DR"; }
 
             try {
                 conn = DBUtilityAuto.getReportDBConnection();
-                ZonedDateTime CurrentDate = ZonedDateTime.now(ZoneId.of("Asia/Kolkata"));
-                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM_yy").withLocale(Locale.US);
-                String PART = CurrentDate.format(formatter).toUpperCase();
-
                 String dbLink = flagStatus.equalsIgnoreCase("PR") ? "MIDB_LINK" : "HIDB_LINK";
 
                 sql = "WITH filtered_logs AS ( "
@@ -451,7 +428,6 @@ Thread expThread = new Thread(new Runnable() {
     }
 });
 
-/* ============ SYS Query Thread ============ */
 Thread sysThread = new Thread(new Runnable() {
     public void run() {
         try {
@@ -529,7 +505,6 @@ request.setAttribute("expValues", expHolder.values);
 request.setAttribute("expApiNames", expHolder.apiNames);
 request.setAttribute("expBrokerNames", expHolder.brokerNames);
 request.setAttribute("expErrorCodes", expHolder.errorCodes);
-
 request.setAttribute("sysLabels", sysHolder.labels);
 request.setAttribute("sysValues", sysHolder.values);
 request.setAttribute("sysApiNames", sysHolder.apiNames);
@@ -540,9 +515,8 @@ request.setAttribute("sysErrorCodes", sysHolder.errorCodes);
 <%@include file="../userheader.jsp"%>
 
 <div class="new-wrapper">
-<div class="dash-shell">
 
-    <!-- Legend -->
+    <!-- Legend — top right corner -->
     <div class="dashboard-legend">
         <h4>Color Guide</h4>
         <ul>
@@ -556,6 +530,7 @@ request.setAttribute("sysErrorCodes", sysHolder.errorCodes);
         </ul>
     </div>
 
+    <!-- Header with timer -->
     <div class="header-info">
         <p class="blink" style="font-size: 20px;">
             This Data get Auto Refresh after <span class="timer" id="ten-countdown"></span> min
@@ -563,6 +538,7 @@ request.setAttribute("sysErrorCodes", sysHolder.errorCodes);
         </p>
     </div>
 
+    <!-- Two charts -->
     <div class="dashboard-container">
         <div class="chart-wrapper">
             <div class="chart-title">
@@ -588,7 +564,6 @@ request.setAttribute("sysErrorCodes", sysHolder.errorCodes);
         </div>
     </div>
 
-</div>
 </div>
 
 <script>
@@ -624,7 +599,7 @@ function initializeDashboards() {
 
     expData.labels = [<%
         List<String> expLabelsList = (List<String>)request.getAttribute("expLabels");
-        if(expLabelsList != null) { for(String label: expLabelsList) { out.print("\"" + label.replace("\"", "\\\"").replace("\n","") + "\","); } }
+        if(expLabelsList != null) { for(String label: expLabelsList) { out.print("\"" + label.replace("\\","\\\\").replace("\"", "\\\"").replace("\n","").replace("\r","") + "\","); } }
     %>];
     expData.values = [<%
         List<Double> expValuesList = (List<Double>)request.getAttribute("expValues");
@@ -646,7 +621,7 @@ function initializeDashboards() {
 
     sysData.labels = [<%
         List<String> sysLabelsList = (List<String>)request.getAttribute("sysLabels");
-        if(sysLabelsList != null) { for(String label: sysLabelsList) { out.print("\"" + label.replace("\"", "\\\"").replace("\n","") + "\","); } }
+        if(sysLabelsList != null) { for(String label: sysLabelsList) { out.print("\"" + label.replace("\\","\\\\").replace("\"", "\\\"").replace("\n","").replace("\r","") + "\","); } }
     %>];
     sysData.values = [<%
         List<Double> sysValuesList = (List<Double>)request.getAttribute("sysValues");
@@ -677,7 +652,6 @@ function initializeDashboards() {
     renderExpChart();
     renderSysChart();
 
-    /* ✅ Fix labels color after render */
     setTimeout(function(){
         var names = document.querySelectorAll('.ep-name');
         var color = isDark ? '#FFFFFF' : '#0A0A0A';
@@ -891,7 +865,6 @@ document.addEventListener('DOMContentLoaded', function(){
     initializeDashboards();
     countdown("ten-countdown", 10, 0);
 
-    /* ✅ Theme change pe reload — chart re-render */
     var lastTheme = isDark ? 'dark' : 'light';
     setInterval(function(){
         var now = document.documentElement.getAttribute('data-theme') || 'light';
