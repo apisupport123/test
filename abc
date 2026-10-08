@@ -1,62 +1,132 @@
- try {
-    switch (cell.getCellType()) {
-      case Cell.CELL_TYPE_STRING:
-        return cell.getStringCellValue().trim();
-       
-      case Cell.CELL_TYPE_NUMERIC:
-        // Check if it's a date
-        if (org.apache.poi.ss.usermodel.DateUtil.isCellDateFormatted(cell)) {
-          // For dates, format as string
-          Date date = cell.getDateCellValue();
-          SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-          return sdf.format(date);
-        } else {
-          // For numbers, check if it's integer or decimal
-          double num = cell.getNumericCellValue();
-          // Check if it's an integer value
-          if (num == Math.floor(num)) {
-            return String.valueOf((int) num);
-          } else {
-            return String.valueOf(num);
-          }
-        }
-       
-      case Cell.CELL_TYPE_BOOLEAN:
-        return String.valueOf(cell.getBooleanCellValue());
-       
-      case Cell.CELL_TYPE_FORMULA:
-        // Try to evaluate formula result
-        try {
-          switch (cell.getCachedFormulaResultType()) {
-            case Cell.CELL_TYPE_STRING:
-              return cell.getStringCellValue().trim();
-            case Cell.CELL_TYPE_NUMERIC:
-              double num = cell.getNumericCellValue();
-              if (num == Math.floor(num)) {
-                return String.valueOf((int) num);
-              } else {
-                return String.valueOf(num);
-              }
-            case Cell.CELL_TYPE_BOOLEAN:
-              return String.valueOf(cell.getBooleanCellValue());
-            default:
-              return cell.getCellFormula();
-          }
-        } catch (Exception e) {
-          return cell.getCellFormula();
-        }
-       
-      case Cell.CELL_TYPE_BLANK:
-        return null;
-       
-      case Cell.CELL_TYPE_ERROR:
-        return "#ERROR";
-       
-      default:
-        return null;
-    }
-  } catch (Exception e) {
-    e.printStackTrace();
-    return null;
-  }
+<%@ page language="java" contentType="text/html; charset=ISO-8859-1" pageEncoding="ISO-8859-1"%>
+<%@ taglib prefix="s" uri="/struts-tags" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="ISO-8859-1">
+<title>Failure Services</title>
+<script src="${pageContext.request.contextPath}/js/jquery-3.3.1.min.js"></script>
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/bootstrap.min.css">
+</head>
+
+<body>
+<s:form action="showFailureServicesWise" method="post">
+    <s:hidden name="ServiceCategory" id="ServiceCategory" value="%{ServiceCategory}" />
+
+    <div class="card my-3">
+        <h5 class="card-header text-center">Failure Services</h5>
+        <div class="card-body">
+
+            <!-- Debug Output -->
+            <div class="alert alert-info">
+                <b>Debug Info:</b><br/>
+                Server = <strong><s:property value="m_strServer" /></strong><br/>
+                Broker Name = <strong><s:property value="m_strbroker_name" /></strong><br/>
+                ServiceCategory = <strong><s:property value="ServiceCategory" /></strong><br/>
+                API Name = <strong><s:property value="parameters.url" /></strong><br/>
+                DB_ENVLOCATION = <strong><s:property value="m_strENVLOCATION" /></strong><br/>
+            </div>
+
+            <!-- Show total records -->
+            <p>
+                Total records loaded:
+                <strong><s:property value="m_lstFailureServicedetail.size()" /></strong>
+            </p>
+
+            <s:if test="m_lstFailureServicedetail.isEmpty()">
+                <div class="alert alert-warning">No failure service data available!</div>
+            </s:if>
+
+            <s:else>
+            <table class="table table-bordered table-sm table-hover">
+                <thead class="thead-light">
+                    <tr>
+                        <th>API NAME</th>
+                        <th>Broker Name</th>
+                        <th>BrokerEG</th>
+                        <th>Total Hits</th>
+                        <th>Success</th>
+                        <th>SI001</th>
+                        <th>002</th>
+                        <th>SI002</th>
+                        <th>SI007</th>
+                        <th>SI051</th>
+                        <th>014</th>
+                        <th>SI014</th>
+                        <th>PARSING EXCEPTION</th>
+                        <th>SI569</th>
+                        <th>SI570</th>
+                        <th>TD</th>
+                        <th>TD Percent</th>
+                        <th>BD</th>
+                        <th>BD Percent</th>
+                    </tr>
+                </thead>
+                <tbody>
+                <s:iterator value="m_lstFailureServicedetail" var="list">
+                    <tr>
+                        <td><s:property value="#list.m_strAPIName" /></td>
+                        <td><s:property value="#list.m_strbroker_name" /></td>
+                        <td><s:property value="#list.m_strbroker_eg" /></td>
+                        <td><s:property value="#list.m_strTOTAL_HITS" /></td>
+                        <td><s:property value="#list.m_strSUCCESS" /></td>
+                        <td onclick="showreferenceno('SI001','<s:property value="#list.m_strAPIName" />','<s:property value="#list.m_strexp_ip" />')">
+                            <s:property value="#list.m_str001" />
+                        </td>
+                        <td onclick="showreferenceno('002','<s:property value="#list.m_strAPIName" />','<s:property value="#list.m_strexp_ip" />')">
+                            <s:property value="#list.m_str002" />
+                        </td>
+                        <td onclick="showreferenceno('SI002','<s:property value="#list.m_strAPIName" />','<s:property value="#list.m_strexp_ip" />')">
+                            <s:property value="#list.m_strSI002" />
+                        </td>
+                        <td onclick="showreferenceno('SI007','<s:property value="#list.m_strAPIName" />','<s:property value="#list.m_strexp_ip" />')">
+                            <s:property value="#list.m_str007" />
+                        </td>
+                        <td onclick="showreferenceno('SI051','<s:property value="#list.m_strAPIName" />','<s:property value="#list.m_strexp_ip" />')">
+                            <s:property value="#list.m_str051" />
+                        </td>
+                        <td onclick="showreferenceno('014','<s:property value="#list.m_strAPIName" />','<s:property value="#list.m_strexp_ip" />')">
+                            <s:property value="#list.m_str014" />
+                        </td>
+                        <td onclick="showreferenceno('SI014','<s:property value="#list.m_strAPIName" />','<s:property value="#list.m_strexp_ip" />')">
+                            <s:property value="#list.m_strSI014" />
+                        </td>
+                        <td onclick="showreferenceno('PARSING_EXCEPTION','<s:property value="#list.m_strAPIName" />','<s:property value="#list.m_strexp_ip" />')">
+                            <s:property value="#list.m_strPARSINGEXCEPTION" />
+                        </td>
+                        <td onclick="showreferenceno('SI569','<s:property value="#list.m_strAPIName" />','<s:property value="#list.m_strexp_ip" />')">
+                            <s:property value="#list.m_str569" />
+                        </td>
+                        <td onclick="showreferenceno('SI570','<s:property value="#list.m_strAPIName" />','<s:property value="#list.m_strexp_ip" />')">
+                            <s:property value="#list.m_str570" />
+                        </td>
+                        <td><s:property value="#list.m_strTD" /></td>
+                        <td><s:property value="#list.m_strTD_PERCENT" /></td>
+                        <td><s:property value="#list.m_strBD" /></td>
+                        <td><s:property value="#list.m_strBD_PERCENT" /></td>
+                    </tr>
+                </s:iterator>
+                </tbody>
+            </table>
+            </s:else>
+        </div>
+    </div>
+</s:form>
+
+<script>
+function showreferenceno(errorcode, apiname, expip) {
+    var serviceCategory = document.getElementById("ServiceCategory").value;
+    var url = '${pageContext.request.contextPath}/Multiple?action=showfailurerefernceno'
+        + '&errorcode=' + encodeURIComponent(errorcode)
+        + '&apiname=' + encodeURIComponent(apiname)
+        + '&expip=' + encodeURIComponent(expip)
+        + '&ServiceCategory=' + encodeURIComponent(serviceCategory);
+    window.open(url, '_blank');
 }
+</script>
+
+</body>
+</html>
