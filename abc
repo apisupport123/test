@@ -24,53 +24,43 @@
 }
 
 html, body {
-    height: 100vh;
-    width: 100vw;
+    height: 100%;
+    width: 100%;
     overflow: hidden;
     background-color: var(--bg) !important;
     color: var(--ink);
     transition: background .3s ease, color .3s ease;
 }
 
-body {
-    display: flex;
-    flex-direction: column;
-    position: relative;
-}
-
-/* Content wrapper — topnav + sidebar ke adjust */
+/* ================================================================
+   ✅ FIX: new-wrapper override — no double offset
+   userheader.jsp me margin-left:260px + padding-top:64px already hai
+   Isliye yahan sirf height set karo, aur kuch nahi
+   ================================================================ */
 .new-wrapper {
-    position: absolute;
-    top: 64px;
-    left: 260px;
-    right: 0;
-    bottom: 0;
-    padding: 5px;
+    height: calc(100vh - 64px) !important;   /* topnav ke baad ki height */
+    padding: 6px 8px !important;              /* thoda minimal padding */
+    overflow: hidden;
     display: flex;
     flex-direction: column;
-    transition: left .3s cubic-bezier(.4,0,.2,1), background .3s ease;
-}
-html.sb-collapsed .new-wrapper {
-    left: 0;
 }
 
 .header-info {
     color: var(--ink) !important;
     text-align: center;
-    height: 8vh;
-    min-height: 60px;
+    flex-shrink: 0;
+    padding: 4px 0;
     display: flex;
     align-items: center;
     justify-content: center;
     position: relative;
-    flex-shrink: 0;
 }
 
 .dashboard-container {
     display: flex;
     flex-direction: column;
     flex: 1;
-    gap: 5px;
+    gap: 6px;
     min-height: 0;
     overflow: hidden;
 }
@@ -78,25 +68,27 @@ html.sb-collapsed .new-wrapper {
 .chart-wrapper {
     flex: 1;
     background-color: var(--card) !important;
-    border-radius: 5px;
-    padding: 5px;
+    border-radius: 6px;
+    padding: 4px;
     min-height: 0;
     display: flex;
     flex-direction: column;
     position: relative;
     border: 1px solid var(--line);
+    overflow: hidden;
 }
 
 .chart-title {
     color: var(--ink) !important;
     text-align: center;
-    font-size: 24px;
-    height: 40px;
+    font-size: 18px;
+    height: 30px;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
+    gap: 8px;
     flex-shrink: 0;
+    font-weight: 700;
 }
 
 .chart--container {
@@ -104,6 +96,7 @@ html.sb-collapsed .new-wrapper {
     width: 100%;
     min-height: 0;
     position: relative;
+    overflow: hidden;
 }
 
 .loading-indicator {
@@ -116,7 +109,7 @@ html.sb-collapsed .new-wrapper {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 20px;
+    font-size: 16px;
 }
 
 .blink {
@@ -125,6 +118,7 @@ html.sb-collapsed .new-wrapper {
     font-family: sans-serif;
     font-weight: 900;
     display: inline;
+    font-size: 16px !important;
 }
 
 @keyframes blinker {
@@ -134,10 +128,10 @@ html.sb-collapsed .new-wrapper {
 .timer {
     border: 3px solid var(--brand);
     display: inline;
-    padding: 3px 8px;
+    padding: 2px 8px;
     color: var(--brand) !important;
     font-family: Verdana, sans-serif;
-    font-size: 24px;
+    font-size: 18px;
     font-weight: bold;
     border-radius: 6px;
     background: var(--brand-light);
@@ -148,8 +142,8 @@ html[data-theme="dark"] .timer {
 
 .status-indicator {
     display: inline-block;
-    width: 15px;
-    height: 15px;
+    width: 12px;
+    height: 12px;
     border-radius: 50%;
 }
 
@@ -169,7 +163,9 @@ html[data-theme="dark"] .timer {
 }
 
 #timeRangeMessage {
-    font-size: 16px !important;
+    font-size: 14px !important;
+    color: var(--muted);
+    margin-left: 10px;
 }
 
 .chart--container div {
@@ -189,7 +185,7 @@ html[data-theme="dark"] .timer {
     white-space: nowrap;
     overflow: visible !important;
     text-overflow: clip !important;
-    font-size: 13px !important;
+    font-size: 12px !important;
 }
 
 .zingchart .zc-scale-x line,
@@ -202,32 +198,35 @@ html[data-theme="dark"] .timer {
 }
 
 .zingchart .zc-scale-x-inner {
-    min-height: 120px !important;
+    min-height: 100px !important;
     overflow: visible !important;
 }
 
 /* ================================================================
-   LEGEND — top-right corner of the new-wrapper
+   ✅ LEGEND — floating over the top-right corner of new-wrapper
    ================================================================ */
 .dashboard-legend {
     position: absolute;
     top: 8px;
-    right: 12px;
+    right: 14px;
     background-color: var(--card);
     border: 1px solid var(--line);
     border-radius: 8px;
-    padding: 10px 14px;
+    padding: 8px 12px;
     z-index: 40;
     font-family: Arial, sans-serif;
-    font-size: 12px;
+    font-size: 11px;
     color: var(--ink);
-    box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+    max-width: 220px;
+    line-height: 1.5;
 }
 .dashboard-legend h4 {
-    margin: 0 0 8px 0;
-    font-size: 14px;
+    margin: 0 0 6px 0;
+    font-size: 12px;
     text-align: center;
     color: var(--brand);
+    font-weight: 700;
 }
 .dashboard-legend ul {
     list-style: none;
@@ -235,21 +234,23 @@ html[data-theme="dark"] .timer {
     padding: 0;
 }
 .dashboard-legend li {
-    margin-bottom: 5px;
+    margin-bottom: 3px;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
 }
 .legend-color-box {
-    width: 14px;
-    height: 14px;
-    border-radius: 3px;
+    width: 11px;
+    height: 11px;
+    border-radius: 2px;
     display: inline-block;
     border: 1px solid var(--line);
+    flex-shrink: 0;
 }
 .legend-text {
-    font-size: 12px;
+    font-size: 11px;
     color: var(--ink);
+    white-space: nowrap;
 }
 
 /* ================================================================
@@ -297,6 +298,15 @@ html[data-theme="dark"] .timer {
     border-color: var(--line) !important;
     color: var(--ink) !important;
 }
+
+/* ================================================================
+   ✅ Small screens me chart stacking
+   ================================================================ */
+@media (max-width: 900px) {
+    .new-wrapper {
+        margin-left: 0 !important;
+    }
+}
 </style>
 </head>
 <body>
@@ -309,7 +319,7 @@ public String formatAPINameWithLineBreaks(String apiName) {
     StringBuilder formatted = new StringBuilder();
     for (int i = 0; i < apiName.length(); i += 16) {
         if (i > 0) {
-            formatted.append("</p><br><p class='ep-name' style='font-weight: bolder; font-size: 15px'>");
+            formatted.append("</p><br><p class='ep-name' style='font-weight: bolder; font-size: 13px'>");
         }
         int endIndex = Math.min(i + 16, apiName.length());
         formatted.append(apiName.substring(i, endIndex));
@@ -319,9 +329,9 @@ public String formatAPINameWithLineBreaks(String apiName) {
 
 public String formatBrokerNameOnly(String brokerName) {
     if (brokerName == null || brokerName.trim().isEmpty()) {
-        return "<span style='color:#FFA500; font-weight:bold; font-size:13px;'>N/A</span>";
+        return "<span style='color:#FFA500; font-weight:bold; font-size:12px;'>N/A</span>";
     }
-    return "<span style='color:#FFA500; font-weight:bold; font-size:13px;'>" + brokerName + "</span>";
+    return "<span style='color:#FFA500; font-weight:bold; font-size:12px;'>" + brokerName + "</span>";
 }
 %>
 
@@ -404,12 +414,12 @@ Thread expThread = new Thread(new Runnable() {
                 while (resultSet.next()) {
                     String brokerNameOnly = resultSet.getString("BROKER_NAME");
                     String formattedBrokerOnly = formatBrokerNameOnly(brokerNameOnly);
-                    String name = "<p style='color:#ff9933; font-weight: bolder;font-size: 15px'>"
+                    String name = "<p style='color:#ff9933; font-weight: bolder;font-size: 13px'>"
                         + Integer.toString(resultSet.getInt("TD_COUNT"))
-                        + "</p><br><p class='ep-name' style='font-weight: bolder;font-size: 15px'>"
+                        + "</p><br><p class='ep-name' style='font-weight: bolder;font-size: 13px'>"
                         + formatAPINameWithLineBreaks(resultSet.getString("API_NAME"))
                         + "</p><br>" + formattedBrokerOnly
-                        + "<br><p style='color:#32CD32; font-weight: bolder;font-size: 15px'>"
+                        + "<br><p style='color:#32CD32; font-weight: bolder;font-size: 13px'>"
                         + Integer.toString(resultSet.getInt("TOTAL_HITS")) + "</p>";
                     expHolder.labels.add(name);
                     expHolder.values.add(resultSet.getDouble("TD_PERCENT"));
@@ -471,12 +481,12 @@ Thread sysThread = new Thread(new Runnable() {
                 while (resultSet.next()) {
                     String sysBrokerOnly = resultSet.getString("SYS_BROKER");
                     String formattedSysBrokerOnly = formatBrokerNameOnly(sysBrokerOnly);
-                    String name = "<p style='color:#ff9933; font-weight: bolder; font-size: 15px'>"
+                    String name = "<p style='color:#ff9933; font-weight: bolder; font-size: 13px'>"
                         + Integer.toString(resultSet.getInt("TD_COUNT"))
-                        + "</p><br><p class='ep-name' style='font-weight: bolder;font-size: 15px'>"
+                        + "</p><br><p class='ep-name' style='font-weight: bolder;font-size: 13px'>"
                         + formatAPINameWithLineBreaks(resultSet.getString("API_NAME"))
                         + "</p><br>" + formattedSysBrokerOnly
-                        + "<br><p style='color:#32CD32; font-weight: bolder;font-size: 15px'>"
+                        + "<br><p style='color:#32CD32; font-weight: bolder;font-size: 13px'>"
                         + Integer.toString(resultSet.getInt("TOTAL_HITS")) + "</p>";
                     sysHolder.labels.add(name);
                     sysHolder.values.add(resultSet.getDouble("TD_PERCENT"));
@@ -523,7 +533,7 @@ request.setAttribute("sysErrorCodes", sysHolder.errorCodes);
             <li><span class="legend-color-box" style="background-color: #ff9933;"></span><span class="legend-text">TD Count</span></li>
             <li><span class="legend-color-box" style="background-color: var(--ink);"></span><span class="legend-text">API Name</span></li>
             <li><span class="legend-color-box" style="background-color: #32CD32;"></span><span class="legend-text">Total Hits</span></li>
-            <li><span class="legend-color-box" style="background-color: #FFA500;"></span><span class="legend-text">Broker Name</span></li>
+            <li><span class="legend-color-box" style="background-color: #FFA500;"></span><span class="legend-text">Broker</span></li>
             <li><span class="legend-color-box" style="background-color: #673AB7;"></span><span class="legend-text">Tooltip</span></li>
             <li><span class="legend-color-box" style="background-color: #99ccff;"></span><span class="legend-text">EXP Bar</span></li>
             <li><span class="legend-color-box" style="background-color: #C0C0C0;"></span><span class="legend-text">SYS Bar</span></li>
@@ -532,9 +542,9 @@ request.setAttribute("sysErrorCodes", sysHolder.errorCodes);
 
     <!-- Header with timer -->
     <div class="header-info">
-        <p class="blink" style="font-size: 20px;">
+        <p class="blink">
             This Data get Auto Refresh after <span class="timer" id="ten-countdown"></span> min
-            <span class="blink" style="font-size: 16px;" id="timeRangeMessage"></span>
+            <span id="timeRangeMessage"></span>
         </p>
     </div>
 
@@ -589,7 +599,7 @@ document.addEventListener('DOMContentLoaded', function() {
         minutes = minutes < 10 ? '0' + minutes : minutes;
         return hours + ':' + minutes;
     };
-    var message = 'Your session was from ' + formatTime(tenMinutesAgo) + ' to ' + formatTime(currentTime);
+    var message = '(' + formatTime(tenMinutesAgo) + ' - ' + formatTime(currentTime) + ')';
     document.getElementById('timeRangeMessage').innerText = message;
 });
 
@@ -674,14 +684,14 @@ function renderExpChart() {
     }
 
     var barCount = expData.values.length > 0 ? expData.values.length : 1;
-    var bottomMargin = Math.max(150, barCount * 10);
-    var leftMargin = 150;
-    var rightMargin = 30;
-    var topMargin = 40;
+    var bottomMargin = Math.max(110, barCount * 8);
+    var leftMargin = 110;
+    var rightMargin = 20;
+    var topMargin = 25;
 
     let chartConfig = {
         type: "bar3d",
-        "3dAspect": { depth: 20, true3d: 0, yAngle: 8 },
+        "3dAspect": { depth: 15, true3d: 0, yAngle: 8 },
         backgroundColor: chartBg,
         plotarea: {
             alpha: 0.3,
@@ -695,9 +705,9 @@ function renderExpChart() {
             borderColor: chartBorder,
             borderWidth: "1px",
             guide: { visible: false },
-            item: { fontColor: chartText, fontSize: "14px", fontFamily: "Arial", wrapText: false, overflow: "visible", maxChars: null, angle: 0, textAlign: "center" },
+            item: { fontColor: chartText, fontSize: "12px", fontFamily: "Arial", wrapText: false, overflow: "visible", maxChars: null, angle: 0, textAlign: "center" },
             tick: { alpha: 0.2, lineColor: chartTick },
-            label: { text: '', color: chartText, fontSize: "20px", offsetX: '-50px' },
+            label: { text: '', color: chartText, fontSize: "16px", offsetX: '-40px' },
             layout: { type: "auto", adjustLayout: true },
             maxItems: 50,
             step: 1,
@@ -709,17 +719,17 @@ function renderExpChart() {
             borderColor: chartBorder,
             borderWidth: "1px",
             guide: { alpha: 0.2, lineColor: chartGrid, lineStyle: "solid" },
-            item: { fontColor: chartText, paddingRight: "5px", fontSize: "20px" },
+            item: { fontColor: chartText, paddingRight: "5px", fontSize: "14px" },
             tick: { alpha: 0.2, lineColor: chartTick },
-            label: { text: "Failure %", color: chartText, fontSize: "20px" },
+            label: { text: "Failure %", color: chartText, fontSize: "14px" },
             guide: { visible: true, 'line-color': chartGrid, 'line-style': "dotted", alpha: 1 }
         },
         series: [{
             text: "Failure Rate",
             values: expData.values.length > 0 ? expData.values : [0],
             "data-tooltip": tooltips,
-            "value-box": { "text": "%v%", "placement": "top", "font-color": chartText, "font-size": "18px", "font-weight": "bold", "offset-y": -5 },
-            tooltip: { text: "%data-tooltip", backgroundColor: "#673AB7", borderColor: "none", borderRadius: "5px", fontSize: "16px", padding: "8px 12px", shadow: false, wrapText: true },
+            "value-box": { "text": "%v%", "placement": "top", "font-color": chartText, "font-size": "14px", "font-weight": "bold", "offset-y": -3 },
+            tooltip: { text: "%data-tooltip", backgroundColor: "#673AB7", borderColor: "none", borderRadius: "5px", fontSize: "14px", padding: "6px 10px", shadow: false, wrapText: true },
             backgroundColor: "#99ccff #7399ff",
             borderColor: "#fff",
         }],
@@ -765,14 +775,14 @@ function renderSysChart() {
     }
 
     var barCount = sysData.values.length > 0 ? sysData.values.length : 1;
-    var bottomMargin = Math.max(150, barCount * 10);
-    var leftMargin = 150;
-    var rightMargin = 30;
-    var topMargin = 40;
+    var bottomMargin = Math.max(110, barCount * 8);
+    var leftMargin = 110;
+    var rightMargin = 20;
+    var topMargin = 25;
 
     let chartConfig = {
         type: "bar3d",
-        "3dAspect": { depth: 20, true3d: 0, yAngle: 8 },
+        "3dAspect": { depth: 15, true3d: 0, yAngle: 8 },
         backgroundColor: chartBg,
         plotarea: {
             alpha: 0.3,
@@ -786,9 +796,9 @@ function renderSysChart() {
             borderColor: chartBorder,
             borderWidth: "1px",
             guide: { visible: false },
-            item: { fontColor: chartText, fontSize: "14px", fontFamily: "Arial", wrapText: false, overflow: "visible", maxChars: null, angle: 0, textAlign: "center" },
+            item: { fontColor: chartText, fontSize: "12px", fontFamily: "Arial", wrapText: false, overflow: "visible", maxChars: null, angle: 0, textAlign: "center" },
             tick: { alpha: 0.2, lineColor: chartTick },
-            label: { text: 'TD Count, API Name, Total count', color: chartText, fontSize: "20px", offsetX: '-50px' },
+            label: { text: 'TD Count, API Name, Total count', color: chartText, fontSize: "16px", offsetX: '-40px' },
             layout: { type: "auto", adjustLayout: true },
             maxItems: 50,
             step: 1,
@@ -800,17 +810,17 @@ function renderSysChart() {
             borderColor: chartBorder,
             borderWidth: "1px",
             guide: { alpha: 0.2, lineColor: chartGrid, lineStyle: "solid" },
-            item: { fontColor: chartText, paddingRight: "5px", fontSize: "20px" },
+            item: { fontColor: chartText, paddingRight: "5px", fontSize: "14px" },
             tick: { alpha: 0.2, lineColor: chartTick },
-            label: { text: "Failure %", color: chartText, fontSize: "20px" },
+            label: { text: "Failure %", color: chartText, fontSize: "14px" },
             guide: { visible: true, 'line-color': chartGrid, 'line-style': "dotted", alpha: 1 }
         },
         series: [{
             text: "Failure Rate",
             values: sysData.values.length > 0 ? sysData.values : [0],
             "data-tooltip": tooltips,
-            "value-box": { "text": "%v%", "placement": "top", "font-color": chartText, "font-size": "18px", "font-weight": "bold", "offset-y": -5 },
-            tooltip: { text: "%data-tooltip", backgroundColor: "#673AB7", borderColor: "none", borderRadius: "5px", fontSize: "16px", padding: "8px 12px", shadow: false, wrapText: true },
+            "value-box": { "text": "%v%", "placement": "top", "font-color": chartText, "font-size": "14px", "font-weight": "bold", "offset-y": -3 },
+            tooltip: { text: "%data-tooltip", backgroundColor: "#673AB7", borderColor: "none", borderRadius: "5px", fontSize: "14px", padding: "6px 10px", shadow: false, wrapText: true },
             backgroundColor: "#f2f7f2 #C0C0C0",
             borderColor: "#fff",
         }],
