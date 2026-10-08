@@ -1,648 +1,871 @@
-<%--
-  EIS Portal — Shared Header Fragment
-  ⚠️ IMPORTANT: Ye file har page me include hoti hai.
-  Isme <html>, <head>, <body> tags NAHI hone chahiye.
---%>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<%@page pageEncoding="UTF-8"%>
+<%@page import="java.util.*"%>
+<%@page import="java.sql.*"%>
+<%@page import="com.jdbc.DBUtilityAuto" %>
+<%@page import="com.jdbc.DBUtility" %>
+<%@page import="java.time.ZoneId, java.time.ZonedDateTime, java.time.format.DateTimeFormatter, java.time.LocalTime" %>
+<%@page import="java.util.concurrent.*"%>
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="refresh" content="600; url=<%= request.getRequestURI() %>">
+<title>EXP &amp; SYS Service Wise Failure Dashboard</title>
+<script nonce="undefined" src="<%=request.getContextPath()%>/js/zingchart.min.js"></script>
 <script src="<%=request.getContextPath()%>/js/jquery.min.js"></script>
 <style>
-:root{
-  --brand:#F86F03;
-  --brand-2:#FF9A3D;
-  --brand-light:#FFF4EC;
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
-  --ink:#0A0A0A;
-  --muted:#6B7280;
-  --line:#EAEAEA;
-  --bg:#F7F7F5;
-  --card:#FFFFFF;
-  --sidebar-bg:#FFFFFF;
-  --sidebar-text:#4B5563;
-  --sidebar-text-hover:#0A0A0A;
-  --sidebar-hover:#F5F5F4;
-  --sidebar-active:#FFF4EC;
-  --topnav-bg:rgba(247,247,245,.85);
-  --hero-dark:#1A1A1A;
-  --hero-dark-2:#2A2A2A;
-
-  --topnav-h:64px;
-  --sidebar-w:260px;
-}
-html[data-theme="dark"]{
-  --ink:#F5F5F5;
-  --muted:#9CA3AF;
-  --line:#272727;
-  --bg:#0F0F0F;
-  --card:#161616;
-  --sidebar-bg:#131313;
-  --sidebar-text:#A1A1AA;
-  --sidebar-text-hover:#FFFFFF;
-  --sidebar-hover:#1F1F1F;
-  --sidebar-active:#1E1408;
-  --topnav-bg:rgba(15,15,15,.85);
-  --hero-dark:#0B0B0B;
-  --hero-dark-2:#1A1A1A;
+html, body {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    background-color: var(--bg) !important;
+    color: var(--ink);
+    transition: background .3s ease, color .3s ease;
 }
 
-*{margin:0;padding:0;box-sizing:border-box}
-html,body{height:100%}
-body{
-  font-family:'Inter',system-ui,sans-serif;
-  background:var(--bg);
-  color:var(--ink);
-  -webkit-font-smoothing:antialiased;
-  transition:background .3s ease,color .3s ease;
+.new-wrapper {
+    height: calc(100vh - 64px - 12px) !important;
+    margin-top: 12px !important;
+    padding: 6px 10px 8px 10px !important;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--bg);
+    transition: margin-left .3s cubic-bezier(.4,0,.2,1), background .3s ease;
 }
-.primary-nav,.hamburger,.menu,.overflow-container{display:none!important}
+html.sb-collapsed .new-wrapper { margin-left: 0 !important; }
 
-/* ============ SIDEBAR ============ */
-.sidebar{
-  position:fixed;top:0;left:0;bottom:0;
-  width:var(--sidebar-w);
-  background:var(--sidebar-bg);
-  border-right:1px solid var(--line);
-  z-index:60;
-  display:flex;flex-direction:column;
-  transition:transform .3s cubic-bezier(.4,0,.2,1),background .3s ease,border-color .3s ease;
+.page-main-heading {
+    text-align: center;
+    flex-shrink: 0;
+    padding: 2px 0 6px 0;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 6px;
 }
-html.sb-collapsed .sidebar{transform:translateX(-100%)}
-html.sb-collapsed .topnav{left:0}
-html.sb-collapsed .new-wrapper{margin-left:0}
+.page-main-heading h1 {
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+    color: var(--ink);
+    margin: 0;
+    line-height: 1.2;
+}
+.page-main-heading h1 .accent { color: var(--brand); }
 
-.sb-head{
-  padding:16px 16px 16px 20px;
-  height:var(--topnav-h);
-  display:flex;align-items:center;gap:11px;
-  border-bottom:1px solid var(--line);
-  flex-shrink:0;
-  transition:border-color .3s ease;
-}
-.sb-logo{
-  width:36px;height:36px;
-  background:linear-gradient(135deg,var(--brand),var(--brand-2));
-  border-radius:10px;
-  display:grid;place-items:center;color:#fff;font-size:.9rem;
-  box-shadow:0 6px 16px -6px var(--brand);
-  flex-shrink:0;
-}
-.sb-title{
-  font-weight:800;font-size:.95rem;
-  letter-spacing:-.3px;line-height:1.1;
-  flex:1;min-width:0;
-}
-.sb-title small{
-  display:block;font-size:.68rem;font-weight:500;
-  color:var(--muted);letter-spacing:.4px;text-transform:uppercase;margin-top:2px;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-}
-.sb-collapse-btn{
-  width:28px;height:28px;
-  display:grid;place-items:center;
-  background:transparent;
-  border:1px solid var(--line);
-  border-radius:7px;
-  color:var(--muted);
-  cursor:pointer;
-  font-size:.7rem;
-  transition:all .15s ease;
-  flex-shrink:0;
-}
-.sb-collapse-btn:hover{
-  background:var(--brand);
-  border-color:var(--brand);
-  color:#fff;
+.header-info {
+    color: var(--ink) !important;
+    text-align: center;
+    flex-shrink: 0;
+    padding: 4px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
 }
 
-.sb-search{padding:14px 16px 8px;flex-shrink:0}
-.sb-search-box{position:relative;display:flex;align-items:center}
-.sb-search-box i{
-  position:absolute;left:12px;color:var(--muted);font-size:.8rem;pointer-events:none;
-}
-.sb-search-box input{
-  width:100%;padding:9px 12px 9px 34px;
-  background:var(--sidebar-hover);
-  border:1px solid transparent;
-  border-radius:9px;
-  color:var(--ink);
-  font-family:inherit;font-size:.82rem;font-weight:500;outline:none;
-  transition:all .2s ease;
-}
-.sb-search-box input::placeholder{color:var(--muted);opacity:.7}
-.sb-search-box input:focus{
-  background:var(--card);
-  border-color:var(--brand);
-  box-shadow:0 0 0 3px rgba(248,111,3,.12);
+.dashboard-container {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    gap: 6px;
+    min-height: 0;
+    overflow: hidden;
 }
 
-.sb-body{
-  flex:1;overflow-y:auto;padding:8px 12px 20px;
-}
-.sb-body::-webkit-scrollbar{width:6px}
-.sb-body::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px}
-
-.sb-group{
-  padding:14px 10px 6px;
-  font-size:.68rem;font-weight:700;
-  color:var(--muted);letter-spacing:.8px;text-transform:uppercase;
-}
-.sb-item{
-  display:flex;align-items:center;gap:11px;
-  padding:8px 10px;border-radius:8px;
-  font-size:.83rem;font-weight:500;
-  color:var(--sidebar-text);text-decoration:none;
-  transition:all .15s ease;cursor:pointer;line-height:1.35;
-}
-.sb-item:hover{
-  background:var(--sidebar-hover);
-  color:var(--sidebar-text-hover);
-}
-.sb-item .sb-icon{
-  width:26px;height:26px;
-  display:grid;place-items:center;
-  background:var(--sidebar-hover);
-  border-radius:7px;font-size:.72rem;
-  color:var(--sidebar-text);flex-shrink:0;
-  transition:all .15s ease;
-}
-.sb-item:hover .sb-icon{
-  background:var(--brand-light);color:var(--brand);
-}
-html[data-theme="dark"] .sb-item:hover .sb-icon{
-  background:rgba(248,111,3,.15);color:var(--brand);
-}
-.sb-item.sb-active{
-  background:var(--sidebar-active);
-  color:var(--brand);font-weight:600;
-}
-.sb-item.sb-active .sb-icon{background:var(--brand);color:#fff}
-.sb-item.sb-logout{color:#E53935;margin-top:6px}
-.sb-item.sb-logout .sb-icon{background:#FFEBEE;color:#E53935}
-.sb-item.sb-logout:hover{background:#FFEBEE;color:#C62828}
-.sb-item.sb-logout:hover .sb-icon{background:#E53935;color:#fff}
-html[data-theme="dark"] .sb-item.sb-logout{color:#FF6B6B}
-html[data-theme="dark"] .sb-item.sb-logout .sb-icon{background:rgba(229,57,53,.15);color:#FF6B6B}
-
-/* ============ TOPNAV ============ */
-.topnav{
-  position:fixed;top:0;left:var(--sidebar-w);right:0;
-  height:var(--topnav-h);
-  background:var(--topnav-bg);
-  backdrop-filter:blur(14px) saturate(180%);
-  -webkit-backdrop-filter:blur(14px) saturate(180%);
-  border-bottom:1px solid var(--line);
-  z-index:50;
-  display:flex;align-items:center;padding:0 24px;gap:16px;
-  transition:left .3s cubic-bezier(.4,0,.2,1),background .3s ease,border-color .3s ease;
-}
-.tn-toggle{
-  display:none;width:36px;height:36px;
-  background:transparent;border:1px solid var(--line);
-  border-radius:9px;color:var(--ink);cursor:pointer;font-size:.85rem;
-}
-.tn-menu-btn{
-  display:grid;place-items:center;
-  width:36px;height:36px;
-  background:var(--sidebar-hover);
-  border:1px solid var(--line);
-  border-radius:9px;color:var(--ink);
-  cursor:pointer;font-size:.85rem;
-  transition:all .15s ease;
-}
-.tn-menu-btn:hover{
-  background:var(--brand);border-color:var(--brand);color:#fff;
-}
-.tn-search{
-  flex:1;max-width:520px;height:40px;
-  background:var(--card);
-  border:1px solid var(--line);
-  border-radius:11px;padding:0 14px;
-  display:flex;align-items:center;gap:10px;
-  color:var(--muted);font-size:.83rem;cursor:pointer;
-  transition:all .2s ease;font-family:inherit;
-}
-.tn-search:hover{
-  border-color:var(--brand);color:var(--ink);
-  box-shadow:0 4px 14px rgba(248,111,3,.06);
-}
-.tn-search .kbd{
-  margin-left:auto;
-  display:inline-flex;align-items:center;
-  padding:3px 7px;background:var(--sidebar-hover);
-  border:1px solid var(--line);border-radius:6px;
-  font-size:.68rem;font-weight:600;color:var(--muted);
-}
-.tn-right{margin-left:auto;display:flex;align-items:center;gap:10px}
-.tn-btn{
-  width:36px;height:36px;
-  display:grid;place-items:center;
-  background:transparent;border:1px solid var(--line);
-  border-radius:9px;color:var(--ink);
-  cursor:pointer;font-size:.85rem;
-  transition:all .15s ease;text-decoration:none;
-}
-.tn-btn:hover{background:var(--brand);border-color:var(--brand);color:#fff}
-.tn-avatar{
-  width:36px;height:36px;border-radius:50%;
-  background:linear-gradient(135deg,var(--brand),var(--brand-2));
-  display:grid;place-items:center;color:#fff;
-  font-weight:700;font-size:.85rem;cursor:pointer;
-  border:2px solid var(--card);
-  box-shadow:0 2px 8px rgba(0,0,0,.08);
+.chart-wrapper {
+    flex: 1;
+    background-color: var(--card) !important;
+    border-radius: 6px;
+    padding: 4px;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    border: 1px solid var(--line);
+    overflow: hidden;
 }
 
-.new-wrapper{
-  margin-left:var(--sidebar-w);
-  padding-top:var(--topnav-h);
-  transition:margin-left .3s cubic-bezier(.4,0,.2,1);
-  min-height:100vh;
-}
-html.sb-collapsed .new-wrapper{
-  margin-left:0;
+.chart-title {
+    color: var(--ink) !important;
+    text-align: center;
+    font-size: 18px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    flex-shrink: 0;
+    font-weight: 700;
 }
 
-.sb-overlay{
-  position:fixed;inset:0;
-  background:rgba(10,10,10,.4);
-  backdrop-filter:blur(2px);
-  z-index:55;opacity:0;pointer-events:none;
-  transition:opacity .25s ease;
+.chart--container {
+    flex: 1;
+    width: 100%;
+    min-height: 0;
+    position: relative;
+    overflow: hidden;
 }
-html.sb-open .sb-overlay{opacity:1;pointer-events:auto}
 
-@media (max-width:900px){
-  .sidebar{transform:translateX(-100%);box-shadow:0 0 40px rgba(0,0,0,.1)}
-  html.sb-open .sidebar{transform:translateX(0)}
-  .topnav{left:0}
-  .tn-toggle{display:grid;place-items:center}
-  .tn-menu-btn{display:none}
-  .new-wrapper{margin-left:0}
-  .sb-collapse-btn{display:none}
+.loading-indicator {
+    color: var(--ink) !important;
+    text-align: center;
+    background-color: var(--sidebar-hover) !important;
+    border-radius: 5px;
+    height: 100%;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+}
+
+.blink {
+    animation: blinker 0s linear infinite;
+    color: var(--ink) !important;
+    font-family: sans-serif;
+    font-weight: 900;
+    display: inline;
+    font-size: 16px !important;
+}
+@keyframes blinker { 50% { opacity: 0; } }
+
+.timer {
+    border: 3px solid var(--brand);
+    display: inline;
+    padding: 2px 8px;
+    color: var(--brand) !important;
+    font-family: Verdana, sans-serif;
+    font-size: 18px;
+    font-weight: bold;
+    border-radius: 6px;
+    background: var(--brand-light);
+}
+html[data-theme="dark"] .timer { background: rgba(248,111,3,.15); }
+
+.status-indicator {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+.status-loaded { background-color: #32CD32; }
+.status-loading { background-color: #ff9933; animation: pulse 1.5s infinite; }
+@keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+
+#timeRangeMessage { font-size: 14px !important; color: var(--muted); margin-left: 10px; }
+
+.chart--container div { max-height: 100%; }
+.zc-tooltip { font-family: Arial, sans-serif; line-height: 1.5; }
+.zc-bar { cursor: pointer; }
+
+.zingchart text[data-element="scale-x-item"] tspan {
+    white-space: nowrap;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    font-size: 12px !important;
+}
+.zingchart .zc-scale-x line,
+.zingchart .zc-scale-x path { display: none; }
+.zingchart .zc-plot { overflow: visible !important; }
+.zingchart .zc-scale-x-inner { min-height: 100px !important; overflow: visible !important; }
+
+.dashboard-legend {
+    position: absolute;
+    top: 60px;
+    right: 20px;
+    background-color: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 8px 12px;
+    z-index: 40;
+    font-family: Arial, sans-serif;
+    font-size: 11px;
+    color: var(--ink);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+    max-width: 220px;
+    line-height: 1.5;
+}
+.dashboard-legend h4 {
+    margin: 0 0 6px 0;
+    font-size: 12px;
+    text-align: center;
+    color: var(--brand);
+    font-weight: 700;
+}
+.dashboard-legend ul { list-style: none; margin: 0; padding: 0; }
+.dashboard-legend li { margin-bottom: 3px; display: flex; align-items: center; gap: 6px; }
+.legend-color-box {
+    width: 11px; height: 11px;
+    border-radius: 2px;
+    display: inline-block;
+    border: 1px solid var(--line);
+    flex-shrink: 0;
+}
+.legend-text { font-size: 11px; color: var(--ink); white-space: nowrap; }
+
+.topnav {
+    background: var(--topnav-bg) !important;
+    border-bottom: 1px solid var(--line) !important;
+}
+.topnav .tn-search {
+    background: var(--card) !important;
+    border-color: var(--line) !important;
+    color: var(--muted) !important;
+}
+.topnav .tn-search:hover { border-color: var(--brand) !important; color: var(--ink) !important; }
+.topnav .tn-search .kbd {
+    background: var(--sidebar-hover) !important;
+    border-color: var(--line) !important;
+    color: var(--muted) !important;
+}
+.topnav .tn-menu-btn {
+    background: var(--sidebar-hover) !important;
+    border-color: var(--line) !important;
+    color: var(--ink) !important;
+}
+.topnav .tn-menu-btn:hover {
+    background: var(--brand) !important;
+    border-color: var(--brand) !important;
+    color: #fff !important;
+}
+.topnav .tn-btn {
+    background: transparent !important;
+    border-color: var(--line) !important;
+    color: var(--ink) !important;
+}
+.topnav .tn-btn:hover {
+    background: var(--brand) !important;
+    border-color: var(--brand) !important;
+    color: #fff !important;
+}
+.topnav .tn-toggle { border-color: var(--line) !important; color: var(--ink) !important; }
+
+@media (max-width: 900px) {
+    .new-wrapper { margin-left: 0 !important; }
+    .dashboard-legend { top: 50px; right: 10px; font-size: 10px; padding: 6px 10px; }
+    .page-main-heading h1 { font-size: 16px; }
 }
 </style>
+</head>
+<body>
 
-<%--
-  ✅ BOOT SCRIPT — Pehli visit pe sidebar OPEN, navigate pe CLOSED
-  Theme localStorage me save
---%>
-<script>
-(function(){
-  try{
-    var t = localStorage.getItem('eis-theme') || 'light';
-    document.documentElement.setAttribute('data-theme', t);
-
-    var visited = sessionStorage.getItem('eis-visited');
-    if (visited === null) {
-      sessionStorage.setItem('eis-visited', '1');
-      // Pehli visit — sidebar OPEN (default)
-    } else {
-      // Navigate kiya — sidebar CLOSED
-      document.documentElement.classList.add('sb-collapsed');
+<%!
+public String formatAPINameWithLineBreaks(String apiName) {
+    if (apiName == null || apiName.isEmpty()) return "";
+    apiName = apiName.replace("_", " ");
+    if (apiName.length() <= 16) return apiName;
+    StringBuilder formatted = new StringBuilder();
+    for (int i = 0; i < apiName.length(); i += 16) {
+        if (i > 0) {
+            formatted.append("</p><br><p class='ep-name' style='font-weight: bolder; font-size: 13px'>");
+        }
+        int endIndex = Math.min(i + 16, apiName.length());
+        formatted.append(apiName.substring(i, endIndex));
     }
-  }catch(e){
-    // sessionStorage blocked — default open
-  }
-})();
-</script>
+    return formatted.toString();
+}
 
-<%
-  HttpSession sess = request.getSession(false);
-  String m_strrole = (sess != null) ? (String) sess.getAttribute("role") : null;
-  String ctx = request.getContextPath();
+public String formatBrokerNameOnly(String brokerName) {
+    if (brokerName == null || brokerName.trim().isEmpty()) {
+        return "<span style='color:#FFA500; font-weight:bold; font-size:12px;'>N/A</span>";
+    }
+    return "<span style='color:#FFA500; font-weight:bold; font-size:12px;'>" + brokerName + "</span>";
+}
 %>
 
-<aside class="sidebar" id="sidebar">
-  <div class="sb-head">
-    <div class="sb-logo"><i class="fa-solid fa-shield-halved"></i></div>
-    <div class="sb-title">
-      EIS Portal
-      <small><%=m_strrole != null ? m_strrole : "Guest"%></small>
+<%
+class ExpDataHolder {
+    List<String> labels = new ArrayList<>();
+    List<Double> values = new ArrayList<>();
+    List<String> apiNames = new ArrayList<>();
+    List<String> brokerNames = new ArrayList<>();
+    List<String> errorCodes = new ArrayList<>();
+    boolean loaded = false;
+}
+
+class SysDataHolder {
+    List<String> labels = new ArrayList<>();
+    List<Double> values = new ArrayList<>();
+    List<String> apiNames = new ArrayList<>();
+    List<String> brokerNames = new ArrayList<>();
+    List<String> errorCodes = new ArrayList<>();
+    boolean loaded = false;
+}
+
+final ExpDataHolder expHolder = new ExpDataHolder();
+final SysDataHolder sysHolder = new SysDataHolder();
+
+Thread expThread = new Thread(new Runnable() {
+    public void run() {
+        try {
+            Connection conn = null;
+            String flagStatus = null;
+            String sql = null;
+
+            try (Connection conn1 = DBUtilityAuto.getReportDBConnection();
+                 Statement smt = conn1.createStatement();
+                 ResultSet rs = smt.executeQuery("SELECT FLAG FROM connection_master")) {
+                if (rs.next()) {
+                    flagStatus = rs.getString("FLAG");
+                    if (flagStatus == null) flagStatus = "DR";
+                }
+            } catch(Exception e) { flagStatus = "DR"; }
+
+            try {
+                conn = DBUtilityAuto.getReportDBConnection();
+                String dbLink = flagStatus.equalsIgnoreCase("PR") ? "MIDB_LINK" : "HIDB_LINK";
+
+                sql = "WITH filtered_logs AS ( "
+                    + " SELECT /*+MATERIALIZE*/ API_NAME, BROKER_NAME, error_code, "
+                    + " CASE WHEN (substr(error_code,3,3) in ('002','014') OR error_code in ('SI001','SI007','SI569','SI570','SI015')) AND error_code <> '00014' THEN 1 ELSE 0 END AS is_td_error "
+                    + " FROM eisapp.API_LOG@" + dbLink + " "
+                    + " WHERE REQUEST_DATE_TIME >= SYSDATE - INTERVAL '10' MINUTE "
+                    + " AND API_NAME NOT LIKE '%gen.%' "
+                    + " AND trim(CONCAT(API_NAME, SOURCE_ID) || error_description) NOT IN ( "
+                    + "   SELECT trim(CONCAT(API_NAME, SOURCE_ID) || error_description) FROM vaild_bd_master "
+                    + " ) "
+                    + ") "
+                    + "SELECT * FROM ( "
+                    + " SELECT API_NAME, BROKER_NAME, COUNT(1) AS TOTAL_HITS, SUM(is_td_error) AS TD_COUNT, "
+                    + " ROUND(SUM(is_td_error) * 100 / COUNT(1), 2) AS TD_PERCENT, "
+                    + " TRIM(',' FROM "
+                    + " CASE WHEN SUM(CASE WHEN error_code = 'SI001' THEN 1 ELSE 0 END) > 0 THEN ',SI001' ELSE '' END || "
+                    + " CASE WHEN SUM(CASE WHEN error_code = 'SI002' THEN 1 ELSE 0 END) > 0 THEN ',SI002' ELSE '' END || "
+                    + " CASE WHEN SUM(CASE WHEN substr(error_code,3,3) = '002' AND error_code <> 'SI002' THEN 1 ELSE 0 END) > 0 THEN ',DYNAMIC 002' ELSE '' END || "
+                    + " CASE WHEN SUM(CASE WHEN error_code = 'SI007' AND error_code <> '70007' THEN 1 ELSE 0 END) > 0 THEN ',SI007' ELSE '' END || "
+                    + " CASE WHEN SUM(CASE WHEN error_code = 'SI051' THEN 1 ELSE 0 END) > 0 THEN ',SI051' ELSE '' END || "
+                    + " CASE WHEN SUM(CASE WHEN substr(error_code,3,3) = '014' AND error_code <> '00014' THEN 1 ELSE 0 END) > 0 THEN ',014' ELSE '' END || "
+                    + " CASE WHEN SUM(CASE WHEN error_code = 'SI569' THEN 1 ELSE 0 END) > 0 THEN ',SI569' ELSE '' END || "
+                    + " CASE WHEN SUM(CASE WHEN error_code = 'SI570' THEN 1 ELSE 0 END) > 0 THEN ',SI570' ELSE '' END || "
+                    + " CASE WHEN SUM(CASE WHEN error_code = 'SI015' THEN 1 ELSE 0 END) > 0 THEN ',SI015' ELSE '' END "
+                    + " ) AS ACTIVE_ERROR_CODES "
+                    + " FROM filtered_logs GROUP BY API_NAME, BROKER_NAME "
+                    + " HAVING ROUND(SUM(is_td_error) * 100 / COUNT(1), 2) >= 0.5 "
+                    + " ORDER BY TD_PERCENT DESC "
+                    + ") WHERE ROWNUM <= 10";
+
+                Statement statement = conn.createStatement();
+                ResultSet resultSet = statement.executeQuery(sql);
+
+                while (resultSet.next()) {
+                    String brokerNameOnly = resultSet.getString("BROKER_NAME");
+                    String formattedBrokerOnly = formatBrokerNameOnly(brokerNameOnly);
+                    String name = "<p style='color:#ff9933; font-weight: bolder;font-size: 13px'>"
+                        + Integer.toString(resultSet.getInt("TD_COUNT"))
+                        + "</p><br><p class='ep-name' style='font-weight: bolder;font-size: 13px'>"
+                        + formatAPINameWithLineBreaks(resultSet.getString("API_NAME"))
+                        + "</p><br>" + formattedBrokerOnly
+                        + "<br><p style='color:#32CD32; font-weight: bolder;font-size: 13px'>"
+                        + Integer.toString(resultSet.getInt("TOTAL_HITS")) + "</p>";
+                    expHolder.labels.add(name);
+                    expHolder.values.add(resultSet.getDouble("TD_PERCENT"));
+                    expHolder.apiNames.add(resultSet.getString("API_NAME"));
+                    expHolder.brokerNames.add(brokerNameOnly == null ? "N/A" : brokerNameOnly);
+                    String activeErrorCodes = resultSet.getString("ACTIVE_ERROR_CODES");
+                    if (activeErrorCodes == null || activeErrorCodes.trim().isEmpty()) activeErrorCodes = "None";
+                    expHolder.errorCodes.add(activeErrorCodes);
+                }
+                resultSet.close();
+                statement.close();
+            } catch (Exception e) { e.printStackTrace(); }
+            finally { if (conn != null) try { conn.close(); } catch (Exception e) {} }
+            expHolder.loaded = true;
+        } catch(Exception e) { e.printStackTrace(); expHolder.loaded = true; }
+    }
+});
+
+Thread sysThread = new Thread(new Runnable() {
+    public void run() {
+        try {
+            Connection connSys = null;
+            try {
+                connSys = DBUtilityAuto.getIIBDBConnection();
+                ZonedDateTime CurrentDate = ZonedDateTime.now(ZoneId.of("Asia/Kolkata"));
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM_yy").withLocale(Locale.US);
+                String PART = CurrentDate.format(formatter).toUpperCase();
+
+                String SysSql = "WITH filtered_logs AS ( "
+                    + " SELECT /*+PARALLEL(04)*/ API_NAME, SYS_BROKER, error_code, "
+                    + " CASE WHEN (substr(error_code,3,3) in ('002','014') OR error_code in ('SI001','SI007','SI569','SI570','SI015')) AND error_code <> '00014' THEN 1 ELSE 0 END AS is_td_error "
+                    + " FROM eisapp.backend_log PARTITION(" + PART + ") "
+                    + " WHERE REQUEST_DATE_TIME >= SYSDATE - INTERVAL '10' MINUTE "
+                    + " AND API_NAME NOT LIKE '%gen.%' "
+                    + ") "
+                    + "SELECT * FROM ( "
+                    + " SELECT API_NAME, SYS_BROKER, COUNT(1) AS TOTAL_HITS, SUM(is_td_error) AS TD_COUNT, "
+                    + " ROUND(SUM(is_td_error) * 100 / COUNT(1), 2) AS TD_PERCENT, "
+                    + " TRIM(',' FROM "
+                    + " CASE WHEN SUM(CASE WHEN error_code = 'SI001' THEN 1 ELSE 0 END) > 0 THEN ',SI001' ELSE '' END || "
+                    + " CASE WHEN SUM(CASE WHEN error_code = 'SI002' THEN 1 ELSE 0 END) > 0 THEN ',SI002' ELSE '' END || "
+                    + " CASE WHEN SUM(CASE WHEN substr(error_code,3,3) = '002' AND error_code <> 'SI002' THEN 1 ELSE 0 END) > 0 THEN ',DYNAMIC 002' ELSE '' END || "
+                    + " CASE WHEN SUM(CASE WHEN error_code = 'SI007' AND error_code <> '70007' THEN 1 ELSE 0 END) > 0 THEN ',SI007' ELSE '' END || "
+                    + " CASE WHEN SUM(CASE WHEN error_code = 'SI051' THEN 1 ELSE 0 END) > 0 THEN ',SI051' ELSE '' END || "
+                    + " CASE WHEN SUM(CASE WHEN substr(error_code,3,3) = '014' AND error_code <> '00014' THEN 1 ELSE 0 END) > 0 THEN ',014' ELSE '' END || "
+                    + " CASE WHEN SUM(CASE WHEN error_code = 'SI569' THEN 1 ELSE 0 END) > 0 THEN ',SI569' ELSE '' END || "
+                    + " CASE WHEN SUM(CASE WHEN error_code = 'SI570' THEN 1 ELSE 0 END) > 0 THEN ',SI570' ELSE '' END || "
+                    + " CASE WHEN SUM(CASE WHEN error_code = 'SI015' THEN 1 ELSE 0 END) > 0 THEN ',SI015' ELSE '' END "
+                    + " ) AS ACTIVE_ERROR_CODES "
+                    + " FROM filtered_logs GROUP BY API_NAME, SYS_BROKER "
+                    + " HAVING COUNT(1)>10 "
+                    + " ORDER BY TD_PERCENT DESC "
+                    + ") WHERE ROWNUM <= 10";
+
+                Statement statement = connSys.createStatement();
+                ResultSet resultSet = statement.executeQuery(SysSql);
+
+                while (resultSet.next()) {
+                    String sysBrokerOnly = resultSet.getString("SYS_BROKER");
+                    String formattedSysBrokerOnly = formatBrokerNameOnly(sysBrokerOnly);
+                    String name = "<p style='color:#ff9933; font-weight: bolder; font-size: 13px'>"
+                        + Integer.toString(resultSet.getInt("TD_COUNT"))
+                        + "</p><br><p class='ep-name' style='font-weight: bolder;font-size: 13px'>"
+                        + formatAPINameWithLineBreaks(resultSet.getString("API_NAME"))
+                        + "</p><br>" + formattedSysBrokerOnly
+                        + "<br><p style='color:#32CD32; font-weight: bolder;font-size: 13px'>"
+                        + Integer.toString(resultSet.getInt("TOTAL_HITS")) + "</p>";
+                    sysHolder.labels.add(name);
+                    sysHolder.values.add(resultSet.getDouble("TD_PERCENT"));
+                    sysHolder.apiNames.add(resultSet.getString("API_NAME"));
+                    sysHolder.brokerNames.add(sysBrokerOnly == null ? "N/A" : sysBrokerOnly);
+                    String activeErrorCodes = resultSet.getString("ACTIVE_ERROR_CODES");
+                    if (activeErrorCodes == null || activeErrorCodes.trim().isEmpty()) activeErrorCodes = "None";
+                    sysHolder.errorCodes.add(activeErrorCodes);
+                }
+                resultSet.close();
+                statement.close();
+            } catch (Exception e) { e.printStackTrace(); }
+            finally { if (connSys != null) try { connSys.close(); } catch (Exception e) {} }
+            sysHolder.loaded = true;
+        } catch(Exception e) { e.printStackTrace(); sysHolder.loaded = true; }
+    }
+});
+
+expThread.start();
+sysThread.start();
+expThread.join();
+sysThread.join();
+
+request.setAttribute("expLabels", expHolder.labels);
+request.setAttribute("expValues", expHolder.values);
+request.setAttribute("expApiNames", expHolder.apiNames);
+request.setAttribute("expBrokerNames", expHolder.brokerNames);
+request.setAttribute("expErrorCodes", expHolder.errorCodes);
+request.setAttribute("sysLabels", sysHolder.labels);
+request.setAttribute("sysValues", sysHolder.values);
+request.setAttribute("sysApiNames", sysHolder.apiNames);
+request.setAttribute("sysBrokerNames", sysHolder.brokerNames);
+request.setAttribute("sysErrorCodes", sysHolder.errorCodes);
+%>
+
+<%@include file="../userheader.jsp"%>
+
+<div class="new-wrapper">
+
+    <div class="page-main-heading">
+        <h1><span class="accent">EXP</span> &amp; <span class="accent">SYS</span> Service Wise Failure Dashboard</h1>
     </div>
-    <button class="sb-collapse-btn" onclick="toggleSidebar()" title="Hide sidebar">
-      <i class="fa-solid fa-angles-left"></i>
-    </button>
-  </div>
 
-  <div class="sb-search">
-    <div class="sb-search-box">
-      <i class="fa-solid fa-magnifying-glass"></i>
-      <input type="text" id="searchbar" onkeyup="search_animal()" placeholder="Search..." autocomplete="off">
+    <div class="dashboard-legend">
+        <h4>Color Guide</h4>
+        <ul>
+            <li><span class="legend-color-box" style="background-color: #ff9933;"></span><span class="legend-text">TD Count</span></li>
+            <li><span class="legend-color-box" style="background-color: var(--ink);"></span><span class="legend-text">API Name</span></li>
+            <li><span class="legend-color-box" style="background-color: #32CD32;"></span><span class="legend-text">Total Hits</span></li>
+            <li><span class="legend-color-box" style="background-color: #FFA500;"></span><span class="legend-text">Broker</span></li>
+            <li><span class="legend-color-box" style="background-color: #673AB7;"></span><span class="legend-text">Tooltip</span></li>
+            <li><span class="legend-color-box" style="background-color: #99ccff;"></span><span class="legend-text">EXP Bar</span></li>
+            <li><span class="legend-color-box" style="background-color: #C0C0C0;"></span><span class="legend-text">SYS Bar</span></li>
+        </ul>
     </div>
-  </div>
 
-  <nav class="sb-body" id="list">
-
-    <div class="sb-group">Dashboards</div>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/statMgmtDashboard.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>Strategic Mgmt. Status</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/eisSbiDashboard.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>SBI Support Status</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/ErrorDashboard">
-      <span class="sb-icon"><i class="fa-solid fa-triangle-exclamation"></i></span><span>Error Dashboard</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/CombinedServiceWise&HundreadPerFailure.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-tower-broadcast"></i></span><span>EIS Command Center</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/PortStatus.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-signal"></i></span><span>Service Status</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/AtmCardServlet">
-      <span class="sb-icon"><i class="fa-solid fa-credit-card"></i></span><span>ATM IP Port Portal</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/TransactionEndPointBank.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-money-bill-transfer"></i></span><span>Transaction End Point</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/AutoRefreshTxnEndpoint_New.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-money-bill-transfer"></i></span><span>Txn End Point (Golden Gate)</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/AutoRefreshExpSysServiceWise.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>EXP SYS Service Wise</span>
-    </a>
-
-    <div class="sb-group">LDAP</div>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/A_EXP_SERVERWISE_COUNT_LDAP.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>LDAP EXP Server</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/A_SYS_SERVERWISE_COUNT_LDAP.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>LDAP SYS Server</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/ErrorDashboardLDAP">
-      <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>LDAP Error Dashboard</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/ServiceWiseFailure_LDAP.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>LDAP Service-Wise Failure</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/100PercentFailure_LDAP.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>LDAP 100% Failure</span>
-    </a>
-
-    <div class="sb-group">Deployments</div>
-    <a class="sb-item animals" href="<%=ctx%>/DeploymentSheetServlet">
-      <span class="sb-icon"><i class="fa-solid fa-plus"></i></span><span>Add Deployment Sheet</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/ViewDeploymentSheetActionServ">
-      <span class="sb-icon"><i class="fa-solid fa-eye"></i></span><span>View Deployment Sheet</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/deployment_analysis.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-chart-column"></i></span><span>Deployment Analysis</span>
-    </a>
-
-    <div class="sb-group">Logs &amp; Data</div>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/Dpg_Sys_Log.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-file-lines"></i></span><span>SYS Logs</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/Dpg_log.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-file-lines"></i></span><span>DPG Logs</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/ITSMDetailsBackup.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-database"></i></span><span>ITSM Details</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/ThirdPartyExcel.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-table"></i></span><span>Third Party Excel</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/UploadExcelServlet">
-      <span class="sb-icon"><i class="fa-solid fa-certificate"></i></span><span>Source Certificate</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/Exp_Sys_Url_Mapper.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-heart-pulse"></i></span><span>EXP &amp; SYS URL Mapper</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/newChannelDestination.jsp?&role=<%=m_strrole%>">
-      <span class="sb-icon"><i class="fa-solid fa-heart-pulse"></i></span><span>Channel &amp; Destination</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/TxnContactDetail">
-      <span class="sb-icon"><i class="fa-solid fa-heart-pulse"></i></span><span>TXN Contact Details</span>
-    </a>
-
-    <div class="sb-group">Reports</div>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/FlashReport.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-bolt"></i></span><span>Flash Report</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/DailyStatisticsReport.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-chart-pie"></i></span><span>Daily Statistics</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/TimeDefrenceAnalysisreport.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-clock"></i></span><span>Time Difference Analysis</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/SourceWiseTdSearch.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>Source Wise TD Failure</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/TxnEndPointSearch.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>Txn End Point Manual</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/autocompleteapiwithtdbd.do">
-      <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>API Wise TD% BD%</span>
-    </a>
-
-    <div class="sb-group">Monitoring Tools</div>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/yonoGraph.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>YONO 2.0 Analytics</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/dpg-carts.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>DMZ DPG Incoming</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/channelwisepresent&pastdata.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>Channel Wise Volume</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/monitoring_dashboard_morethan_30Per_fail.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>BD API Monitor</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/Source_Monitor.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>Source Monitor</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/AtmPortWiseManualSearch.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-heart-pulse"></i></span><span>Manual ATM Portal</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/BarFileReader.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>Java Source Extractor</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/Centralized query storage User.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>Centralized Query</span>
-    </a>
-
-    <div class="sb-group">IBCE</div>
-    <a class="sb-item animals" href="<%=ctx%>/CronController">
-      <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>IBCE DR PR Activity</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/IbceActionNew">
-      <span class="sb-icon"><i class="fa-solid fa-chart-line"></i></span><span>IBCE DR PR Active Active</span>
-    </a>
-
-    <div class="sb-group">Checklists</div>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/DRChecklistHomePage.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-list-check"></i></span><span>Module DR Checklist</span>
-    </a>
-    <% if("Service Reporting Management".equals(m_strrole)){ %>
-    <a class="sb-item animals" href="<%=ctx%>/ServletConn">
-      <span class="sb-icon"><i class="fa-solid fa-list-check"></i></span><span>Adhoc Checklist</span>
-    </a>
-    <% } else if("Service Desk".equals(m_strrole)) { %>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/userscorechecklist.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-list-check"></i></span><span>SCORE Checklist</span>
-    </a>
-    <% } else if("Event Management".equals(m_strrole)) { %>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/MonitoringChecklistUser.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-list-check"></i></span><span>Monitoring Checklist</span>
-    </a>
-    <% } else if("Incident Management".equals(m_strrole)) { %>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/IssueMgmtEmployeemain.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-list-check"></i></span><span>Mail's Checklist</span>
-    </a>
-    <% } else if("Problem Management".equals(m_strrole)) { %>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/Problemuserchecklist.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-list-check"></i></span><span>Problem Mgmt Checklist</span>
-    </a>
-    <% } %>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/NightShiftUser.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-moon"></i></span><span>Nightshift Checklist</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/NightShiftCheckList_NEW.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-moon"></i></span><span>New Nightshift Checklist</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/MailsNightShiftChecklist.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-envelope"></i></span><span>Mail's Nightshift Checklist</span>
-    </a>
-
-    <div class="sb-group">Team</div>
-    <% if(("Manager".equals(m_strrole)) || ("Team Lead".equals(m_strrole))){ %>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/ExcelRoster.jsp?&role=<%=m_strrole%>">
-      <span class="sb-icon"><i class="fa-solid fa-calendar-days"></i></span><span>Roster</span>
-    </a>
-    <% } else { %>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/ExcelRoster_new.jsp?&role=<%=m_strrole%>">
-      <span class="sb-icon"><i class="fa-solid fa-calendar-days"></i></span><span>Roster</span>
-    </a>
-    <% } %>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/TicketHome.jsp?&role=<%=m_strrole%>">
-      <span class="sb-icon"><i class="fa-solid fa-ticket"></i></span><span>Ticketing Portal</span>
-    </a>
-
-    <div class="sb-group">Documentation</div>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/EISSOPDashboard.jsp?&role=<%=m_strrole%>">
-      <span class="sb-icon"><i class="fa-solid fa-book"></i></span><span>SOP Management</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/channel_journey.jsp?&role=<%=m_strrole%>">
-      <span class="sb-icon"><i class="fa-solid fa-route"></i></span><span>Channel Journeys</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/ProblemCET.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-clipboard-list"></i></span><span>CET Portal</span>
-    </a>
-
-    <div class="sb-group">Search Tools</div>
-    <a class="sb-item animals" href="<%=ctx%>/multiple.html">
-      <span class="sb-icon"><i class="fa-solid fa-magnifying-glass"></i></span><span>Search Gen5 Reference</span>
-    </a>
-    <a class="sb-item animals" href="https://siapp1.sbi.co.in/LotusTransEnq/Home/About?">
-      <span class="sb-icon"><i class="fa-solid fa-magnifying-glass"></i></span><span>Search SI Reference</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/query.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-terminal"></i></span><span>EIS Query Console</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/ipo-monitor.jsp">
-      <span class="sb-icon"><i class="fa-solid fa-desktop"></i></span><span>IPO Monitor</span>
-    </a>
-
-    <div class="sb-group">Account</div>
-    <a class="sb-item sb-logout" href="<%=ctx%>/login.action">
-      <span class="sb-icon"><i class="fa-solid fa-right-from-bracket"></i></span><span>Logout</span>
-    </a>
-
-  </nav>
-</aside>
-
-<div class="sb-overlay" onclick="document.documentElement.classList.remove('sb-open')"></div>
-
-<header class="topnav">
-  <button class="tn-toggle" onclick="document.documentElement.classList.toggle('sb-open')">
-    <i class="fa-solid fa-bars"></i>
-  </button>
-
-  <button class="tn-menu-btn" onclick="toggleSidebar()" title="Show sidebar">
-    <i class="fa-solid fa-bars"></i>
-  </button>
-
-  <button class="tn-search" onclick="focusSidebarSearch()">
-    <i class="fa-solid fa-magnifying-glass"></i>
-    <span>Search dashboards, reports, tools...</span>
-    <span class="kbd">Ctrl K</span>
-  </button>
-
-  <div class="tn-right">
-    <button class="tn-btn" onclick="toggleTheme()" title="Toggle theme">
-      <i class="fa-solid fa-moon" id="themeIcon"></i>
-    </button>
-    <a class="tn-btn" href="<%=ctx%>/jsp/TicketHome.jsp?&role=<%=m_strrole%>" title="Ticketing">
-      <i class="fa-solid fa-ticket"></i>
-    </a>
-    <a class="tn-btn" href="<%=ctx%>/login.action" title="Logout">
-      <i class="fa-solid fa-right-from-bracket"></i>
-    </a>
-    <div class="tn-avatar" title="<%=m_strrole%>">
-      <%= (m_strrole != null && m_strrole.length() > 0) ? m_strrole.substring(0,1).toUpperCase() : "U" %>
+    <div class="header-info">
+        <p class="blink">
+            This Data get Auto Refresh after <span class="timer" id="ten-countdown"></span> min
+            <span id="timeRangeMessage"></span>
+        </p>
     </div>
-  </div>
-</header>
+
+    <div class="dashboard-container">
+        <div class="chart-wrapper">
+            <div class="chart-title">
+                <span class="status-indicator" id="expStatus"></span>
+                Failure % EXP Service Wise
+            </div>
+            <div id="expChart" class="chart--container">
+                <div id="expLoading" class="loading-indicator">
+                    <div>Loading EXP Dashboard...</div>
+                </div>
+            </div>
+        </div>
+        <div class="chart-wrapper">
+            <div class="chart-title">
+                <span class="status-indicator" id="sysStatus"></span>
+                Failure % SYS Service Wise
+            </div>
+            <div id="sysChart" class="chart--container">
+                <div id="sysLoading" class="loading-indicator">
+                    <div>Loading SYS Dashboard...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
 
 <script>
-function toggleTheme(){
-  var cur = document.documentElement.getAttribute('data-theme') || 'light';
-  var next = cur === 'light' ? 'dark' : 'light';
-  document.documentElement.setAttribute('data-theme', next);
-  try{ localStorage.setItem('eis-theme', next); }catch(e){}
-  updateThemeIcon();
-}
-function updateThemeIcon(){
-  var t = document.documentElement.getAttribute('data-theme') || 'light';
-  var icon = document.getElementById('themeIcon');
-  if(!icon) return;
-  icon.className = t === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
-}
-document.addEventListener('DOMContentLoaded', updateThemeIcon);
-updateThemeIcon();
+var expData = { labels: [], values: [], apiNames: [], brokerNames: [], errorCodes: [], loaded: false };
+var sysData = { labels: [], values: [], apiNames: [], sysBrokerNames: [], errorCodes: [], loaded: false };
 
-function toggleSidebar(){
-  var root = document.documentElement;
-  if(window.innerWidth <= 900){
-    root.classList.toggle('sb-open');
-  } else {
-    root.classList.toggle('sb-collapsed');
-  }
+/* ✅ Theme detect + colors */
+var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+
+function getThemeColors() {
+    var dark = document.documentElement.getAttribute('data-theme') === 'dark';
+    return {
+        bg:        dark ? '#000000' : '#FFFFFF',
+        text:      dark ? '#FFFFFF' : '#0A0A0A',
+        grid:      dark ? '#333333' : '#E5E7EB',
+        tick:      dark ? '#333333' : '#D1D5DB',
+        border:    dark ? '#333333' : '#CCCCCC',
+        /* ✅ Bars — light mode me dark, dark mode me light */
+        expBar1:   dark ? '#99ccff' : '#2563EB',
+        expBar2:   dark ? '#7399ff' : '#1D4ED8',
+        sysBar1:   dark ? '#f2f7f2' : '#7C3AED',
+        sysBar2:   dark ? '#C0C0C0' : '#6D28D9',
+        valueBox:  dark ? '#FFFFFF' : '#0A0A0A',
+        tooltip:   '#673AB7'
+    };
 }
 
-function search_animal() {
-  var input = document.getElementById('searchbar').value.toLowerCase();
-  var x = document.getElementsByClassName('animals');
-  var groups = document.querySelectorAll('.sb-group');
-  for (var i = 0; i < x.length; i++) {
-    if (!x[i].innerText.toLowerCase().includes(input)) {
-      x[i].style.display = "none";
-    } else {
-      x[i].style.display = "flex";
-    }
-  }
-  groups.forEach(function(g){
-    var next = g.nextElementSibling;
-    var hasVisible = false;
-    while(next && !next.classList.contains('sb-group')){
-      if(next.classList.contains('animals') && next.style.display !== 'none'){ hasVisible = true; break; }
-      next = next.nextElementSibling;
-    }
-    g.style.display = (hasVisible || input === '') ? 'block' : 'none';
-  });
+var TC = getThemeColors();
+
+document.addEventListener('DOMContentLoaded', function() {
+    var currentTime = new Date();
+    var tenMinutesAgo = new Date();
+    tenMinutesAgo.setMinutes(currentTime.getMinutes() - 10);
+    var formatTime = function(date) {
+        var hours = date.getHours();
+        var minutes = date.getMinutes();
+        hours = hours < 10 ? '0' + hours : hours;
+        minutes = minutes < 10 ? '0' + minutes : minutes;
+        return hours + ':' + minutes;
+    };
+    var message = '(' + formatTime(tenMinutesAgo) + ' - ' + formatTime(currentTime) + ')';
+    document.getElementById('timeRangeMessage').innerText = message;
+});
+
+function initializeDashboards() {
+    document.getElementById('expStatus').className = 'status-indicator status-loading';
+    document.getElementById('sysStatus').className = 'status-indicator status-loading';
+
+    expData.labels = [<%
+        List<String> expLabelsList = (List<String>)request.getAttribute("expLabels");
+        if(expLabelsList != null) { for(String label: expLabelsList) { out.print("\"" + label.replace("\\","\\\\").replace("\"", "\\\"").replace("\n","").replace("\r","") + "\","); } }
+    %>];
+    expData.values = [<%
+        List<Double> expValuesList = (List<Double>)request.getAttribute("expValues");
+        if(expValuesList != null) { for(Double value: expValuesList) { out.print(value + ","); } }
+    %>];
+    expData.apiNames = [<%
+        List<String> expApiNamesList = (List<String>)request.getAttribute("expApiNames");
+        if(expApiNamesList != null) { for(String name: expApiNamesList) { out.print("\"" + name.replace("\"", "\\\"") + "\","); } }
+    %>];
+    expData.brokerNames = [<%
+        List<String> expBrokerNamesList = (List<String>)request.getAttribute("expBrokerNames");
+        if(expBrokerNamesList != null) { for(String broker: expBrokerNamesList) { out.print("\"" + broker.replace("\"", "\\\"") + "\","); } }
+    %>];
+    expData.errorCodes = [<%
+        List<String> expErrorCodesList = (List<String>)request.getAttribute("expErrorCodes");
+        if(expErrorCodesList != null) { for(String codes: expErrorCodesList) { out.print("\"" + codes.replace("\"", "\\\"") + "\","); } }
+    %>];
+    expData.loaded = true;
+
+    sysData.labels = [<%
+        List<String> sysLabelsList = (List<String>)request.getAttribute("sysLabels");
+        if(sysLabelsList != null) { for(String label: sysLabelsList) { out.print("\"" + label.replace("\\","\\\\").replace("\"", "\\\"").replace("\n","").replace("\r","") + "\","); } }
+    %>];
+    sysData.values = [<%
+        List<Double> sysValuesList = (List<Double>)request.getAttribute("sysValues");
+        if(sysValuesList != null) { for(Double value: sysValuesList) { out.print(value + ","); } }
+    %>];
+    sysData.apiNames = [<%
+        List<String> sysApiNamesList = (List<String>)request.getAttribute("sysApiNames");
+        if(sysApiNamesList != null) { for(String name: sysApiNamesList) { out.print("\"" + name.replace("\"", "\\\"") + "\","); } }
+    %>];
+    sysData.sysBrokerNames = [<%
+        List<String> sysBrokerNamesList = (List<String>)request.getAttribute("sysBrokerNames");
+        if(sysBrokerNamesList != null) { for(String broker: sysBrokerNamesList) { out.print("\"" + broker.replace("\"", "\\\"") + "\","); } }
+    %>];
+    sysData.errorCodes = [<%
+        List<String> sysErrorCodesList = (List<String>)request.getAttribute("sysErrorCodes");
+        if(sysErrorCodesList != null) { for(String codes: sysErrorCodesList) { out.print("\"" + codes.replace("\"", "\\\"") + "\","); } }
+    %>];
+    sysData.loaded = true;
+
+    document.getElementById('expStatus').className = 'status-indicator status-loaded';
+    document.getElementById('sysStatus').className = 'status-indicator status-loaded';
+
+    var expLoading = document.getElementById('expLoading');
+    if(expLoading){ expLoading.style.display = 'none'; }
+    var sysLoading = document.getElementById('sysLoading');
+    if(sysLoading){ sysLoading.style.display = 'none'; }
+
+    renderExpChart();
+    renderSysChart();
+
+    setTimeout(function(){
+        var names = document.querySelectorAll('.ep-name');
+        var color = TC.text;
+        names.forEach(function(el){ el.style.color = color; });
+    }, 300);
 }
-function focusSidebarSearch(){
-  if(window.innerWidth <= 900){
-    document.documentElement.classList.add('sb-open');
-  } else if(document.documentElement.classList.contains('sb-collapsed')){
-    document.documentElement.classList.remove('sb-collapsed');
-  }
-  setTimeout(function(){ document.getElementById('searchbar').focus(); }, 150);
+
+function renderExpChart() {
+    if (!expData.loaded) return;
+
+    var tooltips = [];
+    for (var i = 0; i < expData.values.length; i++) {
+        tooltips.push(
+            "<b>Failure Rate:</b> " + expData.values[i] + "%" +
+            "<br><b>Broker Name:</b> " + (expData.brokerNames[i] || "N/A") +
+            "<br><b>Error Codes:</b> " + (expData.errorCodes[i] || "None") +
+            "<br><b>API:</b> " + expData.apiNames[i] +
+            "<br><b>Click to view details</b>"
+        );
+    }
+
+    var barCount = expData.values.length > 0 ? expData.values.length : 1;
+    var bottomMargin = Math.max(110, barCount * 8);
+    var leftMargin = 110;
+    var rightMargin = 20;
+    var topMargin = 25;
+
+    let chartConfig = {
+        type: "bar3d",
+        "3dAspect": { depth: 15, true3d: 0, yAngle: 8 },
+        backgroundColor: TC.bg,
+        plotarea: {
+            alpha: 1,
+            backgroundColor: TC.bg,
+            margin: topMargin + "px " + rightMargin + "px " + bottomMargin + "px " + leftMargin + "px"
+        },
+        scaleX: {
+            values: expData.labels.length > 0 ? expData.labels : ["No Data"],
+            alpha: 1,
+            backgroundColor: TC.bg,
+            borderColor: TC.border,
+            borderWidth: "1px",
+            guide: { visible: false },
+            item: { fontColor: TC.text, fontSize: "12px", fontFamily: "Arial", wrapText: false, overflow: "visible", maxChars: null, angle: 0, textAlign: "center" },
+            tick: { alpha: 0.2, lineColor: TC.tick },
+            label: { text: '', color: TC.text, fontSize: "16px", offsetX: '-40px' },
+            layout: { type: "auto", adjustLayout: true },
+            maxItems: 50,
+            step: 1,
+            transform: { type: "none" }
+        },
+        scaleY: {
+            alpha: 1,
+            backgroundColor: TC.bg,
+            borderColor: TC.border,
+            borderWidth: "1px",
+            guide: { alpha: 0.3, lineColor: TC.grid, lineStyle: "solid" },
+            item: { fontColor: TC.text, paddingRight: "5px", fontSize: "14px" },
+            tick: { alpha: 0.2, lineColor: TC.tick },
+            label: { text: "Failure %", color: TC.text, fontSize: "14px" },
+            guide: { visible: true, 'line-color': TC.grid, 'line-style': "dotted", alpha: 1 }
+        },
+        series: [{
+            text: "Failure Rate",
+            values: expData.values.length > 0 ? expData.values : [0],
+            "data-tooltip": tooltips,
+            "value-box": { "text": "%v%", "placement": "top", "font-color": TC.valueBox, "font-size": "14px", "font-weight": "bold", "offset-y": -3 },
+            tooltip: { text: "%data-tooltip", backgroundColor: TC.tooltip, borderColor: "none", borderRadius: "5px", fontSize: "14px", padding: "6px 10px", shadow: false, wrapText: true },
+            /* ✅ Bar colors — theme-based */
+            backgroundColor: TC.expBar1 + " " + TC.expBar2,
+            borderColor: TC.border,
+            borderWidth: 1
+        }],
+        options: { responsive: true, maintainAspectRatio: false, scaleOverflow: "visible" }
+    };
+
+    zingchart.render({
+        id: 'expChart',
+        data: chartConfig,
+        height: '100%',
+        width: '100%',
+        callback: function() {
+            var chartContainer = document.getElementById('expChart');
+            if (chartContainer) {
+                var chartDiv = chartContainer.querySelector('.zingchart');
+                if (chartDiv) chartDiv.style.overflow = 'visible';
+            }
+        }
+    });
+
+    zingchart.bind('expChart', 'node_click', function(event) {
+        var nodeIndex = event.nodeindex;
+        if (nodeIndex < expData.apiNames.length) {
+            var apiName = expData.apiNames[nodeIndex];
+            var expUrl = '<%=request.getContextPath() + "/jsp/AutoRefreshExpWiseService.jsp?apiName="%>' + encodeURIComponent(apiName);
+            window.open(expUrl, '_blank');
+        }
+    });
 }
-document.addEventListener('keydown', function(e){
-  if((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k'){
-    e.preventDefault();
-    focusSidebarSearch();
-  }
+
+function renderSysChart() {
+    if (!sysData.loaded) return;
+
+    var tooltips = [];
+    for (var i = 0; i < sysData.values.length; i++) {
+        tooltips.push(
+            "<b>Failure Rate:</b> " + sysData.values[i] + "%" +
+            "<br><b>SYS Broker Name:</b> " + (sysData.sysBrokerNames[i] || "N/A") +
+            "<br><b>Error Codes:</b> " + (sysData.errorCodes[i] || "None") +
+            "<br><b>API:</b> " + sysData.apiNames[i] +
+            "<br><b>Click to view details</b>"
+        );
+    }
+
+    var barCount = sysData.values.length > 0 ? sysData.values.length : 1;
+    var bottomMargin = Math.max(110, barCount * 8);
+    var leftMargin = 110;
+    var rightMargin = 20;
+    var topMargin = 25;
+
+    let chartConfig = {
+        type: "bar3d",
+        "3dAspect": { depth: 15, true3d: 0, yAngle: 8 },
+        backgroundColor: TC.bg,
+        plotarea: {
+            alpha: 1,
+            backgroundColor: TC.bg,
+            margin: topMargin + "px " + rightMargin + "px " + bottomMargin + "px " + leftMargin + "px"
+        },
+        scaleX: {
+            values: sysData.labels.length > 0 ? sysData.labels : ["No Data"],
+            alpha: 1,
+            backgroundColor: TC.bg,
+            borderColor: TC.border,
+            borderWidth: "1px",
+            guide: { visible: false },
+            item: { fontColor: TC.text, fontSize: "12px", fontFamily: "Arial", wrapText: false, overflow: "visible", maxChars: null, angle: 0, textAlign: "center" },
+            tick: { alpha: 0.2, lineColor: TC.tick },
+            label: { text: 'TD Count, API Name, Total count', color: TC.text, fontSize: "16px", offsetX: '-40px' },
+            layout: { type: "auto", adjustLayout: true },
+            maxItems: 50,
+            step: 1,
+            transform: { type: "none" }
+        },
+        scaleY: {
+            alpha: 1,
+            backgroundColor: TC.bg,
+            borderColor: TC.border,
+            borderWidth: "1px",
+            guide: { alpha: 0.3, lineColor: TC.grid, lineStyle: "solid" },
+            item: { fontColor: TC.text, paddingRight: "5px", fontSize: "14px" },
+            tick: { alpha: 0.2, lineColor: TC.tick },
+            label: { text: "Failure %", color: TC.text, fontSize: "14px" },
+            guide: { visible: true, 'line-color': TC.grid, 'line-style': "dotted", alpha: 1 }
+        },
+        series: [{
+            text: "Failure Rate",
+            values: sysData.values.length > 0 ? sysData.values : [0],
+            "data-tooltip": tooltips,
+            "value-box": { "text": "%v%", "placement": "top", "font-color": TC.valueBox, "font-size": "14px", "font-weight": "bold", "offset-y": -3 },
+            tooltip: { text: "%data-tooltip", backgroundColor: TC.tooltip, borderColor: "none", borderRadius: "5px", fontSize: "14px", padding: "6px 10px", shadow: false, wrapText: true },
+            /* ✅ Bar colors — theme-based */
+            backgroundColor: TC.sysBar1 + " " + TC.sysBar2,
+            borderColor: TC.border,
+            borderWidth: 1
+        }],
+        options: { responsive: true, maintainAspectRatio: false, scaleOverflow: "visible" }
+    };
+
+    zingchart.render({
+        id: 'sysChart',
+        data: chartConfig,
+        height: '100%',
+        width: '100%',
+        callback: function() {
+            var chartContainer = document.getElementById('sysChart');
+            if (chartContainer) {
+                var chartDiv = chartContainer.querySelector('.zingchart');
+                if (chartDiv) chartDiv.style.overflow = 'visible';
+            }
+        }
+    });
+
+    zingchart.bind('sysChart', 'node_click', function(event) {
+        var nodeIndex = event.nodeindex;
+        if (nodeIndex < sysData.apiNames.length) {
+            var apiName = sysData.apiNames[nodeIndex];
+            var sysUrl = '<%=request.getContextPath() + "/jsp/AutoRefreshSysWiseService.jsp?apiName="%>' + encodeURIComponent(apiName);
+            window.open(sysUrl, '_blank');
+        }
+    });
+}
+
+function countdown(elementName, minutes, seconds) {
+    var element, endTime, mins, msLeft, time;
+    function twoDigits(n) { return (n <= 9 ? "0" + n : n); }
+    function updateTimer() {
+        msLeft = endTime - (+new Date);
+        if (msLeft < 1000) {
+            element.innerHTML = "0:00";
+            window.location.reload();
+        } else {
+            time = new Date(msLeft);
+            mins = time.getUTCMinutes();
+            element.innerHTML = mins + ':' + twoDigits(time.getUTCSeconds());
+            setTimeout(updateTimer, time.getUTCMilliseconds() + 500);
+        }
+    }
+    element = document.getElementById(elementName);
+    endTime = (+new Date) + 1000 * (60 * minutes + seconds) + 500;
+    updateTimer();
+}
+
+/* ✅ Theme change — charts ko re-render karo (reload nahi) */
+function applyThemeToCharts() {
+    /* Update theme colors */
+    TC = getThemeColors();
+    isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+
+    /* ✅ Re-render charts with new colors (cleaner than setdata) */
+    try {
+        zingchart.exec('expChart', 'destroy');
+    } catch(e) {}
+    try {
+        zingchart.exec('sysChart', 'destroy');
+    } catch(e) {}
+
+    /* Small delay to let destroy complete */
+    setTimeout(function(){
+        renderExpChart();
+        renderSysChart();
+
+        /* Endpoint labels color */
+        var names = document.querySelectorAll('.ep-name');
+        names.forEach(function(el){ el.style.color = TC.text; });
+    }, 100);
+}
+
+var lastTheme = document.documentElement.getAttribute('data-theme') || 'light';
+setInterval(function(){
+    var now = document.documentElement.getAttribute('data-theme') || 'light';
+    if(now !== lastTheme){
+        lastTheme = now;
+        applyThemeToCharts();
+    }
+}, 500);
+
+document.addEventListener('DOMContentLoaded', function(){
+    initializeDashboards();
+    countdown("ten-countdown", 10, 0);
 });
 </script>
+</body>
+</html>
