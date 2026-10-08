@@ -22,11 +22,11 @@
 
 .blink {
     animation: blinker 0s linear infinite;
-    color: white;
     font-family: sans-serif;
     font-size: larger;
     text-align-last: center;
     font-weight: 900;
+    color: var(--ink);
 }
 
 .footer {
@@ -34,7 +34,7 @@
     left: 0;
     bottom: 0;
     width: 100%;
-    color: white;
+    color: var(--ink);
     text-align: center;
 }
 
@@ -72,15 +72,20 @@
 .modal-footer { padding: 2px 16px; background-color: #AB5AF3; color: white; }
 
 .timer {
-    border: 5px solid white;
+    border: 5px solid var(--brand);
     display: inline;
     padding: 5px;
-    color: white;
+    color: var(--ink);
     font-family: Verdana, sans-serif, Arial;
     font-size: 40px;
     height: 50px;
     font-weight: bold;
     text-decoration: none;
+    border-radius: 8px;
+    background: var(--brand-light);
+}
+html[data-theme="dark"] .timer {
+    background: rgba(248,111,3,.15);
 }
 
 .button-container {
@@ -97,42 +102,41 @@
 }
 
 /* ================================================================
-   SIDEBAR INTEGRATION — SIRF 3 CHEEZEIN
+   THEME-AWARE OVERRIDES — page bhi theme ke saath change ho
    ================================================================ */
 
-/* 1. Body ka black bg — topnav aur sidebar ke saath match ho */
+/* ✅ Body — theme-aware background aur text */
 body {
-    background-color: #000000 !important;
+    background-color: var(--bg) !important;
+    color: var(--ink) !important;
     margin: 0 !important;
     padding: 0 !important;
+    transition: background .3s ease, color .3s ease;
 }
 
-/* 2. Topnav ko transparent/dark karo — page ka bg dikhe usme */
+/* ✅ Topnav — theme ke saath match kare */
 .topnav {
-    background: rgba(0, 0, 0, 0.85) !important;
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    border-bottom: 1px solid rgba(255,255,255,.08) !important;
+    background: var(--topnav-bg) !important;
+    border-bottom: 1px solid var(--line) !important;
 }
 .topnav .tn-search {
-    background: rgba(255,255,255,.06) !important;
-    border-color: rgba(255,255,255,.1) !important;
-    color: #cbd5e1 !important;
+    background: var(--card) !important;
+    border-color: var(--line) !important;
+    color: var(--muted) !important;
 }
 .topnav .tn-search:hover {
     border-color: var(--brand) !important;
-    color: #fff !important;
-    background: rgba(255,255,255,.1) !important;
+    color: var(--ink) !important;
 }
 .topnav .tn-search .kbd {
-    background: rgba(255,255,255,.08) !important;
-    border-color: rgba(255,255,255,.15) !important;
-    color: #94a3b8 !important;
+    background: var(--sidebar-hover) !important;
+    border-color: var(--line) !important;
+    color: var(--muted) !important;
 }
 .topnav .tn-menu-btn {
-    background: rgba(255,255,255,.06) !important;
-    border-color: rgba(255,255,255,.1) !important;
-    color: #fff !important;
+    background: var(--sidebar-hover) !important;
+    border-color: var(--line) !important;
+    color: var(--ink) !important;
 }
 .topnav .tn-menu-btn:hover {
     background: var(--brand) !important;
@@ -141,41 +145,44 @@ body {
 }
 .topnav .tn-btn {
     background: transparent !important;
-    border-color: rgba(255,255,255,.1) !important;
-    color: #fff !important;
+    border-color: var(--line) !important;
+    color: var(--ink) !important;
 }
 .topnav .tn-btn:hover {
     background: var(--brand) !important;
     border-color: var(--brand) !important;
-}
-.topnav .tn-toggle {
-    border-color: rgba(255,255,255,.1) !important;
     color: #fff !important;
 }
+.topnav .tn-toggle {
+    border-color: var(--line) !important;
+    color: var(--ink) !important;
+}
 
-/* 3. Content ko topnav ke neeche properly start karo */
+/* ✅ Content wrapper — topnav ke neeche, proper spacing */
 .new-wrapper {
-    padding-top: 64px !important;   /* topnav height */
-    margin-left: 260px !important;   /* sidebar width */
-    background-color: #000000;
+    padding-top: 64px !important;
+    margin-left: 260px !important;
+    background-color: var(--bg);
     min-height: 100vh;
+    transition: margin-left .3s cubic-bezier(.4,0,.2,1), background .3s ease;
 }
 html.sb-collapsed .new-wrapper {
     margin-left: 0 !important;
 }
 
-/* Chart ke upar wali p (blink) ko proper spacing do */
+/* ✅ Blink <p> — topnav ke neeche properly */
 .new-wrapper .blink {
     margin: 0 !important;
-    padding: 12px 20px 8px 20px !important;
+    padding: 16px 20px 8px 20px !important;
+    color: var(--ink) !important;
 }
 
-/* Button container padding */
+/* ✅ Button container */
 .new-wrapper .button-container {
     margin: 6px 20px 20px 20px !important;
 }
 
-/* Chart container — original margin-top hata do, kyunki new-wrapper me already space hai */
+/* ✅ Chart container — theme ke saath bg change */
 .new-wrapper .chart--container {
     margin-top: 20px !important;
     padding: 0 20px !important;
@@ -184,14 +191,19 @@ html.sb-collapsed .new-wrapper {
     position: relative;
 }
 
-/* Footer */
+/* ✅ Footer */
 .new-wrapper .footer {
     margin-top: 20px;
     padding-bottom: 20px;
 }
 .new-wrapper .footer p {
-    color: white !important;
+    color: var(--ink) !important;
 }
+
+/* ================================================================
+   ZINGCHART THEME OVERRIDE
+   Light mode me chart ka bg bhi light, dark me dark
+   ================================================================ */
 </style>
 </head>
 <body>
@@ -221,11 +233,6 @@ function openPopup1() {
 document.addEventListener('DOMContentLoaded', function(){
     document.getElementById('openPopup1').addEventListener('click', openPopup1);
 });
-
-function myFunction_Time() {
-    var x = document.lastModified;
-    document.getElementById("demo").innerHTML = x;
-}
 </script>
 
 <script>
@@ -260,21 +267,27 @@ statement.close();
 conn.close();
 %>
 
+/* ✅ Chart background — theme ke hisaab se */
+var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+var chartBg = isDark ? '#000000' : '#FFFFFF';
+var chartTextColor = isDark ? '#FFFFFF' : '#0A0A0A';
+var chartAxisBg = isDark ? '#000000' : '#FFFFFF';
+
 let chartConfig = {
     type: "bar3d",
     "3dAspect": { depth: 30, true3d: 0, yAngle: 10 },
-    backgroundColor: "#000000",
+    backgroundColor: chartBg,
     title: {
         text: "Failure %   End Point Wise",
         fontWeight: "bold",
         height: "25px",
-        color: "#FFFFFF",
+        color: chartTextColor,
         fontSize: "40px",
         fontFamily: "Times New Roman",
     },
     plotarea: {
         alpha: 0.3,
-        backgroundColor: "#000000",
+        backgroundColor: chartBg,
         margin: "50px 35px 250px 200px",
     },
     scaleX: {
@@ -296,14 +309,14 @@ let chartConfig = {
             }
         %>],
         alpha: 0.5,
-        backgroundColor: "#fff",
-        borderColor: "#333",
+        backgroundColor: chartBg,
+        borderColor: isDark ? "#333" : "#ccc",
         borderWidth: "1px",
         guide: { visible: false },
-        item: { fontColor: "#fff", fontSize: "30px" },
-        tick: { alpha: 0.2, lineColor: "#333" },
+        item: { fontColor: chartTextColor, fontSize: "30px" },
+        tick: { alpha: 0.2, lineColor: isDark ? "#333" : "#999" },
         label: {
-            text: '<p style="color:#ff9933;">TD FAILURE, </p><p style="color:#FFFFFF;"> END POINT, </p><p style="color:#32CD32;">TOTAL HITS</p>',
+            text: '<p style="color:#ff9933;">TD FAILURE, </p><p style="color:' + chartTextColor + ';"> END POINT, </p><p style="color:#32CD32;">TOTAL HITS</p>',
             color: "red",
             fontSize: "30",
             offsetX: '-100px',
@@ -311,19 +324,19 @@ let chartConfig = {
         item: { 'font-size': 30 },
         guide: {
             visible: true,
-            'line-color': "black",
+            'line-color': isDark ? "#333" : "#ddd",
             'line-style': "dotted",
             alpha: 1
         }
     },
     scaleY: {
         alpha: 0.5,
-        backgroundColor: "#fff",
-        borderColor: "#fff",
+        backgroundColor: chartBg,
+        borderColor: isDark ? "#fff" : "#333",
         borderWidth: "1px",
-        guide: { alpha: 0.2, lineColor: "#FFF", lineStyle: "solid" },
-        item: { fontColor: "#FFF", paddingRight: "10px" },
-        tick: { alpha: 0.2, lineColor: "#333" },
+        guide: { alpha: 0.2, lineColor: isDark ? "#FFF" : "#333", lineStyle: "solid" },
+        item: { fontColor: chartTextColor, paddingRight: "10px" },
+        tick: { alpha: 0.2, lineColor: isDark ? "#333" : "#999" },
         label: {
             text: "Failure Percentage",
             color: "red",
@@ -332,7 +345,7 @@ let chartConfig = {
         item: { 'font-size': 30 },
         guide: {
             visible: true,
-            'line-color': "black",
+            'line-color': isDark ? "#333" : "#ddd",
             'line-style': "dotted",
             alpha: 1
         }
@@ -349,7 +362,7 @@ let chartConfig = {
             "value-box": {
                 "text": "%v %",
                 "placement": "top",
-                "font-color": "#ffffff",
+                "font-color": chartTextColor,
                 "font-size": "30px",
                 "font-weight": "bold",
                 "offset-y": -10,
@@ -381,6 +394,16 @@ zingchart.render({
 });
 
 zingchart.bind('myChart', 'node_click', updateChart);
+
+/* ✅ Theme change hone pe chart ko re-render karo */
+var _lastTheme = isDark ? 'dark' : 'light';
+setInterval(function(){
+    var now = document.documentElement.getAttribute('data-theme') || 'light';
+    if(now !== _lastTheme){
+        _lastTheme = now;
+        location.reload();
+    }
+}, 500);
 
 var modal = document.getElementById("myModal");
 var btn = document.getElementById("myBtn");
@@ -429,7 +452,7 @@ countdown( "ten-countdown", 10, 0 );
 </script>
 
 <div class="footer">
-    <p class="font-italic text-center text-bottom" style="position:relative; color: white; font-size: 15px; top: -20px;">Designed by @Shubham Chaudhari &amp; Developed by @Anil Gupta</p>
+    <p class="font-italic text-center text-bottom" style="position:relative; color: var(--ink); font-size: 15px; top: -20px;">Designed by @Shubham Chaudhari &amp; Developed by @Anil Gupta</p>
 </div>
 
 </div>
