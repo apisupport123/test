@@ -12,381 +12,280 @@
 <meta http-equiv="refresh" content="600">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ATM IP Port Wise</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link rel="stylesheet" href="<%=request.getContextPath()%>/css/Atmbootstrap.min.css">
 <script src="<%=request.getContextPath()%>/js/Atmjquery.min.js"></script>
 <script src="<%=request.getContextPath()%>/js/Atmbootstrap.min.js"></script>
 
 <style>
-/* ============ PAGE BASE ============ */
+/* ============ THEME-AWARE OVERRIDES ============ */
 body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+    font-family: Arial, sans-serif !important;
     background: var(--bg) !important;
     color: var(--ink) !important;
     margin: 0 !important;
     padding: 0 !important;
 }
 
-.page-container {
-    padding: 28px 32px 48px;
-    max-width: 1600px;
+/* Content wrapper — topnav ke neeche se */
+.atm-wrap {
+    padding: 20px 24px 40px;
+    max-width: 3050px;
     margin: 0 auto;
 }
 
-/* ============ PAGE HEADER ============ */
-.page-head {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 16px;
-    margin-bottom: 24px;
-    flex-wrap: wrap;
-}
-.page-head .ttl-wrap { flex: 1; min-width: 260px; }
-.page-head .ttl {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-weight: 800;
-    font-size: 1.65rem;
-    letter-spacing: -0.6px;
-    color: var(--ink);
-    line-height: 1.2;
-    margin: 0;
-}
-.page-head .ttl .ttl-icon {
-    width: 44px; height: 44px;
-    display: grid; place-items: center;
-    background: var(--brand-light);
-    color: var(--brand);
-    border-radius: 12px;
-    font-size: 1.05rem;
-    flex-shrink: 0;
-}
-html[data-theme="dark"] .page-head .ttl .ttl-icon {
-    background: rgba(248,111,3,.15);
-}
-.page-head .sub {
-    color: var(--muted);
-    font-size: 0.9rem;
-    margin: 6px 0 0 56px;
-    font-weight: 500;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-}
-.refresh-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 12px;
-    background: var(--brand-light);
-    color: var(--brand);
-    border-radius: 999px;
-    font-size: 0.75rem;
-    font-weight: 600;
-}
-html[data-theme="dark"] .refresh-badge {
-    background: rgba(248,111,3,.15);
-}
-.refresh-badge .timer {
-    font-family: 'JetBrains Mono', Consolas, monospace;
-    font-weight: 700;
-    font-size: 0.85rem;
-}
-
-.btn-manual {
-    padding: 11px 22px;
-    border-radius: 11px;
-    font-weight: 700;
-    font-size: 0.82rem;
-    border: none;
-    background: #F59E0B;
-    color: #fff;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-family: inherit;
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
-    box-shadow: 0 4px 14px -4px #F59E0B;
-}
-.btn-manual:hover {
-    background: #D97706;
-    transform: translateY(-1px);
-    box-shadow: 0 8px 22px -6px #F59E0B;
-}
-
-/* ============ SECTION ============ */
-.section {
-    margin-bottom: 32px;
-}
-.section-head {
-    display: flex;
-    align-items: center;
-    gap: 12px;
+/* Page heading */
+.atm-head {
+    text-align: center;
     margin-bottom: 16px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid var(--line);
 }
-.section-head .s-icon {
-    width: 34px; height: 34px;
-    display: grid; place-items: center;
-    background: var(--brand-light);
-    color: var(--brand);
-    border-radius: 10px;
-    font-size: 0.85rem;
-    flex-shrink: 0;
-}
-html[data-theme="dark"] .section-head .s-icon {
-    background: rgba(248,111,3,.15);
-}
-.section-head h3 {
-    font-size: 1.05rem;
-    font-weight: 800;
+.atm-head h1 {
+    font-size: 2rem;
+    font-weight: 700;
     color: var(--ink);
-    letter-spacing: -0.3px;
+    letter-spacing: -0.5px;
+    margin: 0 0 8px 0;
+    text-align: center;
+}
+.atm-head .blink {
+    font-size: 30px;
+    text-align: center;
+    color: var(--ink);
     margin: 0;
 }
-.section-head .count-badge {
-    margin-left: auto;
-    font-size: 0.72rem;
-    font-weight: 700;
-    color: var(--muted);
-    background: var(--card);
-    border: 1px solid var(--line);
-    padding: 4px 12px;
-    border-radius: 999px;
+
+/* Timer badge */
+.timer {
+    border: 5px solid var(--brand);
+    display: inline;
+    padding: 5px 12px;
+    color: var(--ink);
+    font-family: Verdana, sans-serif, Arial;
+    font-size: 40px;
+    height: 50px;
+    font-weight: bold;
+    text-decoration: none;
+    border-radius: 8px;
+    background: var(--brand-light);
+}
+html[data-theme="dark"] .timer {
+    background: rgba(248,111,3,.15);
+    border-color: var(--brand);
+    color: var(--brand);
 }
 
-/* ============ CARD GRID ============ */
-.card-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 14px;
-}
-
-.card {
-    width: auto !important;
-    height: auto !important;
-    margin: 0 !important;
-    min-height: 150px;
-    border-radius: 14px !important;
-    box-shadow: 0 2px 12px rgba(0,0,0,.05) !important;
-    transition: all 0.25s ease;
-    cursor: pointer;
-    position: relative;
-    overflow: hidden;
-    border: none !important;
-    color: #fff;
+/* Button container */
+.button-container {
     display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding: 20px;
+    justify-content: flex-end;
+    margin-right: 10px;
+    margin-bottom: 20px;
+}
+.button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-right: 10px;
+    background-color: #ebe310;
+    color: black;
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: 600;
+    transition: all .2s ease;
+}
+.button:hover {
+    background-color: #d4cc00;
+    transform: translateY(-1px);
 }
 
-.card::before {
-    content: "";
-    position: absolute;
-    top: -60px; right: -60px;
-    width: 140px; height: 140px;
-    border-radius: 50%;
-    background: rgba(255,255,255,.1);
-    transition: all .4s ease;
-    pointer-events: none;
+/* Card container — original flex */
+.card-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    margin-bottom: 30px;
+    gap: 0;
 }
-.card:hover::before {
-    transform: scale(1.5);
-    opacity: .25;
+
+/* Card — original size */
+.card {
+    width: 310px !important;
+    height: 180px !important;
+    margin: 10px !important;
+    text-align: center;
+    transition: transform 0.3s ease, background-color 0.3s ease;
+    border-radius: 10px !important;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) !important;
+    color: white !important;
+    cursor: pointer;
+    border: none !important;
+    padding: 0 !important;
 }
+
 .card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 16px 40px -12px rgba(0,0,0,.25) !important;
+    transform: scale(1.05) !important;
 }
 
 .card-zero {
-    background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%) !important;
+    background-color: #dc3545 !important;
 }
 .card-zero:hover {
-    background: linear-gradient(135deg, #B91C1C 0%, #991B1B 100%) !important;
+    background-color: #c82333 !important;
 }
+
 .card-nonzero {
-    background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%) !important;
+    background-color: #007bff !important;
 }
 .card-nonzero:hover {
-    background: linear-gradient(135deg, #1D4ED8 0%, #1E40AF 100%) !important;
+    background-color: #0056b3 !important;
 }
 
 .card-body {
-    display: flex;
+    display: flex !important;
     flex-direction: column;
     justify-content: center;
     height: 100%;
-    position: relative;
-    z-index: 2;
     padding: 0 !important;
 }
+
 .card-info {
-    font-size: 0.9rem;
+    font-size: 14px;
 }
+
 .card-title {
-    font-weight: 800 !important;
-    font-size: 0.95rem !important;
+    font-weight: bold !important;
     margin-bottom: 10px !important;
-    color: #fff;
-    letter-spacing: -0.3px;
-    line-height: 1.3;
-    word-break: break-word;
+    font-size: 18px !important;
+    color: #fff !important;
+    letter-spacing: 0 !important;
 }
+
 .card-text {
-    font-size: 0.78rem !important;
-    margin: 3px 0 !important;
-    opacity: .92;
-    font-weight: 500;
-}
-.card-text b {
-    font-weight: 800;
+    font-size: 14px !important;
+    color: #fff !important;
+    margin: 4px 0 !important;
+    opacity: 1 !important;
 }
 
-.card-badge {
-    position: absolute;
-    top: 14px;
-    right: 14px;
-    padding: 3px 10px;
-    border-radius: 999px;
-    font-size: 0.65rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    z-index: 3;
+/* Section */
+.section {
+    margin-bottom: 30px;
 }
-.card-zero .card-badge {
-    background: rgba(255,255,255,.2);
-    color: #fff;
-}
-.card-nonzero .card-badge {
-    background: rgba(255,255,255,.2);
-    color: #fff;
+.section h3 {
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--ink);
+    letter-spacing: -0.3px;
+    margin: 0 0 14px 0;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--line);
 }
 
-/* ============ EMPTY STATE ============ */
+/* Empty state */
 .empty-state {
-    grid-column: 1 / -1;
+    width: 100%;
     text-align: center;
     padding: 40px 20px;
     color: var(--muted);
-    background: var(--card);
-    border: 1px dashed var(--line);
-    border-radius: 14px;
-    font-size: 0.85rem;
-}
-.empty-state i {
-    font-size: 2rem;
-    color: var(--brand);
-    opacity: .4;
-    display: block;
-    margin-bottom: 10px;
+    font-size: 0.95rem;
+    font-style: italic;
 }
 
-/* ============ MODAL (theme-aware) ============ */
+/* ============ MODAL (theme-aware, original sizes) ============ */
 .modal-content {
     background: var(--card) !important;
-    border: 1px solid var(--line) !important;
-    border-radius: 18px !important;
     color: var(--ink) !important;
+    border: 1px solid var(--line) !important;
+    border-radius: 10px !important;
 }
 .modal-header {
     border-bottom: 1px solid var(--line) !important;
-    padding: 16px 20px !important;
+    padding: 15px !important;
+    background: var(--bg);
 }
 .modal-title {
     color: var(--ink) !important;
-    font-weight: 800 !important;
+    font-size: 1.15rem;
+    font-weight: 700;
 }
 .modal-body {
-    padding: 18px 20px !important;
+    padding: 20px !important;
     color: var(--ink) !important;
 }
 .modal-body p {
     color: var(--ink);
-    font-size: 0.85rem;
+    font-size: 0.95rem;
     margin-bottom: 8px;
 }
 .modal-body strong {
-    color: var(--muted);
-    font-size: 0.78rem;
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
-    display: block;
-    margin-bottom: 4px;
+    font-weight: 700;
+    color: var(--ink);
 }
 .modal-body .form-control {
     background: var(--bg) !important;
-    border: 1.5px solid var(--line) !important;
-    border-radius: 10px !important;
+    border: 1px solid var(--line) !important;
+    border-radius: 6px !important;
     color: var(--ink) !important;
     font-family: inherit;
-    font-size: 0.85rem;
-    padding: 10px 12px;
+    font-size: 0.95rem;
+    padding: 8px 12px;
 }
 .modal-body .form-control:focus {
     border-color: var(--brand) !important;
-    box-shadow: 0 0 0 4px rgba(248,111,3,.12) !important;
+    box-shadow: 0 0 0 3px rgba(248,111,3,.12) !important;
     background: var(--card) !important;
     color: var(--ink) !important;
 }
 .modal-footer {
     border-top: 1px solid var(--line) !important;
-    padding: 14px 20px !important;
+    padding: 15px !important;
+    background: var(--bg);
 }
 .modal-footer .btn-primary {
     background: var(--brand) !important;
-    border: none !important;
-    border-radius: 10px !important;
+    border-color: var(--brand) !important;
+    color: #fff !important;
+    border-radius: 6px !important;
     padding: 10px 24px !important;
-    font-weight: 700 !important;
-    font-size: 0.82rem !important;
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
-    box-shadow: 0 4px 14px -4px var(--brand) !important;
+    font-weight: 600 !important;
+    font-size: 0.95rem !important;
 }
 .modal-footer .btn-primary:hover {
     background: var(--brand-2) !important;
-    transform: translateY(-1px);
+    border-color: var(--brand-2) !important;
 }
 .modal-header .close {
     color: var(--muted) !important;
     opacity: 1 !important;
-    font-size: 1.5rem;
     text-shadow: none !important;
-    outline: none;
+    font-size: 1.6rem;
 }
 .modal-header .close:hover {
     color: var(--ink) !important;
 }
 
-/* ============ RESPONSIVE ============ */
-@media (max-width: 900px) {
-    .page-container { padding: 20px 16px 32px; }
-    .page-head .ttl { font-size: 1.3rem; }
-    .page-head .ttl .ttl-icon { width: 38px; height: 38px; font-size: .9rem; }
-    .page-head .sub { margin-left: 50px; font-size: 0.82rem; }
-    .card-container { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+/* Textarea/select placeholder */
+.modal-body textarea::placeholder {
+    color: var(--muted);
+    opacity: .6;
 }
-@media (max-width: 500px) {
-    .card-container { grid-template-columns: 1fr 1fr; gap: 10px; }
-    .card { min-height: 130px; padding: 16px; }
-    .card-title { font-size: 0.82rem !important; }
-    .card-text { font-size: 0.72rem !important; }
+
+/* Responsive — chhota card on mobile */
+@media (max-width: 700px) {
+    .atm-wrap { padding: 16px; }
+    .atm-head h1 { font-size: 1.4rem; }
+    .atm-head .blink { font-size: 1.1rem; }
+    .timer { font-size: 24px; padding: 3px 8px; border-width: 3px; }
+    .card { width: calc(50% - 20px) !important; height: 160px !important; }
+    .section h3 { font-size: 1.15rem; }
+}
+@media (max-width: 480px) {
+    .card { width: 100% !important; }
 }
 </style>
 
 <script>
-    /* Same original logic — form reset */
     $(document).ready(function () {
         $("#close,#submitBtn").click(function (e) {
             e.preventDefault();
@@ -427,54 +326,39 @@ html[data-theme="dark"] .section-head .s-icon {
 %>
 
 <div class="new-wrapper">
-<div class="page-container">
+<div class="atm-wrap">
 
     <!-- ============ PAGE HEADER ============ -->
-    <div class="page-head">
-        <div class="ttl-wrap">
-            <h1 class="ttl">
-                <span class="ttl-icon"><i class="fas fa-credit-card"></i></span>
-                ATM IP Port Wise
-            </h1>
-            <p class="sub">
-                Live ATM services monitoring · auto refresh in
-                <span class="refresh-badge">
-                    <i class="far fa-clock"></i>
-                    <span class="timer" id="ten-countdown">--:--</span>
-                </span>
-            </p>
-        </div>
-        <button class="btn-manual" onclick="openNewPageManual()">
-            <i class="fas fa-exchange-alt"></i> Switch to Manual
-        </button>
+    <div class="atm-head">
+        <h1>ATM IP Port Wise</h1>
+        <p class="blink">
+            This Data gets Auto Refresh after
+            <span class="timer" id="ten-countdown"></span>
+            Minutes
+        </p>
+    </div>
+
+    <div class="button-container">
+        <input type="button" class="button" onclick="openNewPageManual();" value="Switch To Manual">
     </div>
 
     <!-- ============ YONO 2.0 SECTION ============ -->
     <div class="section">
-        <div class="section-head">
-            <div class="s-icon"><i class="fas fa-mobile-alt"></i></div>
-            <h3>Yono 2.0 Cash Business Services</h3>
-            <span class="count-badge">
-                <%
-                    ArrayList<Integer> totalYono2Count = (ArrayList<Integer>) request.getAttribute("totalYonoNew");
-                    out.print(totalYono2Count != null ? totalYono2Count.size() : 0);
-                %> services
-            </span>
-        </div>
+        <h3>Yono 2.0 Cash Business Services</h3>
         <div class="card-container">
         <%
             String[] yono2Names = {"YONOCash_Business_8092","YONOCash_Business_8093","YONOCash_Business_8094","YONOCash_Business_8095","YONOCash_Business_8096","YONOCash_Business_8097","YONOCash_Business_8098","YONOCash_Business_8099"};
             ArrayList<Integer> totalYono2 = (ArrayList<Integer>) request.getAttribute("totalYonoNew");
             ArrayList<String> ipYono2 = (ArrayList<String>) request.getAttribute("ipYonoNew");
-            if (totalYono2 != null && ipYono2 != null && totalYono2.size() > 0) {
+            if (totalYono2 != null && ipYono2 != null) {
                 for (int i = 0; i < totalYono2.size(); i++) {
                     int totalHits = totalYono2.get(i);
                     String ip = ipYono2.get(i);
                     String cardClass = totalHits == 0 ? "card card-zero" : "card card-nonzero";
-                    if(totalHits == 0) {
+                    if(totalHits == 0){
                         if(list.contains(yono2Names[i])) {
         %>
-            <div class="card card-nonzero" data-name="<%= yono2Names[i] %>" data-hits="<%= totalHits %>" data-ip="<%= ip %>">
+            <div class="card card-nonzero">
         <%
                         } else {
         %>
@@ -487,24 +371,16 @@ html[data-theme="dark"] .section-head .s-icon {
         <%
                     }
         %>
-                <span class="card-badge"><%= totalHits == 0 ? "STOPPED" : "RUNNING" %></span>
                 <div class="card-body">
                     <div class="card-info">
                         <p class="card-title"><%= yono2Names[i] %></p>
-                        <p class="card-text"><b>Hits:</b> <%= totalHits %></p>
-                        <p class="card-text"><b>IP:</b> <%= ip %></p>
+                        <p class="card-text">Hits: <%= totalHits %></p>
+                        <p class="card-text">IP: <%= ip %></p>
                     </div>
                 </div>
             </div>
         <%
                 }
-            } else {
-        %>
-            <div class="empty-state">
-                <i class="fas fa-inbox"></i>
-                No data available for YONO 2.0 services
-            </div>
-        <%
             }
         %>
         </div>
@@ -512,30 +388,21 @@ html[data-theme="dark"] .section-head .s-icon {
 
     <!-- ============ SEND OTP SMS SECTION ============ -->
     <div class="section">
-        <div class="section-head">
-            <div class="s-icon"><i class="fas fa-sms"></i></div>
-            <h3>Send OTP SMS Services</h3>
-            <span class="count-badge">
-                <%
-                    ArrayList<Integer> totalOtpsCount = (ArrayList<Integer>) request.getAttribute("totalOtp");
-                    out.print(totalOtpsCount != null ? totalOtpsCount.size() : 0);
-                %> services
-            </span>
-        </div>
+        <h3>Send OTP Sms Services</h3>
         <div class="card-container">
         <%
             String[] otpsNames = {"sendOtpSms_8115","sendOtpSms_8116","sendOtpSms_8117","sendOtpSms_8118","sendOtpSms_8119","sendOtpSms_8120","sendOtpSms_8121","sendOtpSms_8122","sendOtpSms_8123","sendOtpSms_8124","sendOtpSms_8125","sendOtpSms_8126","sendOtpSms_8127","sendOtpSms_8128","sendOtpSms_8129","sendOtpSms_8130","sendOtpSms_8131","sendOtpSms_8132","sendOtpSms_8133","sendOtpSms_8134","sendOtpSms_8135","sendOtpSms_8136","sendOtpSms_8137","sendOtpSms_8138","sendOtpSms_8139"};
             ArrayList<Integer> totalOtps = (ArrayList<Integer>) request.getAttribute("totalOtp");
             ArrayList<String> ipOtps = (ArrayList<String>) request.getAttribute("ipOtp");
-            if (totalOtps != null && ipOtps != null && totalOtps.size() > 0) {
+            if (totalOtps != null && ipOtps != null) {
                 for (int i = 0; i < totalOtps.size(); i++) {
                     int totalHits = totalOtps.get(i);
                     String ip = ipOtps.get(i);
                     String cardClass = totalHits == 0 ? "card card-zero" : "card card-nonzero";
-                    if(totalHits == 0) {
+                    if(totalHits == 0){
                         if(list.contains(otpsNames[i])) {
         %>
-            <div class="card card-nonzero" data-name="<%= otpsNames[i] %>" data-hits="<%= totalHits %>" data-ip="<%= ip %>">
+            <div class="card card-nonzero">
         <%
                         } else {
         %>
@@ -548,24 +415,16 @@ html[data-theme="dark"] .section-head .s-icon {
         <%
                     }
         %>
-                <span class="card-badge"><%= totalHits == 0 ? "STOPPED" : "RUNNING" %></span>
                 <div class="card-body">
                     <div class="card-info">
                         <p class="card-title"><%= otpsNames[i] %></p>
-                        <p class="card-text"><b>Hits:</b> <%= totalHits %></p>
-                        <p class="card-text"><b>IP:</b> <%= ip %></p>
+                        <p class="card-text">Hits: <%= totalHits %></p>
+                        <p class="card-text">IP: <%= ip %></p>
                     </div>
                 </div>
             </div>
         <%
                 }
-            } else {
-        %>
-            <div class="empty-state">
-                <i class="fas fa-inbox"></i>
-                No data available for OTP SMS services
-            </div>
-        <%
             }
         %>
         </div>
@@ -573,30 +432,21 @@ html[data-theme="dark"] .section-head .s-icon {
 
     <!-- ============ OTHER SERVICES SECTION ============ -->
     <div class="section">
-        <div class="section-head">
-            <div class="s-icon"><i class="fas fa-cog"></i></div>
-            <h3>Other Services</h3>
-            <span class="count-badge">
-                <%
-                    ArrayList<Integer> totalOthersCount = (ArrayList<Integer>) request.getAttribute("totalOther");
-                    out.print(totalOthersCount != null ? totalOthersCount.size() : 0);
-                %> services
-            </span>
-        </div>
+        <h3>Other Services</h3>
         <div class="card-container">
         <%
             String[] othersName = {"PCMS_ATM_8026","KycUpdation_ATM_TCP_8025","KycBranchTransfer_ATM_TCP_8027","YONOCash_POS_8082","NCMC_ATM_TCPIP_8020"};
             ArrayList<Integer> totalOthers = (ArrayList<Integer>) request.getAttribute("totalOther");
             ArrayList<String> ipOthers = (ArrayList<String>) request.getAttribute("ipOther");
-            if (totalOthers != null && ipOthers != null && totalOthers.size() > 0) {
+            if (totalOthers != null && ipOthers != null) {
                 for (int i = 0; i < totalOthers.size(); i++) {
                     int totalHits = totalOthers.get(i);
                     String ip = ipOthers.get(i);
                     String cardClass = totalHits == 0 ? "card card-zero" : "card card-nonzero";
-                    if(totalHits == 0) {
+                    if(totalHits == 0){
                         if(list.contains(othersName[i])) {
         %>
-            <div class="card card-nonzero" data-name="<%= othersName[i] %>" data-hits="<%= totalHits %>" data-ip="<%= ip %>">
+            <div class="card card-nonzero">
         <%
                         } else {
         %>
@@ -609,24 +459,16 @@ html[data-theme="dark"] .section-head .s-icon {
         <%
                     }
         %>
-                <span class="card-badge"><%= totalHits == 0 ? "STOPPED" : "RUNNING" %></span>
                 <div class="card-body">
                     <div class="card-info">
                         <p class="card-title"><%= othersName[i] %></p>
-                        <p class="card-text"><b>Hits:</b> <%= totalHits %></p>
-                        <p class="card-text"><b>IP:</b> <%= ip %></p>
+                        <p class="card-text">Hits: <%= totalHits %></p>
+                        <p class="card-text">IP: <%= ip %></p>
                     </div>
                 </div>
             </div>
         <%
                 }
-            } else {
-        %>
-            <div class="empty-state">
-                <i class="fas fa-inbox"></i>
-                No data available for other services
-            </div>
-        <%
             }
         %>
         </div>
@@ -641,20 +483,20 @@ html[data-theme="dark"] .section-head .s-icon {
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h4 class="modal-title"><i class="fas fa-info-circle" style="color:var(--brand);margin-right:8px;"></i><b>Card Information</b></h4>
                 <button type="button" id="close" class="close" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title"><b>Card Information</b></h4>
             </div>
             <div class="modal-body">
-                <p><strong>Name</strong> <span id="modal-card-name" style="font-weight:700;color:var(--ink);"></span></p>
-                <p><strong>Reason</strong></p>
+                <p><strong>Name:</strong> <span id="modal-card-name"></span></p>
+                <p><strong>Reason:</strong></p>
                 <textarea id="modal-textarea" class="form-control" rows="4" placeholder="Enter reason here"></textarea>
-                <p style="margin-top:12px;"><strong>Close Time</strong></p>
+                <p><strong>Close Time:</strong></p>
                 <select id="modal-close-time" class="form-control">
                     <% for (int i = 1; i <= 24; i++) { %>
                         <option value="<%= i %>"><%= i %> hour(s)</option>
                     <% } %>
                 </select>
-                <p style="margin-top:12px;"><strong>Close By</strong></p>
+                <p><strong>Close By:</strong></p>
                 <select id="modal-close-by" class="form-control">
                 <%
                     try {
@@ -677,9 +519,7 @@ html[data-theme="dark"] .section-head .s-icon {
                 </select>
             </div>
             <div class="modal-footer">
-                <button type="button" id="submitBtn" class="btn btn-primary" onclick="submitCardInfo();">
-                    <i class="fas fa-check"></i> Submit
-                </button>
+                <button type="button" id="submitBtn" class="btn btn-primary" onclick="submitCardInfo();">Submit</button>
             </div>
         </div>
     </div>
@@ -713,7 +553,7 @@ function countdown(elementName, minutes, seconds) {
     function updateTimer() {
         msLeft = endTime - (+new Date);
         if (msLeft < 1000) {
-            element.innerHTML = "Fetching...";
+            element.innerHTML = "Please Wait Fetching the Latest Data!";
         } else {
             time = new Date(msLeft);
             hours = time.getUTCHours();
