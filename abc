@@ -1,144 +1,8 @@
-<%@ page language="java" contentType="text/html; charset=ISO-8859-1" pageEncoding="ISO-8859-1"%>
-<%@ taglib prefix="s" uri="/struts-tags" %>
-<%@ taglib prefix="c" uri="jakarta.tags.core" %>
-<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
-
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="ISO-8859-1">
-<title>Failure Services</title>
-<script src="${pageContext.request.contextPath}/js/jquery-3.3.1.min.js"></script>
-<link rel="stylesheet" href="${pageContext.request.contextPath}/css/bootstrap.min.css">
-</head>
-
-<body>
-<s:form action="showFailureServicesWise" method="post">
-    <s:hidden name="ServiceCategory" id="ServiceCategory" value="%{ServiceCategory}" />
-
-    <div class="card my-3">
-        <h5 class="card-header text-center">Failure Services</h5>
-        <div class="card-body">
-
-            <!-- Debug Output -->
-            <div class="alert alert-info">
-                <b>Debug Info:</b><br/>
-                Server = <strong><s:property value="m_strServer" /></strong><br/>
-                Broker Name = <strong><s:property value="m_strbroker_name" /></strong><br/>
-                ServiceCategory = <strong><s:property value="ServiceCategory" /></strong><br/>
-                API Name = <strong><s:property value="parameters.url" /></strong><br/>
-                DB_ENVLOCATION = <strong><s:property value="m_strENVLOCATION" /></strong><br/>
-            </div>
-
-            <!-- Show total records -->
-            <p>
-                Total records loaded:
-                <strong><s:property value="m_lstFailureServicedetail.size()" /></strong>
-            </p>
-
-            <s:if test="m_lstFailureServicedetail.isEmpty()">
-                <div class="alert alert-warning">No failure service data available!</div>
-            </s:if>
-
-            <s:else>
-            <table class="table table-bordered table-sm table-hover">
-                <thead class="thead-light">
-                    <tr>
-                        <th>API NAME</th>
-                        <th>Broker Name</th>
-                        <th>BrokerEG</th>
-                        <th>Total Hits</th>
-                        <th>Success</th>
-                        <th>SI001</th>
-                        <th>002</th>
-                        <th>SI002</th>
-                        <th>SI007</th>
-                        <th>SI051</th>
-                        <th>014</th>
-                        <th>SI014</th>
-                        <th>PARSING EXCEPTION</th>
-                        <th>SI569</th>
-                        <th>SI570</th>
-                        <th>TD</th>
-                        <th>TD Percent</th>
-                        <th>BD</th>
-                        <th>BD Percent</th>
-                    </tr>
-                </thead>
-                <tbody>
-                <s:iterator value="m_lstFailureServicedetail" var="list">
-                    <tr>
-                        <td><s:property value="#list.m_strAPIName" /></td>
-                        <td><s:property value="#list.m_strbroker_name" /></td>
-                        <td><s:property value="#list.m_strbroker_eg" /></td>
-                        <td><s:property value="#list.m_strTOTAL_HITS" /></td>
-                        <td><s:property value="#list.m_strSUCCESS" /></td>
-                        <td onclick="showreferenceno('SI001','<s:property value="#list.m_strAPIName" />','<s:property value="#list.m_strexp_ip" />')">
-                            <s:property value="#list.m_str001" />
-                        </td>
-                        <td onclick="showreferenceno('002','<s:property value="#list.m_strAPIName" />','<s:property value="#list.m_strexp_ip" />')">
-                            <s:property value="#list.m_str002" />
-                        </td>
-                        <td onclick="showreferenceno('SI002','<s:property value="#list.m_strAPIName" />','<s:property value="#list.m_strexp_ip" />')">
-                            <s:property value="#list.m_strSI002" />
-                        </td>
-                        <td onclick="showreferenceno('SI007','<s:property value="#list.m_strAPIName" />','<s:property value="#list.m_strexp_ip" />')">
-                            <s:property value="#list.m_str007" />
-                        </td>
-                        <td onclick="showreferenceno('SI051','<s:property value="#list.m_strAPIName" />','<s:property value="#list.m_strexp_ip" />')">
-                            <s:property value="#list.m_str051" />
-                        </td>
-                        <td onclick="showreferenceno('014','<s:property value="#list.m_strAPIName" />','<s:property value="#list.m_strexp_ip" />')">
-                            <s:property value="#list.m_str014" />
-                        </td>
-                        <td onclick="showreferenceno('SI014','<s:property value="#list.m_strAPIName" />','<s:property value="#list.m_strexp_ip" />')">
-                            <s:property value="#list.m_strSI014" />
-                        </td>
-                        <td onclick="showreferenceno('PARSING_EXCEPTION','<s:property value="#list.m_strAPIName" />','<s:property value="#list.m_strexp_ip" />')">
-                            <s:property value="#list.m_strPARSINGEXCEPTION" />
-                        </td>
-                        <td onclick="showreferenceno('SI569','<s:property value="#list.m_strAPIName" />','<s:property value="#list.m_strexp_ip" />')">
-                            <s:property value="#list.m_str569" />
-                        </td>
-                        <td onclick="showreferenceno('SI570','<s:property value="#list.m_strAPIName" />','<s:property value="#list.m_strexp_ip" />')">
-                            <s:property value="#list.m_str570" />
-                        </td>
-                        <td><s:property value="#list.m_strTD" /></td>
-                        <td><s:property value="#list.m_strTD_PERCENT" /></td>
-                        <td><s:property value="#list.m_strBD" /></td>
-                        <td><s:property value="#list.m_strBD_PERCENT" /></td>
-                    </tr>
-                </s:iterator>
-                </tbody>
-            </table>
-            </s:else>
-        </div>
-    </div>
-</s:form>
-
-<script>
-function showreferenceno(errorcode, apiname, expip) {
-    var serviceCategory = document.getElementById("ServiceCategory").value;
-    var url = '${pageContext.request.contextPath}/Multiple?action=showfailurerefernceno'
-        + '&errorcode=' + encodeURIComponent(errorcode)
-        + '&apiname=' + encodeURIComponent(apiname)
-        + '&expip=' + encodeURIComponent(expip)
-        + '&ServiceCategory=' + encodeURIComponent(serviceCategory);
-    window.open(url, '_blank');
-}
-</script>
-
-</body>
-</html>
-
--------------------------------------------------------------------------------------
-
-
 package com.action;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -174,19 +38,36 @@ public class ShowfailureServicesWiseAction extends ActionSupport implements Mode
     private void displayServices(HttpServletRequest request) throws Exception {
         System.out.println("==> [DEBUG] Entering displayServices()");
         Connection con = null;
-        Statement stmt = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
         List<FailureServicesBean> serviceList = new ArrayList<>();
 
+        // ---- Read input params (request first, then form/model fallback) ----
         String m_strURL = request.getParameter("url");
         String server = request.getParameter("server");
         String broker_Name = request.getParameter("broker_Name");
 
-        System.out.println("[DEBUG] Raw Input Parameters: url=" + m_strURL + ", server=" + server + ", broker_Name=" + broker_Name);
+        // Fallback: if request params are null, try model (from hidden fields)
+        if (m_strURL == null || m_strURL.trim().isEmpty()) {
+            m_strURL = loginForm.getUrl();
+        }
+        if (server == null || server.trim().isEmpty()) {
+            server = loginForm.getM_strServer();
+        }
+        if (broker_Name == null || broker_Name.trim().isEmpty()) {
+            broker_Name = loginForm.getM_strbroker_name();
+        }
 
-        // These fields for debug info
+        System.out.println("[DEBUG] Raw Input Parameters:");
+        System.out.println("        url          = [" + m_strURL + "]");
+        System.out.println("        server       = [" + server + "]");
+        System.out.println("        broker_Name  = [" + broker_Name + "]");
+
+        // Set debug info on model
         loginForm.setM_strServer(server);
         loginForm.setM_strbroker_name(broker_Name);
 
+        // ---- Determine ServiceCategory ----
         HttpSession session = request.getSession(false);
         String serviceCategory = null;
         if (session != null) {
@@ -196,72 +77,90 @@ public class ShowfailureServicesWiseAction extends ActionSupport implements Mode
                 System.out.println("[DEBUG] ServiceCategory from session: " + serviceCategory);
             }
         }
-        if (request.getParameter("ServiceCategory") != null) {
+        if (request.getParameter("ServiceCategory") != null && !request.getParameter("ServiceCategory").trim().isEmpty()) {
             serviceCategory = request.getParameter("ServiceCategory");
             System.out.println("[DEBUG] ServiceCategory overridden from request: " + serviceCategory);
         }
+        if (serviceCategory == null && loginForm.getServiceCategory() != null) {
+            serviceCategory = loginForm.getServiceCategory();
+            System.out.println("[DEBUG] ServiceCategory from model: " + serviceCategory);
+        }
         loginForm.setServiceCategory(serviceCategory);
 
-        // Optional, if you have environment location
+        // ---- ENV Location ----
         String envLoc = System.getenv("DB_ENVLOCATION");
         System.out.println("[DEBUG] ENVLOCATION: " + envLoc);
         loginForm.setM_strENVLOCATION(envLoc);
 
+        // ---- Guard: if url is null/empty, skip DB call ----
+        if (m_strURL == null || m_strURL.trim().isEmpty()) {
+            System.out.println("[ERROR] m_strURL (API Name) is NULL or EMPTY. Skipping DB call.");
+            loginForm.setM_lstFailureServicedetail(serviceList);
+            return;
+        }
+
         try {
             con = DBUtilityAuto.getIIBDBConnection();
-            String query = "";
 
-            if ("GEN-5".equals(serviceCategory) || "IVR-Service".equals(serviceCategory)
-                    || "SBICAPS-Service".equals(serviceCategory)) {
-                query = getQueryForGen5(m_strURL);
-            } else if ("ThirdParty-GEN-5".equals(serviceCategory)) {
-                query = getQueryForThirdParty(m_strURL);
+            boolean isGen5 = "GEN-5".equals(serviceCategory)
+                          || "IVR-Service".equals(serviceCategory)
+                          || "SBICAPS-Service".equals(serviceCategory);
+            boolean isThirdParty = "ThirdParty-GEN-5".equals(serviceCategory);
+
+            if (!isGen5 && !isThirdParty) {
+                System.out.println("[ERROR] Unknown ServiceCategory: [" + serviceCategory + "]. No query executed.");
+                loginForm.setM_lstFailureServicedetail(serviceList);
+                return;
             }
 
+            String query = isGen5 ? getQueryForGen5() : getQueryForThirdParty();
             System.out.println("[DEBUG] Final SQL Query: " + query);
+            System.out.println("[DEBUG] Bind Param (API Name): [" + m_strURL + "]");
 
-            if (!query.isEmpty()) {
-                stmt = con.createStatement();
-                ResultSet rs = stmt.executeQuery(query);
+            ps = con.prepareStatement(query);
+            ps.setString(1, m_strURL.trim());
 
-                int rowCount = 0;
-                while (rs.next()) {
-                    FailureServicesBean bean = extractBeanFromResultSet(rs, true);
-                    serviceList.add(bean);
-                    rowCount++;
-                    System.out.println("[DEBUG] Row " + rowCount + ": " +
-                        bean.getM_strAPIName() + " | " +
-                        bean.getM_strbroker_name() + " | " +
-                        bean.getM_strbroker_eg());
-                }
-                rs.close();
+            rs = ps.executeQuery();
 
-                if (rowCount == 0) {
-                    System.out.println("[DEBUG] No rows found in result set.");
-                } else {
-                    System.out.println("[DEBUG] Total records loaded from DB: " + rowCount);
-                }
+            int rowCount = 0;
+            while (rs.next()) {
+                FailureServicesBean bean = extractBeanFromResultSet(rs);
+                serviceList.add(bean);
+                rowCount++;
+                System.out.println("[DEBUG] Row " + rowCount + ": "
+                        + bean.getM_strAPIName() + " | "
+                        + bean.getM_strbroker_name() + " | "
+                        + bean.getM_strbroker_eg());
+            }
+            rs.close();
+            rs = null;
+
+            if (rowCount == 0) {
+                System.out.println("[DEBUG] No rows found in result set.");
             } else {
-                System.out.println("[DEBUG] Query is empty. Skipping DB call.");
+                System.out.println("[DEBUG] Total records loaded from DB: " + rowCount);
             }
 
             loginForm.setM_lstFailureServicedetail(serviceList);
 
-            System.out.println("[DEBUG] loginForm.m_lstFailureServicedetail size after DB load: " +
-                (loginForm.getM_lstFailureServicedetail() == null ? "null" :
-                loginForm.getM_lstFailureServicedetail().size()));
+            System.out.println("[DEBUG] loginForm.m_lstFailureServicedetail size: "
+                    + (loginForm.getM_lstFailureServicedetail() == null
+                        ? "null" : loginForm.getM_lstFailureServicedetail().size()));
 
         } catch (Exception e) {
             System.err.println("[ERROR] Exception in displayServices():");
             e.printStackTrace();
+            loginForm.setM_lstFailureServicedetail(serviceList);
         } finally {
-            if (stmt != null) try { stmt.close(); } catch (Exception ex) { /* ignore */ }
-            if (con != null) try { con.close(); } catch (Exception ex) { /* ignore */ }
+            if (rs != null)   try { rs.close(); }   catch (Exception ex) { /* ignore */ }
+            if (ps != null)   try { ps.close(); }   catch (Exception ex) { /* ignore */ }
+            if (con != null)  try { con.close(); }  catch (Exception ex) { /* ignore */ }
             System.out.println("==> [DEBUG] Exiting displayServices()");
         }
     }
 
-    private String getQueryForGen5(String m_strURL) {
+    // ---- Prepared query: API name bound as parameter 1 ----
+    private String getQueryForGen5() {
         return "SELECT trim(API_NAME), trim(broker_name), trim(broker_eg), " +
                 "COUNT(1) AS TOTAL_HITS, " +
                 "SUM(CASE WHEN RESPONSE_STATUS IN ('0','SUCCESS') THEN 1 ELSE 0 END) AS SUCCESS, " +
@@ -279,11 +178,11 @@ public class ShowfailureServicesWiseAction extends ActionSupport implements Mode
                 "ROUND((SUM(CASE WHEN (substr(error_code,3,3) IN ('002','014') OR error_code IN ('SI001','SI007','SI051','SI569','SI570')) AND error_code <> '00014' THEN 1 ELSE 0 END) * 100) / COUNT(1), 2) AS TD_PERCENT, " +
                 "SUM(CASE WHEN (NVL(substr(error_code,3,3),'A') NOT IN ('001','002','007','051','014') OR error_code IN ('00014','70007')) AND RESPONSE_STATUS NOT IN ('0','SUCCESS') THEN 1 ELSE 0 END) AS BD, " +
                 "ROUND((SUM(CASE WHEN (NVL(substr(error_code,3,3),'A') NOT IN ('001','002','007','051','014') OR error_code IN ('00014','70007')) AND RESPONSE_STATUS NOT IN ('0','SUCCESS') THEN 1 ELSE 0 END) * 100) / COUNT(1), 2) AS BD_PERCENT " +
-                "FROM eisapp.api_log WHERE API_NAME = '" + m_strURL + "' AND REQUEST_DATE_TIME >= SYSDATE - INTERVAL '20' MINUTE " +
+                "FROM eisapp.api_log WHERE API_NAME = ? AND REQUEST_DATE_TIME >= SYSDATE - INTERVAL '20' MINUTE " +
                 "GROUP BY trim(API_NAME), trim(broker_name), trim(broker_eg) ORDER BY TD DESC";
     }
 
-    private String getQueryForThirdParty(String m_strURL) {
+    private String getQueryForThirdParty() {
         return "SELECT trim(original_urn), trim(broker_name), trim(broker_eg), " +
                 "COUNT(1) AS TOTAL_HITS, " +
                 "SUM(CASE WHEN RESPONSE_STATUS IN ('0','SUCCESS') THEN 1 ELSE 0 END) AS SUCCESS, " +
@@ -301,11 +200,11 @@ public class ShowfailureServicesWiseAction extends ActionSupport implements Mode
                 "ROUND((SUM(CASE WHEN (substr(error_code,3,3) IN ('002','014') OR error_code IN ('SI001','SI007','SI051','SI569','SI570')) AND error_code <> '00014' THEN 1 ELSE 0 END) * 100) / COUNT(1), 2) AS TD_PERCENT, " +
                 "SUM(CASE WHEN (NVL(substr(error_code,3,3),'A') NOT IN ('001','002','007','051','014') OR error_code IN ('00014','70007')) AND RESPONSE_STATUS NOT IN ('0','SUCCESS') THEN 1 ELSE 0 END) AS BD, " +
                 "ROUND((SUM(CASE WHEN (NVL(substr(error_code,3,3),'A') NOT IN ('001','002','007','051','014') OR error_code IN ('00014','70007')) AND RESPONSE_STATUS NOT IN ('0','SUCCESS') THEN 1 ELSE 0 END) * 100) / COUNT(1), 2) AS BD_PERCENT " +
-                "FROM eisapp.thirdparty_api_log WHERE original_urn = '" + m_strURL + "' AND REQUEST_DATE_TIME >= SYSDATE - INTERVAL '20' MINUTE " +
+                "FROM eisapp.thirdparty_api_log WHERE original_urn = ? AND REQUEST_DATE_TIME >= SYSDATE - INTERVAL '20' MINUTE " +
                 "GROUP BY trim(original_urn), trim(broker_name), trim(broker_eg) ORDER BY TD DESC";
     }
 
-    private FailureServicesBean extractBeanFromResultSet(ResultSet rs, boolean isGen5) throws Exception {
+    private FailureServicesBean extractBeanFromResultSet(ResultSet rs) throws Exception {
         FailureServicesBean bean = new FailureServicesBean();
         bean.setM_strAPIName(rs.getString(1));
         bean.setM_strbroker_name(rs.getString(2));
@@ -329,4 +228,3 @@ public class ShowfailureServicesWiseAction extends ActionSupport implements Mode
         return bean;
     }
 }
-
