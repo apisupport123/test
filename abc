@@ -1,211 +1,159 @@
-package com.action;
+Oct 08, 2026 12:36:35 PM org.apache.jasper.servlet.TldScanner scanJars
+INFO: At least one JAR was scanned for TLDs yet contained no TLDs. Enable debug logging for this logger for a complete list of JARs that were scanned but no TLDs were found in them. Skipping unneeded JARs during scanning can improve startup time and JSP compilation time.
+Oct 08, 2026 12:36:38 PM org.apache.catalina.core.StandardContext reload
+INFO: Reloading Context with name [/EISPortalVer2] is completed
+[DBConfig] Config file found: D:\AppConfig\db.properties
+[DBConfig] Config loaded successfully from: D:\AppConfig\db.properties
+Connected to PRIMARY DB 1
+Flag Status: PR, Location: HI
+getReportDBConnection - flagStatus: PR
+Connecting to Report PR Database
+Report PR Connected
+SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+Connected to PRIMARY DB 1
+Flag Status: PR, Location: HI
+getIIBDBConnection - flagStatus: PR, DB_ENVLOCATION: HI
+In Mumbai Environment
+In Mumbai PR
+IIB Mumbai PR Connected: jdbc:oracle:thin:@10.176.0.107:1787/MIBDRCDB_SRV
+java.sql.SQLSyntaxErrorException: ORA-00942: table or view does not exist
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.util.ArrayList;
-import java.util.List;
-
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
-
-import com.opensymphony.xwork2.ActionSupport;
-import com.beans.FailureServicesBean;
-import com.jdbc.DBUtilityAuto;
-import org.apache.struts2.ServletActionContext;
-
-@SuppressWarnings("serial")
-public class ShowfailureServicesWiseAction extends ActionSupport {
-
-    // ================= FIELDS =================
-    private String url;
-    private String server;
-    private String broker_Name;
-    private String ServiceCategory;
-    private String m_strENVLOCATION;
-
-    private List<FailureServicesBean> m_lstFailureServicedetail = new ArrayList<>();
-
-    // ================= GETTERS / SETTERS =================
-    public String getUrl() { return url; }
-    public void setUrl(String url) { this.url = url; }
-
-    public String getServer() { return server; }
-    public void setServer(String server) { this.server = server; }
-
-    public String getBroker_Name() { return broker_Name; }
-    public void setBroker_Name(String broker_Name) { this.broker_Name = broker_Name; }
-
-    public String getServiceCategory() { return ServiceCategory; }
-    public void setServiceCategory(String serviceCategory) { this.ServiceCategory = serviceCategory; }
-
-    public String getM_strENVLOCATION() { return m_strENVLOCATION; }
-    public void setM_strENVLOCATION(String m_strENVLOCATION) { this.m_strENVLOCATION = m_strENVLOCATION; }
-
-    public List<FailureServicesBean> getM_lstFailureServicedetail() { return m_lstFailureServicedetail; }
-    public void setM_lstFailureServicedetail(List<FailureServicesBean> list) { this.m_lstFailureServicedetail = list; }
-
-    // ================= EXECUTE =================
-    @Override
-    public String execute() throws Exception {
-        HttpServletRequest request = ServletActionContext.getRequest();
-        displayServices(request);
-        return SUCCESS;
-    }
-
-    // ================= MAIN LOGIC =================
-    private void displayServices(HttpServletRequest request) throws Exception {
-
-        Connection con = null;
-        PreparedStatement ps = null;
-        ResultSet rs = null;
-        List<FailureServicesBean> serviceList = new ArrayList<>();
-
-        // ---------- Read parameters ----------
-        String m_strURL = request.getParameter("url");
-        String srv      = request.getParameter("server");
-        String bname    = request.getParameter("broker_Name");
-
-        if (m_strURL == null || m_strURL.trim().isEmpty()) m_strURL = this.url;
-        if (srv == null      || srv.trim().isEmpty())      srv      = this.server;
-        if (bname == null    || bname.trim().isEmpty())    bname    = this.broker_Name;
-
-        this.url         = m_strURL;
-        this.server      = srv;
-        this.broker_Name = bname;
-
-        // ---------- ServiceCategory ----------
-        HttpSession session = request.getSession(false);
-        String serviceCategory = this.ServiceCategory;
-
-        if (session != null && session.getAttribute("ServiceCategory") != null) {
-            serviceCategory = session.getAttribute("ServiceCategory").toString();
-        }
-        String scReq = request.getParameter("ServiceCategory");
-        if (scReq != null && !scReq.trim().isEmpty()) {
-            serviceCategory = scReq;
-        }
-        this.ServiceCategory = serviceCategory;
-
-        this.m_strENVLOCATION = System.getenv("DB_ENVLOCATION");
-
-        // ---------- Guard: empty url ----------
-        if (m_strURL == null || m_strURL.trim().isEmpty()) {
-            this.m_lstFailureServicedetail = serviceList;
-            return;
-        }
-
-        try {
-            con = DBUtilityAuto.getIIBDBConnection();
-
-            // ----- GEN-5 family (any of these) -----
-            boolean isGen5 = "GEN-5".equals(serviceCategory)
-                          || "IVR-Service".equals(serviceCategory)
-                          || "SBICAPS-Service".equals(serviceCategory);
-
-            // ----- ThirdParty family (accept multiple variants) -----
-            boolean isThirdParty = "ThirdParty".equals(serviceCategory)
-                                || "ThirdParty-GEN-5".equals(serviceCategory)
-                                || "ThirdParty-Gen-5".equals(serviceCategory);
-
-            if (!isGen5 && !isThirdParty) {
-                System.out.println("[ERROR] Unknown ServiceCategory: [" + serviceCategory + "]. No query executed.");
-                this.m_lstFailureServicedetail = serviceList;
-                return;
-            }
-
-            String query = isThirdParty ? getQueryForThirdParty() : getQueryForGen5();
-
-            ps = con.prepareStatement(query);
-            ps.setString(1, m_strURL.trim());
-
-            rs = ps.executeQuery();
-
-            while (rs.next()) {
-                serviceList.add(extractBeanFromResultSet(rs));
-            }
-            rs.close();
-            rs = null;
-
-            this.m_lstFailureServicedetail = serviceList;
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            this.m_lstFailureServicedetail = serviceList;
-        } finally {
-            if (rs != null)  try { rs.close(); }  catch (Exception ex) { /* ignore */ }
-            if (ps != null)  try { ps.close(); }  catch (Exception ex) { /* ignore */ }
-            if (con != null) try { con.close(); } catch (Exception ex) { /* ignore */ }
-        }
-    }
-
-    // ================= QUERIES =================
-    private String getQueryForGen5() {
-        return "SELECT trim(API_NAME), trim(broker_name), trim(broker_eg), " +
-                "COUNT(1) AS TOTAL_HITS, " +
-                "SUM(CASE WHEN RESPONSE_STATUS IN ('0','SUCCESS') THEN 1 ELSE 0 END) AS SUCCESS, " +
-                "SUM(CASE WHEN error_code ='SI001' THEN 1 ELSE 0 END) AS SI001, " +
-                "SUM(CASE WHEN substr(error_code,3,3) ='002' AND error_code <> 'SI002' THEN 1 ELSE 0 END) AS \"002\", " +
-                "SUM(CASE WHEN error_code = 'SI002' THEN 1 ELSE 0 END) AS SI002, " +
-                "SUM(CASE WHEN error_code = 'SI007' AND error_code <> '70007' THEN 1 ELSE 0 END) AS SI007, " +
-                "SUM(CASE WHEN error_code = 'SI051' THEN 1 ELSE 0 END) AS SI051, " +
-                "SUM(CASE WHEN substr(error_code,3,3) ='014' AND error_code NOT IN ('00014','SI014') THEN 1 ELSE 0 END) AS \"014\", " +
-                "SUM(CASE WHEN error_code = 'SI014' THEN 1 ELSE 0 END) AS SI014, " +
-                "SUM(CASE WHEN error_description = 'PARSING EXCEPTION' THEN 1 ELSE 0 END) AS PARSING_EXCEPTION, " +
-                "SUM(CASE WHEN error_code = 'SI569' THEN 1 ELSE 0 END) AS SI569, " +
-                "SUM(CASE WHEN error_code = 'SI570' THEN 1 ELSE 0 END) AS SI570, " +
-                "SUM(CASE WHEN (substr(error_code,3,3) IN ('002','014') OR error_code IN ('SI001','SI007','SI051','SI569','SI570')) AND error_code <> '00014' THEN 1 ELSE 0 END) AS TD, " +
-                "ROUND((SUM(CASE WHEN (substr(error_code,3,3) IN ('002','014') OR error_code IN ('SI001','SI007','SI051','SI569','SI570')) AND error_code <> '00014' THEN 1 ELSE 0 END) * 100) / COUNT(1), 2) AS TD_PERCENT, " +
-                "SUM(CASE WHEN (NVL(substr(error_code,3,3),'A') NOT IN ('001','002','007','051','014') OR error_code IN ('00014','70007')) AND RESPONSE_STATUS NOT IN ('0','SUCCESS') THEN 1 ELSE 0 END) AS BD, " +
-                "ROUND((SUM(CASE WHEN (NVL(substr(error_code,3,3),'A') NOT IN ('001','002','007','051','014') OR error_code IN ('00014','70007')) AND RESPONSE_STATUS NOT IN ('0','SUCCESS') THEN 1 ELSE 0 END) * 100) / COUNT(1), 2) AS BD_PERCENT " +
-                "FROM eisapp.api_log WHERE API_NAME = ? AND REQUEST_DATE_TIME >= SYSDATE - INTERVAL '20' MINUTE " +
-                "GROUP BY trim(API_NAME), trim(broker_name), trim(broker_eg) ORDER BY TD DESC";
-    }
-
-    private String getQueryForThirdParty() {
-        return "SELECT trim(original_urn), trim(broker_name), trim(broker_eg), " +
-                "COUNT(1) AS TOTAL_HITS, " +
-                "SUM(CASE WHEN RESPONSE_STATUS IN ('0','SUCCESS') THEN 1 ELSE 0 END) AS SUCCESS, " +
-                "SUM(CASE WHEN error_code ='SI001' THEN 1 ELSE 0 END) AS SI001, " +
-                "SUM(CASE WHEN substr(error_code,3,3) ='002' AND error_code <> 'SI002' THEN 1 ELSE 0 END) AS \"002\", " +
-                "SUM(CASE WHEN error_code = 'SI002' THEN 1 ELSE 0 END) AS SI002, " +
-                "SUM(CASE WHEN error_code = 'SI007' AND error_code <> '70007' THEN 1 ELSE 0 END) AS SI007, " +
-                "SUM(CASE WHEN error_code = 'SI051' THEN 1 ELSE 0 END) AS SI051, " +
-                "SUM(CASE WHEN substr(error_code,3,3) ='014' AND error_code NOT IN ('00014','SI014') THEN 1 ELSE 0 END) AS \"014\", " +
-                "SUM(CASE WHEN error_code = 'SI014' THEN 1 ELSE 0 END) AS SI014, " +
-                "SUM(CASE WHEN error_description = 'PARSING EXCEPTION' THEN 1 ELSE 0 END) AS PARSING_EXCEPTION, " +
-                "SUM(CASE WHEN error_code = 'SI569' THEN 1 ELSE 0 END) AS SI569, " +
-                "SUM(CASE WHEN error_code = 'SI570' THEN 1 ELSE 0 END) AS SI570, " +
-                "SUM(CASE WHEN (substr(error_code,3,3) IN ('002','014') OR error_code IN ('SI001','SI007','SI051','SI569','SI570')) AND error_code <> '00014' THEN 1 ELSE 0 END) AS TD, " +
-                "ROUND((SUM(CASE WHEN (substr(error_code,3,3) IN ('002','014') OR error_code IN ('SI001','SI007','SI051','SI569','SI570')) AND error_code <> '00014' THEN 1 ELSE 0 END) * 100) / COUNT(1), 2) AS TD_PERCENT, " +
-                "SUM(CASE WHEN (NVL(substr(error_code,3,3),'A') NOT IN ('001','002','007','051','014') OR error_code IN ('00014','70007')) AND RESPONSE_STATUS NOT IN ('0','SUCCESS') THEN 1 ELSE 0 END) AS BD, " +
-                "ROUND((SUM(CASE WHEN (NVL(substr(error_code,3,3),'A') NOT IN ('001','002','007','051','014') OR error_code IN ('00014','70007')) AND RESPONSE_STATUS NOT IN ('0','SUCCESS') THEN 1 ELSE 0 END) * 100) / COUNT(1), 2) AS BD_PERCENT " +
-                "FROM eisapp.thirdparty_api_log WHERE original_urn = ? AND REQUEST_DATE_TIME >= SYSDATE - INTERVAL '20' MINUTE " +
-                "GROUP BY trim(original_urn), trim(broker_name), trim(broker_eg) ORDER BY TD DESC";
-    }
-
-    // ================= BEAN EXTRACTOR =================
-    private FailureServicesBean extractBeanFromResultSet(ResultSet rs) throws Exception {
-        FailureServicesBean bean = new FailureServicesBean();
-        bean.setM_strAPIName(rs.getString(1));
-        bean.setM_strbroker_name(rs.getString(2));
-        bean.setM_strbroker_eg(rs.getString(3));
-        bean.setM_strTOTAL_HITS(rs.getString(4));
-        bean.setM_strSUCCESS(rs.getString(5));
-        bean.setM_str001(rs.getString(6));
-        bean.setM_str002(rs.getString(7));
-        bean.setM_strSI002(rs.getString(8));
-        bean.setM_str007(rs.getString(9));
-        bean.setM_str051(rs.getString(10));
-        bean.setM_str014(rs.getString(11));
-        bean.setM_strSI014(rs.getString(12));
-        bean.setM_strPARSINGEXCEPTION(rs.getString(13));
-        bean.setM_str569(rs.getString(14));
-        bean.setM_str570(rs.getString(15));
-        bean.setM_strTD(rs.getString(16));
-        bean.setM_strTD_PERCENT(rs.getString(17));
-        bean.setM_strBD(rs.getString(18));
-        bean.setM_strBD_PERCENT(rs.getString(19));
-        return bean;
-    }
-}
+	at oracle.jdbc.driver.T4CTTIoer.processError(T4CTTIoer.java:450)
+	at oracle.jdbc.driver.T4CTTIoer.processError(T4CTTIoer.java:399)
+	at oracle.jdbc.driver.T4C8Oall.processError(T4C8Oall.java:1017)
+	at oracle.jdbc.driver.T4CTTIfun.receive(T4CTTIfun.java:655)
+	at oracle.jdbc.driver.T4CTTIfun.doRPC(T4CTTIfun.java:249)
+	at oracle.jdbc.driver.T4C8Oall.doOALL(T4C8Oall.java:566)
+	at oracle.jdbc.driver.T4CPreparedStatement.doOall8(T4CPreparedStatement.java:215)
+	at oracle.jdbc.driver.T4CPreparedStatement.doOall8(T4CPreparedStatement.java:58)
+	at oracle.jdbc.driver.T4CPreparedStatement.executeForDescribe(T4CPreparedStatement.java:776)
+	at oracle.jdbc.driver.OracleStatement.executeMaybeDescribe(OracleStatement.java:897)
+	at oracle.jdbc.driver.OracleStatement.doExecuteWithTimeout(OracleStatement.java:1034)
+	at oracle.jdbc.driver.OraclePreparedStatement.executeInternal(OraclePreparedStatement.java:3820)
+	at oracle.jdbc.driver.OraclePreparedStatement.executeQuery(OraclePreparedStatement.java:3867)
+	at oracle.jdbc.driver.OraclePreparedStatementWrapper.executeQuery(OraclePreparedStatementWrapper.java:1502)
+	at com.action.ShowfailureServicesWiseAction.displayServices(ShowfailureServicesWiseAction.java:122)
+	at com.action.ShowfailureServicesWiseAction.execute(ShowfailureServicesWiseAction.java:52)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at ognl.OgnlRuntime.invokeMethodInsideSandbox(OgnlRuntime.java:1245)
+	at ognl.OgnlRuntime.invokeMethod(OgnlRuntime.java:1230)
+	at ognl.OgnlRuntime.callAppropriateMethod(OgnlRuntime.java:1958)
+	at ognl.ObjectMethodAccessor.callMethod(ObjectMethodAccessor.java:68)
+	at org.apache.struts2.ognl.accessor.XWorkMethodAccessor.callMethodWithDebugInfo(XWorkMethodAccessor.java:101)
+	at org.apache.struts2.ognl.accessor.XWorkMethodAccessor.callMethod(XWorkMethodAccessor.java:93)
+	at ognl.OgnlRuntime.callMethod(OgnlRuntime.java:2034)
+	at ognl.ASTMethod.getValueBody(ASTMethod.java:97)
+	at ognl.SimpleNode.evaluateGetValueBody(SimpleNode.java:212)
+	at ognl.SimpleNode.getValue(SimpleNode.java:258)
+	at ognl.Ognl.getValue(Ognl.java:586)
+	at org.apache.struts2.ognl.OgnlUtil.ognlGet(OgnlUtil.java:425)
+	at org.apache.struts2.ognl.OgnlUtil.callMethod(OgnlUtil.java:401)
+	at org.apache.struts2.DefaultActionInvocation.invokeAction(DefaultActionInvocation.java:447)
+	at org.apache.struts2.DefaultActionInvocation.invokeActionOnly(DefaultActionInvocation.java:320)
+	at org.apache.struts2.DefaultActionInvocation.invoke(DefaultActionInvocation.java:271)
+	at org.apache.struts2.interceptor.debugging.DebuggingInterceptor.intercept(DebuggingInterceptor.java:261)
+	at org.apache.struts2.DefaultActionInvocation.executeConditional(DefaultActionInvocation.java:311)
+	at org.apache.struts2.DefaultActionInvocation.invoke(DefaultActionInvocation.java:265)
+	at org.apache.struts2.interceptor.DefaultWorkflowInterceptor.doIntercept(DefaultWorkflowInterceptor.java:181)
+	at org.apache.struts2.interceptor.MethodFilterInterceptor.intercept(MethodFilterInterceptor.java:99)
+	at org.apache.struts2.DefaultActionInvocation.executeConditional(DefaultActionInvocation.java:311)
+	at org.apache.struts2.DefaultActionInvocation.invoke(DefaultActionInvocation.java:265)
+	at org.apache.struts2.validator.ValidationInterceptor.doIntercept(ValidationInterceptor.java:263)
+	at org.apache.struts2.interceptor.validation.AnnotationValidationInterceptor.doIntercept(AnnotationValidationInterceptor.java:49)
+	at org.apache.struts2.interceptor.MethodFilterInterceptor.intercept(MethodFilterInterceptor.java:99)
+	at org.apache.struts2.DefaultActionInvocation.executeConditional(DefaultActionInvocation.java:311)
+	at org.apache.struts2.DefaultActionInvocation.invoke(DefaultActionInvocation.java:265)
+	at org.apache.struts2.interceptor.FetchMetadataInterceptor.intercept(FetchMetadataInterceptor.java:78)
+	at org.apache.struts2.DefaultActionInvocation.executeConditional(DefaultActionInvocation.java:311)
+	at org.apache.struts2.DefaultActionInvocation.invoke(DefaultActionInvocation.java:265)
+	at org.apache.struts2.interceptor.CoopInterceptor.intercept(CoopInterceptor.java:57)
+	at org.apache.struts2.DefaultActionInvocation.executeConditional(DefaultActionInvocation.java:311)
+	at org.apache.struts2.DefaultActionInvocation.invoke(DefaultActionInvocation.java:265)
+	at org.apache.struts2.interceptor.CoepInterceptor.intercept(CoepInterceptor.java:55)
+	at org.apache.struts2.DefaultActionInvocation.executeConditional(DefaultActionInvocation.java:311)
+	at org.apache.struts2.DefaultActionInvocation.invoke(DefaultActionInvocation.java:265)
+	at org.apache.struts2.interceptor.ConversionErrorInterceptor.doIntercept(ConversionErrorInterceptor.java:140)
+	at org.apache.struts2.interceptor.MethodFilterInterceptor.intercept(MethodFilterInterceptor.java:99)
+	at org.apache.struts2.DefaultActionInvocation.executeConditional(DefaultActionInvocation.java:311)
+	at org.apache.struts2.DefaultActionInvocation.invoke(DefaultActionInvocation.java:265)
+	at org.apache.struts2.interceptor.parameter.ParametersInterceptor.doIntercept(ParametersInterceptor.java:212)
+	at org.apache.struts2.interceptor.MethodFilterInterceptor.intercept(MethodFilterInterceptor.java:99)
+	at org.apache.struts2.DefaultActionInvocation.executeConditional(DefaultActionInvocation.java:311)
+	at org.apache.struts2.DefaultActionInvocation.invoke(DefaultActionInvocation.java:265)
+	at org.apache.struts2.interceptor.parameter.ParametersInterceptor.doIntercept(ParametersInterceptor.java:212)
+	at org.apache.struts2.interceptor.MethodFilterInterceptor.intercept(MethodFilterInterceptor.java:99)
+	at org.apache.struts2.DefaultActionInvocation.executeConditional(DefaultActionInvocation.java:311)
+	at org.apache.struts2.DefaultActionInvocation.invoke(DefaultActionInvocation.java:265)
+	at org.apache.struts2.interceptor.StaticParametersInterceptor.intercept(StaticParametersInterceptor.java:202)
+	at org.apache.struts2.DefaultActionInvocation.executeConditional(DefaultActionInvocation.java:311)
+	at org.apache.struts2.DefaultActionInvocation.invoke(DefaultActionInvocation.java:265)
+	at org.apache.struts2.interceptor.MultiselectInterceptor.intercept(MultiselectInterceptor.java:69)
+	at org.apache.struts2.DefaultActionInvocation.executeConditional(DefaultActionInvocation.java:311)
+	at org.apache.struts2.DefaultActionInvocation.invoke(DefaultActionInvocation.java:265)
+	at org.apache.struts2.interceptor.DateTextFieldInterceptor.intercept(DateTextFieldInterceptor.java:133)
+	at org.apache.struts2.DefaultActionInvocation.executeConditional(DefaultActionInvocation.java:311)
+	at org.apache.struts2.DefaultActionInvocation.invoke(DefaultActionInvocation.java:265)
+	at org.apache.struts2.interceptor.CheckboxInterceptor.intercept(CheckboxInterceptor.java:92)
+	at org.apache.struts2.DefaultActionInvocation.executeConditional(DefaultActionInvocation.java:311)
+	at org.apache.struts2.DefaultActionInvocation.invoke(DefaultActionInvocation.java:265)
+	at org.apache.struts2.interceptor.ActionFileUploadInterceptor.intercept(ActionFileUploadInterceptor.java:144)
+	at org.apache.struts2.DefaultActionInvocation.executeConditional(DefaultActionInvocation.java:311)
+	at org.apache.struts2.DefaultActionInvocation.invoke(DefaultActionInvocation.java:265)
+	at org.apache.struts2.interceptor.ModelDrivenInterceptor.intercept(ModelDrivenInterceptor.java:101)
+	at org.apache.struts2.DefaultActionInvocation.executeConditional(DefaultActionInvocation.java:311)
+	at org.apache.struts2.DefaultActionInvocation.invoke(DefaultActionInvocation.java:265)
+	at org.apache.struts2.interceptor.ScopedModelDrivenInterceptor.intercept(ScopedModelDrivenInterceptor.java:141)
+	at org.apache.struts2.DefaultActionInvocation.executeConditional(DefaultActionInvocation.java:311)
+	at org.apache.struts2.DefaultActionInvocation.invoke(DefaultActionInvocation.java:265)
+	at org.apache.struts2.interceptor.ChainingInterceptor.intercept(ChainingInterceptor.java:166)
+	at org.apache.struts2.DefaultActionInvocation.executeConditional(DefaultActionInvocation.java:311)
+	at org.apache.struts2.DefaultActionInvocation.invoke(DefaultActionInvocation.java:265)
+	at org.apache.struts2.interceptor.PrepareInterceptor.doIntercept(PrepareInterceptor.java:175)
+	at org.apache.struts2.interceptor.MethodFilterInterceptor.intercept(MethodFilterInterceptor.java:99)
+	at org.apache.struts2.DefaultActionInvocation.executeConditional(DefaultActionInvocation.java:311)
+	at org.apache.struts2.DefaultActionInvocation.invoke(DefaultActionInvocation.java:265)
+	at org.apache.struts2.interceptor.csp.CspInterceptor.intercept(CspInterceptor.java:66)
+	at org.apache.struts2.DefaultActionInvocation.executeConditional(DefaultActionInvocation.java:311)
+	at org.apache.struts2.DefaultActionInvocation.invoke(DefaultActionInvocation.java:265)
+	at org.apache.struts2.interceptor.I18nInterceptor.intercept(I18nInterceptor.java:138)
+	at org.apache.struts2.DefaultActionInvocation.executeConditional(DefaultActionInvocation.java:311)
+	at org.apache.struts2.DefaultActionInvocation.invoke(DefaultActionInvocation.java:265)
+	at org.apache.struts2.interceptor.httpmethod.HttpMethodInterceptor.intercept(HttpMethodInterceptor.java:99)
+	at org.apache.struts2.DefaultActionInvocation.executeConditional(DefaultActionInvocation.java:311)
+	at org.apache.struts2.DefaultActionInvocation.invoke(DefaultActionInvocation.java:265)
+	at org.apache.struts2.interceptor.ServletConfigInterceptor.intercept(ServletConfigInterceptor.java:156)
+	at org.apache.struts2.DefaultActionInvocation.executeConditional(DefaultActionInvocation.java:311)
+	at org.apache.struts2.DefaultActionInvocation.invoke(DefaultActionInvocation.java:265)
+	at org.apache.struts2.interceptor.AliasInterceptor.intercept(AliasInterceptor.java:228)
+	at org.apache.struts2.DefaultActionInvocation.executeConditional(DefaultActionInvocation.java:311)
+	at org.apache.struts2.DefaultActionInvocation.invoke(DefaultActionInvocation.java:265)
+	at org.apache.struts2.interceptor.ExceptionMappingInterceptor.intercept(ExceptionMappingInterceptor.java:205)
+	at org.apache.struts2.DefaultActionInvocation.executeConditional(DefaultActionInvocation.java:311)
+	at org.apache.struts2.DefaultActionInvocation.invoke(DefaultActionInvocation.java:265)
+	at org.apache.struts2.factory.StrutsActionProxy.execute(StrutsActionProxy.java:51)
+	at org.apache.struts2.dispatcher.Dispatcher.serviceAction(Dispatcher.java:721)
+	at org.apache.struts2.dispatcher.ExecuteOperations.executeAction(ExecuteOperations.java:79)
+	at org.apache.struts2.dispatcher.filter.StrutsPrepareAndExecuteFilter.handleRequest(StrutsPrepareAndExecuteFilter.java:154)
+	at org.apache.struts2.dispatcher.filter.StrutsPrepareAndExecuteFilter.tryHandleRequest(StrutsPrepareAndExecuteFilter.java:137)
+	at org.apache.struts2.dispatcher.filter.StrutsPrepareAndExecuteFilter.doFilter(StrutsPrepareAndExecuteFilter.java:125)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:165)
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:77)
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:482)
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:113)
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:83)
+	at org.apache.catalina.valves.AbstractAccessLogValve.invoke(AbstractAccessLogValve.java:654)
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:72)
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:341)
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:397)
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63)
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:903)
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1778)
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:946)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:480)
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:57)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
