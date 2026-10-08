@@ -1,186 +1,214 @@
-
-<%@page contentType="text/html" pageEncoding="UTF-8"%>
-
+<%@page pageEncoding="UTF-8"%>
 <%@page import="java.util.*"%>
 <%@page import="java.sql.*"%>
 <%@page import="com.jdbc.DBUtilityAuto" %>
 <%@page import="com.jdbc.DBUtility" %>
-<%@page import=" java.time.ZoneId, java.time.ZonedDateTime , java.time.format.DateTimeFormatter , java.time.LocalTime" %>
+<%@page import="java.time.ZoneId, java.time.ZonedDateTime, java.time.format.DateTimeFormatter, java.time.LocalTime" %>
 <%@page import="java.util.concurrent.*"%>
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="ISO-8859-1" >
+<meta charset="UTF-8">
 <meta http-equiv="refresh" content="600; url=<%= request.getRequestURI() %>">
 <title>EXP & SYS Service Wise Failure Dashboard</title>
-<script nonce="undefined" src="../js/zingchart.min.js"></script>
-<script src="../js/jquery.min.js"></script>
+<script nonce="undefined" src="<%=request.getContextPath()%>/js/zingchart.min.js"></script>
+<script src="<%=request.getContextPath()%>/js/jquery.min.js"></script>
 <style>
-/* Remove all margins and padding that cause scrolling */
+/* ================================================================
+   ORIGINAL STYLES — THEME-AWARE
+   ================================================================ */
 * {
-margin: 0;
-padding: 0;
-box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
+
 html, body {
-height: 100vh;
-width: 100vw;
-overflow: hidden; /* This prevents scrolling */
-background-color: #000000;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+    background-color: var(--bg) !important;
+    color: var(--ink);
+    transition: background .3s ease, color .3s ease;
 }
+
 body {
-display: flex;
-flex-direction: column;
-padding: 5px;
-position: relative;
+    display: flex;
+    flex-direction: column;
+    padding: 5px;
+    position: relative;
 }
+
 .header-info {
-color: white;
-text-align: center;
-height: 8vh;
-min-height: 60px;
-display: flex;
-align-items: center;
-justify-content: center;
-position: relative;
+    color: var(--ink) !important;
+    text-align: center;
+    height: 8vh;
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
 }
+
 .dashboard-container {
-display: flex;
-flex-direction: column;
-height: 92vh;
-gap: 5px;
+    display: flex;
+    flex-direction: column;
+    height: 92vh;
+    gap: 5px;
 }
+
 .chart-wrapper {
-flex: 1;
-background-color: #000000;
-border-radius: 5px;
-padding: 5px;
-min-height: 0; /* Important for flex children */
-display: flex;
-flex-direction: column;
-position: relative;
+    flex: 1;
+    background-color: var(--card) !important;
+    border-radius: 5px;
+    padding: 5px;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    border: 1px solid var(--line);
 }
+
 .chart-title {
-color: white;
-text-align: center;
-font-size: 24px;
-height: 40px;
-display: flex;
-align-items: center;
-justify-content: center;
-gap: 10px;
+    color: var(--ink) !important;
+    text-align: center;
+    font-size: 24px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
 }
+
 .chart--container {
-flex: 1;
-width: 100%;
-min-height: 0; /* Important for flex children */
+    flex: 1;
+    width: 100%;
+    min-height: 0;
 }
+
 .loading-indicator {
-color: white;
-text-align: center;
-background-color: #333;
-border-radius: 5px;
-height: 100%;
-width: 100%;
-display: flex;
-align-items: center;
-justify-content: center;
-font-size: 20px;
+    color: var(--ink) !important;
+    text-align: center;
+    background-color: var(--sidebar-hover) !important;
+    border-radius: 5px;
+    height: 100%;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
 }
+
 .blink {
-animation: blinker 0s linear infinite;
-color: white;
-font-family: sans-serif;
-font-weight: 900;
-display: inline;
+    animation: blinker 0s linear infinite;
+    color: var(--ink) !important;
+    font-family: sans-serif;
+    font-weight: 900;
+    display: inline;
 }
+
 @keyframes blinker {
-50% { opacity: 0; }
+    50% { opacity: 0; }
 }
+
 .timer {
-border: 3px solid white;
-display: inline;
-padding: 3px 8px;
-color: white;
-font-family: Verdana, sans-serif;
-font-size: 24px;
-font-weight: bold;
+    border: 3px solid var(--brand);
+    display: inline;
+    padding: 3px 8px;
+    color: var(--brand) !important;
+    font-family: Verdana, sans-serif;
+    font-size: 24px;
+    font-weight: bold;
+    border-radius: 6px;
+    background: var(--brand-light);
 }
+html[data-theme="dark"] .timer {
+    background: rgba(248,111,3,.15);
+}
+
 .status-indicator {
-display: inline-block;
-width: 15px;
-height: 15px;
-border-radius: 50%;
+    display: inline-block;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
 }
+
 .status-loaded {
-background-color: #32CD32;
+    background-color: #32CD32;
 }
+
 .status-loading {
-background-color: #ff9933;
-animation: pulse 1.5s infinite;
+    background-color: #ff9933;
+    animation: pulse 1.5s infinite;
 }
+
 @keyframes pulse {
-0% { opacity: 1; }
-50% { opacity: 0.5; }
-100% { opacity: 1; }
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
 }
+
 #timeRangeMessage {
-font-size: 16px !important;
+    font-size: 16px !important;
 }
-/* Override ZingChart default margins */
+
 .chart--container div {
-max-height: 100%;
+    max-height: 100%;
 }
-/* Tooltip styling */
+
 .zc-tooltip {
-font-family: Arial, sans-serif;
-line-height: 1.5;
+    font-family: Arial, sans-serif;
+    line-height: 1.5;
 }
-/* Make bars look clickable */
+
 .zc-bar {
-cursor: pointer;
+    cursor: pointer;
 }
-/* Ensure bar labels are always visible on any resolution */
+
 .zingchart text[data-element="scale-x-item"] tspan {
     white-space: nowrap;
     overflow: visible !important;
     text-overflow: clip !important;
     font-size: 13px !important;
 }
+
 .zingchart .zc-scale-x line,
 .zingchart .zc-scale-x path {
     display: none;
 }
-/* Force bar label container to have enough height */
+
 .zingchart .zc-plot {
     overflow: visible !important;
 }
+
 .zingchart .zc-scale-x-inner {
     min-height: 120px !important;
     overflow: visible !important;
 }
 
-/* Legend Styles for Top Right Corner */
+/* ================================================================
+   LEGEND — theme-aware
+   ================================================================ */
 .dashboard-legend {
     position: fixed;
-    top: 10px;
+    top: 74px;
     right: 15px;
-    background-color: rgba(0,0,0,0.85);
-    border: 1px solid #444;
+    background-color: var(--card);
+    border: 1px solid var(--line);
     border-radius: 8px;
     padding: 10px 15px;
-    z-index: 1000;
+    z-index: 40;
     font-family: Arial, sans-serif;
     font-size: 12px;
-    color: white;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    color: var(--ink);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.15);
     backdrop-filter: blur(5px);
 }
 .dashboard-legend h4 {
     margin: 0 0 8px 0;
     font-size: 14px;
     text-align: center;
-    color: #ffaa00;
+    color: var(--brand);
 }
 .dashboard-legend ul {
     list-style: none;
@@ -198,44 +226,123 @@ cursor: pointer;
     height: 14px;
     border-radius: 3px;
     display: inline-block;
+    border: 1px solid var(--line);
 }
 .legend-text {
     font-size: 12px;
+    color: var(--ink);
+}
+
+/* ================================================================
+   THEME-AWARE OVERRIDES — Topnav + Wrapper
+   ================================================================ */
+.topnav {
+    background: var(--topnav-bg) !important;
+    border-bottom: 1px solid var(--line) !important;
+}
+.topnav .tn-search {
+    background: var(--card) !important;
+    border-color: var(--line) !important;
+    color: var(--muted) !important;
+}
+.topnav .tn-search:hover {
+    border-color: var(--brand) !important;
+    color: var(--ink) !important;
+}
+.topnav .tn-search .kbd {
+    background: var(--sidebar-hover) !important;
+    border-color: var(--line) !important;
+    color: var(--muted) !important;
+}
+.topnav .tn-menu-btn {
+    background: var(--sidebar-hover) !important;
+    border-color: var(--line) !important;
+    color: var(--ink) !important;
+}
+.topnav .tn-menu-btn:hover {
+    background: var(--brand) !important;
+    border-color: var(--brand) !important;
+    color: #fff !important;
+}
+.topnav .tn-btn {
+    background: transparent !important;
+    border-color: var(--line) !important;
+    color: var(--ink) !important;
+}
+.topnav .tn-btn:hover {
+    background: var(--brand) !important;
+    border-color: var(--brand) !important;
+    color: #fff !important;
+}
+.topnav .tn-toggle {
+    border-color: var(--line) !important;
+    color: var(--ink) !important;
+}
+
+/* ✅ Page wrapper — topnav aur sidebar ke saath fit */
+.new-wrapper {
+    position: fixed;
+    top: 64px;
+    left: 260px;
+    right: 0;
+    bottom: 0;
+    background-color: var(--bg);
+    overflow: hidden;
+    transition: left .3s cubic-bezier(.4,0,.2,1), background .3s ease;
+}
+html.sb-collapsed .new-wrapper {
+    left: 0;
+}
+
+/* Full height inside wrapper */
+.new-wrapper .dash-shell {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 5px;
+}
+
+/* Legend adjust for new layout */
+.new-wrapper .dashboard-legend {
+    position: absolute;
+    top: 5px;
+    right: 10px;
+    z-index: 40;
 }
 </style>
 </head>
-<body onload="initializeDashboards()">
+<body>
 
 <%!
 public String formatAPINameWithLineBreaks(String apiName) {
-if (apiName == null || apiName.isEmpty()) {
-return "";
-}
-apiName = apiName.replace("_", " ");
-if (apiName.length() <= 16) {
-return apiName;
-}
-StringBuilder formatted = new StringBuilder();
-for (int i = 0; i < apiName.length(); i += 16) {
-if (i > 0) {
-formatted.append("</p><br><p style='color:#FFFFFF; font-weight: bolder;font-size: 15px'>");
-}
-int endIndex = Math.min(i + 16, apiName.length());
-formatted.append(apiName.substring(i, endIndex));
-}
-return formatted.toString();
+    if (apiName == null || apiName.isEmpty()) {
+        return "";
+    }
+    apiName = apiName.replace("_", " ");
+    if (apiName.length() <= 16) {
+        return apiName;
+    }
+    StringBuilder formatted = new StringBuilder();
+    for (int i = 0; i < apiName.length(); i += 16) {
+        if (i > 0) {
+            formatted.append("</p><br><p class='ep-name' style='font-weight: bolder; font-size: 15px'>");
+        }
+        int endIndex = Math.min(i + 16, apiName.length());
+        formatted.append(apiName.substring(i, endIndex));
+    }
+    return formatted.toString();
 }
 
 public String formatBrokerNameOnly(String brokerName) {
-if (brokerName == null || brokerName.trim().isEmpty()) {
-return "<span style='color:#FFA500; font-weight:bold; font-size:13px;'>N/A</span>";
-}
-return "<span style='color:#FFA500; font-weight:bold; font-size:13px;'>" + brokerName + "</span>";
+    if (brokerName == null || brokerName.trim().isEmpty()) {
+        return "<span style='color:#FFA500; font-weight:bold; font-size:13px;'>N/A</span>";
+    }
+    return "<span style='color:#FFA500; font-weight:bold; font-size:13px;'>" + brokerName + "</span>";
 }
 %>
 
 <%
-// Data holder classes - defined inside scriptlet
+/* ============ Data holders ============ */
 class ExpDataHolder {
     List<String> labels = new ArrayList<>();
     List<Double> values = new ArrayList<>();
@@ -257,135 +364,74 @@ class SysDataHolder {
 final ExpDataHolder expHolder = new ExpDataHolder();
 final SysDataHolder sysHolder = new SysDataHolder();
 
-// Create threads to run queries in PARALLEL
+/* ============ EXP Query Thread ============ */
 Thread expThread = new Thread(new Runnable() {
     public void run() {
         try {
             Connection conn = null;
             String flagStatus = null;
             String sql = null;
-            
+
             try (Connection conn1 = DBUtilityAuto.getReportDBConnection();
-                Statement smt = conn1.createStatement();
-                ResultSet rs = smt.executeQuery("SELECT FLAG FROM connection_master")) {
+                 Statement smt = conn1.createStatement();
+                 ResultSet rs = smt.executeQuery("SELECT FLAG FROM connection_master")) {
                 if (rs.next()) {
                     flagStatus = rs.getString("FLAG");
                     if (flagStatus == null) flagStatus = "DR";
                 }
-                rs.close();
-                smt.close();
-                conn1.close();
             } catch(Exception e) {
                 flagStatus = "DR";
             }
-            
+
             try {
                 conn = DBUtilityAuto.getReportDBConnection();
                 ZonedDateTime CurrentDate = ZonedDateTime.now(ZoneId.of("Asia/Kolkata"));
                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM_yy").withLocale(Locale.US);
                 String PART = CurrentDate.format(formatter).toUpperCase();
-                if(flagStatus.equalsIgnoreCase("PR")){
-                    sql = "WITH filtered_logs AS ( " +
-                        " SELECT /*+MATERIALIZE*/ " +
-                        " API_NAME, " +
-                        " BROKER_NAME, " +
-                        " error_code, " +
-                        " CASE " +
-                        " WHEN (substr(error_code,3,3) in ('002','014') OR error_code in ('SI001','SI007','SI569','SI570','SI015')) " +
-                        " AND error_code <> '00014' THEN 1 " +
-                        " ELSE 0 " +
-                        " END AS is_td_error " +
-                        " FROM eisapp.API_LOG@MIDB_LINK " +
-                        " WHERE " +
-                        " REQUEST_DATE_TIME >= SYSDATE - INTERVAL '10' MINUTE " +
-                        " AND API_NAME NOT LIKE '%gen.%' " +
-                        " AND trim(CONCAT(API_NAME, SOURCE_ID) || error_description) NOT IN ( " +
-                        " SELECT trim(CONCAT(API_NAME, SOURCE_ID) || error_description) " +
-                        " FROM vaild_bd_master " +
-                        " ) " +
-                        ") " +
-                        "SELECT * FROM ( " +
-                        " SELECT " +
-                        " API_NAME, " +
-                        " BROKER_NAME, " +
-                        " COUNT(1) AS TOTAL_HITS, " +
-                        " SUM(is_td_error) AS TD_COUNT, " +
-                        " ROUND(SUM(is_td_error) * 100 / COUNT(1), 2) AS TD_PERCENT, " +
-                        " TRIM(',' FROM " +
-                        " CASE WHEN SUM(CASE WHEN error_code = 'SI001' THEN 1 ELSE 0 END) > 0 THEN ',SI001' ELSE '' END || " +
-                        " CASE WHEN SUM(CASE WHEN error_code = 'SI002' THEN 1 ELSE 0 END) > 0 THEN ',SI002' ELSE '' END || " +
-                        " CASE WHEN SUM(CASE WHEN substr(error_code,3,3) = '002' AND error_code <> 'SI002' THEN 1 ELSE 0 END) > 0 THEN ',DYNAMIC 002' ELSE '' END || " +
-                        " CASE WHEN SUM(CASE WHEN error_code = 'SI007' AND error_code <> '70007' THEN 1 ELSE 0 END) > 0 THEN ',SI007' ELSE '' END || " +
-                        " CASE WHEN SUM(CASE WHEN error_code = 'SI051' THEN 1 ELSE 0 END) > 0 THEN ',SI051' ELSE '' END || " +
-                        " CASE WHEN SUM(CASE WHEN substr(error_code,3,3) = '014' AND error_code <> '00014' THEN 1 ELSE 0 END) > 0 THEN ',014' ELSE '' END || " +
-                        " CASE WHEN SUM(CASE WHEN error_code = 'SI569' THEN 1 ELSE 0 END) > 0 THEN ',SI569' ELSE '' END || " +
-                        " CASE WHEN SUM(CASE WHEN error_code = 'SI570' THEN 1 ELSE 0 END) > 0 THEN ',SI570' ELSE '' END || " +
-                        " CASE WHEN SUM(CASE WHEN error_code = 'SI015' THEN 1 ELSE 0 END) > 0 THEN ',SI015' ELSE '' END" +
-                        " ) AS ACTIVE_ERROR_CODES " +
-                        " FROM filtered_logs " +
-                        " GROUP BY API_NAME, BROKER_NAME " +
-                        " HAVING ROUND(SUM(is_td_error) * 100 / COUNT(1), 2) >= 0.5 " +
-                        " ORDER BY TD_PERCENT DESC " +
-                        ") WHERE ROWNUM <= 10";
-                } else {
-                    sql = "WITH filtered_logs AS ( " +
-                        " SELECT /*+MATERIALIZE*/ " +
-                        " API_NAME, " +
-                        " BROKER_NAME, " +
-                        " error_code, " +
-                        " CASE " +
-                        " WHEN (substr(error_code,3,3) in ('002','014') OR error_code in ('SI001','SI007','SI569','SI570','SI015')) " +
-                        " AND error_code <> '00014' THEN 1 " +
-                        " ELSE 0 " +
-                        " END AS is_td_error " +
-                        " FROM eisapp.API_LOG@HIDB_LINK " +
-                        " WHERE " +
-                        " REQUEST_DATE_TIME >= SYSDATE - INTERVAL '10' MINUTE " +
-                        " AND API_NAME NOT LIKE '%gen.%' " +
-                        " AND trim(CONCAT(API_NAME, SOURCE_ID) || error_description) NOT IN ( " +
-                        " SELECT trim(CONCAT(API_NAME, SOURCE_ID) || error_description) " +
-                        " FROM vaild_bd_master " +
-                        " ) " +
-                        ") " +
-                        "SELECT * FROM ( " +
-                        " SELECT " +
-                        " API_NAME, " +
-                        " BROKER_NAME, " +
-                        " COUNT(1) AS TOTAL_HITS, " +
-                        " SUM(is_td_error) AS TD_COUNT, " +
-                        " ROUND(SUM(is_td_error) * 100 / COUNT(1), 2) AS TD_PERCENT, " +
-                        " TRIM(',' FROM " +
-                        " CASE WHEN SUM(CASE WHEN error_code = 'SI001' THEN 1 ELSE 0 END) > 0 THEN ',SI001' ELSE '' END || " +
-                        " CASE WHEN SUM(CASE WHEN error_code = 'SI002' THEN 1 ELSE 0 END) > 0 THEN ',SI002' ELSE '' END || " +
-                        " CASE WHEN SUM(CASE WHEN substr(error_code,3,3) = '002' AND error_code <> 'SI002' THEN 1 ELSE 0 END) > 0 THEN ',DYNAMIC 002' ELSE '' END || " +
-                        " CASE WHEN SUM(CASE WHEN error_code = 'SI007' AND error_code <> '70007' THEN 1 ELSE 0 END) > 0 THEN ',SI007' ELSE '' END || " +
-                        " CASE WHEN SUM(CASE WHEN error_code = 'SI051' THEN 1 ELSE 0 END) > 0 THEN ',SI051' ELSE '' END || " +
-                        " CASE WHEN SUM(CASE WHEN substr(error_code,3,3) = '014' AND error_code <> '00014' THEN 1 ELSE 0 END) > 0 THEN ',014' ELSE '' END || " +
-                        " CASE WHEN SUM(CASE WHEN error_code = 'SI569' THEN 1 ELSE 0 END) > 0 THEN ',SI569' ELSE '' END || " +
-                        " CASE WHEN SUM(CASE WHEN error_code = 'SI570' THEN 1 ELSE 0 END) > 0 THEN ',SI570' ELSE '' END || " +
-                        " CASE WHEN SUM(CASE WHEN error_code = 'SI015' THEN 1 ELSE 0 END) > 0 THEN ',SI015' ELSE '' END" +
-                        " ) AS ACTIVE_ERROR_CODES " +
-                        " FROM filtered_logs " +
-                        " GROUP BY API_NAME, BROKER_NAME " +
-                        " HAVING ROUND(SUM(is_td_error) * 100 / COUNT(1), 2) >= 0.5 " +
-                        " ORDER BY TD_PERCENT DESC " +
-                        ") WHERE ROWNUM <= 10";
-                }
-                System.out.println(" EXP Query :- "+ sql);
-                System.out.println("EXP Query Started at :"+LocalTime.now() + " on thread: " + Thread.currentThread().getName());
+
+                String dbLink = flagStatus.equalsIgnoreCase("PR") ? "MIDB_LINK" : "HIDB_LINK";
+
+                sql = "WITH filtered_logs AS ( "
+                    + " SELECT /*+MATERIALIZE*/ API_NAME, BROKER_NAME, error_code, "
+                    + " CASE WHEN (substr(error_code,3,3) in ('002','014') OR error_code in ('SI001','SI007','SI569','SI570','SI015')) AND error_code <> '00014' THEN 1 ELSE 0 END AS is_td_error "
+                    + " FROM eisapp.API_LOG@" + dbLink + " "
+                    + " WHERE REQUEST_DATE_TIME >= SYSDATE - INTERVAL '10' MINUTE "
+                    + " AND API_NAME NOT LIKE '%gen.%' "
+                    + " AND trim(CONCAT(API_NAME, SOURCE_ID) || error_description) NOT IN ( "
+                    + "   SELECT trim(CONCAT(API_NAME, SOURCE_ID) || error_description) FROM vaild_bd_master "
+                    + " ) "
+                    + ") "
+                    + "SELECT * FROM ( "
+                    + " SELECT API_NAME, BROKER_NAME, COUNT(1) AS TOTAL_HITS, SUM(is_td_error) AS TD_COUNT, "
+                    + " ROUND(SUM(is_td_error) * 100 / COUNT(1), 2) AS TD_PERCENT, "
+                    + " TRIM(',' FROM "
+                    + " CASE WHEN SUM(CASE WHEN error_code = 'SI001' THEN 1 ELSE 0 END) > 0 THEN ',SI001' ELSE '' END || "
+                    + " CASE WHEN SUM(CASE WHEN error_code = 'SI002' THEN 1 ELSE 0 END) > 0 THEN ',SI002' ELSE '' END || "
+                    + " CASE WHEN SUM(CASE WHEN substr(error_code,3,3) = '002' AND error_code <> 'SI002' THEN 1 ELSE 0 END) > 0 THEN ',DYNAMIC 002' ELSE '' END || "
+                    + " CASE WHEN SUM(CASE WHEN error_code = 'SI007' AND error_code <> '70007' THEN 1 ELSE 0 END) > 0 THEN ',SI007' ELSE '' END || "
+                    + " CASE WHEN SUM(CASE WHEN error_code = 'SI051' THEN 1 ELSE 0 END) > 0 THEN ',SI051' ELSE '' END || "
+                    + " CASE WHEN SUM(CASE WHEN substr(error_code,3,3) = '014' AND error_code <> '00014' THEN 1 ELSE 0 END) > 0 THEN ',014' ELSE '' END || "
+                    + " CASE WHEN SUM(CASE WHEN error_code = 'SI569' THEN 1 ELSE 0 END) > 0 THEN ',SI569' ELSE '' END || "
+                    + " CASE WHEN SUM(CASE WHEN error_code = 'SI570' THEN 1 ELSE 0 END) > 0 THEN ',SI570' ELSE '' END || "
+                    + " CASE WHEN SUM(CASE WHEN error_code = 'SI015' THEN 1 ELSE 0 END) > 0 THEN ',SI015' ELSE '' END "
+                    + " ) AS ACTIVE_ERROR_CODES "
+                    + " FROM filtered_logs GROUP BY API_NAME, BROKER_NAME "
+                    + " HAVING ROUND(SUM(is_td_error) * 100 / COUNT(1), 2) >= 0.5 "
+                    + " ORDER BY TD_PERCENT DESC "
+                    + ") WHERE ROWNUM <= 10";
+
+                System.out.println("EXP Query :- " + sql);
                 Statement statement = conn.createStatement();
                 ResultSet resultSet = statement.executeQuery(sql);
-                System.out.println("EXP Query End at :"+LocalTime.now());
-                
+
                 while (resultSet.next()) {
                     String brokerNameOnly = resultSet.getString("BROKER_NAME");
                     String formattedBrokerOnly = formatBrokerNameOnly(brokerNameOnly);
                     String name = "<p style='color:#ff9933; font-weight: bolder;font-size: 15px'>"
                         + Integer.toString(resultSet.getInt("TD_COUNT"))
-                        + "</p><br><p style='color:#FFFFFF; font-weight: bolder;font-size: 15px'>"
+                        + "</p><br><p class='ep-name' style='font-weight: bolder;font-size: 15px'>"
                         + formatAPINameWithLineBreaks(resultSet.getString("API_NAME"))
-                        + "</p><br>"
-                        + formattedBrokerOnly
+                        + "</p><br>" + formattedBrokerOnly
                         + "<br><p style='color:#32CD32; font-weight: bolder;font-size: 15px'>"
                         + Integer.toString(resultSet.getInt("TOTAL_HITS")) + "</p>";
                     expHolder.labels.add(name);
@@ -393,26 +439,19 @@ Thread expThread = new Thread(new Runnable() {
                     expHolder.apiNames.add(resultSet.getString("API_NAME"));
                     expHolder.brokerNames.add(brokerNameOnly == null ? "N/A" : brokerNameOnly);
                     String activeErrorCodes = resultSet.getString("ACTIVE_ERROR_CODES");
-                    if (activeErrorCodes == null || activeErrorCodes.trim().isEmpty()) {
-                        activeErrorCodes = "None";
-                    }
+                    if (activeErrorCodes == null || activeErrorCodes.trim().isEmpty()) activeErrorCodes = "None";
                     expHolder.errorCodes.add(activeErrorCodes);
                 }
                 resultSet.close();
                 statement.close();
-            } catch (Exception e) {
-                e.printStackTrace();
-            } finally {
-                if (conn != null) try { conn.close(); } catch (Exception e) {}
-            }
+            } catch (Exception e) { e.printStackTrace(); }
+            finally { if (conn != null) try { conn.close(); } catch (Exception e) {} }
             expHolder.loaded = true;
-        } catch(Exception e) {
-            e.printStackTrace();
-            expHolder.loaded = true;
-        }
+        } catch(Exception e) { e.printStackTrace(); expHolder.loaded = true; }
     }
 });
 
+/* ============ SYS Query Thread ============ */
 Thread sysThread = new Thread(new Runnable() {
     public void run() {
         try {
@@ -422,60 +461,45 @@ Thread sysThread = new Thread(new Runnable() {
                 ZonedDateTime CurrentDate = ZonedDateTime.now(ZoneId.of("Asia/Kolkata"));
                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM_yy").withLocale(Locale.US);
                 String PART = CurrentDate.format(formatter).toUpperCase();
-                String SysSql = "WITH filtered_logs AS ( " +
-                    " SELECT /*+PARALLEL(04)*/ " +
-                    " API_NAME, " +
-                    " SYS_BROKER, " +
-                    " error_code, " +
-                    " CASE " +
-                    " WHEN (substr(error_code,3,3) in ('002','014') OR error_code in ('SI001','SI007','SI569','SI570','SI015')) " +
-                    " AND error_code <> '00014' THEN 1 " +
-                    " ELSE 0 " +
-                    " END AS is_td_error " +
-                    " FROM eisapp.backend_log PARTITION(" + PART + ") " +
-                    " WHERE " +
-                    " REQUEST_DATE_TIME >= SYSDATE - INTERVAL '10' MINUTE " +
-                    " AND API_NAME NOT LIKE '%gen.%' " +
-                    ") " +
-                    "SELECT * FROM ( " +
-                    " SELECT " +
-                    " API_NAME, " +
-                    " SYS_BROKER, " +
-                    " COUNT(1) AS TOTAL_HITS, " +
-                    " SUM(is_td_error) AS TD_COUNT, " +
-                    " ROUND(SUM(is_td_error) * 100 / COUNT(1), 2) AS TD_PERCENT, " +
-                    " TRIM(',' FROM " +
-                    " CASE WHEN SUM(CASE WHEN error_code = 'SI001' THEN 1 ELSE 0 END) > 0 THEN ',SI001' ELSE '' END || " +
-                    " CASE WHEN SUM(CASE WHEN error_code = 'SI002' THEN 1 ELSE 0 END) > 0 THEN ',SI002' ELSE '' END || " +
-                    " CASE WHEN SUM(CASE WHEN substr(error_code,3,3) = '002' AND error_code <> 'SI002' THEN 1 ELSE 0 END) > 0 THEN ',DYNAMIC 002' ELSE '' END || " +
-                    " CASE WHEN SUM(CASE WHEN error_code = 'SI007' AND error_code <> '70007' THEN 1 ELSE 0 END) > 0 THEN ',SI007' ELSE '' END || " +
-                    " CASE WHEN SUM(CASE WHEN error_code = 'SI051' THEN 1 ELSE 0 END) > 0 THEN ',SI051' ELSE '' END || " +
-                    " CASE WHEN SUM(CASE WHEN substr(error_code,3,3) = '014' AND error_code <> '00014' THEN 1 ELSE 0 END) > 0 THEN ',014' ELSE '' END || " +
-                    " CASE WHEN SUM(CASE WHEN error_code = 'SI569' THEN 1 ELSE 0 END) > 0 THEN ',SI569' ELSE '' END || " +
-                    " CASE WHEN SUM(CASE WHEN error_code = 'SI570' THEN 1 ELSE 0 END) > 0 THEN ',SI570' ELSE '' END || " +
-                    " CASE WHEN SUM(CASE WHEN error_code = 'SI015' THEN 1 ELSE 0 END) > 0 THEN ',SI015' ELSE '' END" +
-                    " ) AS ACTIVE_ERROR_CODES " +
-                    " FROM filtered_logs " +
-                    " GROUP BY API_NAME, SYS_BROKER " +
-                    " HAVING COUNT(1)>10 "+
-                   // " HAVING ROUND(SUM(is_td_error) * 100 / COUNT(1), 2) >= 0.5 " +
-                    " ORDER BY TD_PERCENT DESC " +
-                    ") WHERE ROWNUM <= 10";
-                System.out.println(" Sys Query :- "+ SysSql);
-                System.out.println("SYS Query Started at :"+LocalTime.now() + " on thread: " + Thread.currentThread().getName());
+
+                String SysSql = "WITH filtered_logs AS ( "
+                    + " SELECT /*+PARALLEL(04)*/ API_NAME, SYS_BROKER, error_code, "
+                    + " CASE WHEN (substr(error_code,3,3) in ('002','014') OR error_code in ('SI001','SI007','SI569','SI570','SI015')) AND error_code <> '00014' THEN 1 ELSE 0 END AS is_td_error "
+                    + " FROM eisapp.backend_log PARTITION(" + PART + ") "
+                    + " WHERE REQUEST_DATE_TIME >= SYSDATE - INTERVAL '10' MINUTE "
+                    + " AND API_NAME NOT LIKE '%gen.%' "
+                    + ") "
+                    + "SELECT * FROM ( "
+                    + " SELECT API_NAME, SYS_BROKER, COUNT(1) AS TOTAL_HITS, SUM(is_td_error) AS TD_COUNT, "
+                    + " ROUND(SUM(is_td_error) * 100 / COUNT(1), 2) AS TD_PERCENT, "
+                    + " TRIM(',' FROM "
+                    + " CASE WHEN SUM(CASE WHEN error_code = 'SI001' THEN 1 ELSE 0 END) > 0 THEN ',SI001' ELSE '' END || "
+                    + " CASE WHEN SUM(CASE WHEN error_code = 'SI002' THEN 1 ELSE 0 END) > 0 THEN ',SI002' ELSE '' END || "
+                    + " CASE WHEN SUM(CASE WHEN substr(error_code,3,3) = '002' AND error_code <> 'SI002' THEN 1 ELSE 0 END) > 0 THEN ',DYNAMIC 002' ELSE '' END || "
+                    + " CASE WHEN SUM(CASE WHEN error_code = 'SI007' AND error_code <> '70007' THEN 1 ELSE 0 END) > 0 THEN ',SI007' ELSE '' END || "
+                    + " CASE WHEN SUM(CASE WHEN error_code = 'SI051' THEN 1 ELSE 0 END) > 0 THEN ',SI051' ELSE '' END || "
+                    + " CASE WHEN SUM(CASE WHEN substr(error_code,3,3) = '014' AND error_code <> '00014' THEN 1 ELSE 0 END) > 0 THEN ',014' ELSE '' END || "
+                    + " CASE WHEN SUM(CASE WHEN error_code = 'SI569' THEN 1 ELSE 0 END) > 0 THEN ',SI569' ELSE '' END || "
+                    + " CASE WHEN SUM(CASE WHEN error_code = 'SI570' THEN 1 ELSE 0 END) > 0 THEN ',SI570' ELSE '' END || "
+                    + " CASE WHEN SUM(CASE WHEN error_code = 'SI015' THEN 1 ELSE 0 END) > 0 THEN ',SI015' ELSE '' END "
+                    + " ) AS ACTIVE_ERROR_CODES "
+                    + " FROM filtered_logs GROUP BY API_NAME, SYS_BROKER "
+                    + " HAVING COUNT(1)>10 "
+                    + " ORDER BY TD_PERCENT DESC "
+                    + ") WHERE ROWNUM <= 10";
+
+                System.out.println("SYS Query :- " + SysSql);
                 Statement statement = connSys.createStatement();
                 ResultSet resultSet = statement.executeQuery(SysSql);
-                System.out.println("SYS Query End at :"+LocalTime.now());
-                
+
                 while (resultSet.next()) {
                     String sysBrokerOnly = resultSet.getString("SYS_BROKER");
                     String formattedSysBrokerOnly = formatBrokerNameOnly(sysBrokerOnly);
                     String name = "<p style='color:#ff9933; font-weight: bolder; font-size: 15px'>"
                         + Integer.toString(resultSet.getInt("TD_COUNT"))
-                        + "</p><br><p style='color:#FFFFFF; font-weight: bolder;font-size: 15px'>"
+                        + "</p><br><p class='ep-name' style='font-weight: bolder;font-size: 15px'>"
                         + formatAPINameWithLineBreaks(resultSet.getString("API_NAME"))
-                        + "</p><br>"
-                        + formattedSysBrokerOnly
+                        + "</p><br>" + formattedSysBrokerOnly
                         + "<br><p style='color:#32CD32; font-weight: bolder;font-size: 15px'>"
                         + Integer.toString(resultSet.getInt("TOTAL_HITS")) + "</p>";
                     sysHolder.labels.add(name);
@@ -483,35 +507,23 @@ Thread sysThread = new Thread(new Runnable() {
                     sysHolder.apiNames.add(resultSet.getString("API_NAME"));
                     sysHolder.brokerNames.add(sysBrokerOnly == null ? "N/A" : sysBrokerOnly);
                     String activeErrorCodes = resultSet.getString("ACTIVE_ERROR_CODES");
-                    if (activeErrorCodes == null || activeErrorCodes.trim().isEmpty()) {
-                        activeErrorCodes = "None";
-                    }
+                    if (activeErrorCodes == null || activeErrorCodes.trim().isEmpty()) activeErrorCodes = "None";
                     sysHolder.errorCodes.add(activeErrorCodes);
                 }
                 resultSet.close();
                 statement.close();
-            } catch (Exception e) {
-                e.printStackTrace();
-            } finally {
-                if (connSys != null) try { connSys.close(); } catch (Exception e) {}
-            }
+            } catch (Exception e) { e.printStackTrace(); }
+            finally { if (connSys != null) try { connSys.close(); } catch (Exception e) {} }
             sysHolder.loaded = true;
-        } catch(Exception e) {
-            e.printStackTrace();
-            sysHolder.loaded = true;
-        }
+        } catch(Exception e) { e.printStackTrace(); sysHolder.loaded = true; }
     }
 });
 
-// Start BOTH threads simultaneously - THEY RUN IN PARALLEL!
 expThread.start();
 sysThread.start();
-
-// Wait for both threads to complete
 expThread.join();
 sysThread.join();
 
-// Store in request attributes for access
 request.setAttribute("expLabels", expHolder.labels);
 request.setAttribute("expValues", expHolder.values);
 request.setAttribute("expApiNames", expHolder.apiNames);
@@ -525,471 +537,370 @@ request.setAttribute("sysBrokerNames", sysHolder.brokerNames);
 request.setAttribute("sysErrorCodes", sysHolder.errorCodes);
 %>
 
-<!-- Legend in Top Right Corner -->
-<div class="dashboard-legend">
-    <h4>Color Guide</h4>
-    <ul>
-        <li><span class="legend-color-box" style="background-color: #ff9933;"></span><span class="legend-text">TD Count (Failure Hits)</span></li>
-        <li><span class="legend-color-box" style="background-color: #FFFFFF;"></span><span class="legend-text">API Name</span></li>
-        <li><span class="legend-color-box" style="background-color: #32CD32;"></span><span class="legend-text">Total Hits</span></li>
-        <li><span class="legend-color-box" style="background-color: #FFA500;"></span><span class="legend-text">Broker Name (Bold)</span></li>
-        <li><span class="legend-color-box" style="background-color: #673AB7;"></span><span class="legend-text">Tooltip Background</span></li>
-        <li><span class="legend-color-box" style="background-color: #99ccff;"></span><span class="legend-text">EXP Bar Color</span></li>
-        <li><span class="legend-color-box" style="background-color: #C0C0C0;"></span><span class="legend-text">SYS Bar Color</span></li>
-    </ul>
-</div>
+<%@include file="../userheader.jsp"%>
 
-<div class="header-info">
-<p class="blink" style="font-size: 20px;">
-This Data get Auto Refresh after <span class="timer" id="ten-countdown"></span> min
-<span class="blink" style="font-size: 16px;" id="timeRangeMessage"></span>
-</p>
-</div>
+<div class="new-wrapper">
+<div class="dash-shell">
 
-<div class="dashboard-container">
-<!-- EXP Chart - Top Half -->
-<div class="chart-wrapper">
-<div class="chart-title">
-<span class="status-indicator" id="expStatus"></span>
-Failure % EXP Service Wise
-</div>
-<div id="expChart" class="chart--container">
-<div id="expLoading" class="loading-indicator">
-<div>Loading EXP Dashboard...</div>
-</div>
-</div>
-</div>
-<!-- SYS Chart - Bottom Half -->
-<div class="chart-wrapper">
-<div class="chart-title">
-<span class="status-indicator" id="sysStatus"></span>
-Failure % SYS Service Wise
-</div>
-<div id="sysChart" class="chart--container">
-<div id="sysLoading" class="loading-indicator">
-<div>Loading SYS Dashboard...</div>
-</div>
-</div>
+    <!-- Legend -->
+    <div class="dashboard-legend">
+        <h4>Color Guide</h4>
+        <ul>
+            <li><span class="legend-color-box" style="background-color: #ff9933;"></span><span class="legend-text">TD Count</span></li>
+            <li><span class="legend-color-box" style="background-color: var(--ink);"></span><span class="legend-text">API Name</span></li>
+            <li><span class="legend-color-box" style="background-color: #32CD32;"></span><span class="legend-text">Total Hits</span></li>
+            <li><span class="legend-color-box" style="background-color: #FFA500;"></span><span class="legend-text">Broker Name</span></li>
+            <li><span class="legend-color-box" style="background-color: #673AB7;"></span><span class="legend-text">Tooltip</span></li>
+            <li><span class="legend-color-box" style="background-color: #99ccff;"></span><span class="legend-text">EXP Bar</span></li>
+            <li><span class="legend-color-box" style="background-color: #C0C0C0;"></span><span class="legend-text">SYS Bar</span></li>
+        </ul>
+    </div>
+
+    <div class="header-info">
+        <p class="blink" style="font-size: 20px;">
+            This Data get Auto Refresh after <span class="timer" id="ten-countdown"></span> min
+            <span class="blink" style="font-size: 16px;" id="timeRangeMessage"></span>
+        </p>
+    </div>
+
+    <div class="dashboard-container">
+        <div class="chart-wrapper">
+            <div class="chart-title">
+                <span class="status-indicator" id="expStatus"></span>
+                Failure % EXP Service Wise
+            </div>
+            <div id="expChart" class="chart--container">
+                <div id="expLoading" class="loading-indicator">
+                    <div>Loading EXP Dashboard...</div>
+                </div>
+            </div>
+        </div>
+        <div class="chart-wrapper">
+            <div class="chart-title">
+                <span class="status-indicator" id="sysStatus"></span>
+                Failure % SYS Service Wise
+            </div>
+            <div id="sysChart" class="chart--container">
+                <div id="sysLoading" class="loading-indicator">
+                    <div>Loading SYS Dashboard...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
 </div>
 
 <script>
-// Global variables to store data
-var expData = {
-labels: [],
-values: [],
-apiNames: [],
-brokerNames: [],
-errorCodes: [],
-loaded: false
-};
+var expData = { labels: [], values: [], apiNames: [], brokerNames: [], errorCodes: [], loaded: false };
+var sysData = { labels: [], values: [], apiNames: [], sysBrokerNames: [], errorCodes: [], loaded: false };
 
-var sysData = {
-labels: [],
-values: [],
-apiNames: [],
-sysBrokerNames: [],
-errorCodes: [],
-loaded: false
-};
+/* ✅ Theme detect */
+var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+var chartBg      = isDark ? '#000000' : '#FFFFFF';
+var chartText    = isDark ? '#FFFFFF' : '#0A0A0A';
+var chartGrid    = isDark ? '#333333' : '#E5E7EB';
+var chartTick    = isDark ? '#333333' : '#D1D5DB';
+var chartBorder  = isDark ? '#333333' : '#CCCCCC';
 
-// Time range message
 document.addEventListener('DOMContentLoaded', function() {
-var currentTime = new Date();
-var tenMinutesAgo = new Date();
-tenMinutesAgo.setMinutes(currentTime.getMinutes() - 10);
-var formatTime = function(date) {
-var hours = date.getHours();
-var minutes = date.getMinutes();
-hours = hours < 10 ? '0' + hours : hours;
-minutes = minutes < 10 ? '0' + minutes : minutes;
-return hours + ':' + minutes;
-};
-var message = 'Your session was from ' + formatTime(tenMinutesAgo) + ' to ' + formatTime(currentTime);
-document.getElementById('timeRangeMessage').innerText = message;
+    var currentTime = new Date();
+    var tenMinutesAgo = new Date();
+    tenMinutesAgo.setMinutes(currentTime.getMinutes() - 10);
+    var formatTime = function(date) {
+        var hours = date.getHours();
+        var minutes = date.getMinutes();
+        hours = hours < 10 ? '0' + hours : hours;
+        minutes = minutes < 10 ? '0' + minutes : minutes;
+        return hours + ':' + minutes;
+    };
+    var message = 'Your session was from ' + formatTime(tenMinutesAgo) + ' to ' + formatTime(currentTime);
+    document.getElementById('timeRangeMessage').innerText = message;
 });
 
-// Initialize dashboards
 function initializeDashboards() {
-document.getElementById('expStatus').className = 'status-indicator status-loading';
-document.getElementById('sysStatus').className = 'status-indicator status-loading';
+    document.getElementById('expStatus').className = 'status-indicator status-loading';
+    document.getElementById('sysStatus').className = 'status-indicator status-loading';
 
-// Data from server-side parallel execution
-expData.labels = [<%
-    List<String> expLabelsList = (List<String>)request.getAttribute("expLabels");
-    if(expLabelsList != null) {
-        for(String label: expLabelsList) { out.print("\"" + label.replace("\"", "\\\"") + "\","); }
-    }
-%>];
-expData.values = [<%
-    List<Double> expValuesList = (List<Double>)request.getAttribute("expValues");
-    if(expValuesList != null) {
-        for(Double value: expValuesList) { out.print(value + ","); }
-    }
-%>];
-expData.apiNames = [<%
-    List<String> expApiNamesList = (List<String>)request.getAttribute("expApiNames");
-    if(expApiNamesList != null) {
-        for(String name: expApiNamesList) { out.print("\"" + name.replace("\"", "\\\"") + "\","); }
-    }
-%>];
-expData.brokerNames = [<%
-    List<String> expBrokerNamesList = (List<String>)request.getAttribute("expBrokerNames");
-    if(expBrokerNamesList != null) {
-        for(String broker: expBrokerNamesList) { out.print("\"" + broker.replace("\"", "\\\"") + "\","); }
-    }
-%>];
-expData.errorCodes = [<%
-    List<String> expErrorCodesList = (List<String>)request.getAttribute("expErrorCodes");
-    if(expErrorCodesList != null) {
-        for(String codes: expErrorCodesList) { out.print("\"" + codes.replace("\"", "\\\"") + "\","); }
-    }
-%>];
-expData.loaded = true;
+    expData.labels = [<%
+        List<String> expLabelsList = (List<String>)request.getAttribute("expLabels");
+        if(expLabelsList != null) { for(String label: expLabelsList) { out.print("\"" + label.replace("\"", "\\\"").replace("\n","") + "\","); } }
+    %>];
+    expData.values = [<%
+        List<Double> expValuesList = (List<Double>)request.getAttribute("expValues");
+        if(expValuesList != null) { for(Double value: expValuesList) { out.print(value + ","); } }
+    %>];
+    expData.apiNames = [<%
+        List<String> expApiNamesList = (List<String>)request.getAttribute("expApiNames");
+        if(expApiNamesList != null) { for(String name: expApiNamesList) { out.print("\"" + name.replace("\"", "\\\"") + "\","); } }
+    %>];
+    expData.brokerNames = [<%
+        List<String> expBrokerNamesList = (List<String>)request.getAttribute("expBrokerNames");
+        if(expBrokerNamesList != null) { for(String broker: expBrokerNamesList) { out.print("\"" + broker.replace("\"", "\\\"") + "\","); } }
+    %>];
+    expData.errorCodes = [<%
+        List<String> expErrorCodesList = (List<String>)request.getAttribute("expErrorCodes");
+        if(expErrorCodesList != null) { for(String codes: expErrorCodesList) { out.print("\"" + codes.replace("\"", "\\\"") + "\","); } }
+    %>];
+    expData.loaded = true;
 
-sysData.labels = [<%
-    List<String> sysLabelsList = (List<String>)request.getAttribute("sysLabels");
-    if(sysLabelsList != null) {
-        for(String label: sysLabelsList) { out.print("\"" + label.replace("\"", "\\\"") + "\","); }
-    }
-%>];
-sysData.values = [<%
-    List<Double> sysValuesList = (List<Double>)request.getAttribute("sysValues");
-    if(sysValuesList != null) {
-        for(Double value: sysValuesList) { out.print(value + ","); }
-    }
-%>];
-sysData.apiNames = [<%
-    List<String> sysApiNamesList = (List<String>)request.getAttribute("sysApiNames");
-    if(sysApiNamesList != null) {
-        for(String name: sysApiNamesList) { out.print("\"" + name.replace("\"", "\\\"") + "\","); }
-    }
-%>];
-sysData.sysBrokerNames = [<%
-    List<String> sysBrokerNamesList = (List<String>)request.getAttribute("sysBrokerNames");
-    if(sysBrokerNamesList != null) {
-        for(String broker: sysBrokerNamesList) { out.print("\"" + broker.replace("\"", "\\\"") + "\","); }
-    }
-%>];
-sysData.errorCodes = [<%
-    List<String> sysErrorCodesList = (List<String>)request.getAttribute("sysErrorCodes");
-    if(sysErrorCodesList != null) {
-        for(String codes: sysErrorCodesList) { out.print("\"" + codes.replace("\"", "\\\"") + "\","); }
-    }
-%>];
-sysData.loaded = true;
+    sysData.labels = [<%
+        List<String> sysLabelsList = (List<String>)request.getAttribute("sysLabels");
+        if(sysLabelsList != null) { for(String label: sysLabelsList) { out.print("\"" + label.replace("\"", "\\\"").replace("\n","") + "\","); } }
+    %>];
+    sysData.values = [<%
+        List<Double> sysValuesList = (List<Double>)request.getAttribute("sysValues");
+        if(sysValuesList != null) { for(Double value: sysValuesList) { out.print(value + ","); } }
+    %>];
+    sysData.apiNames = [<%
+        List<String> sysApiNamesList = (List<String>)request.getAttribute("sysApiNames");
+        if(sysApiNamesList != null) { for(String name: sysApiNamesList) { out.print("\"" + name.replace("\"", "\\\"") + "\","); } }
+    %>];
+    sysData.sysBrokerNames = [<%
+        List<String> sysBrokerNamesList = (List<String>)request.getAttribute("sysBrokerNames");
+        if(sysBrokerNamesList != null) { for(String broker: sysBrokerNamesList) { out.print("\"" + broker.replace("\"", "\\\"") + "\","); } }
+    %>];
+    sysData.errorCodes = [<%
+        List<String> sysErrorCodesList = (List<String>)request.getAttribute("sysErrorCodes");
+        if(sysErrorCodesList != null) { for(String codes: sysErrorCodesList) { out.print("\"" + codes.replace("\"", "\\\"") + "\","); } }
+    %>];
+    sysData.loaded = true;
 
-document.getElementById('expStatus').className = 'status-indicator status-loaded';
-document.getElementById('sysStatus').className = 'status-indicator status-loaded';
+    document.getElementById('expStatus').className = 'status-indicator status-loaded';
+    document.getElementById('sysStatus').className = 'status-indicator status-loaded';
 
-var expLoading = document.getElementById('expLoading');
-if(expLoading){
-expLoading.style.display = 'none';
-}
-var sysLoading = document.getElementById('sysLoading');
-if(sysLoading){
-sysLoading.style.display = 'none';
+    var expLoading = document.getElementById('expLoading');
+    if(expLoading){ expLoading.style.display = 'none'; }
+    var sysLoading = document.getElementById('sysLoading');
+    if(sysLoading){ sysLoading.style.display = 'none'; }
+
+    renderExpChart();
+    renderSysChart();
+
+    /* ✅ Fix labels color after render */
+    setTimeout(function(){
+        var names = document.querySelectorAll('.ep-name');
+        var color = isDark ? '#FFFFFF' : '#0A0A0A';
+        names.forEach(function(el){ el.style.color = color; });
+    }, 300);
 }
 
-// Render both charts
-renderExpChart();
-renderSysChart();
-}
-
-// Render EXP Chart with 3D bars
 function renderExpChart() {
-if (!expData.loaded) return;
+    if (!expData.loaded) return;
 
-var tooltips = [];
-for (var i = 0; i < expData.values.length; i++) {
-tooltips.push(
-"<b>Failure Rate:</b> " + expData.values[i] + "%" +
-"<br><b>Broker Name:</b> " + (expData.brokerNames[i] || "N/A") +
-"<br><b>Error Codes:</b> " + (expData.errorCodes[i] || "None") +
-"<br><b>API:</b> " + expData.apiNames[i] +
-"<br><b> Click to view details</b>"
-);
-}
-
-var barCount = expData.values.length > 0 ? expData.values.length : 1;
-var bottomMargin = Math.max(150, barCount * 10);
-var leftMargin = 150;
-var rightMargin = 30;
-var topMargin = 40;
-
-let chartConfig = {
-type: "bar3d",
-"3dAspect": { depth: 20, true3d: 0, yAngle: 8 },
-backgroundColor: "#000000",
-plotarea: {
-alpha: 0.3,
-backgroundColor: "#000000",
-margin: topMargin + "px " + rightMargin + "px " + bottomMargin + "px " + leftMargin + "px"
-},
-scaleX: {
-values: expData.labels.length > 0 ? expData.labels : ["No Data"],
-alpha: 0.5,
-backgroundColor: "#fff",
-borderColor: "#333",
-borderWidth: "1px",
-guide: { visible: false },
-item: { 
-    fontColor: "#fff", 
-    fontSize: "14px",
-    fontFamily: "Arial",
-    wrapText: false,
-    overflow: "visible",
-    maxChars: null,
-    angle: 0,
-    textAlign: "center"
-},
-tick: { alpha: 0.2, lineColor: "#333" },
-label: {
-    text: '',
-    color: "red",
-    fontSize: "20px",
-    offsetX: '-50px',
-},
-layout: {
-    type: "auto",
-    adjustLayout: true
-},
-maxItems: 50,
-step: 1,
-transform: {
-    type: "none"
-}
-},
-scaleY: {
-alpha: 0.5,
-backgroundColor: "#fff",
-borderColor: "#fff",
-borderWidth: "1px",
-guide: { alpha: 0.2, lineColor: "#FFF", lineStyle: "solid" },
-item: { fontColor: "#FFF", paddingRight: "5px", fontSize: "20px" },
-tick: { alpha: 0.2, lineColor: "#333" },
-label: { text: "Failure %", color: "red", fontSize: "20px" },
-guide: { visible: true, 'line-color': "black", 'line-style': "dotted", alpha: 1 }
-},
-series: [{
-text: "Failure Rate",
-values: expData.values.length > 0 ? expData.values : [0],
-"data-tooltip": tooltips,
-"value-box": {
-"text": "%v%",
-"placement": "top",
-"font-color": "#ffffff",
-"font-size": "18px",
-"font-weight": "bold",
-"offset-y": -5,
-},
-tooltip: {
-text: "%data-tooltip",
-backgroundColor: "#673AB7",
-borderColor: "none",
-borderRadius: "5px",
-fontSize: "16px",
-padding: "8px 12px",
-shadow: false,
-wrapText: true,
-},
-backgroundColor: "#99ccff #7399ff",
-borderColor: "#fff",
-}],
-options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    scaleOverflow: "visible"
-}
-};
-
-zingchart.render({
-id: 'expChart',
-data: chartConfig,
-height: '100%',
-width: '100%',
-callback: function() {
-    var chartContainer = document.getElementById('expChart');
-    if (chartContainer) {
-        var chartDiv = chartContainer.querySelector('.zingchart');
-        if (chartDiv) {
-            chartDiv.style.overflow = 'visible';
-        }
+    var tooltips = [];
+    for (var i = 0; i < expData.values.length; i++) {
+        tooltips.push(
+            "<b>Failure Rate:</b> " + expData.values[i] + "%" +
+            "<br><b>Broker Name:</b> " + (expData.brokerNames[i] || "N/A") +
+            "<br><b>Error Codes:</b> " + (expData.errorCodes[i] || "None") +
+            "<br><b>API:</b> " + expData.apiNames[i] +
+            "<br><b>Click to view details</b>"
+        );
     }
-}
-});
 
-zingchart.bind('expChart', 'node_click', function(event) {
-var nodeIndex = event.nodeindex;
-if (nodeIndex < expData.apiNames.length) {
-var apiName = expData.apiNames[nodeIndex];
-var expUrl = '<%=request.getContextPath() + "/jsp/AutoRefreshExpWiseService.jsp?apiName="%>' + encodeURIComponent(apiName);
-window.open(expUrl, '_blank');
-}
-});
+    var barCount = expData.values.length > 0 ? expData.values.length : 1;
+    var bottomMargin = Math.max(150, barCount * 10);
+    var leftMargin = 150;
+    var rightMargin = 30;
+    var topMargin = 40;
+
+    let chartConfig = {
+        type: "bar3d",
+        "3dAspect": { depth: 20, true3d: 0, yAngle: 8 },
+        backgroundColor: chartBg,
+        plotarea: {
+            alpha: 0.3,
+            backgroundColor: chartBg,
+            margin: topMargin + "px " + rightMargin + "px " + bottomMargin + "px " + leftMargin + "px"
+        },
+        scaleX: {
+            values: expData.labels.length > 0 ? expData.labels : ["No Data"],
+            alpha: 0.5,
+            backgroundColor: chartBg,
+            borderColor: chartBorder,
+            borderWidth: "1px",
+            guide: { visible: false },
+            item: { fontColor: chartText, fontSize: "14px", fontFamily: "Arial", wrapText: false, overflow: "visible", maxChars: null, angle: 0, textAlign: "center" },
+            tick: { alpha: 0.2, lineColor: chartTick },
+            label: { text: '', color: chartText, fontSize: "20px", offsetX: '-50px' },
+            layout: { type: "auto", adjustLayout: true },
+            maxItems: 50,
+            step: 1,
+            transform: { type: "none" }
+        },
+        scaleY: {
+            alpha: 0.5,
+            backgroundColor: chartBg,
+            borderColor: chartBorder,
+            borderWidth: "1px",
+            guide: { alpha: 0.2, lineColor: chartGrid, lineStyle: "solid" },
+            item: { fontColor: chartText, paddingRight: "5px", fontSize: "20px" },
+            tick: { alpha: 0.2, lineColor: chartTick },
+            label: { text: "Failure %", color: chartText, fontSize: "20px" },
+            guide: { visible: true, 'line-color': chartGrid, 'line-style': "dotted", alpha: 1 }
+        },
+        series: [{
+            text: "Failure Rate",
+            values: expData.values.length > 0 ? expData.values : [0],
+            "data-tooltip": tooltips,
+            "value-box": { "text": "%v%", "placement": "top", "font-color": chartText, "font-size": "18px", "font-weight": "bold", "offset-y": -5 },
+            tooltip: { text: "%data-tooltip", backgroundColor: "#673AB7", borderColor: "none", borderRadius: "5px", fontSize: "16px", padding: "8px 12px", shadow: false, wrapText: true },
+            backgroundColor: "#99ccff #7399ff",
+            borderColor: "#fff",
+        }],
+        options: { responsive: true, maintainAspectRatio: false, scaleOverflow: "visible" }
+    };
+
+    zingchart.render({
+        id: 'expChart',
+        data: chartConfig,
+        height: '100%',
+        width: '100%',
+        callback: function() {
+            var chartContainer = document.getElementById('expChart');
+            if (chartContainer) {
+                var chartDiv = chartContainer.querySelector('.zingchart');
+                if (chartDiv) chartDiv.style.overflow = 'visible';
+            }
+        }
+    });
+
+    zingchart.bind('expChart', 'node_click', function(event) {
+        var nodeIndex = event.nodeindex;
+        if (nodeIndex < expData.apiNames.length) {
+            var apiName = expData.apiNames[nodeIndex];
+            var expUrl = '<%=request.getContextPath() + "/jsp/AutoRefreshExpWiseService.jsp?apiName="%>' + encodeURIComponent(apiName);
+            window.open(expUrl, '_blank');
+        }
+    });
 }
 
-// Render SYS Chart with 3D bars
 function renderSysChart() {
-if (!sysData.loaded) return;
+    if (!sysData.loaded) return;
 
-var tooltips = [];
-for (var i = 0; i < sysData.values.length; i++) {
-tooltips.push(
-"<b>Failure Rate:</b> " + sysData.values[i] + "%" +
-"<br><b>SYS Broker Name:</b> " + (sysData.sysBrokerNames[i] || "N/A") +
-"<br><b>Error Codes:</b> " + (sysData.errorCodes[i] || "None") +
-"<br><b>API:</b> " + sysData.apiNames[i] +
-"<br><b> Click to view details</b>"
-);
+    var tooltips = [];
+    for (var i = 0; i < sysData.values.length; i++) {
+        tooltips.push(
+            "<b>Failure Rate:</b> " + sysData.values[i] + "%" +
+            "<br><b>SYS Broker Name:</b> " + (sysData.sysBrokerNames[i] || "N/A") +
+            "<br><b>Error Codes:</b> " + (sysData.errorCodes[i] || "None") +
+            "<br><b>API:</b> " + sysData.apiNames[i] +
+            "<br><b>Click to view details</b>"
+        );
+    }
+
+    var barCount = sysData.values.length > 0 ? sysData.values.length : 1;
+    var bottomMargin = Math.max(150, barCount * 10);
+    var leftMargin = 150;
+    var rightMargin = 30;
+    var topMargin = 40;
+
+    let chartConfig = {
+        type: "bar3d",
+        "3dAspect": { depth: 20, true3d: 0, yAngle: 8 },
+        backgroundColor: chartBg,
+        plotarea: {
+            alpha: 0.3,
+            backgroundColor: chartBg,
+            margin: topMargin + "px " + rightMargin + "px " + bottomMargin + "px " + leftMargin + "px"
+        },
+        scaleX: {
+            values: sysData.labels.length > 0 ? sysData.labels : ["No Data"],
+            alpha: 0.5,
+            backgroundColor: chartBg,
+            borderColor: chartBorder,
+            borderWidth: "1px",
+            guide: { visible: false },
+            item: { fontColor: chartText, fontSize: "14px", fontFamily: "Arial", wrapText: false, overflow: "visible", maxChars: null, angle: 0, textAlign: "center" },
+            tick: { alpha: 0.2, lineColor: chartTick },
+            label: { text: 'TD Count, API Name, Total count', color: chartText, fontSize: "20px", offsetX: '-50px' },
+            layout: { type: "auto", adjustLayout: true },
+            maxItems: 50,
+            step: 1,
+            transform: { type: "none" }
+        },
+        scaleY: {
+            alpha: 0.5,
+            backgroundColor: chartBg,
+            borderColor: chartBorder,
+            borderWidth: "1px",
+            guide: { alpha: 0.2, lineColor: chartGrid, lineStyle: "solid" },
+            item: { fontColor: chartText, paddingRight: "5px", fontSize: "20px" },
+            tick: { alpha: 0.2, lineColor: chartTick },
+            label: { text: "Failure %", color: chartText, fontSize: "20px" },
+            guide: { visible: true, 'line-color': chartGrid, 'line-style': "dotted", alpha: 1 }
+        },
+        series: [{
+            text: "Failure Rate",
+            values: sysData.values.length > 0 ? sysData.values : [0],
+            "data-tooltip": tooltips,
+            "value-box": { "text": "%v%", "placement": "top", "font-color": chartText, "font-size": "18px", "font-weight": "bold", "offset-y": -5 },
+            tooltip: { text: "%data-tooltip", backgroundColor: "#673AB7", borderColor: "none", borderRadius: "5px", fontSize: "16px", padding: "8px 12px", shadow: false, wrapText: true },
+            backgroundColor: "#f2f7f2 #C0C0C0",
+            borderColor: "#fff",
+        }],
+        options: { responsive: true, maintainAspectRatio: false, scaleOverflow: "visible" }
+    };
+
+    zingchart.render({
+        id: 'sysChart',
+        data: chartConfig,
+        height: '100%',
+        width: '100%',
+        callback: function() {
+            var chartContainer = document.getElementById('sysChart');
+            if (chartContainer) {
+                var chartDiv = chartContainer.querySelector('.zingchart');
+                if (chartDiv) chartDiv.style.overflow = 'visible';
+            }
+        }
+    });
+
+    zingchart.bind('sysChart', 'node_click', function(event) {
+        var nodeIndex = event.nodeindex;
+        if (nodeIndex < sysData.apiNames.length) {
+            var apiName = sysData.apiNames[nodeIndex];
+            var sysUrl = '<%=request.getContextPath() + "/jsp/AutoRefreshSysWiseService.jsp?apiName="%>' + encodeURIComponent(apiName);
+            window.open(sysUrl, '_blank');
+        }
+    });
 }
 
-var barCount = sysData.values.length > 0 ? sysData.values.length : 1;
-var bottomMargin = Math.max(150, barCount * 10);
-var leftMargin = 150;
-var rightMargin = 30;
-var topMargin = 40;
-
-let chartConfig = {
-type: "bar3d",
-"3dAspect": { depth: 20, true3d: 0, yAngle: 8 },
-backgroundColor: "#000000",
-plotarea: {
-alpha: 0.3,
-backgroundColor: "#000000",
-margin: topMargin + "px " + rightMargin + "px " + bottomMargin + "px " + leftMargin + "px"
-},
-scaleX: {
-values: sysData.labels.length > 0 ? sysData.labels : ["No Data"],
-alpha: 0.5,
-backgroundColor: "#fff",
-borderColor: "#333",
-borderWidth: "1px",
-guide: { visible: false },
-item: { 
-    fontColor: "#fff", 
-    fontSize: "14px",
-    fontFamily: "Arial",
-    wrapText: false,
-    overflow: "visible",
-    maxChars: null,
-    angle: 0,
-    textAlign: "center"
-},
-tick: { alpha: 0.2, lineColor: "#333" },
-label: {
-text: '<p style="color:#ff9933;">TD Count, </p><p style="color:#FFFFFF;">API Name, </p><p style="color:#32CD32;">Total count</p>',
-color: "red",
-fontSize: "20px",
-offsetX: '-50px',
-},
-layout: {
-    type: "auto",
-    adjustLayout: true
-},
-maxItems: 50,
-step: 1,
-transform: {
-    type: "none"
-}
-},
-scaleY: {
-alpha: 0.5,
-backgroundColor: "#fff",
-borderColor: "#fff",
-borderWidth: "1px",
-guide: { alpha: 0.2, lineColor: "#FFF", lineStyle: "solid" },
-item: { fontColor: "#FFF", paddingRight: "5px", fontSize: "20px" },
-tick: { alpha: 0.2, lineColor: "#333" },
-label: { text: "Failure %", color: "red", fontSize: "20px" },
-guide: { visible: true, 'line-color': "black", 'line-style': "dotted", alpha: 1 }
-},
-series: [{
-text: "Failure Rate",
-values: sysData.values.length > 0 ? sysData.values : [0],
-"data-tooltip": tooltips,
-"value-box": {
-"text": "%v%",
-"placement": "top",
-"font-color": "#ffffff",
-"font-size": "18px",
-"font-weight": "bold",
-"offset-y": -5,
-},
-tooltip: {
-text: "%data-tooltip",
-backgroundColor: "#673AB7",
-borderColor: "none",
-borderRadius: "5px",
-fontSize: "16px",
-padding: "8px 12px",
-shadow: false,
-wrapText: true,
-},
-backgroundColor: "#f2f7f2 #C0C0C0",
-borderColor: "#fff",
-}],
-options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    scaleOverflow: "visible"
-}
-};
-
-zingchart.render({
-id: 'sysChart',
-data: chartConfig,
-height: '100%',
-width: '100%',
-callback: function() {
-    var chartContainer = document.getElementById('sysChart');
-    if (chartContainer) {
-        var chartDiv = chartContainer.querySelector('.zingchart');
-        if (chartDiv) {
-            chartDiv.style.overflow = 'visible';
+function countdown(elementName, minutes, seconds) {
+    var element, endTime, mins, msLeft, time;
+    function twoDigits(n) { return (n <= 9 ? "0" + n : n); }
+    function updateTimer() {
+        msLeft = endTime - (+new Date);
+        if (msLeft < 1000) {
+            element.innerHTML = "0:00";
+            window.location.reload();
+        } else {
+            time = new Date(msLeft);
+            mins = time.getUTCMinutes();
+            element.innerHTML = mins + ':' + twoDigits(time.getUTCSeconds());
+            setTimeout(updateTimer, time.getUTCMilliseconds() + 500);
         }
     }
+    element = document.getElementById(elementName);
+    endTime = (+new Date) + 1000 * (60 * minutes + seconds) + 500;
+    updateTimer();
 }
+
+document.addEventListener('DOMContentLoaded', function(){
+    initializeDashboards();
+    countdown("ten-countdown", 10, 0);
+
+    /* ✅ Theme change pe reload — chart re-render */
+    var lastTheme = isDark ? 'dark' : 'light';
+    setInterval(function(){
+        var now = document.documentElement.getAttribute('data-theme') || 'light';
+        if(now !== lastTheme){
+            lastTheme = now;
+            location.reload();
+        }
+    }, 500);
 });
-
-zingchart.bind('sysChart', 'node_click', function(event) {
-var nodeIndex = event.nodeindex;
-if (nodeIndex < sysData.apiNames.length) {
-var apiName = sysData.apiNames[nodeIndex];
-var sysUrl = '<%=request.getContextPath() + "/jsp/AutoRefreshSysWiseService.jsp?apiName="%>' + encodeURIComponent(apiName);
-window.open(sysUrl, '_blank');
-}
-});
-}
-
-// Countdown timer with actual page refresh
-function countdown(elementName, minutes, seconds) {
-var element, endTime, hours, mins, msLeft, time;
-
-function twoDigits(n) {
-return (n <= 9 ? "0" + n : n);
-}
-
-function updateTimer() {
-msLeft = endTime - (+new Date);
-if (msLeft < 1000) {
-element.innerHTML = "0:00";
-// Actually refresh the page
-window.location.reload();
-} else {
-time = new Date(msLeft);
-mins = time.getUTCMinutes();
-element.innerHTML = mins + ':' + twoDigits(time.getUTCSeconds());
-setTimeout(updateTimer, time.getUTCMilliseconds() + 500);
-}
-}
-
-element = document.getElementById(elementName);
-endTime = (+new Date) + 1000 * (60 * minutes + seconds) + 500;
-updateTimer();
-}
-
-countdown("ten-countdown", 10, 0);
 </script>
 </body>
 </html>
