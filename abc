@@ -1,495 +1,486 @@
-<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%@page pageEncoding="UTF-8"%>
 <%@page import="java.util.*"%>
-<%@page import="java.sql.*"%> 
-<%@page import="com.jdbc.DBUtilityAuto" %>   
-<%@page import="com.jdbc.DBUtility" %>   
+<%@page import="java.sql.*"%>
+<%@page import="com.jdbc.DBUtilityAuto" %>
+<%@page import="com.jdbc.DBUtility" %>
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="ISO-8859-1" >
+<meta charset="UTF-8">
 <title>Transaction End Point</title>
- <script nonce="undefined" src="../js/zingchart.min.js"></script>
- <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-  <style>
-    .chart--container {
-      min-height: 620px;
-      width: 100%;
-      height: 100%;
+<script nonce="undefined" src="<%=request.getContextPath()%>/js/zingchart.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 
-    }
-
-    .blink {
-      animation: blinker 0s linear infinite;
-      color: white;
-      font-family: sans-serif;
-      font-size: larger;
-      text-align-last: center;
-      font-weight: 900;
-    }
-    
-    .footer {
-   position: relative;
-   left: 0;
-   bottom: 0;
-   width: 100%;
-   color: white;
-   text-align: center;
+<style>
+/* ================================================================
+   ORIGINAL STYLES — AS-IS (theme-aware)
+   ================================================================ */
+.chart--container {
+    min-height: 620px;
+    width: 100%;
+    height: 100%;
 }
 
-    @keyframes blinker {
-      50% {
-        opacity: 0;
-      }
-    }
-    
-    
-    
-    
-    
-    
-/* The Modal (background) */
+.blink {
+    animation: blinker 0s linear infinite;
+    font-family: sans-serif;
+    font-size: larger;
+    text-align-last: center;
+    font-weight: 900;
+    color: var(--ink) !important;
+}
+
+@keyframes blinker {
+    50% { opacity: 0; }
+}
+
+/* Modal */
 .modal {
-  display: none; /* Hidden by default */
-  position: fixed; /* Stay in place */
-  z-index: 1; /* Sit on top */
-  padding-top: 100px; /* Location of the box */
-  left: 0;
-  top: 0;
-  width: 100%; /* Full width */
-  height: 100%; /* Full height */
-  overflow: auto; /* Enable scroll if needed */
-  background-color: rgb(0,0,0); /* Fallback color */
-  background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+    display: none;
+    position: fixed;
+    z-index: 1;
+    padding-top: 100px;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.4);
 }
-
-/* Modal Content */
 .modal-content {
-  position: relative;
-  background-color: #fefefe;
-  margin: auto;
-  padding: 0;
-  border: 1px solid #888;
-  width: 80%;
-  box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19);
-  -webkit-animation-name: animatetop;
-  -webkit-animation-duration: 0.4s;
-  animation-name: animatetop;
-  animation-duration: 0.4s
+    position: relative;
+    background-color: var(--card);
+    margin: auto;
+    padding: 0;
+    border: 1px solid var(--line);
+    width: 80%;
+    box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19);
+    color: var(--ink);
 }
-
-/* Add Animation */
 @-webkit-keyframes animatetop {
-  from {top:-300px; opacity:0} 
-  to {top:0; opacity:1}
+    from {top:-300px; opacity:0}
+    to {top:0; opacity:1}
 }
-
 @keyframes animatetop {
-  from {top:-300px; opacity:0}
-  to {top:0; opacity:1}
+    from {top:-300px; opacity:0}
+    to {top:0; opacity:1}
 }
-
-/* The Close Button */
 .close {
-  color: white;
-  float: right;
-  font-size: 28px;
-  font-weight: bold;
+    color: white;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
 }
-
 .close:hover,
 .close:focus {
-  color: #000;
-  text-decoration: none;
-  cursor: pointer;
+    color: #000;
+    text-decoration: none;
+    cursor: pointer;
 }
-
 .modal-header {
-  padding: 2px 16px;
-  background-color: #AB5AF3;
-  color: white;
+    padding: 2px 16px;
+    background-color: #AB5AF3;
+    color: white;
 }
-
-.modal-body {padding: 2px 16px;
-font-size:large;
+.modal-body {
+    padding: 2px 16px;
+    font-size: large;
+    color: var(--ink);
 }
-
 .modal-footer {
-  padding: 2px 16px;
-  background-color: #AB5AF3 ;
-  color: white;
+    padding: 2px 16px;
+    background-color: #AB5AF3;
+    color: white;
 }
 
 table {
-  font-family: arial, sans-serif;
-  border-collapse: collapse;
-  width: 100%;
+    font-family: arial, sans-serif;
+    border-collapse: collapse;
+    width: 100%;
 }
-
 td, th {
-  border: 1px solid #dddddd;
-  text-align: left;
-  padding: 8px;
+    border: 1px solid #dddddd;
+    text-align: left;
+    padding: 8px;
 }
-
 tr:nth-child(even) {
-  background-color: #dddddd;
+    background-color: #dddddd;
 }
 
+/* Timer — theme aware */
 .timer {
-    /* text-align: center; */
-    border: 5px solid white;
-    display:inline;
+    border: 5px solid var(--brand);
+    display: inline;
     padding: 5px;
-    color: white;
+    color: var(--brand) !important;
     font-family: Verdana, sans-serif, Arial;
     font-size: 40px;
     height: 50px;
     font-weight: bold;
     text-decoration: none;
+    border-radius: 8px;
+    background: var(--brand-light);
 }
-    
-    
-    .wait{
-font-family: arial;
-font-size: 13px;
-color: #ff0000;
-font-weight: bold;
-zoom: 10%;
+html[data-theme="dark"] .timer {
+    background: rgba(248,111,3,.15);
 }
-    
-   
 
-    
-  </style>
-  
+.wait {
+    font-family: arial;
+    font-size: 13px;
+    color: #ff0000;
+    font-weight: bold;
+    zoom: 10%;
+}
+
+/* ================================================================
+   THEME-AWARE OVERRIDES
+   ================================================================ */
+body {
+    background-color: var(--bg) !important;
+    color: var(--ink) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    transition: background .3s ease, color .3s ease;
+}
+
+/* Topnav theme-aware */
+.topnav {
+    background: var(--topnav-bg) !important;
+    border-bottom: 1px solid var(--line) !important;
+}
+.topnav .tn-search {
+    background: var(--card) !important;
+    border-color: var(--line) !important;
+    color: var(--muted) !important;
+}
+.topnav .tn-search:hover {
+    border-color: var(--brand) !important;
+    color: var(--ink) !important;
+}
+.topnav .tn-search .kbd {
+    background: var(--sidebar-hover) !important;
+    border-color: var(--line) !important;
+    color: var(--muted) !important;
+}
+.topnav .tn-menu-btn {
+    background: var(--sidebar-hover) !important;
+    border-color: var(--line) !important;
+    color: var(--ink) !important;
+}
+.topnav .tn-menu-btn:hover {
+    background: var(--brand) !important;
+    border-color: var(--brand) !important;
+    color: #fff !important;
+}
+.topnav .tn-btn {
+    background: transparent !important;
+    border-color: var(--line) !important;
+    color: var(--ink) !important;
+}
+.topnav .tn-btn:hover {
+    background: var(--brand) !important;
+    border-color: var(--brand) !important;
+    color: #fff !important;
+}
+.topnav .tn-toggle {
+    border-color: var(--line) !important;
+    color: var(--ink) !important;
+}
+
+/* Content wrapper — topnav ke neeche */
+.new-wrapper {
+    padding-top: 64px !important;
+    margin-left: 260px !important;
+    background-color: var(--bg);
+    min-height: 100vh;
+    transition: margin-left .3s cubic-bezier(.4,0,.2,1), background .3s ease;
+}
+html.sb-collapsed .new-wrapper {
+    margin-left: 0 !important;
+}
+
+/* Blink <p> */
+.new-wrapper .blink {
+    margin: 0 !important;
+    padding: 16px 20px 8px 20px !important;
+    color: var(--ink) !important;
+}
+
+/* Chart container */
+.new-wrapper .chart--container {
+    margin-top: 20px !important;
+    padding: 0 20px !important;
+    height: 800px !important;
+    zoom: 85%;
+    position: relative;
+}
+</style>
 </head>
- <%--   <%@include file="./DRPRHeader.jsp"%>  --%>
-<body onload="myFunction_Time()" bgcolor="#000000">
+<body>
 
+<%@include file="../userheader.jsp"%>
 
-    <p class="blink" style="font-size: 30px"> This Data get Auto Refresh after <span class="timer" id="ten-countdown"></span> Minutes
-  </p>
+<div class="new-wrapper">
 
-  <div id="myChart" style="margin-top: 150px; height: 800px; zoom:85%; position: relative;" class="chart--container">
- 
-  
-  </div>
-  
-<!--   <button id="myBtn">Open Modal</button> -->
+<p class="blink" style="font-size: 30px;"> This Data get Auto Refresh after <span class="timer" id="ten-countdown"></span> Minutes
+</p>
 
-<!-- The Modal -->
-	<script>
-      function myFunction_Time() {
-        var x = document.lastModified;
-        document.getElementById("demo").innerHTML = x;
-      }
-     
-    
-      
-    
-   </script>
-   	
-	
+<div id="myChart" class="chart--container"></div>
 
-	
-	
-	<script>
-	  var Arr = new Array(); 
-	<%String m_strtxnArray="";
-	response.setIntHeader("Refresh", 600);
-	//load the sql driver
-	//Class.forName("oracle.jdbc.OracleDriver");
-	//Connect to oracle database
-	//Connection conn = DriverManager.getConnection("jdbc:oracle:thin:@10.176.0.85:1787/iibdrdb", "eisappsupport", "India#25");
-	
-	// uncomment it after DR Switch
-	
- 	/*String flagStatus = null;
- 	Connection conn= null;
-	Connection connection = DBUtilityAuto.getReportDBConnection();
-	String sql1 = "select * from connection_master";
-	Statement smt1 = connection.createStatement();
-	ResultSet rs = smt1.executeQuery(sql1);
-	while (rs.next()) {
-		flagStatus = rs.getString("FLAG");
-	}
+<script>
+function myFunction_Time() {
+    var x = document.lastModified;
+    var el = document.getElementById("demo");
+    if(el) el.innerHTML = x;
+}
+</script>
 
-	System.out.println("flagStatus" + flagStatus);
-	
-	if (flagStatus != null && flagStatus.equals("PR"))
-	{
-		 conn = DBUtility.getConnection();
-	}
-	else if(flagStatus != null && flagStatus.equals("DR"))
-	{
-		 conn = DBUtility.getDRConnection();
-	}
-	else
-	{
-		 conn=DBUtilityAuto.getIIBDBConnection();
-	}*/
-	
-	//Connection conn=DBUtilityAuto.getReportDBConnection();
-	Connection conn=DBUtilityAuto.getIIBDBConnection();
-	
+<script>
+var Arr = new Array();
+<%
+    String m_strtxnArray="";
+    response.setIntHeader("Refresh", 600);
 
-	String sql = "Select * from(select txn_endpoint,\r\n"
-	  		+ "COUNT(1) AS TOTAL_HITS,\r\n"
-	  		+ "SUM(CASE WHEN (substr(error_code,3,3) in ('002','014') OR error_code in ('SI001','SI007','SI569','SI570')) and error_code <> '00014' THEN 1 ELSE 0 END) AS TD_COUNT,\r\n"
-	  		+ "ROUND((SUM(CASE WHEN (substr(error_code,3,3) in ('002','014') OR error_code in ('SI001','SI007','SI569','SI570')) and error_code <> '00014' THEN 1 ELSE 0 END)*100)/COUNT(1),2) AS TD_PERCENT \r\n"
-	  		+ "from eisapp.BACKEND_LOG_V where txn_endpoint != 'NATIONAL_PORTAL' and \r\n"
-	  		+ "REQUEST_DATE_TIME>=SYSDATE - INTERVAL '10' MINUTE \r\n"
-	  		+ "GROUP BY txn_endpoint \r\n"
-	  		+ "having ROUND((SUM(CASE WHEN (substr(error_code,3,3) in ('002','014') OR error_code in ('SI001','SI007','SI569','SI570')) and error_code <> '00014' THEN 1 ELSE 0 END)*100)/COUNT(1),2)>= 0.5 \r\n"
-	  		+ "order by TD_PERCENT desc)where ROWNUM <=12";	
-	System.out.println(sql);
-	Statement statement = conn.createStatement();
-	ResultSet resultSet = statement.executeQuery(sql);
+    Connection conn = DBUtilityAuto.getIIBDBConnection();
 
-	List<String> labels = new ArrayList<String>();
-	List<Double> failure = new ArrayList<Double>();
-	int j = 0;
-	while (resultSet.next()) {
-		String name = "<p style='color:#ff9933; font-weight: bolder; '>"
-				+ Integer.toString(resultSet.getInt("TD_COUNT"))
-				+ "</p><br><p style='color:#FFFFFF; font-weight: bolder;'>"
-				+ resultSet.getString("txn_endpoint").replaceAll("_",
-						"</p><br><p style='color:#FFFFFF; font-weight: bolder;'>")
-				+ "</p><br>" + "<p style='color:#32CD32; font-weight: bolder;'>"
-				+ Integer.toString(resultSet.getInt("TOTAL_HITS")) + "</p>";
-		//	String name="<p style='color:#ff9933; font-weight: bolder; '>"+Integer.toString(resultSet.getInt("TD_COUNT"))+"</p><br>"+"<p style='color:#FFFFFF; font-weight: bolder;'>"+resultSet.getString("txn_endpoint")+"</p><br>"+"<p style='color:#32CD32; font-weight: bolder;'>"+Integer.toString(resultSet.getInt("TOTAL_HITS")) +"</p>";%>
-        Arr[<%=j %>] = '<%=resultSet.getString("txn_endpoint") %>';
-        <%
-		double value= resultSet.getDouble("TD_PERCENT");
-		labels.add(name);
-		failure.add(value);
-		j++;
-	}
-	resultSet.close();
-	statement.close();
-	conn.close();
-	
-	%>
-	
+    String sql = "Select * from(select txn_endpoint,"
+        + "COUNT(1) AS TOTAL_HITS,"
+        + "SUM(CASE WHEN (substr(error_code,3,3) in ('002','014') OR error_code in ('SI001','SI007','SI569','SI570')) and error_code <> '00014' THEN 1 ELSE 0 END) AS TD_COUNT,"
+        + "ROUND((SUM(CASE WHEN (substr(error_code,3,3) in ('002','014') OR error_code in ('SI001','SI007','SI569','SI570')) and error_code <> '00014' THEN 1 ELSE 0 END)*100)/COUNT(1),2) AS TD_PERCENT "
+        + "from eisapp.BACKEND_LOG_V where txn_endpoint != 'NATIONAL_PORTAL' and "
+        + "REQUEST_DATE_TIME>=SYSDATE - INTERVAL '10' MINUTE "
+        + "GROUP BY txn_endpoint "
+        + "having ROUND((SUM(CASE WHEN (substr(error_code,3,3) in ('002','014') OR error_code in ('SI001','SI007','SI569','SI570')) and error_code <> '00014' THEN 1 ELSE 0 END)*100)/COUNT(1),2)>= 0.5 "
+        + "order by TD_PERCENT desc)where ROWNUM <=12";
+    System.out.println(sql);
+    Statement statement = conn.createStatement();
+    ResultSet resultSet = statement.executeQuery(sql);
 
-    let chartConfig = {
-      type: "bar3d",
-      "3dAspect": { depth: 30, true3d: 0, yAngle: 10 },
-      backgroundColor: "#000000",
-      title: {
+    List<String> labels = new ArrayList<String>();
+    List<Double> failure = new ArrayList<Double>();
+    int j = 0;
+    while (resultSet.next()) {
+        /* ✅ Endpoint name ka color generic rakha — JS me theme ke hisaab se set karenge */
+        String name = "<p style='color:#ff9933; font-weight: bolder; '>"
+                + Integer.toString(resultSet.getInt("TD_COUNT"))
+                + "</p><br><p class='ep-name' style='font-weight: bolder;'>"
+                + resultSet.getString("txn_endpoint").replaceAll("_",
+                        "</p><br><p class='ep-name' style='font-weight: bolder;'>")
+                + "</p><br>" + "<p style='color:#32CD32; font-weight: bolder;'>"
+                + Integer.toString(resultSet.getInt("TOTAL_HITS")) + "</p>";
+%>
+Arr[<%=j %>] = '<%=resultSet.getString("txn_endpoint") %>';
+<%
+        double value = resultSet.getDouble("TD_PERCENT");
+        labels.add(name);
+        failure.add(value);
+        j++;
+    }
+    resultSet.close();
+    statement.close();
+    conn.close();
+%>
+
+/* ✅ Theme detection */
+var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+
+/* ✅ Theme-based colors */
+var chartBg        = isDark ? '#000000' : '#FFFFFF';
+var chartText      = isDark ? '#FFFFFF' : '#0A0A0A';
+var chartGridLine  = isDark ? '#333333' : '#E5E7EB';
+var chartTickColor = isDark ? '#333333' : '#D1D5DB';
+var chartBorder    = isDark ? '#333333' : '#CCCCCC';
+
+let chartConfig = {
+    type: "bar3d",
+    "3dAspect": { depth: 30, true3d: 0, yAngle: 10 },
+    backgroundColor: chartBg,
+    title: {
         text: "Failure %   End Point Wise",
         fontWeight: "bold",
         height: "25px",
-        color: "#FFFFFF",
-
-
-
+        color: chartText,
         fontSize: "40px",
         fontFamily: "Times New Roman",
-
-
-
-      },
-
-      plotarea: {
+    },
+    plotarea: {
         alpha: 0.3,
-        backgroundColor: "#000000",
+        backgroundColor: chartBg,
         margin: "50px 35px 250px 200px",
-      },
-      scaleX: {
-
+    },
+    scaleX: {
         values: [<%
-         if(labels.size()<=5){
-        	 for(String label: labels){
-        		 out.print("\""+label+"\",");
-        	 }
-        	 for(int i=labels.size();i<5;i++)
-        	 {
-        		 out.print("\""+" "+"\",");
-        	 }
-         }
-         else
-         {
-        	 for(String label: labels){
-        		 out.print("\""+label+"\",");
-        	 }
-         }
+            if(labels.size()<=5){
+                for(String label: labels){
+                    out.print("\""+label+"\",");
+                }
+                for(int i=labels.size();i<5;i++)
+                {
+                    out.print("\""+" "+"\",");
+                }
+            }
+            else
+            {
+                for(String label: labels){
+                    out.print("\""+label+"\",");
+                }
+            }
         %>],
-
         alpha: 0.5,
-        backgroundColor: "#fff",
-        borderColor: "#333",
+        backgroundColor: chartBg,
+        borderColor: chartBorder,
         borderWidth: "1px",
         guide: { visible: false },
-        item: { fontColor: "#fff", fontSize: "30px" },
-        tick: { alpha: 0.2, lineColor: "#333" },
-
+        item: { fontColor: chartText, fontSize: "30px" },
+        tick: { alpha: 0.2, lineColor: chartTickColor },
         label: {
-          text: '<p style="color:#ff9933;">TD FAILURE, </p><p style="color:#FFFFFF;"> END POINT, </p><p style="color:#32CD32;">TOTAL HITS</p>',
-          color: "red",
-          fontSize: "30",
-          offsetX: '-100px',
+            text: '<p style="color:#ff9933;">TD FAILURE, </p><p style="color:' + chartText + ';"> END POINT, </p><p style="color:#32CD32;">TOTAL HITS</p>',
+            color: chartText,
+            fontSize: "30",
+            offsetX: '-100px',
         },
-        item: {
-          'font-size': 30
-        },
+        item: { 'font-size': 30 },
         guide: {
-          visible: true,
-          'line-color': "black",
-          'line-style': "dotted",
-          alpha: 1
+            visible: true,
+            'line-color': chartGridLine,
+            'line-style': "dotted",
+            alpha: 1
         }
-
-
-      },
-
-
-
-      scaleY: {
+    },
+    scaleY: {
         alpha: 0.5,
-        backgroundColor: "#fff",
-        borderColor: "#fff",
+        backgroundColor: chartBg,
+        borderColor: chartBorder,
         borderWidth: "1px",
-        guide: { alpha: 0.2, lineColor: "#FFF", lineStyle: "solid" },
-        item: { fontColor: "#FFF", paddingRight: "10px" },
-        tick: { alpha: 0.2, lineColor: "#333" },
+        guide: { alpha: 0.2, lineColor: chartGridLine, lineStyle: "solid" },
+        item: { fontColor: chartText, paddingRight: "10px" },
+        tick: { alpha: 0.2, lineColor: chartTickColor },
         label: {
-          text: "Failure Percentage",
-          color: "red",
-          fontSize: "30",
-
-
-
-
+            text: "Failure Percentage",
+            color: chartText,
+            fontSize: "30",
         },
-        item: {
-          'font-size': 30
-        },
+        item: { 'font-size': 30 },
         guide: {
-          visible: true,
-          'line-color': "black",
-          'line-style': "dotted",
-          alpha: 1
+            visible: true,
+            'line-color': chartGridLine,
+            'line-style': "dotted",
+            alpha: 1
         }
-      },
-
-
-      series: [
-
+    },
+    series: [
         {
-          text: "Product 2",
-          values: [<%
-                   for(Double value: failure)
-                   {
-                	  out.print(value+","); 
-                   }
-          %>],
-          "value-box": {
-            "text": "%v %",
-            "placement": "top",
-            "font-color": "#ffffff",
-            "font-size": "30px",
-            "font-weight": "bold",
-            "offset-y": -10,
-
-          },
-          tooltip: {
-            backgroundColor: "#673AB7",
-            borderColor: "none",
-            borderRadius: "5px",
-            fontSize: "20px",
-            padding: "6px 12px",
-            shadow: false,
-          },
-          backgroundColor: "#673AB7 #9575CD",
-          borderColor: "#fff",
-          legendMarker: { borderColor: "#673AB7" },
+            text: "Product 2",
+            values: [<%
+                for(Double value: failure)
+                {
+                    out.print(value+",");
+                }
+            %>],
+            "value-box": {
+                "text": "%v %",
+                "placement": "top",
+                "font-color": chartText,
+                "font-size": "30px",
+                "font-weight": "bold",
+                "offset-y": -10,
+            },
+            tooltip: {
+                backgroundColor: "#673AB7",
+                borderColor: "none",
+                borderRadius: "5px",
+                fontSize: "20px",
+                padding: "6px 12px",
+                shadow: false,
+            },
+            backgroundColor: "#673AB7 #9575CD",
+            borderColor: "#fff",
+            legendMarker: { borderColor: "#673AB7" },
         },
-      ],
-    };
-    let updateChart = (p) => {
-        initState = zingchart.exec(p.id, 'getdata'); // Gets the state of the chart when the node was clicked
-      //  alert(Arr[p.nodeindex]);
-     
-    
-        var a = '<%=request.getContextPath() + "/jsp/TransactionEndPointWiseService_new.jsp?txnEndPoint="%>'+Arr[p.nodeindex];
-  	     window.open(a,'_blank');
+    ],
+};
 
-      }
-      zingchart.render({
-        id: 'myChart',
-        data: chartConfig,
-        height: '100%',
-        width: '100%',
-      });
+let updateChart = (p) => {
+    initState = zingchart.exec(p.id, 'getdata');
+    /* ✅ Chart bar click pe detail page khulta hai — SAME as original */
+    var a = '<%=request.getContextPath() + "/jsp/TransactionEndPointWiseService_new.jsp?txnEndPoint="%>' + Arr[p.nodeindex];
+    window.open(a, '_blank');
+};
 
-      zingchart.bind('myChart', 'node_click', updateChart);
-    
-    
-    
- // Get the modal this is for the popup window
-    var modal = document.getElementById("myModal");
+zingchart.render({
+    id: 'myChart',
+    data: chartConfig,
+    height: '100%',
+    width: '100%',
+});
 
-    // Get the button that opens the modal
-    var btn = document.getElementById("myBtn");
+zingchart.bind('myChart', 'node_click', updateChart);
 
-    // Get the <span> element that closes the modal
-    var span = document.getElementsByClassName("close")[0];
+/* ✅ Chart ke endpoint labels ko theme ke hisaab se color karo */
+setTimeout(function(){
+    var names = document.querySelectorAll('.ep-name');
+    var color = isDark ? '#FFFFFF' : '#0A0A0A';
+    names.forEach(function(el){ el.style.color = color; });
+}, 250);
 
-    // When the user clicks the button, open the modal 
-    btn.onclick = function() {
-      modal.style.display = "block";
+/* ✅ Theme change hone pe reload */
+var _lastTheme = isDark ? 'dark' : 'light';
+setInterval(function(){
+    var now = document.documentElement.getAttribute('data-theme') || 'light';
+    if(now !== _lastTheme){
+        _lastTheme = now;
+        location.reload();
+    }
+}, 500);
+
+/* Modal */
+var modal = document.getElementById("myModal");
+var btn = document.getElementById("myBtn");
+var span = document.getElementsByClassName("close")[0];
+if(btn){
+    btn.onclick = function() { modal.style.display = "block"; }
+}
+if(span){
+    span.onclick = function() { modal.style.display = "none"; }
+}
+window.onclick = function(event) {
+    if (event.target == modal) { modal.style.display = "none"; }
+}
+</script>
+
+<script>
+function countdown( elementName, minutes, seconds )
+{
+    var element, endTime, hours, mins, msLeft, time;
+
+    function twoDigits( n )
+    {
+        return (n <= 9 ? "0" + n : n);
     }
 
-    // When the user clicks on <span> (x), close the modal
-    span.onclick = function() {
-      modal.style.display = "none";
+    function updateTimer()
+    {
+        msLeft = endTime - (+new Date);
+        if ( msLeft < 1000 ) {
+            element.innerHTML = "Please Wait Fetching the Latest Data!";
+        } else {
+            time = new Date( msLeft );
+            hours = time.getUTCHours();
+            mins = time.getUTCMinutes();
+            element.innerHTML = (hours ? hours + ':' + twoDigits( mins ) : mins) + ':' + twoDigits( time.getUTCSeconds() );
+            setTimeout( updateTimer, time.getUTCMilliseconds() + 500 );
+        }
     }
 
-    // When the user clicks anywhere outside of the modal, close it
-    window.onclick = function(event) {
-      if (event.target == modal) {
-        modal.style.display = "none";
-      }
-    }
-  </script>
-  <script>
-  function countdown( elementName, minutes, seconds )
-  {
-      var element, endTime, hours, mins, msLeft, time;
+    element = document.getElementById( elementName );
+    endTime = (+new Date) + 1000 * (60*minutes + seconds) + 500;
+    updateTimer();
+}
 
-      function twoDigits( n )
-      {
-          return (n <= 9 ? "0" + n : n);
-      }
+countdown( "ten-countdown", 10, 0 );
+</script>
 
-      function updateTimer()
-      {
-          msLeft = endTime - (+new Date);
-          if ( msLeft < 1000 ) {
-              element.innerHTML = "Please Wait Fetching the Latest Data!";
-          } else {
-              time = new Date( msLeft );
-              hours = time.getUTCHours();
-              mins = time.getUTCMinutes();
-              element.innerHTML = (hours ? hours + ':' + twoDigits( mins ) : mins) + ':' + twoDigits( time.getUTCSeconds() );
-              setTimeout( updateTimer, time.getUTCMilliseconds() + 500 );
-          }
-      }
-
-      element = document.getElementById( elementName );
-      endTime = (+new Date) + 1000 * (60*minutes + seconds) + 500;
-      updateTimer();
-  }
-
-  countdown( "ten-countdown", 10, 0 );
-
-  </script>
-  <br>
-  <!--  <div class="footer">
-    <p class="font-italic text-center text-bottom" style="position:relative; color: white; font-size: 15px; top: -40px">Designed by @Shubham Chaudhari & Developed by @Anil Gupta  </p>
-    </div> -->
-    
- 
+</div>
 </body>
 </html>
