@@ -1,3 +1,215 @@
-http://localhost:8085/EISPortalVer2/login!adminsign.action
+package com.action;
 
-http://localhost:8085/EISPortalVer2/adminHome.action
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.struts2.ServletActionContext;
+import com.opensymphony.xwork2.ActionSupport;
+import com.opensymphony.xwork2.ModelDriven;
+
+import com.actionform.LoginForm;
+import com.jdbc.DBUtilityAuto;
+import com.jdbc.TrippleDes;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
+
+@SuppressWarnings("serial")
+public class LoginAction extends ActionSupport implements ModelDriven<LoginForm> {
+
+    private LoginForm loginForm = new LoginForm();
+
+    // JSON response ke liye
+    private Map<String, Object> jsonData = new HashMap<>();
+
+    @Override
+    public LoginForm getModel() {
+        return loginForm;
+    }
+
+    public List<String> getRolelist() {
+        return loginForm.getRolelist();
+    }
+
+    // Struts2 JSON plugin is getter ko dhoondhta hai
+    public Map<String, Object> getJsonData() {
+        return jsonData;
+    }
+
+    // ==================== DEFAULT: LOAD LOGIN PAGE ====================
+    @Override
+    public String execute() throws Exception {
+        System.out.println(">>> LoginAction.execute() called");
+        this.getEISRole(loginForm);
+        System.out.println("Roles Loaded : " + loginForm.getRolelist());
+        return "success";
+    }
+
+    // ==================== USER LOGIN (AJAX JSON) ====================
+    public String usersign() throws Exception {
+        System.out.println(">>> usersign() called");
+        HttpServletRequest request = ServletActionContext.getRequest();
+
+        String username = request.getParameter("m_strUserName");
+        String password = request.getParameter("m_struserPassword");
+        String role     = request.getParameter("m_strRole");
+
+        if (username == null || username.trim().isEmpty()
+                || password == null || password.trim().isEmpty()
+                || role == null || role.trim().isEmpty()) {
+            jsonData.put("status", "error");
+            jsonData.put("message", "Please fill all fields");
+            return "jsonerror";
+        }
+
+        boolean hasRole = this.checkRole(loginForm, request);
+
+        if (hasRole) {
+            HttpSession session = request.getSession();
+            session.setAttribute("role", role);
+            session.setAttribute("username", username);
+
+            jsonData.put("status", "success");
+
+            if ("EIS Bank".equals(role)) {
+                // ✅ Banker → Bankheader.jsp (direct JSP, kyunki bankerHome action nahi hai)
+                jsonData.put("redirectUrl",
+                    request.getContextPath() + "/jsp/Bankheader.jsp");
+            } else {
+                // ✅ Normal user → userhomescreen action (exists in struts.xml)
+                jsonData.put("redirectUrl",
+                    request.getContextPath() + "/userhomescreen.action");
+            }
+            return "jsonsuccess";
+        } else {
+            jsonData.put("status", "error");
+            jsonData.put("message", "Invalid username, password or role");
+            return "jsonerror";
+        }
+    }
+
+    // ==================== ADMIN LOGIN (AJAX JSON) ====================
+    public String adminsign() throws Exception {
+        System.out.println(">>> adminsign() called");
+        HttpServletRequest request = ServletActionContext.getRequest();
+
+        String adminUser = request.getParameter("m_stradminUserName");
+        String adminPass = request.getParameter("m_stradminPassword");
+
+        if (adminUser == null || adminUser.trim().isEmpty()
+                || adminPass == null || adminPass.trim().isEmpty()) {
+            jsonData.put("status", "error");
+            jsonData.put("message", "Please fill all fields");
+            return "jsonerror";
+        }
+
+        // ---------- Hardcoded Admin ----------
+        if ("Admin".equalsIgnoreCase(adminUser) && "admin".equals(adminPass)) {
+            request.getSession().setAttribute("role", "Admin");
+            jsonData.put("status", "success");
+            // ✅ header.jsp — purane flow ke hisaab se (successadmin)
+            jsonData.put("redirectUrl",
+                request.getContextPath() + "/jsp/header.jsp");
+            return "jsonsuccess";
+        }
+
+        // ---------- Module Lead check ----------
+        Connection con = null;
+        Statement stmt = null;
+        ResultSet rs = null;
+        String password = null;
+        try {
+            con = DBUtilityAuto.getReportDBConnection();
+            String query = "SELECT passwords FROM a_module_leads WHERE LOWER(username) = LOWER('"
+                            + adminUser.replace("'", "''") + "')";
+            stmt = con.createStatement();
+            rs = stmt.executeQuery(query);
+            if (rs.next()) password = rs.getString("passwords");
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (rs != null) try { rs.close(); } catch (Exception ignored) {}
+            if (stmt != null) try { stmt.close(); } catch (Exception ignored) {}
+            if (con != null) try { con.close(); } catch (Exception ignored) {}
+        }
+
+        if (password != null && password.equals(adminPass)) {
+            request.getSession().setAttribute("role", "ModuleLead");
+            jsonData.put("status", "success");
+            // ✅ moduleHeader.jsp — purane flow ke hisaab se (successmodule)
+            jsonData.put("redirectUrl",
+                request.getContextPath() + "/jsp/moduleHeader.jsp");
+            return "jsonsuccess";
+        }
+
+        // ---------- Fail ----------
+        jsonData.put("status", "error");
+        jsonData.put("message", "Invalid admin credentials");
+        return "jsonerror";
+    }
+
+    // For REST plugin (agar use ho raha ho)
+    public String index() throws Exception {
+        return execute();
+    }
+
+    // ==================== HELPERS ====================
+    private boolean checkRole(LoginForm loginForm, HttpServletRequest request) throws SQLException {
+        Connection con = null;
+        Statement stmt = null;
+        ResultSet rs = null;
+        try {
+            TrippleDes td = new TrippleDes();
+            int count = 0;
+
+            String user = request.getParameter("m_strUserName").replace("'", "''");
+            String pass = td.encrypt(request.getParameter("m_struserPassword").trim());
+            String role = request.getParameter("m_strRole").replace("'", "''");
+
+            String query = "SELECT COUNT(1) FROM rolemst "
+                    + "WHERE username LIKE '%" + user + "%' "
+                    + "AND password='" + pass + "' "
+                    + "AND rolename='" + role + "'";
+
+            con = DBUtilityAuto.getReportDBConnection();
+            stmt = con.createStatement();
+            rs = stmt.executeQuery(query);
+            if (rs.next()) count = rs.getInt(1);
+            return count > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        } finally {
+            if (rs != null) try { rs.close(); } catch (Exception ignored) {}
+            if (stmt != null) try { stmt.close(); } catch (Exception ignored) {}
+            if (con != null) try { con.close(); } catch (Exception ignored) {}
+        }
+    }
+
+    private void getEISRole(LoginForm loginForm) throws SQLException {
+        Connection con = null;
+        Statement stmt = null;
+        ResultSet rs = null;
+        try {
+            ArrayList<String> list = new ArrayList<>();
+            con = DBUtilityAuto.getReportDBConnection();
+            stmt = con.createStatement();
+            rs = stmt.executeQuery("SELECT rolename FROM rolemst");
+            while (rs.next()) list.add(rs.getString("rolename"));
+            loginForm.setRolelist(list);
+            System.out.println("Roles loaded: " + list);
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (rs != null) try { rs.close(); } catch (Exception ignored) {}
+            if (stmt != null) try { stmt.close(); } catch (Exception ignored) {}
+            if (con != null) try { con.close(); } catch (Exception ignored) {}
+        }
+    }
+}
