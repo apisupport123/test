@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%-- <%@page import="org.apache.poi.util.SystemOutLogger"%> --%>
 <%@page import="org.json.JSONObject"%>
 <%@page import="org.json.JSONArray"%>
@@ -18,14 +18,18 @@
 <%@ page import="java.util.*,java.util.stream.Collectors,java.time.LocalDate, java.time.format.DateTimeFormatter"%>
 <%@ page import="java.text.*"%>
 <%@page import="com.jdbc.DBUtilityAuto"%>
-<html lang="en">
-<head>
 <%
+    // ✅ Session check
+    if(session == null || session.getAttribute("role") == null) {
+        response.sendRedirect(request.getContextPath() + "/login.action");
+        return;
+    }
+
+    // ✅ Cache headers
     response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate, private");
     response.setHeader("Pragma", "no-cache");
     response.setDateHeader("Expires", 0);
     response.setHeader("Surrogate-Control", "no-store");
-    response.setHeader("Cache-Control", "max-age=0, no-cache, no-store, must-revalidate");
     response.addHeader("Cache-Control", "post-check=0, pre-check=0");
     request.setAttribute("pageLoadTime", System.currentTimeMillis());
 
@@ -293,6 +297,9 @@
         if (reportConn != null) try { reportConn.close(); } catch (SQLException e) {}
     }
 %>
+<!DOCTYPE html>
+<html lang="en">
+<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -300,26 +307,24 @@
     <meta http-equiv="Expires" content="0">
     <title>SYS Server Broker Monitoring</title>
     <meta http-equiv="refresh" content="600">
-    <link rel='stylesheet' href='../css/font-awesome-sysexp.css'>
-    <link rel='stylesheet' href='../css/bootstrap-expsys.css'>
-    <link rel='stylesheet' href='../css/dataTables.bootstrap4.min-expsys.css'>
-    <link rel='stylesheet' href='../css/buttons.bootstrap4.min-expsys.css'>
-    <link rel="stylesheet" href="../css/expsys-css2.css">
-    <link rel="stylesheet" href="../css/expsys-all.min.css">
-    <script src="../js/LdapAuth.js"></script>
+    <link rel='stylesheet' href='<%=request.getContextPath()%>/css/bootstrap-expsys.css'>
+    <link rel='stylesheet' href='<%=request.getContextPath()%>/css/dataTables.bootstrap4.min-expsys.css'>
+    <link rel='stylesheet' href='<%=request.getContextPath()%>/css/buttons.bootstrap4.min-expsys.css'>
+    <link rel="stylesheet" href="<%=request.getContextPath()%>/css/expsys-css2.css">
+    <link rel="stylesheet" href="<%=request.getContextPath()%>/css/expsys-all.min.css">
+    <script src="<%=request.getContextPath()%>/js/LdapAuth.js"></script>
     <style>
-        /* THEME VARIABLES */
         :root, [data-theme="light"] {
-            --primary: #6366f1;
-            --primary-dark: #4f46e5;
-            --primary-light: #818cf8;
+            --primary: #F86F03;
+            --primary-dark: #E85D00;
+            --primary-light: #FFA41B;
             --success: #10b981;
             --warning: #f59e0b;
             --danger: #ef4444;
             --isolated: #8b5cf6;
             --info: #0ea5e9;
 
-            --bg-body: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+            --bg-body: transparent;
             --bg-card: #ffffff;
             --bg-elevated: #f8fafc;
             --bg-hover: #f1f5f9;
@@ -343,16 +348,16 @@
         }
 
         [data-theme="dark"] {
-            --primary: #818cf8;
-            --primary-dark: #6366f1;
-            --primary-light: #a5b4fc;
+            --primary: #FF9A3D;
+            --primary-dark: #F86F03;
+            --primary-light: #FFA41B;
             --success: #34d399;
             --warning: #fbbf24;
             --danger: #f87171;
             --isolated: #a78bfa;
             --info: #38bdf8;
 
-            --bg-body: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            --bg-body: transparent;
             --bg-card: #1e293b;
             --bg-elevated: #293548;
             --bg-hover: #334155;
@@ -376,23 +381,30 @@
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
+
         html, body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: var(--bg-body);
-            background-attachment: fixed;
+            background: var(--bg);
             color: var(--text-primary);
             line-height: 1.4;
-            min-height: 100vh;
             font-size: 17px;
             overflow-x: hidden;
             width: 100%;
             transition: background 0.3s ease, color 0.3s ease;
         }
 
+        /* ✅ CONTENT WRAPPER */
+        .sys-content {
+            padding: 20px 24px 40px;
+            max-width: 100%;
+            width: 100%;
+        }
+
         /* TOPBAR */
         .topbar {
             background: var(--bg-header);
-            border-bottom: 1px solid var(--border);
+            border: 1px solid var(--border);
+            border-radius: 14px;
             padding: 0.7rem 1.25rem;
             display: flex;
             align-items: center;
@@ -400,25 +412,16 @@
             gap: 1rem;
             flex-wrap: wrap;
             box-shadow: var(--shadow-sm);
-            position: relative;
-            transition: background 0.3s ease, border-color 0.3s ease;
-        }
-        .topbar::after {
-            content: '';
-            position: absolute;
-            bottom: -1px; left: 0; right: 0;
-            height: 2px;
-            background: linear-gradient(90deg, var(--isolated) 0%, var(--primary) 50%, var(--info) 100%);
-            opacity: 0.6;
+            margin-bottom: 16px;
         }
         .brand { display: flex; align-items: center; gap: 0.7rem; flex-shrink: 0; }
         .brand-logo {
             width: 38px; height: 38px; border-radius: 10px;
-            background: linear-gradient(135deg, var(--isolated) 0%, var(--primary-dark) 100%);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
             color: white;
             display: flex; align-items: center; justify-content: center;
             font-size: 1rem;
-            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.35);
+            box-shadow: 0 4px 12px rgba(248, 111, 3, 0.35);
         }
         .brand-title { font-size: 1.15rem; font-weight: 800; color: var(--text-primary); letter-spacing: -0.02em; line-height: 1.1; }
         .brand-sub { font-size: 0.78rem; color: var(--text-muted); font-weight: 500; margin-top: 2px; }
@@ -437,7 +440,7 @@
             transition: all 0.2s ease;
         }
         .pill i { font-size: 0.82rem; }
-        .pill.timer { background: rgba(99, 102, 241, 0.12); color: var(--primary); border-color: rgba(99, 102, 241, 0.35); }
+        .pill.timer { background: rgba(248, 111, 3, 0.12); color: var(--primary); border-color: rgba(248, 111, 3, 0.35); }
         .pill.timer.warning-state { background: rgba(245, 158, 11, 0.15); color: var(--warning); border-color: rgba(245, 158, 11, 0.5); animation: pulseWarn 1s ease-in-out infinite; }
         @keyframes pulseWarn { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); } }
         .pill.window { background: var(--bg-elevated); color: var(--text-primary); }
@@ -457,17 +460,20 @@
             background: var(--primary); color: white;
             border-color: var(--primary);
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+            box-shadow: 0 4px 12px rgba(248, 111, 3, 0.35);
         }
 
         /* STATS BAR */
         .stats-bar {
             background: var(--bg-card);
-            border-bottom: 1px solid var(--border);
-            padding: 0.7rem 1.25rem;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 0.7rem 1rem;
             display: grid;
             grid-template-columns: repeat(6, minmax(0, 1fr));
             gap: 0.6rem;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow-sm);
         }
         .stat-mini {
             display: flex; align-items: center; gap: 0.7rem;
@@ -501,30 +507,22 @@
         .stat-mini-value { font-size: 1.3rem; font-weight: 800; color: var(--text-primary); line-height: 1; }
         .stat-mini-label { font-size: 0.72rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
 
-        /* MAIN LAYOUT — full height */
+        /* MAIN LAYOUT */
         .main-content {
             display: grid;
-            grid-template-columns: 400px minmax(0, 1fr);
-            gap: 1rem;
-            padding: 1rem 1.25rem;
-            align-items: stretch;
+            grid-template-columns: 380px minmax(0, 1fr);
+            gap: 16px;
+            align-items: start;
             width: 100%;
-            min-height: calc(100vh - 128px);
         }
         .left-panel {
             display: flex;
             flex-direction: column;
             gap: 0.85rem;
             min-width: 0;
-            height: 100%;
-            max-height: calc(100vh - 145px);
         }
         .right-panel {
             min-width: 0;
-            height: 100%;
-            max-height: calc(100vh - 145px);
-            overflow-y: auto;
-            padding-right: 0.25rem;
         }
 
         .card {
@@ -564,7 +562,7 @@
             font-family: inherit;
             width: 100%;
         }
-        .time-filter-input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15); }
+        .time-filter-input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(248, 111, 3, 0.15); }
         .time-filter-actions { display: flex; gap: 0.45rem; }
         .time-filter-actions .btn { flex: 1; justify-content: center; }
         .quick-filter-buttons { display: flex; gap: 0.35rem; margin-top: 0.7rem; flex-wrap: wrap; }
@@ -613,15 +611,7 @@
         .controls-row { display: flex; gap: 0.45rem; flex-wrap: wrap; padding: 0.7rem; }
         .controls-row .btn { flex: 1; justify-content: center; }
 
-        /* IMPACTED / ISOLATED — FLEX-FIT */
-        .left-panel > .card { flex-shrink: 0; }
-        .left-panel > .impacted-section {
-            flex: 1 1 0;
-            min-height: 140px;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
+        /* IMPACTED / ISOLATED */
         .impacted-section { border-left: 5px solid var(--danger); }
         .impacted-section.isolated { border-left-color: var(--isolated); }
         .impacted-header {
@@ -630,7 +620,6 @@
             gap: 0.5rem;
             border-bottom: 1px solid var(--border);
             background: var(--bg-elevated);
-            flex-shrink: 0;
         }
         .impacted-title { font-size: 0.95rem; font-weight: 800; color: var(--danger); display: flex; align-items: center; gap: 0.45rem; }
         .impacted-title.isolated { color: var(--isolated); }
@@ -644,9 +633,8 @@
         .impacted-count.isolated { background: var(--isolated); box-shadow: 0 2px 6px rgba(139, 92, 246, 0.3); }
         .impacted-content {
             padding: 0.65rem 0.85rem 0.85rem;
-            flex: 1;
+            max-height: 280px;
             overflow-y: auto;
-            min-height: 0;
         }
         .impacted-list { display: flex; flex-direction: column; gap: 0.45rem; }
         .impacted-server-item {
@@ -844,8 +832,7 @@
             align-items: center; justify-content: center;
             text-align: center;
             color: var(--text-muted);
-            padding: 1rem;
-            height: 100%;
+            padding: 1.5rem 1rem;
             min-height: 120px;
             font-size: 0.9rem;
         }
@@ -874,14 +861,10 @@
         .no-blink .impacted-count, .no-blink .impacted-count.isolated,
         .no-blink .status-indicator.critical, .no-blink .status-indicator.warning, .no-blink .status-indicator.isolated { animation: none !important; opacity: 1 !important; }
 
-        .impacted-content::-webkit-scrollbar,
-        .right-panel::-webkit-scrollbar { width: 8px; }
-        .impacted-content::-webkit-scrollbar-track,
-        .right-panel::-webkit-scrollbar-track { background: var(--scrollbar-track); border-radius: 4px; }
-        .impacted-content::-webkit-scrollbar-thumb,
-        .right-panel::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 4px; }
-        .impacted-content::-webkit-scrollbar-thumb:hover,
-        .right-panel::-webkit-scrollbar-thumb:hover { background: var(--text-faint); }
+        .impacted-content::-webkit-scrollbar { width: 8px; }
+        .impacted-content::-webkit-scrollbar-track { background: var(--scrollbar-track); border-radius: 4px; }
+        .impacted-content::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 4px; }
+        .impacted-content::-webkit-scrollbar-thumb:hover { background: var(--text-faint); }
 
         #chromeVoiceOverlay {
             position: fixed; inset: 0;
@@ -891,7 +874,7 @@
             cursor: pointer;
         }
         .overlay-box {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #F86F03 0%, #FF9A3D 100%);
             padding: 2rem;
             border-radius: 1rem;
             text-align: center;
@@ -903,7 +886,7 @@
         .overlay-box h3 { margin-bottom: 0.5rem; font-size: 1.25rem; }
         .overlay-box p { margin-bottom: 1rem; line-height: 1.4; font-size: 0.9rem; opacity: 0.95; }
         .overlay-box button {
-            background: white; color: #667eea;
+            background: white; color: #F86F03;
             border: none;
             padding: 0.65rem 1.5rem;
             border-radius: 0.6rem;
@@ -911,25 +894,19 @@
             cursor: pointer;
         }
 
-        /* RESPONSIVE */
         @media (max-width: 1200px) {
             .stats-bar { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-            .main-content { grid-template-columns: 360px minmax(0, 1fr); }
+            .main-content { grid-template-columns: 340px minmax(0, 1fr); }
             .broker-cards-container { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
         }
         @media (max-width: 1024px) {
-            html, body { overflow-x: hidden; overflow-y: auto; }
-            .main-content { grid-template-columns: 1fr; padding: 0.85rem; min-height: auto; align-items: stretch; }
-            .left-panel, .right-panel { width: 100%; height: auto; max-height: none; overflow-y: visible; }
-            .left-panel > .impacted-section { flex: 0 0 auto; min-height: 220px; max-height: 320px; }
-            .impacted-content { max-height: 220px; }
+            .main-content { grid-template-columns: 1fr; }
             .broker-cards-container { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
-            .topbar { padding: 0.6rem 1rem; }
-            .topbar-center { justify-content: flex-start; }
         }
         @media (max-width: 768px) {
             body { font-size: 16px; }
-            .stats-bar { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 0.6rem 0.85rem; }
+            .sys-content { padding: 16px 14px 32px; }
+            .stats-bar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
             .stat-mini-value { font-size: 1.15rem; }
             .broker-cards-container { grid-template-columns: 1fr; gap: 0.8rem; }
             .server-list { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
@@ -949,9 +926,14 @@
             .broker-card { page-break-inside: avoid; margin-bottom: 20px; }
         }
     </style>
-    <script type="text/javascript" src="../js/xlsx.full.min.js"></script>
+    <script type="text/javascript" src="<%=request.getContextPath()%>/js/xlsx.full.min.js"></script>
 </head>
 <body>
+
+<%@include file="../userheader.jsp"%>
+
+<div class="new-wrapper">
+<div class="sys-content">
 
 <div id="chromeVoiceOverlay" style="display: none;">
     <div class="overlay-box">
@@ -969,7 +951,11 @@
         for (Map.Entry<String, List<String>> entry : criticalServersByBroker.entrySet()) {
             if (brokerIndex > 0) jsBrokerMap.append(",");
             String broker = entry.getKey().replace("'", "\\'").replace("\"", "&quot;");
-            jsBrokerMap.append("\"").append(broker).append("\":[");
+            jsBrokerMap.append("\"").append(broker).append("\":[]");
+            brokerIndex++;
+            // Correct: build with IPs
+            jsBrokerMap.setLength(jsBrokerMap.length() - 2);
+            jsBrokerMap.append(":[");
             List<String> ips = entry.getValue();
             for (int i = 0; i < ips.size(); i++) {
                 if (i > 0) jsBrokerMap.append(",");
@@ -977,7 +963,6 @@
                 jsBrokerMap.append("\"").append(ip).append("\"");
             }
             jsBrokerMap.append("]");
-            brokerIndex++;
         }
     }
 %>
@@ -1003,9 +988,6 @@
     </div>
 
     <div class="topbar-actions">
-        <button class="icon-btn" id="themeToggle" onclick="toggleTheme()" title="Toggle theme (Ctrl+D)">
-            <i class="fas fa-moon" id="themeIcon"></i>
-        </button>
         <button class="icon-btn" onclick="toggleBlinking()" id="blinkToggleBtn" title="Toggle blinking">
             <i class="fas fa-eye" id="blinkIcon"></i>
         </button>
@@ -1237,29 +1219,10 @@
     </div>
 </div>
 
-<script>
-    // ============================================================
-    // THEME TOGGLE
-    // ============================================================
-    function applyTheme(theme) {
-        document.documentElement.setAttribute('data-theme', theme);
-        const icon = document.getElementById('themeIcon');
-        if (icon) icon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
-        try { localStorage.setItem('expTheme', theme); } catch(e) {}
-    }
-    function toggleTheme() {
-        const current = document.documentElement.getAttribute('data-theme') || 'light';
-        applyTheme(current === 'dark' ? 'light' : 'dark');
-    }
-    (function() {
-        try {
-            const saved = localStorage.getItem('expTheme');
-            if (saved === 'dark' || saved === 'light') applyTheme(saved);
-            else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) applyTheme('dark');
-            else applyTheme('light');
-        } catch(e) { applyTheme('light'); }
-    })();
+</div>
+</div>
 
+<script>
     // ============================================================
     // VOICE ALERT SYSTEM
     // ============================================================
@@ -1293,6 +1256,7 @@
         for (let i = 0; i < brokerKeys.length; i++) {
             let broker = brokerKeys[i];
             let servers = criticalServersByBroker[broker];
+            if (!servers || servers.length === 0) continue;
             let cleanBroker = cleanForPronunciation(broker);
             if (servers.length === 1) messageParts.push(cleanBroker + ' server ' + cleanForPronunciation(servers[0]));
             else {
@@ -1300,13 +1264,17 @@
                 messageParts.push(cleanBroker + ' servers ' + serverList);
             }
         }
+        if (messageParts.length === 0) return '';
         if (messageParts.length === 1) return fullMessage + messageParts[0];
         return fullMessage + messageParts.join(', then ');
     }
 
     function getTotalCriticalCount() {
         let count = 0;
-        for (let broker in criticalServersByBroker) count += criticalServersByBroker[broker].length;
+        for (let broker in criticalServersByBroker) {
+            let servers = criticalServersByBroker[broker];
+            if (servers) count += servers.length;
+        }
         return count;
     }
 
@@ -1363,6 +1331,7 @@
         if (criticalCount === 0) return;
         if (!isVoiceEnabled || isMuted) return;
         const message = buildSequentialMessage();
+        if (!message) return;
         isPlaying = true;
         voicePlayCount++;
         speakMessage(message, function() { isPlaying = false; updateVoiceUI(); });
@@ -1392,42 +1361,10 @@
         } catch(e) {}
     }
     function testVoice() {
-        if (!userInteracted) { showOverlayAndInitialize(); return; }
-        if (!isVoiceEnabled) { alert('Voice system active. Click Unmute if muted.'); return; }
         if (isMuted) { alert('Please unmute first'); return; }
         speakMessage('Voice alert system is working correctly. This is a test message.', function() { alert('Voice test completed!'); });
     }
-    function showOverlayAndInitialize() { document.getElementById('chromeVoiceOverlay').style.display = 'flex'; }
-    function hideOverlayAndInitialize() {
-        document.getElementById('chromeVoiceOverlay').style.display = 'none';
-        initializeVoiceSystem();
-    }
-    function initializeVoiceSystem() {
-        if (voiceInitialized) return;
-        voiceInitialized = true;
-        userInteracted = true;
-        localStorage.setItem('voiceEnabled', 'true');
-        localStorage.setItem('chromeVoiceEnabled', 'true');
-        loadVoicePreferences();
-        updateVoiceUI();
-        try {
-            const silent = new SpeechSynthesisUtterance('');
-            silent.volume = 0;
-            speechSynthesis.speak(silent);
-        } catch(e) {}
-        setTimeout(function() {
-            if (getTotalCriticalCount() > 0 && !isMuted && voicePlayCount < MAX_VOICE_PLAYS) playVoiceAlert();
-        }, 1500);
-    }
-    function playRefreshVoiceAnnouncement() {
-        if (getTotalCriticalCount() > 0 && isVoiceEnabled && !isMuted && userInteracted && voicePlayCount < MAX_VOICE_PLAYS) {
-            setTimeout(playVoiceAlert, 1500);
-        }
-    }
 
-    // ============================================================
-    // UI FUNCTIONS
-    // ============================================================
     function countdown(elementName, minutes, seconds) {
         var element, endTime, time;
         function twoDigits(n) { return (n <= 9 ? "0" + n : n); }
@@ -1469,7 +1406,7 @@
         document.getElementById('fromDateTime').value = formatDateForInput(start);
         document.getElementById('toDateTime').value = formatDateForInput(now);
         document.querySelectorAll('.quick-filter-btn').forEach(b => b.classList.remove('active'));
-        event.target.classList.add('active');
+        if (event && event.target) event.target.classList.add('active');
         document.getElementById('timeFilterForm').submit();
     }
     function formatDateForInput(date) {
@@ -1536,7 +1473,6 @@
         if (e.ctrlKey && e.key === 'a') { e.preventDefault(); showAllBrokers(); }
         if (e.ctrlKey && e.key === 'v') { e.preventDefault(); testVoice(); }
         if (e.ctrlKey && e.key === 'm') { e.preventDefault(); toggleMute(); }
-        if (e.ctrlKey && e.key === 'd') { e.preventDefault(); toggleTheme(); }
     });
 
     document.addEventListener('DOMContentLoaded', function() {
@@ -1562,7 +1498,8 @@
             var diffMinutes = Math.round((new Date(toDateTime) - new Date(fromDateTime)) / (1000 * 60));
             document.querySelectorAll('.quick-filter-btn').forEach(function(btn) {
                 btn.classList.remove('active');
-                var minutes = parseInt(btn.getAttribute('onclick')?.match(/\d+/) || '60');
+                var match = btn.getAttribute('onclick')?.match(/\d+/);
+                var minutes = match ? parseInt(match[0]) : 60;
                 if (Math.abs(diffMinutes - minutes) < 5) btn.classList.add('active');
             });
         }
@@ -1572,9 +1509,9 @@
             voiceInitialized = true;
             loadVoicePreferences();
             updateVoiceUI();
-            setTimeout(playRefreshVoiceAnnouncement, 1500);
-        } else {
-            setTimeout(function() { if (!userInteracted) showOverlayAndInitialize(); }, 500);
+            setTimeout(function(){
+                if (getTotalCriticalCount() > 0 && !isMuted && voicePlayCount < MAX_VOICE_PLAYS) playVoiceAlert();
+            }, 1500);
         }
     });
 
