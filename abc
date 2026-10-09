@@ -1,5 +1,16 @@
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page pageEncoding="UTF-8" contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%
+ // ✅ Session check
+ if(session == null || session.getAttribute("role") == null) {
+     response.sendRedirect(request.getContextPath() + "/login.action");
+     return;
+ }
+ // ✅ Cache headers
+ response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0, private");
+ response.setHeader("Pragma", "no-cache");
+ response.setDateHeader("Expires", 0);
+%>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,12 +19,10 @@
   <title>Deployment Sheet Master</title>
 
   <!-- DataTables CSS -->
-  <!-- <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" /> -->
   <link rel="stylesheet" href="./css/Deployment.jquery.dataTables.min.css" />
-  <!-- DataTables Buttons CSS -->
   <link rel="stylesheet" href="./css/Deployment.buttons.dataTables.min.css" />
 
-   <!-- Scripts -->
+  <!-- Scripts -->
   <script src="./js/Deployment.jquery-3.7.0.min.js"></script>
   <script src="./js/Deployment.1.13.6.jquery.dataTables.min.js"></script>
   <script src="./js/Deployment.2.4.1.dataTables.buttons.min.js"></script>
@@ -22,73 +31,259 @@
   <script src="./js/Deployment.3.10.1.jszip.min.js"></script>
   <script src="./js/Deployment.0.2.7.pdfmake.min.js"></script>
   <script src="./js/Deployment.0.2.7.vfs_fonts.js"></script>
+
   <style>
-    body {
-      background-color: #121212;
-      color: #eee;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      margin: 20px;
+    /* ============================================================
+       ✅ PAGE CSS — original + sidebar integration
+       ============================================================ */
+
+    /* Hide old global junk if any */
+    .primary-nav, .hamburger, .menu, .overflow-container { display: none !important; }
+
+    /* Page wrapper — sidebar ke right me */
+    .new-wrapper {
+      margin-left: var(--sidebar-w, 260px);
+      padding-top: var(--topnav-h, 64px);
+      transition: margin-left .3s cubic-bezier(.4,0,.2,1);
+      min-height: 100vh;
     }
+    html.sb-collapsed .new-wrapper { margin-left: 0; }
+
+    .page-wrap {
+      padding: 24px 28px 40px;
+      width: 100%;
+      max-width: 100%;
+    }
+
     h1 {
       text-align: center;
       margin-bottom: 20px;
-      font-weight: 700;
-      color: #f0f0f0;
+      font-weight: 800;
+      font-size: 1.6rem;
+      color: var(--ink, #0f172a);
+      letter-spacing: -0.4px;
     }
 
     .table-actions {
       margin-bottom: 15px;
-    }
-
-    table.dataTable {
-      width: 100% !important;
-      color: #eee;
-    }
-    table.dataTable thead th {
-      background-color: #1f1f1f;
-      color: #eee;
-      font-weight: 600;
-      border-bottom: 2px solid #444;
-    }
-    table.dataTable tbody tr {
-      background-color: #222;
-      border-bottom: 1px solid #333;
-    }
-    table.dataTable tbody tr:hover {
-      background-color: #333;
-    }
-    td, th {
-      padding: 8px 10px;
-      text-align: center;
-      vertical-align: middle;
-      white-space: nowrap;
-    }
-
-    .dt-buttons button, .custom-btn {
-      background-color: #333;
-      color: #eee;
-      border: none;
-      padding: 6px 12px;
-      margin-right: 5px;
-      cursor: pointer;
-      border-radius: 4px;
-      font-weight: 600;
-    }
-    .dt-buttons button:hover, .custom-btn:hover {
-      background-color: #555;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
     }
 
     #fileInput {
       display: none;
     }
 
+    /* ============================================================
+       ✅ DATATABLE — OVERRIDE everything with proper lines
+       ============================================================ */
     .dataTables_wrapper {
-      width: 100%;
-      overflow-x: auto;
+      width: 100% !important;
+      overflow-x: auto !important;
+      color: var(--ink, #0f172a) !important;
+    }
+
+    /* Table base — FORCE display */
+    table.dataTable {
+      display: table !important;
+      width: 100% !important;
+      border-collapse: separate !important;
+      border-spacing: 0 !important;
+      margin: 0 !important;
+      color: var(--ink, #0f172a) !important;
+      font-size: 0.85rem !important;
+      background: var(--card, #fff) !important;
+    }
+
+    table.dataTable thead { display: table-header-group !important; }
+    table.dataTable tbody { display: table-row-group !important; }
+    table.dataTable tr { display: table-row !important; }
+
+    /* Header cells */
+    table.dataTable thead th {
+      display: table-cell !important;
+      background-color: var(--card, #fff) !important;
+      color: var(--muted, #64748b) !important;
+      font-weight: 800 !important;
+      font-size: 0.72rem !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.5px !important;
+      padding: 14px 14px !important;
+      border-bottom: 2px solid var(--line, #e5e7eb) !important;
+      border-top: none !important;
+      border-left: none !important;
+      border-right: none !important;
+      white-space: nowrap !important;
+      text-align: left !important;
+      vertical-align: middle !important;
+    }
+
+    /* Body cells — proper visible lines */
+    table.dataTable tbody td {
+      display: table-cell !important;
+      padding: 12px 14px !important;
+      background-color: var(--card, #fff) !important;
+      color: var(--ink, #0f172a) !important;
+      font-weight: 700 !important;
+      font-size: 0.82rem !important;
+      border-bottom: 1px solid var(--line, #e5e7eb) !important;
+      border-top: none !important;
+      border-left: none !important;
+      border-right: none !important;
+      white-space: nowrap !important;
+      text-align: left !important;
+      vertical-align: middle !important;
+    }
+
+    /* Hover */
+    table.dataTable tbody tr:hover td {
+      background-color: var(--bg, #f7f7f5) !important;
+    }
+
+    /* Last row */
+    table.dataTable tbody tr:last-child td {
+      border-bottom: none !important;
+    }
+
+    /* Empty state */
+    table.dataTable tbody td.dataTables_empty {
+      text-align: center !important;
+      padding: 40px 20px !important;
+      color: var(--muted, #64748b) !important;
+      font-style: italic !important;
+      font-weight: 600 !important;
+    }
+
+    /* ============================================================
+       ✅ Buttons — brand orange
+       ============================================================ */
+    .dt-buttons button, .custom-btn {
+      background-color: var(--card, #fff) !important;
+      color: var(--ink, #0f172a) !important;
+      border: 1.5px solid var(--line, #e5e7eb) !important;
+      padding: 9px 16px !important;
+      margin-right: 5px;
+      cursor: pointer;
+      border-radius: 10px;
+      font-weight: 800;
+      font-size: 0.82rem;
+      font-family: inherit;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+    }
+    .dt-buttons button:hover, .custom-btn:hover {
+      background-color: var(--brand-light, #FFF4EC) !important;
+      border-color: var(--brand, #F86F03) !important;
+      color: var(--brand, #F86F03) !important;
+    }
+
+    /* Submit button — brand */
+    #submitFileBtn {
+      background: linear-gradient(135deg, var(--brand, #F86F03), #FFA41B) !important;
+      color: #fff !important;
+      border: none !important;
+      box-shadow: 0 6px 18px -6px var(--brand, #F86F03);
+    }
+    #submitFileBtn:hover {
+      transform: translateY(-2px);
+      color: #fff !important;
+    }
+
+    /* Push button — green */
+    #pushDataBtn {
+      background: linear-gradient(135deg, #10B981, #059669) !important;
+      color: #fff !important;
+      border: none !important;
+      padding: 12px 24px !important;
+      font-size: 0.9rem !important;
+      box-shadow: 0 6px 18px -6px #10B981;
+    }
+    #pushDataBtn:hover {
+      transform: translateY(-2px);
+      color: #fff !important;
+    }
+
+    /* Search input */
+    .dataTables_filter input {
+      padding: 8px 12px !important;
+      border: 1.5px solid var(--line, #e5e7eb) !important;
+      border-radius: 8px !important;
+      background: var(--card, #fff) !important;
+      color: var(--ink, #0f172a) !important;
+      font-family: inherit !important;
+      font-weight: 700 !important;
+      outline: none !important;
+      margin-left: 8px !important;
+    }
+    .dataTables_filter input:focus {
+      border-color: var(--brand, #F86F03) !important;
+      box-shadow: 0 0 0 3px var(--brand-light, #FFF4EC) !important;
+    }
+
+    /* Info text */
+    .dataTables_info {
+      font-size: 0.78rem !important;
+      color: var(--muted, #64748b) !important;
+      padding-top: 12px !important;
+    }
+
+    /* Pagination */
+    .dataTables_paginate {
+      margin-top: 16px !important;
+      padding-top: 12px !important;
+      border-top: 1px solid var(--line, #e5e7eb) !important;
+      display: flex !important;
+      justify-content: flex-end !important;
+      gap: 4px !important;
+      flex-wrap: wrap !important;
+    }
+    .dataTables_paginate .paginate_button {
+      padding: 7px 12px !important;
+      border-radius: 8px !important;
+      border: 1.5px solid var(--line, #e5e7eb) !important;
+      background: var(--card, #fff) !important;
+      color: var(--ink, #0f172a) !important;
+      font-weight: 800 !important;
+      font-size: 0.8rem !important;
+      cursor: pointer !important;
+      margin: 0 2px !important;
+    }
+    .dataTables_paginate .paginate_button:hover {
+      background: var(--brand-light, #FFF4EC) !important;
+      border-color: var(--brand, #F86F03) !important;
+      color: var(--brand, #F86F03) !important;
+    }
+    .dataTables_paginate .paginate_button.current {
+      background: linear-gradient(135deg, var(--brand, #F86F03), #FFA41B) !important;
+      border-color: var(--brand, #F86F03) !important;
+      color: #fff !important;
+    }
+    .dataTables_paginate .paginate_button.disabled {
+      opacity: 0.4 !important;
+      cursor: not-allowed !important;
+    }
+
+    /* ============================================================
+       ✅ RESPONSIVE
+       ============================================================ */
+    @media (max-width: 900px) {
+      .new-wrapper { margin-left: 0; }
+      .page-wrap { padding: 16px 14px 32px; }
+      h1 { font-size: 1.2rem; }
     }
   </style>
 </head>
 <body>
+
+<%@include file="./userheader.jsp"%>
+
+<div class="new-wrapper">
+<div class="page-wrap">
 
   <h1>Deployment Sheet Master</h1>
 
@@ -96,9 +291,7 @@
     <form id="uploadForm" enctype="multipart/form-data" method="post">
       <input type="file" id="fileInput" name="file" />
       <button type="button" class="custom-btn" id="submitFileBtn">Submit</button>
-      <!-- <button type="button" class="custom-btn" id="sampleFormatBtn">Sample Format</button> -->
-      <a href='<%=request.getContextPath() + "/XMLFile/Deployment_Sample_Format.xlsx"%>' class="custom-btn" download>Sample Format</a>
-      
+      <a href="<%=request.getContextPath() + "/XMLFile/Deployment_Sample_Format.xlsx"%>" class="custom-btn" download>Sample Format</a>
     </form>
   </div>
 
@@ -141,110 +334,108 @@
     </tbody>
   </table>
 
-  <!-- Scripts -->
-  <!-- <div class="">
-      <button type="button" class="custom-btn" id="pushDataBtn">Push Data to Main Table</button>
-   </div> -->
-   <%-- <div style="margin-top: 20px; text-align: center;">
-  <form id="pushForm" method="post" action="<%=request.getContextPath()%>/DeploymentSheetServlet">
-    <input type="hidden" name="action" value="push" />
-    <button type="submit" class="custom-btn">Push Data to Main Table</button>
-  </form>
-</div> --%>
+  <div style="margin-top: 20px; text-align: center;">
+    <button type="button" class="custom-btn" id="pushDataBtn">Push Data to Main Table</button>
+  </div>
 
-<div style="margin-top: 20px; text-align: center;">
-  <button type="button" class="custom-btn" id="pushDataBtn">Push Data to Main Table</button>
+</div>
 </div>
 
-  <script>
-    $(document).ready(function () {
-      const table = $('#deploymentTable').DataTable({
-        dom: 'Bfrtip',
-        paging: true,
-        scrollX: true,
-        responsive: false,
-        pageLength: 15,
-        searching: true,
-        ordering: true,
-        order: [],
-        lengthChange: false,
-        buttons: [
-          {
-            extend: 'excelHtml5',
-            text: 'Export Excel',
-            exportOptions: { columns: ':visible' }
-          },
-          {
-            extend: 'pdfHtml5',
-            text: 'Export PDF',
-            exportOptions: { columns: ':visible' },
-            orientation: 'landscape',
-            pageSize: 'A4'
-          }
-        ]
-      });
+<script>
+  $(document).ready(function () {
 
-      // File choose button
-      $('#chooseFileBtn').on('click', function () {
-        $('#fileInput').click();
-      });
+    // Safety check
+    if (typeof jQuery.fn.DataTable === 'undefined') {
+      console.error('❌ DataTables not loaded — check ./js/Deployment.1.13.6.jquery.dataTables.min.js');
+      alert('Table library failed to load. Please refresh the page.');
+      return;
+    }
 
-      // Submit file
-      $('#submitFileBtn').on('click', function () {
-        const file = $('#fileInput')[0].files[0];
-        if (!file) {
-          alert("Please choose a file first!");
-          return;
+    const table = $('#deploymentTable').DataTable({
+      dom: 'Bfrtip',
+      paging: true,
+      scrollX: true,
+      responsive: false,
+      pageLength: 15,
+      searching: true,
+      ordering: true,
+      order: [],
+      lengthChange: false,
+      buttons: [
+        {
+          extend: 'excelHtml5',
+          text: 'Export Excel',
+          exportOptions: { columns: ':visible' }
+        },
+        {
+          extend: 'pdfHtml5',
+          text: 'Export PDF',
+          exportOptions: { columns: ':visible' },
+          orientation: 'landscape',
+          pageSize: 'A4'
         }
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("action", "upload");
+      ]
+    });
 
-        $.ajax({
-          url: '<%=request.getContextPath()%>/DeploymentSheetServlet',
-          type: "POST",
-          data: formData,
-          processData: false,
-          contentType: false,
-          success: function (res) {
-            alert(res);
-            /* location.reload(); */
-			window.location.href='<%=request.getContextPath()%>/DeploymentSheetServlet';
-          }
-        });
-      });
+    // File input
+    $('#fileInput').on('change', function () {
+      const file = this.files[0];
+      if (file) console.log('File:', file.name);
+    });
 
-      <%-- // Push data button
-      $('#pushDataBtn').on('click', function () {
-        $.post("deployment", { action: "push" }, function (res) {
+    // Submit file
+    $('#submitFileBtn').on('click', function () {
+      const file = $('#fileInput')[0].files[0];
+      if (!file) { alert("Please choose a file first!"); return; }
+
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("action", "upload");
+
+      const $btn = $(this);
+      const orig = $btn.html();
+      $btn.prop('disabled', true).html('Uploading...');
+
+      $.ajax({
+        url: '<%=request.getContextPath()%>/DeploymentSheetServlet',
+        type: "POST",
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function (res) {
           alert(res);
-          /* location.reload(); */
-         window.location.href='<%=request.getContextPath()%>/DeploymentSheetServlet';
-        });
-      }); --%>
+          window.location.href = '<%=request.getContextPath()%>/DeploymentSheetServlet';
+        },
+        error: function () {
+          alert("Upload failed.");
+          $btn.prop('disabled', false).html(orig);
+        }
+      });
+    });
 
-//Push data button
-$('#pushDataBtn').on('click', function () {
-    $.ajax({
+    // Push data
+    $('#pushDataBtn').on('click', function () {
+      const $btn = $(this);
+      const orig = $btn.html();
+      $btn.prop('disabled', true).html('Pushing...');
+
+      $.ajax({
         url: '<%=request.getContextPath()%>/DeploymentSheetServlet',
         type: "POST",
         data: { action: "push" },
         success: function (res) {
-            alert(res);   // Show popup
-            // Reload JSP to refresh table
-            window.location.href = '<%=request.getContextPath()%>/DeploymentSheetServlet';
+          alert(res);
+          window.location.href = '<%=request.getContextPath()%>/DeploymentSheetServlet';
         },
         error: function () {
-            alert("Error occurred while pushing data!");
+          alert("Error occurred while pushing data!");
+          $btn.prop('disabled', false).html(orig);
         }
-    });
-});
-
-      // Sample format (optional)
-      $('#sampleFormatBtn').on('click', function () {
-        alert("Download sample format!");
       });
     });
-  </script>
+
+  });
+</script>
+
 </body>
 </html>
