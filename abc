@@ -1,12 +1,10 @@
 <%@page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%
- // ✅ Session check
  if(session == null || session.getAttribute("role") == null) {
      response.sendRedirect(request.getContextPath() + "/login.action");
      return;
  }
- // ✅ Cache headers
  response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0, private");
  response.setHeader("Pragma", "no-cache");
  response.setDateHeader("Expires", 0);
@@ -18,11 +16,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Deployment Sheet Master</title>
 
-<!-- DataTables CSS -->
 <link rel="stylesheet" href="<%=request.getContextPath()%>/css/Deployment.jquery.dataTables.min.css" />
 <link rel="stylesheet" href="<%=request.getContextPath()%>/css/Deployment.buttons.dataTables.min.css" />
 
-<!-- Scripts -->
 <script src="<%=request.getContextPath()%>/js/Deployment.jquery-3.7.0.min.js"></script>
 <script src="<%=request.getContextPath()%>/js/Deployment.1.13.6.jquery.dataTables.min.js"></script>
 <script src="<%=request.getContextPath()%>/js/Deployment.2.4.1.dataTables.buttons.min.js"></script>
@@ -34,172 +30,232 @@
 
 <style>
 /* ============================================================
-   BASE — theme-aware
+   RESET & BASE
    ============================================================ */
-body {
-    font-family: var(--font-stack, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
-    background: var(--bg) !important;
-    color: var(--ink) !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    font-weight: 700;
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
-.page-container {
-    padding: 24px 28px 60px;
-    max-width: 100%;
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    font-weight: 700;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+/* ============================================================
+   PAGE WRAPPER
+   ============================================================ */
+.page-wrap {
+    padding: 24px 32px 48px 32px;
+    max-width: 1600px;
+    margin: 0 auto;
     width: 100%;
 }
 
 /* ============================================================
    PAGE HEADER
    ============================================================ */
-.page-head {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 16px;
-    margin-bottom: 22px;
-    flex-wrap: wrap;
-}
-.page-head .ttl {
+.page-header {
     display: flex;
     align-items: center;
-    gap: 12px;
-    font-weight: 800;
-    font-size: 1.5rem;
-    letter-spacing: -0.5px;
-    color: var(--ink);
-    line-height: 1.2;
-    margin: 0;
+    gap: 14px;
+    margin-bottom: 24px;
+    padding-bottom: 18px;
+    border-bottom: 2px solid var(--line);
 }
-.page-head .ttl .ttl-icon {
-    width: 42px;
-    height: 42px;
+
+.page-header .header-icon {
+    width: 48px;
+    height: 48px;
     display: grid;
     place-items: center;
-    background: var(--brand-light);
-    color: var(--brand);
-    border-radius: 12px;
-    font-size: 1rem;
+    background: linear-gradient(135deg, var(--brand), var(--brand-2, #FF9A3D));
+    color: #fff;
+    border-radius: 14px;
+    font-size: 20px;
     flex-shrink: 0;
+    box-shadow: 0 8px 20px -6px var(--brand);
 }
-html[data-theme="dark"] .page-head .ttl .ttl-icon {
-    background: rgba(248,111,3,.15);
+
+.page-header .header-text {
+    flex: 1;
+    min-width: 0;
 }
-.page-head .sub {
+
+.page-header h1 {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--ink);
+    letter-spacing: -0.4px;
+    line-height: 1.2;
+    margin-bottom: 4px;
+}
+
+.page-header p {
+    font-size: 13px;
     color: var(--muted);
-    font-size: 0.85rem;
-    margin: 4px 0 0 54px;
     font-weight: 600;
+    margin: 0;
 }
 
 /* ============================================================
    ACTION BAR
    ============================================================ */
-.table-actions {
+.action-bar {
     display: flex;
+    align-items: center;
     justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 20px;
-    padding: 16px 20px;
+    gap: 16px;
+    padding: 18px 22px;
     background: var(--card);
-    border: 1px solid var(--line);
-    border-radius: 14px;
+    border: 1.5px solid var(--line);
+    border-radius: 16px;
+    margin-bottom: 20px;
     flex-wrap: wrap;
-    box-shadow: 0 2px 8px rgba(0,0,0,.03);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03);
 }
 
-.table-actions form {
+html[data-theme="dark"] .action-bar {
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+}
+
+.action-bar .upload-section {
     display: flex;
     align-items: center;
     gap: 12px;
     flex-wrap: wrap;
 }
 
-#fileInput {
-    padding: 8px 14px;
-    background: var(--bg);
-    border: 1.5px solid var(--line);
-    border-radius: 10px;
-    color: var(--ink);
-    font-family: inherit;
-    font-size: 0.85rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all .2s ease;
-    max-width: 260px;
-}
-#fileInput:hover { border-color: var(--brand); }
-#fileInput::file-selector-button {
-    padding: 6px 14px;
-    border-radius: 8px;
-    background: var(--brand-light);
-    color: var(--brand);
-    border: none;
-    font-family: inherit;
-    font-weight: 800;
-    font-size: 0.78rem;
-    cursor: pointer;
-    margin-right: 10px;
-    transition: all .2s ease;
-}
-#fileInput::file-selector-button:hover {
-    background: var(--brand);
-    color: #fff;
-}
-html[data-theme="dark"] #fileInput::file-selector-button {
-    background: rgba(248,111,3,.15);
+/* File input */
+.file-input-wrapper {
+    position: relative;
+    display: inline-block;
 }
 
-/* ============================================================
-   BUTTONS
-   ============================================================ */
-.custom-btn,
-.dt-buttons button {
-    padding: 10px 18px;
-    border-radius: 10px;
-    border: 1.5px solid var(--line);
-    background: var(--card);
-    color: var(--ink);
-    cursor: pointer;
-    font-family: inherit;
-    font-weight: 800;
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
-    transition: all .2s ease;
-    text-decoration: none;
+.file-input-wrapper input[type="file"] {
+    position: absolute;
+    left: -9999px;
+    opacity: 0;
+}
+
+.file-input-label {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
+    padding: 11px 18px;
+    background: var(--bg);
+    border: 1.5px dashed var(--line);
+    border-radius: 12px;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 260px;
+    max-width: 340px;
 }
-.custom-btn:hover,
-.dt-buttons button:hover {
-    background: var(--brand);
+
+.file-input-label:hover {
     border-color: var(--brand);
-    color: #fff;
-    transform: translateY(-1px);
-    box-shadow: 0 6px 18px -6px var(--brand);
+    color: var(--brand);
+    background: var(--brand-light);
 }
-.custom-btn.primary {
+
+html[data-theme="dark"] .file-input-label:hover {
+    background: rgba(248, 111, 3, 0.1);
+}
+
+.file-input-label.has-file {
+    border-color: var(--brand);
+    border-style: solid;
+    color: var(--brand);
+    background: var(--brand-light);
+}
+
+html[data-theme="dark"] .file-input-label.has-file {
+    background: rgba(248, 111, 3, 0.15);
+}
+
+.file-input-label i {
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.file-input-label .file-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: left;
+}
+
+/* Buttons */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 11px 22px;
+    border-radius: 12px;
+    border: none;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    white-space: nowrap;
+    line-height: 1;
+    height: 44px;
+}
+
+.btn-primary {
     background: linear-gradient(135deg, var(--brand), var(--brand-2, #FF9A3D));
     color: #fff;
-    border: none;
     box-shadow: 0 6px 18px -6px var(--brand);
 }
-.custom-btn.primary:hover {
-    box-shadow: 0 10px 24px -6px var(--brand);
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 26px -6px var(--brand);
 }
-.custom-btn.push-btn {
+
+.btn-secondary {
+    background: var(--card);
+    color: var(--ink);
+    border: 1.5px solid var(--line);
+}
+
+.btn-secondary:hover {
+    border-color: var(--brand);
+    color: var(--brand);
+    background: var(--brand-light);
+}
+
+html[data-theme="dark"] .btn-secondary:hover {
+    background: rgba(248, 111, 3, 0.1);
+}
+
+.btn-success {
     background: linear-gradient(135deg, #10B981, #059669);
     color: #fff;
-    border: none;
     box-shadow: 0 6px 18px -6px #10B981;
 }
-.custom-btn.push-btn:hover {
-    box-shadow: 0 10px 24px -6px #10B981;
+
+.btn-success:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 26px -6px #10B981;
+}
+
+.btn i {
+    font-size: 14px;
 }
 
 /* ============================================================
@@ -207,153 +263,263 @@ html[data-theme="dark"] #fileInput::file-selector-button {
    ============================================================ */
 .table-card {
     background: var(--card);
-    border: 1px solid var(--line);
-    border-radius: 16px;
-    padding: 20px;
+    border: 1.5px solid var(--line);
+    border-radius: 18px;
+    padding: 22px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
     overflow: hidden;
-    box-shadow: 0 4px 20px rgba(0,0,0,.03);
-}
-html[data-theme="dark"] .table-card {
-    box-shadow: 0 4px 20px rgba(0,0,0,.3);
+    margin-bottom: 24px;
 }
 
+html[data-theme="dark"] .table-card {
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+}
+
+/* DataTables Controls */
 .dataTables_wrapper {
-    width: 100%;
-    overflow-x: auto;
     color: var(--ink);
 }
 
-/* Top controls — length, filter */
+.dataTables_wrapper::after {
+    content: "";
+    display: table;
+    clear: both;
+}
+
+/* Top row: length + filter */
 .dataTables_wrapper .dataTables_length,
 .dataTables_wrapper .dataTables_filter {
-    margin-bottom: 14px;
+    margin-bottom: 16px;
     color: var(--muted);
+    font-size: 13px;
     font-weight: 700;
-    font-size: 0.82rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
 }
+
+.dataTables_wrapper .dataTables_length {
+    float: left;
+}
+
+.dataTables_wrapper .dataTables_filter {
+    float: right;
+}
+
 .dataTables_wrapper .dataTables_filter input {
-    padding: 8px 14px;
+    padding: 9px 14px;
     background: var(--bg);
     border: 1.5px solid var(--line);
     border-radius: 10px;
     color: var(--ink);
     font-family: inherit;
-    font-size: 0.85rem;
+    font-size: 13px;
     font-weight: 700;
     outline: none;
-    transition: all .2s ease;
-    margin-left: 8px;
+    transition: all 0.2s ease;
+    margin-left: 4px;
+    min-width: 200px;
 }
+
 .dataTables_wrapper .dataTables_filter input:focus {
     border-color: var(--brand);
     box-shadow: 0 0 0 4px var(--brand-light);
 }
+
 html[data-theme="dark"] .dataTables_wrapper .dataTables_filter input:focus {
-    box-shadow: 0 0 0 4px rgba(248,111,3,.15);
-}
-.dataTables_wrapper .dataTables_length select {
-    padding: 6px 10px;
-    background: var(--bg);
-    border: 1.5px solid var(--line);
-    border-radius: 8px;
-    color: var(--ink);
-    font-family: inherit;
-    font-weight: 700;
-    font-size: 0.85rem;
-    cursor: pointer;
-    outline: none;
-    margin: 0 6px;
+    box-shadow: 0 0 0 4px rgba(248, 111, 3, 0.15);
 }
 
-/* Buttons row */
-.dt-buttons {
+.dataTables_wrapper .dataTables_length select {
+    padding: 9px 32px 9px 12px;
+    background: var(--bg);
+    border: 1.5px solid var(--line);
+    border-radius: 10px;
+    color: var(--ink);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    outline: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+}
+
+/* Buttons row (Export Excel/PDF/Print) */
+.dataTables_wrapper .dt-buttons {
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
-    margin-bottom: 14px;
-}
-.dt-buttons button {
-    padding: 9px 16px;
-    font-size: 0.78rem;
+    margin-bottom: 16px;
+    clear: both;
 }
 
-/* Table */
+.dataTables_wrapper .dt-buttons .dt-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    border-radius: 10px;
+    border: 1.5px solid var(--line);
+    background: var(--card);
+    color: var(--ink);
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    line-height: 1;
+}
+
+.dataTables_wrapper .dt-buttons .dt-button:hover {
+    background: var(--brand);
+    border-color: var(--brand);
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px -6px var(--brand);
+}
+
+.dataTables_wrapper .dt-buttons .dt-button i {
+    font-size: 13px;
+}
+
+/* ============================================================
+   DATA TABLE
+   ============================================================ */
 table.dataTable {
     width: 100% !important;
     border-collapse: collapse !important;
     color: var(--ink) !important;
-    font-size: 0.85rem;
+    font-size: 13px;
+    margin: 0 !important;
 }
+
+table.dataTable thead {
+    background: var(--bg);
+}
+
 table.dataTable thead th {
     background: var(--bg) !important;
     color: var(--muted) !important;
     font-weight: 800 !important;
-    font-size: 0.72rem !important;
+    font-size: 11px !important;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.6px;
     border-bottom: 1.5px solid var(--line) !important;
-    padding: 12px 14px !important;
+    border-top: none !important;
+    padding: 14px 16px !important;
     white-space: nowrap;
+    text-align: left;
+    vertical-align: middle;
 }
+
+table.dataTable thead th:first-child {
+    border-top-left-radius: 10px;
+    border-bottom-left-radius: 10px;
+}
+
+table.dataTable thead th:last-child {
+    border-top-right-radius: 10px;
+    border-bottom-right-radius: 10px;
+}
+
 table.dataTable tbody tr {
     background: var(--card) !important;
-    border-bottom: 1px solid var(--line) !important;
-    transition: background .15s ease;
+    transition: background 0.15s ease;
 }
+
 table.dataTable tbody tr:hover {
     background: var(--bg) !important;
 }
+
 html[data-theme="dark"] table.dataTable tbody tr:hover {
-    background: rgba(255,255,255,.03) !important;
+    background: rgba(255, 255, 255, 0.04) !important;
 }
+
 table.dataTable tbody td {
-    padding: 11px 14px !important;
+    padding: 13px 16px !important;
     vertical-align: middle;
     color: var(--ink) !important;
     border-bottom: 1px solid var(--line);
     font-weight: 700;
     white-space: nowrap;
+    font-size: 13px;
+    text-align: left;
 }
+
 table.dataTable tbody tr:last-child td {
     border-bottom: none;
 }
+
 table.dataTable.no-footer {
     border-bottom: none !important;
 }
 
 /* Sorting icons */
+table.dataTable thead .sorting,
+table.dataTable thead .sorting_asc,
+table.dataTable thead .sorting_desc {
+    cursor: pointer;
+    position: relative;
+}
+
 table.dataTable thead .sorting:before,
 table.dataTable thead .sorting:after,
 table.dataTable thead .sorting_asc:before,
 table.dataTable thead .sorting_asc:after,
 table.dataTable thead .sorting_desc:before,
 table.dataTable thead .sorting_desc:after {
-    opacity: 0.35;
+    opacity: 0.3;
+    color: var(--muted);
 }
 
-/* Pagination */
-.dataTables_wrapper .dataTables_paginate {
-    margin-top: 16px;
-    padding: 4px 0;
+table.dataTable thead .sorting_asc:before,
+table.dataTable thead .sorting_desc:after {
+    opacity: 0.9;
+    color: var(--brand);
 }
+
+/* ============================================================
+   PAGINATION
+   ============================================================ */
+.dataTables_wrapper .dataTables_paginate {
+    margin-top: 20px;
+    padding: 4px 0;
+    float: right;
+    clear: both;
+}
+
 .dataTables_wrapper .dataTables_paginate .paginate_button {
-    padding: 8px 14px !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 38px;
+    height: 38px;
+    padding: 0 12px !important;
     margin: 0 3px !important;
-    border-radius: 8px !important;
+    border-radius: 10px !important;
     background: var(--card) !important;
     border: 1.5px solid var(--line) !important;
     color: var(--ink) !important;
     font-weight: 800 !important;
-    font-size: 0.78rem !important;
+    font-size: 13px !important;
     cursor: pointer;
-    transition: all .15s ease;
+    transition: all 0.15s ease;
     text-decoration: none !important;
+    line-height: 1;
 }
+
 .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
     background: var(--brand) !important;
     border-color: var(--brand) !important;
     color: #fff !important;
 }
+
 .dataTables_wrapper .dataTables_paginate .paginate_button.current,
 .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
     background: linear-gradient(135deg, var(--brand), var(--brand-2, #FF9A3D)) !important;
@@ -361,47 +527,108 @@ table.dataTable thead .sorting_desc:after {
     color: #fff !important;
     box-shadow: 0 4px 12px -3px var(--brand);
 }
+
 .dataTables_wrapper .dataTables_paginate .paginate_button.disabled,
 .dataTables_wrapper .dataTables_paginate .paginate_button.disabled:hover {
-    opacity: 0.4 !important;
+    opacity: 0.35 !important;
     cursor: not-allowed !important;
     background: var(--card) !important;
     color: var(--muted) !important;
+    border-color: var(--line) !important;
 }
 
 /* Info text */
 .dataTables_wrapper .dataTables_info {
-    margin-top: 14px;
+    margin-top: 20px;
+    padding-top: 4px;
     color: var(--muted);
-    font-size: 0.8rem;
+    font-size: 13px;
     font-weight: 700;
+    float: left;
+    clear: both;
 }
 
 /* ============================================================
    PUSH BUTTON ROW
    ============================================================ */
-.push-row {
-    margin-top: 24px;
-    text-align: center;
+.push-section {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 8px 0;
 }
-.push-row .custom-btn {
-    padding: 14px 28px;
-    font-size: 0.85rem;
+
+.push-section .btn {
+    padding: 14px 32px;
+    font-size: 14px;
+    height: 50px;
 }
 
 /* ============================================================
    RESPONSIVE
    ============================================================ */
 @media (max-width: 900px) {
-    .page-container { padding: 16px 14px 40px; }
-    .page-head .ttl { font-size: 1.2rem; }
-    .page-head .ttl .ttl-icon { width: 36px; height: 36px; font-size: 0.9rem; }
-    .page-head .sub { margin-left: 48px; font-size: 0.78rem; }
-    .table-actions { flex-direction: column; align-items: stretch; }
-    .table-actions form { width: 100%; }
-    #fileInput { max-width: 100%; flex: 1; }
-    .dt-buttons { flex-direction: column; }
-    .dt-buttons button { width: 100%; justify-content: center; }
+    .page-wrap {
+        padding: 16px 16px 32px 16px;
+    }
+
+    .page-header h1 {
+        font-size: 18px;
+    }
+
+    .page-header .header-icon {
+        width: 42px;
+        height: 42px;
+        font-size: 18px;
+    }
+
+    .action-bar {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 16px;
+    }
+
+    .action-bar .upload-section {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .file-input-label {
+        max-width: 100%;
+        width: 100%;
+    }
+
+    .btn {
+        width: 100%;
+    }
+
+    .dataTables_wrapper .dataTables_length,
+    .dataTables_wrapper .dataTables_filter {
+        float: none;
+        display: flex;
+        width: 100%;
+        margin-bottom: 12px;
+    }
+
+    .dataTables_wrapper .dataTables_filter input {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .dataTables_wrapper .dt-buttons {
+        flex-direction: column;
+    }
+
+    .dataTables_wrapper .dt-buttons .dt-button {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .dataTables_wrapper .dataTables_info,
+    .dataTables_wrapper .dataTables_paginate {
+        float: none;
+        text-align: center;
+    }
 }
 </style>
 </head>
@@ -410,33 +637,39 @@ table.dataTable thead .sorting_desc:after {
 <%@include file="../userheader.jsp"%>
 
 <div class="new-wrapper">
-<div class="page-container">
+<div class="page-wrap">
 
     <!-- ============ PAGE HEADER ============ -->
-    <div class="page-head">
-        <div>
-            <h1 class="ttl">
-                <span class="ttl-icon"><i class="fas fa-rocket"></i></span>
-                Deployment Sheet Master
-            </h1>
-            <p class="sub">Upload, review, and push deployment records to the main table</p>
+    <div class="page-header">
+        <div class="header-icon">
+            <i class="fas fa-rocket"></i>
+        </div>
+        <div class="header-text">
+            <h1>Deployment Sheet Master</h1>
+            <p>Upload, review, and push deployment records to the main table</p>
         </div>
     </div>
 
     <!-- ============ ACTION BAR ============ -->
-    <div class="table-actions">
-        <form id="uploadForm" enctype="multipart/form-data" method="post">
-            <input type="file" id="fileInput" name="file" accept=".xlsx,.xls,.csv" />
-            <button type="button" class="custom-btn primary" id="submitFileBtn">
+    <div class="action-bar">
+        <form id="uploadForm" enctype="multipart/form-data" method="post" class="upload-section">
+            <div class="file-input-wrapper">
+                <input type="file" id="fileInput" name="file" accept=".xlsx,.xls,.csv" />
+                <label for="fileInput" class="file-input-label" id="fileLabel">
+                    <i class="fas fa-paperclip"></i>
+                    <span class="file-name" id="fileNameText">Choose Excel file...</span>
+                </label>
+            </div>
+            <button type="button" class="btn btn-primary" id="submitFileBtn">
                 <i class="fas fa-upload"></i> Submit
             </button>
-            <a href="<%=request.getContextPath()%>/XMLFile/Deployment_Sample_Format.xlsx" class="custom-btn" download>
-                <i class="fas fa-download"></i> Sample Format
+            <a href="<%=request.getContextPath()%>/XMLFile/Deployment_Sample_Format.xlsx" class="btn btn-secondary" download>
+                <i class="fas fa-download"></i> Sample
             </a>
         </form>
     </div>
 
-    <!-- ============ TABLE ============ -->
+    <!-- ============ TABLE CARD ============ -->
     <div class="table-card">
         <table id="deploymentTable" class="display nowrap" style="width:100%">
             <thead>
@@ -479,8 +712,8 @@ table.dataTable thead .sorting_desc:after {
     </div>
 
     <!-- ============ PUSH BUTTON ============ -->
-    <div class="push-row">
-        <button type="button" class="custom-btn push-btn" id="pushDataBtn">
+    <div class="push-section">
+        <button type="button" class="btn btn-success" id="pushDataBtn">
             <i class="fas fa-cloud-upload-alt"></i> Push Data to Main Table
         </button>
     </div>
@@ -491,9 +724,11 @@ table.dataTable thead .sorting_desc:after {
 <script>
 $(document).ready(function () {
 
-    // ✅ DataTables init
-    const table = $('#deploymentTable').DataTable({
-        dom: 'Bfrtip',
+    /* ============================================================
+       DATATABLES INIT
+       ============================================================ */
+    var table = $('#deploymentTable').DataTable({
+        dom: '<"dt-top"lfB>rt<"dt-bottom"ip>',
         paging: true,
         scrollX: true,
         responsive: false,
@@ -501,47 +736,81 @@ $(document).ready(function () {
         searching: true,
         ordering: true,
         order: [],
-        lengthChange: true,
+        lengthMenu: [[10, 15, 25, 50, 100, -1], [10, 15, 25, 50, 100, "All"]],
         buttons: [
             {
                 extend: 'excelHtml5',
                 text: '<i class="fas fa-file-excel"></i> Export Excel',
-                exportOptions: { columns: ':visible' }
+                exportOptions: { columns: ':visible' },
+                className: 'dt-button'
             },
             {
                 extend: 'pdfHtml5',
                 text: '<i class="fas fa-file-pdf"></i> Export PDF',
                 exportOptions: { columns: ':visible' },
                 orientation: 'landscape',
-                pageSize: 'A4'
+                pageSize: 'A4',
+                className: 'dt-button'
             },
             {
                 extend: 'print',
                 text: '<i class="fas fa-print"></i> Print',
-                exportOptions: { columns: ':visible' }
+                exportOptions: { columns: ':visible' },
+                className: 'dt-button'
             }
-        ]
+        ],
+        language: {
+            search: "",
+            searchPlaceholder: "Search...",
+            lengthMenu: "Show _MENU_ entries",
+            info: "Showing _START_ to _END_ of _TOTAL_ entries",
+            infoEmpty: "No entries",
+            infoFiltered: "(filtered from _MAX_ total)",
+            zeroRecords: "No matching records found",
+            emptyTable: "No data available",
+            paginate: {
+                first: "First",
+                last: "Last",
+                next: "Next",
+                previous: "Prev"
+            }
+        }
     });
 
-    // ✅ Choose file
-    $('#chooseFileBtn').on('click', function () {
-        $('#fileInput').click();
+    /* ============================================================
+       FILE INPUT LABEL UPDATE
+       ============================================================ */
+    $('#fileInput').on('change', function () {
+        var fileName = this.files[0] ? this.files[0].name : 'Choose Excel file...';
+        $('#fileNameText').text(fileName);
+        if (this.files[0]) {
+            $('#fileLabel').addClass('has-file');
+        } else {
+            $('#fileLabel').removeClass('has-file');
+        }
     });
 
-    // ✅ Submit file (upload)
+    /* ============================================================
+       UPLOAD FILE
+       ============================================================ */
     $('#submitFileBtn').on('click', function () {
-        const file = $('#fileInput')[0].files[0];
+        var file = $('#fileInput')[0].files[0];
         if (!file) {
-            alert("Please choose a file first!");
+            alert('Please choose a file first!');
             return;
         }
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("action", "upload");
+
+        var formData = new FormData();
+        formData.append('file', file);
+        formData.append('action', 'upload');
+
+        var $btn = $(this);
+        var origHtml = $btn.html();
+        $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Uploading...');
 
         $.ajax({
             url: '<%=request.getContextPath()%>/DeploymentSheetServlet',
-            type: "POST",
+            type: 'POST',
             data: formData,
             processData: false,
             contentType: false,
@@ -550,34 +819,39 @@ $(document).ready(function () {
                 window.location.href = '<%=request.getContextPath()%>/DeploymentSheetServlet';
             },
             error: function () {
-                alert("Error occurred while uploading file!");
+                alert('Error occurred while uploading file!');
+                $btn.prop('disabled', false).html(origHtml);
             }
         });
     });
 
-    // ✅ Push data to main table
+    /* ============================================================
+       PUSH DATA
+       ============================================================ */
     $('#pushDataBtn').on('click', function () {
-        if (!confirm("Are you sure you want to push data to main table?")) {
+        if (!confirm('Are you sure you want to push data to main table?')) {
             return;
         }
+
+        var $btn = $(this);
+        var origHtml = $btn.html();
+        $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Pushing...');
+
         $.ajax({
             url: '<%=request.getContextPath()%>/DeploymentSheetServlet',
-            type: "POST",
-            data: { action: "push" },
+            type: 'POST',
+            data: { action: 'push' },
             success: function (res) {
                 alert(res);
                 window.location.href = '<%=request.getContextPath()%>/DeploymentSheetServlet';
             },
             error: function () {
-                alert("Error occurred while pushing data!");
+                alert('Error occurred while pushing data!');
+                $btn.prop('disabled', false).html(origHtml);
             }
         });
     });
 
-    // ✅ Sample format download (fallback)
-    $('#sampleFormatBtn').on('click', function () {
-        window.location.href = '<%=request.getContextPath()%>/XMLFile/Deployment_Sample_Format.xlsx';
-    });
 });
 </script>
 
