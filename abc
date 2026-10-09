@@ -1,46 +1,6 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
-<%@page import="java.sql.*"%>
-<%@page import="java.util.*"%>
-<%@ page import="com.jdbc.DBUtilityAuto"%>
-<%
-    // ✅ Session check
-    if(session == null || session.getAttribute("role") == null) {
-        response.sendRedirect(request.getContextPath() + "/login.action");
-        return;
-    }
-
-    // ✅ Cache headers
-    response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0, private");
-    response.setHeader("Pragma", "no-cache");
-    response.setDateHeader("Expires", 0);
-%>
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>Deployment Analysis Dashboard</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel='stylesheet' href='<%=request.getContextPath()%>/css/font-awesomepage1.css'>
-<link rel='stylesheet' href='<%=request.getContextPath()%>/css/bootstrapPage1.css'>
-<link rel='stylesheet' href='<%=request.getContextPath()%>/css/dataTables.bootstrap4Page1.min.css'>
-<link rel='stylesheet' href='<%=request.getContextPath()%>/css/buttons.bootstrap4pagee2.min.css'>
-<link rel="stylesheet" href="<%=request.getContextPath()%>/css/stylecron.css">
-<script src='<%=request.getContextPath()%>/js/cdnjs.cloudflare.com_ajax_libs_jquery_3.3.1_jquery.min.js'></script>
-<script src='<%=request.getContextPath()%>/js/cdnjs.cloudflare.com_ajax_libs_popper.js_1.14.3_umd_popper.min.js'></script>
-<script src='<%=request.getContextPath()%>/js/trail1_4.1.1_js_bootstrap.min.js'></script>
-<script src='<%=request.getContextPath()%>/js/cdn.datatables.net_1.10.19_js_jquery.dataTables1.min.js'></script>
-<script src='<%=request.getContextPath()%>/js/cdn.datatables.net_1.10.19_js_dataTables.bootstrap4.min.js'></script>
-<script src='<%=request.getContextPath()%>/js/cdn.datatables.net_buttons_1.5.2_js_dataTables.buttons.min.js'></script>
-<script src='<%=request.getContextPath()%>/js/cdn.datatables.net_buttons_1.5.2_js_buttons.bootstrap4.min.js'></script>
-<script src='<%=request.getContextPath()%>/js/cdnjs.cloudflare.com_ajax_libs_jszip_3.1.3_jszip.min.js'></script>
-<script src='<%=request.getContextPath()%>/js/cdnjs.cloudflare.com_ajax_libs_pdfmake_0.1.36_pdfmake.min.js'></script>
-<script src='<%=request.getContextPath()%>/js/cdnjs.cloudflare.com_ajax_libs_pdfmake_0.1.36_vfs_fonts.js'></script>
-<script src='<%=request.getContextPath()%>/js/cdn.datatables.net_buttons_1.5.2_js_buttons.html5.min.js'></script>
-<script src='<%=request.getContextPath()%>/js/gfigurebuttons.print.min.js'></script>
-<script src='<%=request.getContextPath()%>/js/cdn.datatables.net_buttons_1.5.2_js_buttons.colVis.min.js'></script>
 <style>
 /* ============================================================
-   THEME VARIABLES — aligned with userheader
+   THEME VARIABLES
    ============================================================ */
 :root, [data-theme="light"] {
     --brand: #F86F03;
@@ -222,9 +182,15 @@ html, body {
     text-transform: uppercase;
     letter-spacing: .6px;
 }
+
+/* ============================================================
+   INPUT / TEXTAREA / SELECT — BASE
+   ============================================================ */
 .form-grid .form-control,
 .form-grid select,
-.form-grid input,
+.form-grid input[type="text"],
+.form-grid input[type="date"],
+.form-grid input[type="time"],
 .form-grid textarea {
     width: 100%;
     padding: 12px 14px;
@@ -237,7 +203,11 @@ html, body {
     font-weight: 600;
     outline: none;
     transition: all .2s ease;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
 }
+
 .form-grid .form-control:focus,
 .form-grid select:focus,
 .form-grid input:focus,
@@ -246,11 +216,79 @@ html, body {
     background: var(--card);
     box-shadow: 0 0 0 4px var(--brand-light);
 }
+
 .form-grid textarea {
     resize: vertical;
     min-height: 44px;
     padding: 12px 14px;
 }
+
+/* ============================================================
+   ✅ SELECT (DROPDOWN) — FULLY FIXED
+   ============================================================ */
+.form-grid select {
+    cursor: pointer;
+    padding-right: 40px;
+    background-color: var(--elevated);
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23F86F03' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    background-size: 14px 14px;
+    color: var(--ink);
+    font-weight: 700;
+    line-height: 1.4;
+}
+
+/* ✅ Dropdown options — LIGHT theme */
+.form-grid select option {
+    background-color: #ffffff;
+    color: #0f172a;
+    padding: 12px 14px;
+    font-weight: 600;
+    font-size: .9rem;
+    line-height: 1.5;
+}
+
+/* ✅ Dropdown options — DARK theme */
+html[data-theme="dark"] .form-grid select option {
+    background-color: #1e293b;
+    color: #f1f5f9;
+}
+
+/* ✅ Selected option highlight */
+.form-grid select option:checked {
+    background: linear-gradient(135deg, #F86F03, #FFA41B) !important;
+    color: #ffffff !important;
+    font-weight: 800;
+}
+
+/* ✅ Disabled option */
+.form-grid select option[disabled] {
+    color: #94a3b8 !important;
+    font-style: italic;
+}
+
+/* ✅ Firefox specific fix */
+@-moz-document url-prefix() {
+    .form-grid select {
+        color: var(--ink);
+        background-color: var(--elevated);
+    }
+    .form-grid select option {
+        background-color: var(--card);
+        color: var(--ink);
+    }
+}
+
+/* ✅ Safari / Chrome option hover (best-effort) */
+.form-grid select option:hover {
+    background-color: #F86F03 !important;
+    color: #ffffff !important;
+}
+
+/* ============================================================
+   CHECKBOX FIELD
+   ============================================================ */
 .form-grid .checkbox-field {
     flex-direction: row;
     align-items: center;
@@ -261,6 +299,8 @@ html, body {
     width: 18px; height: 18px;
     accent-color: var(--brand);
     cursor: pointer;
+    -webkit-appearance: checkbox;
+    appearance: checkbox;
 }
 .form-grid .checkbox-field label {
     text-transform: none;
@@ -268,6 +308,10 @@ html, body {
     cursor: pointer;
     margin: 0;
 }
+
+/* ============================================================
+   SUBMIT BUTTON
+   ============================================================ */
 .form-grid .submit-field {
     display: flex;
     justify-content: flex-end;
@@ -296,7 +340,7 @@ html, body {
 }
 
 /* ============================================================
-   TABLE CONTAINER
+   TABLE WRAPPER
    ============================================================ */
 .table-wrapper {
     background: var(--card);
@@ -461,7 +505,9 @@ html, body {
     transform: translateY(-1px);
 }
 
-/* Textarea container */
+/* ============================================================
+   TEXTAREA CONTAINER
+   ============================================================ */
 .textarea-container {
     display: none;
     margin-top: 6px;
@@ -491,7 +537,9 @@ html, body {
     opacity: .7;
 }
 
-/* Error message */
+/* ============================================================
+   ERROR MESSAGE
+   ============================================================ */
 .error-message {
     padding: 12px 16px;
     background: rgba(239, 68, 68, 0.1);
@@ -524,864 +572,3 @@ html, body {
     .table-wrapper table.table { font-size: .78rem; }
 }
 </style>
-<script>
-function validateForm() {
-    var layer = document.getElementById("options").value;
-    var apiName = document.getElementById("w3review").value;
-    if (!layer) { alert("Please select a Layer."); return false; }
-    if (!apiName) { alert("Please enter an API Name."); return false; }
-    if (document.forms[0].m_stFromTime.value == "") { alert("Please Enter From"); return null; }
-    if (document.forms[0].m_stToTime.value == "") { alert("Please Enter To"); return null; }
-    return true;
-}
-function toggleCheckboxes(button) {
-    var checkboxRow = button.closest('tr').nextElementSibling;
-    if (checkboxRow.style.display === 'none' || checkboxRow.style.display === '') {
-        checkboxRow.style.display = 'table-row';
-    } else {
-        checkboxRow.style.display = 'none';
-    }
-}
-function toggleTextbox(textareaId, checkbox) {
-    var textarea = document.getElementById(textareaId);
-    if (checkbox.checked) {
-        textarea.style.display = 'block';
-    } else {
-        textarea.style.display = 'none';
-    }
-}
-function viewDetails() {
-    document.forms[0].action = '<%=request.getContextPath() + "/jsp/deploymentview.jsp"%>';
-    document.forms[0].submit();
-}
-function viewDetails1() {
-    document.forms[0].action = '<%=request.getContextPath() + "/jsp/nohitsview.jsp"%>';
-    document.forms[0].submit();
-}
-function showrefrencegen(refno) {
-    var a = '<%=request.getContextPath() + "/errorcoderefrencesearch?&refno="%>' + refno;
-    window.open(a, '_blank');
-}
-function CheckBox(counter) {
-    var xhr = new XMLHttpRequest();
-    var reviewChecked = document.getElementById('chk1_' + counter).checked;
-    var remarksChecked = document.getElementById('chk2_' + counter).checked;
-    var completedChecked = document.getElementById('chk3_' + counter).checked;
-    var noHitsChecked = document.getElementById('chk4_' + counter).checked;
-    var reviewText = document.getElementById('reviewText_' + counter);
-    var remarksText = document.getElementById('remarksText_' + counter);
-    var data = {
-        counter: counter,
-        reviewChecked: reviewChecked,
-        remarksChecked: remarksChecked,
-        completedChecked: completedChecked,
-        noHitsChecked: noHitsChecked,
-        reviewText: reviewText ? reviewText.value.trim() : '',
-        remarksText: remarksText ? remarksText.value.trim() : ''
-    };
-    xhr.open("POST", "<%=request.getContextPath() + "/jsp/updateFields.jsp"%>", true);
-    xhr.setRequestHeader("Content-Type", "application/json");
-    xhr.onreadystatechange = function () {
-        if (xhr.readyState === 4 && xhr.status === 200) {
-            console.log("Response: ", xhr.responseText);
-        } else if (xhr.readyState === 4) {
-            console.error("Error: ", xhr.status, xhr.statusText);
-        }
-    };
-    xhr.send(JSON.stringify(data));
-}
-function toggleSourceIDTextbox(checkbox) {
-    var sourceField = document.getElementById("sourceIDField");
-    sourceField.style.display = checkbox.checked ? "block" : "none";
-}
-function toggleServerIpField() {
-    var serverSelect = document.getElementById("server");
-    var serverIpField = document.getElementById("serverIpField");
-    if (serverSelect.value === "single") {
-        serverIpField.style.display = "block";
-    } else {
-        serverIpField.style.display = "none";
-    }
-}
-function disableButton() {
-    document.getElementById('submitBtn').disabled = true;
-    document.getElementById('submitBtn').innerText = 'Submitting...';
-    return true;
-}
-</script>
-</head>
-<body>
-
-<%@include file="../userheader.jsp"%>
-
-<div class="new-wrapper">
-<div class="deploy-content">
-
-    <!-- ============ PAGE HEADER ============ -->
-    <div class="page-header">
-        <h1><i class="fas fa-rocket"></i>Deployment Analysis Dashboard</h1>
-        <p>Analyze deployment results, review URN/RRN references, and track API performance</p>
-    </div>
-
-    <!-- ============ QUICK ACTIONS ============ -->
-    <div class="quick-actions">
-        <button type="button" class="primary" onclick="viewDetails()">
-            <i class="fas fa-list-check"></i> Deployment Details
-        </button>
-        <button type="button" onclick="viewDetails1()">
-            <i class="fas fa-ban"></i> No Hits Details
-        </button>
-    </div>
-
-    <!-- ============ FORM ============ -->
-    <div class="form-card">
-        <form method="post" action="" id="deployForm">
-            <div class="form-grid">
-                <div class="field">
-                    <label for="options">Choose a Layer</label>
-                    <select id="options" name="layer" class="form-control" required>
-                        <option value="" disabled selected>Select Layer</option>
-                        <option value="EXP">EXP</option>
-                        <option value="SYS">SYS</option>
-                    </select>
-                </div>
-
-                <div class="field">
-                    <label for="date">Deployment Date</label>
-                    <input type="date" class="form-control" id="date" name="date">
-                </div>
-
-                <div class="field">
-                    <label>Start Time</label>
-                    <input type="time" id="m_stFromTime" name="m_stFromTime" class="form-control">
-                </div>
-
-                <div class="field">
-                    <label>End Time</label>
-                    <input type="time" id="m_stToTime" name="m_stToTime" class="form-control">
-                </div>
-
-                <div class="field full">
-                    <label for="w3review">Enter API Name(s)</label>
-                    <textarea id="w3review" name="api_name" class="form-control" rows="1" placeholder="Comma separated: API_1,API_2"></textarea>
-                </div>
-
-                <div class="field">
-                    <label for="server">Choose a Server</label>
-                    <select id="server" name="server" class="form-control" onchange="toggleServerIpField()">
-                        <option value="" disabled selected>Select Server</option>
-                        <option value="all">All Server</option>
-                        <option value="single">Single Server</option>
-                    </select>
-                </div>
-
-                <div class="field" id="serverIpField" style="display:none;">
-                    <label for="serverIp">Server IP</label>
-                    <input type="text" id="serverIp" name="serverIp" class="form-control" placeholder="Enter Server IP">
-                </div>
-
-                <div class="field checkbox-field">
-                    <input type="checkbox" id="sourceIDCheckbox" name="sourceIDCheckbox" onclick="toggleSourceIDTextbox(this)">
-                    <label for="sourceIDCheckbox">Source ID</label>
-                </div>
-
-                <div class="field" id="sourceIDField" style="display:none;">
-                    <label for="sourceIDTextBox">Enter Source ID</label>
-                    <input type="text" id="sourceIDTextBox" name="sourceIDTextBox" class="form-control" placeholder="Enter Source ID">
-                </div>
-
-                <div class="field submit-field">
-                    <button type="submit" id="submitBtn" onclick="return validateForm();">
-                        <i class="fas fa-search"></i> Submit
-                    </button>
-                </div>
-            </div>
-        </form>
-    </div>
-
-    <!-- ============ BACKEND PROCESSING ============ -->
-    <%
-    String layer = request.getParameter("layer");
-    session.setAttribute("layer", layer);
-    String apiName = request.getParameter("api_name");
-    session.setAttribute("apiName", apiName);
-    System.out.println("apiName : " + apiName);
-    int counter = 1;
-    if (apiName != null && !apiName.isEmpty()) {
-        String[] elements = apiName.split(",");
-        StringBuilder transformed = new StringBuilder();
-        for (int i = 0; i < elements.length; i++) {
-            transformed.append("'").append(elements[i].trim()).append("'");
-            if (i < elements.length - 1) {
-                transformed.append(",");
-            }
-        }
-        System.out.println("transformed : " + transformed.toString());
-        Connection conn = null, con = null;
-        PreparedStatement insertStmt = null;
-        PreparedStatement insertStmt1 = null;
-        PreparedStatement queryStmt = null;
-        PreparedStatement queryStmt1 = null;
-        ResultSet rs = null;
-        ResultSet rs1 = null;
-        String urn = null;
-        String rrn = null;
-        int totalHits = 0;
-        int success = 0;
-        int td = 0;
-        double tdPercent = 0.0;
-        int bd = 0;
-        double bdPercent = 0.0;
-        String sourceId = null;
-        String serverIps = null;
-        String noHitsObserved = request.getParameter("chk4_" + apiName);
-        ResultSet noHitsRs = null;
-        ResultSet noHitsRs1 = null;
-        PreparedStatement selectNoHitsStmt = null;
-        String deploymentdate1 = request.getParameter("date");
-        String deploymentdate2 = request.getParameter("date");
-        String startTime = request.getParameter("m_stFromTime");
-        String endTime = request.getParameter("m_stToTime");
-        try {
-            conn = DBUtilityAuto.getReportDBConnection();
-            con = DBUtilityAuto.getIIBDBConnection();
-            String sourceIds = request.getParameter("sourceIDTextBox");
-            System.out.println("source_id: " + sourceIds);
-            StringBuilder sourceIds_transformed = new StringBuilder();
-            StringBuilder serverIp_transformed = new StringBuilder();
-            if (sourceIds != null && !sourceIds.trim().isEmpty()) {
-                String[] sourceIds_elements = sourceIds.split(",");
-                for (int i = 0; i < sourceIds_elements.length; i++) {
-                    sourceIds_transformed.append("'").append(sourceIds_elements[i].trim()).append("'");
-                    if (i < sourceIds_elements.length - 1) {
-                        sourceIds_transformed.append(",");
-                    }
-                }
-                System.out.println("sourceIds_transformed: " + sourceIds_transformed.toString());
-            } else {
-                System.out.println("No sourceIds provided or sourceIds is empty.");
-            }
-            String serverIp = request.getParameter("serverIp");
-            System.out.println("serverIp: " + serverIp);
-            if (serverIp != null && !serverIp.trim().isEmpty()) {
-                String[] serverIp_elements = serverIp.split(",");
-                for (int i = 0; i < serverIp_elements.length; i++) {
-                    serverIp_transformed.append("'").append(serverIp_elements[i].trim()).append("'");
-                    if (i < serverIp_elements.length - 1) {
-                        serverIp_transformed.append(",");
-                    }
-                }
-                System.out.println("serverIp_transformed: " + serverIp_transformed.toString());
-            } else {
-                System.out.println("No serverIp provided or serverIp is empty.");
-            }
-            String[] apiNamesArray = apiName.split(",");
-            String m_strDate = request.getParameter("date");
-            String arr[] = null;
-            if (m_strDate != null && !m_strDate.trim().isEmpty()) {
-                arr = m_strDate.split("-");
-                if (arr.length >= 2) {
-                    System.out.println("Month: " + arr[1]);
-                } else {
-                    System.out.println("Invalid date format. Expected 'yyyy-MM-dd'.");
-                }
-                System.out.println("Date: " + m_strDate);
-            } else {
-                System.out.println("No date provided or date is empty.");
-            }
-            String m_strMonth = "";
-            if (arr[1].equals("01")) { m_strMonth = "JAN"; }
-            else if (arr[1].equals("02")) { m_strMonth = "FEB"; }
-            else if (arr[1].equals("03")) { m_strMonth = "MAR"; }
-            else if (arr[1].equals("04")) { m_strMonth = "APR"; }
-            else if (arr[1].equals("05")) { m_strMonth = "MAY"; }
-            else if (arr[1].equals("06")) { m_strMonth = "JUN"; }
-            else if (arr[1].equals("07")) { m_strMonth = "JUL"; }
-            else if (arr[1].equals("08")) { m_strMonth = "AUG"; }
-            else if (arr[1].equals("09")) { m_strMonth = "SEP"; }
-            else if (arr[1].equals("10")) { m_strMonth = "OCT"; }
-            else if (arr[1].equals("11")) { m_strMonth = "NOV"; }
-            else { m_strMonth = "DEC"; }
-            String m_strKPITitle = "Deployment date for " + m_strMonth + " " + arr[2] + " - " + request.getParameter("m_stFromTime") + " to " + request.getParameter("m_stToTime");
-            String m_strFormattedFromDate = arr[2] + "-" + m_strMonth + "-" + arr[0] + " " + request.getParameter("m_stFromTime") + ":00";
-            System.out.println("m_strFormattedFromDate:" + m_strFormattedFromDate);
-            String m_strFormattedToDate = arr[2] + "-" + m_strMonth + "-" + arr[0] + " " + request.getParameter("m_stToTime") + ":00";
-            System.out.println("m_strFormattedToDate:" + m_strFormattedToDate);
-            if ("EXP".equals(layer)) {
-                String querySql = "WITH A AS (\n"
-                    + " SELECT /*+ PARALLEL(16) INDEX(eisapp.api_log ARDT_IDX) */\n"
-                    + " api_name,\n"
-                    + " MAX(urn) KEEP (DENSE_RANK LAST ORDER BY urn) AS RRN,\n"
-                    + " TRIM(source_id) AS source_id\n"
-                    + " FROM eisapp.api_log\n"
-                    + " WHERE api_name IN (" + transformed.toString() + ")\n";
-                if (!sourceIds.isEmpty()) {
-                    querySql += " AND TRIM(source_id) IN (" + sourceIds_transformed.toString() + ")\n";
-                }
-                if (!serverIp.isEmpty()) {
-                    querySql += " AND TRIM(EXP_IP) IN (" + serverIp_transformed.toString() + ")\n";
-                }
-                querySql += " AND request_date_time < TRUNC(SYSDATE)\n"
-                    + " AND RESPONSE_STATUS IN ('0', 'SUCCESS')\n"
-                    + " GROUP BY api_name, TRIM(source_id)\n"
-                    + "),\n"
-                    + "B AS (\n"
-                    + " SELECT /*+ PARALLEL(16) INDEX(eisapp.api_log ARDT_IDX) */\n"
-                    + " api_name,\n"
-                    + " MAX(urn) KEEP (DENSE_RANK LAST ORDER BY urn) AS URN,\n"
-                    + " TRIM(source_id) AS source_id,\n";
-                querySql += " COUNT(*) AS TOTAL_HITS,\n"
-                    + " LISTAGG(DISTINCT TRIM(exp_ip), ',') WITHIN GROUP (ORDER BY exp_ip) AS EXP_IP,\n"
-                    + " SUM(CASE WHEN RESPONSE_STATUS IN ('0', 'SUCCESS') THEN 1 ELSE 0 END) AS SUCCESS,\n"
-                    + " SUM(CASE WHEN SUBSTR(error_code, 3, 3) IN ('001','002','007','051','014','111')\n"
-                    + " AND error_code <> '00014' THEN 1 ELSE 0 END) AS TD,\n"
-                    + " ROUND(\n"
-                    + " (SUM(CASE WHEN SUBSTR(error_code, 3, 3) IN ('001','002','007','051','014','111')\n"
-                    + " AND error_code <> '00014' THEN 1 ELSE 0 END) * 100) / NULLIF(COUNT(*), 0), 2\n"
-                    + " ) AS TD_PERCENT,\n"
-                    + " SUM(CASE WHEN (SUBSTR(error_code, 3, 3) NOT IN ('001','002','007','051','014','111')\n"
-                    + " OR error_code = '00014')\n"
-                    + " AND RESPONSE_STATUS NOT IN ('0', 'SUCCESS') THEN 1 ELSE 0 END) AS BD,\n"
-                    + " ROUND(\n"
-                    + " (SUM(CASE WHEN (SUBSTR(error_code, 3, 3) NOT IN ('001','002','007','051','014','111')\n"
-                    + " OR error_code = '00014')\n"
-                    + " AND RESPONSE_STATUS NOT IN ('0', 'SUCCESS') THEN 1 ELSE 0 END) * 100) / NULLIF(COUNT(*), 0), 2\n"
-                    + " ) AS BD_PERCENT\n"
-                    + " FROM eisapp.api_log\n"
-                    + " WHERE api_name IN (" + transformed.toString() + ")\n";
-                if (!sourceIds.isEmpty()) {
-                    querySql += " AND TRIM(source_id) IN (" + sourceIds_transformed.toString() + ")\n";
-                }
-                if (!serverIp.isEmpty()) {
-                    querySql += " AND TRIM(EXP_IP) IN (" + serverIp_transformed.toString() + ")\n";
-                }
-                querySql += " AND request_date_time BETWEEN TO_DATE('" + m_strFormattedFromDate + "', 'DD-MON-YYYY HH24:MI:SS')\n"
-                    + " AND TO_DATE('" + m_strFormattedToDate + "', 'DD-MON-YYYY HH24:MI:SS')\n"
-                    + " GROUP BY api_name, TRIM(source_id)\n"
-                    + ")\n"
-                    + "SELECT /*+ USE_HASH(B A) FULL(A) FULL(B) */\n"
-                    + " A.*, \n"
-                    + " B.URN,\n"
-                    + " B.EXP_IP,\n"
-                    + " B.TOTAL_HITS,\n"
-                    + " B.SUCCESS,\n"
-                    + " B.TD,\n"
-                    + " B.TD_PERCENT,\n"
-                    + " B.BD,\n"
-                    + " B.BD_PERCENT\n"
-                    + "FROM A\n"
-                    + "FULL OUTER JOIN B\n"
-                    + "ON A.api_name = B.api_name\n"
-                    + "AND A.source_id = B.source_id";
-                System.out.println("querySql " + querySql);
-                queryStmt = con.prepareStatement(querySql);
-                rs = queryStmt.executeQuery();
-                if (rs == null || !rs.next()) {
-                    System.out.println("No data found for the query... Inserting or updating in no_hits_table.");
-                    String checkExistenceSql = "SELECT COUNT(*) FROM no_hits_table WHERE api_name = ?";
-                    String insertOrUpdateSql = "MERGE INTO no_hits_table USING DUAL ON (api_name = ? AND SOURCE_ID = ?) " +
-                        "WHEN MATCHED THEN UPDATE SET insert_time = to_date(?, 'YYYY-MM-DD') " +
-                        "WHEN NOT MATCHED THEN INSERT (api_name, insert_time,SOURCE_ID) VALUES (?, to_date(?, 'YYYY-MM-DD'),?)";
-                    try (PreparedStatement checkExistenceStmt = conn.prepareStatement(checkExistenceSql);
-                         PreparedStatement insertOrUpdateStmt = conn.prepareStatement(insertOrUpdateSql)) {
-                        for (String apiName1 : apiNamesArray) {
-                            String trimmedApiName = apiName1.trim();
-                            insertOrUpdateStmt.setString(1, trimmedApiName);
-                            insertOrUpdateStmt.setString(2, sourceIds);
-                            insertOrUpdateStmt.setString(3, deploymentdate1);
-                            insertOrUpdateStmt.setString(4, trimmedApiName);
-                            insertOrUpdateStmt.setString(5, deploymentdate1);
-                            insertOrUpdateStmt.setString(6, sourceIds);
-                            int result = insertOrUpdateStmt.executeUpdate();
-                            System.out.println("Result for api_name " + trimmedApiName + ": " + result);
-                        }
-                    } catch (SQLException e) {
-                        System.err.println("Error occurred while inserting/updating no_hits_table: " + e.getMessage());
-                        e.printStackTrace();
-                    }
-                } else {
-            %>
-            <!-- ============ DEPLOYMENT TABLE (EXP) ============ -->
-            <div class="table-wrapper">
-                <h3><i class="fas fa-table"></i>Deployment Details — EXP Layer</h3>
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>API Name</th>
-                            <th>Source Id</th>
-                            <th>Server Ip</th>
-                            <th>Post Deploy RRN</th>
-                            <th>Pre Deploy URN</th>
-                            <th>Total Hits</th>
-                            <th>Success</th>
-                            <th>TD</th>
-                            <th>TD %</th>
-                            <th>BD</th>
-                            <th>BD %</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    <%
-                    String uniqueId = UUID.randomUUID().toString();
-                    do {
-                        apiName = rs.getString("api_name");
-                        urn = rs.getString("URN") != null ? rs.getString("URN") : "N/A";
-                        rrn = rs.getString("RRN") != null ? rs.getString("RRN") : "N/A";
-                        totalHits = rs.getInt("TOTAL_HITS");
-                        success = rs.getInt("SUCCESS");
-                        td = rs.getInt("TD");
-                        tdPercent = rs.getDouble("TD_PERCENT");
-                        bd = rs.getInt("BD");
-                        bdPercent = rs.getDouble("BD_PERCENT");
-                        sourceId = rs.getString("source_id");
-                        serverIps = rs.getString("exp_ip");
-                    %>
-                        <tr>
-                            <td><%=apiName%></td>
-                            <td><%=sourceId%></td>
-                            <td class="pre-cell"><%=serverIps != null ? serverIps : "N/A"%></td>
-                            <td class="pre-cell" onclick="showrefrencegen('<%=urn%>')">
-                                <pre><%=urn%> <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></pre>
-                            </td>
-                            <td class="pre-cell" onclick="showrefrencegen('<%=rrn%>')">
-                                <pre><%=rrn%> <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></pre>
-                            </td>
-                            <td><%=totalHits%></td>
-                            <td><%=success%></td>
-                            <td><%=td%></td>
-                            <td><%=tdPercent%></td>
-                            <td><%=bd%></td>
-                            <td><%=bdPercent%></td>
-                            <td>
-                                <button class="action-btn" onclick="toggleCheckboxes(this)">Action</button>
-                            </td>
-                        </tr>
-                        <tr class="checkbox-row">
-                            <td colspan="12">
-                                <form method="post" action="<%=request.getContextPath() + "/jsp/updateFields.jsp"%>">
-                                    <input type="hidden" name="api_name" value="<%= apiName %>">
-                                    <input type="hidden" name="SOURCE_ID" value="<%= sourceId %>">
-                                    <input type="hidden" name="SERVER_IP" value="<%= serverIps %>">
-                                    <input type="hidden" name="urn" value="<%= urn %>">
-                                    <input type="hidden" name="rrn" value="<%= rrn %>">
-                                    <input type="hidden" name="totalHits" value="<%= totalHits %>">
-                                    <input type="hidden" name="success" value="<%= success %>">
-                                    <input type="hidden" name="td" value="<%= td %>">
-                                    <input type="hidden" name="tdPercent" value="<%= tdPercent %>">
-                                    <input type="hidden" name="bd" value="<%= bd %>">
-                                    <input type="hidden" name="bdPercent" value="<%= bdPercent %>">
-                                    <input type="hidden" name="serverIp" value="<%= serverIp %>">
-                                    <input type="hidden" name="startTime" value="<%= startTime %>">
-                                    <input type="hidden" name="endTime" value="<%= endTime %>">
-                                    <div>
-                                        <label>
-                                            <input type="checkbox" id="chk1_<%=counter%>" name="chk1_<%=counter%>" value="1" onclick="toggleTextbox('reviewText_<%=counter%>', this)">
-                                            Review
-                                        </label>
-                                        <label>
-                                            <input type="checkbox" id="chk2_<%=counter%>" name="chk2_<%=counter%>" value="1" onclick="toggleTextbox('remarksText_<%=counter%>', this)">
-                                            Remarks
-                                        </label>
-                                        <label>
-                                            <input type="checkbox" id="chk3_<%=counter%>" name="chk3_<%=counter%>" value="Yes">
-                                            Completed
-                                        </label>
-                                        <label>
-                                            <input type="checkbox" id="chk4_<%=counter%>" name="chk4_<%=counter%>" value="Yes">
-                                            No-hits observed
-                                        </label>
-                                    </div>
-                                    <div id="reviewText_<%= counter %>" class="textarea-container" style="display: none;">
-                                        <textarea id="reviewText_<%= counter %>" name="reviewText_<%= counter %>" placeholder="Enter your review here"></textarea>
-                                    </div>
-                                    <div id="remarksText_<%= counter %>" class="textarea-container" style="display: none;">
-                                        <textarea id="remarksText_<%= counter %>" name="remarksText_<%= counter %>" placeholder="Enter your remarks here"></textarea>
-                                    </div>
-                                    <input type="submit" value="Submit" onclick="return CheckBox('<%= counter %>')">
-                                </form>
-                            </td>
-                        </tr>
-                    <%
-                        if ("POST".equalsIgnoreCase(request.getMethod())) {
-                            String counter1 = request.getParameter("counter");
-                            String reviewText = request.getParameter("reviewText__" + counter1);
-                            String remarksText = request.getParameter("remarksText__" + counter1);
-                            String completedChecked = request.getParameter("chk3_" + counter1);
-                            String server = request.getParameter("server");
-                            String source = request.getParameter("sourceIDTextBox");
-                            String serverIp1 = request.getParameter("serverIp");
-                            String deploymentdate = request.getParameter("date");
-                            boolean isCompleted = (completedChecked != null && completedChecked.equals("on"));
-                            counter++;
-                            String checkExistenceSql = "SELECT id FROM api_log_insert WHERE api_name = ? AND (source_id = ? OR (source_id IS NULL AND ? IS NULL))";
-                            PreparedStatement checkStmt = conn.prepareStatement(checkExistenceSql);
-                            checkStmt.setString(1, apiName);
-                            checkStmt.setString(2, sourceId);
-                            checkStmt.setString(3, sourceId);
-                            ResultSet checkRs = checkStmt.executeQuery();
-                            Integer recordId = null;
-                            if (checkRs.next()) {
-                                recordId = checkRs.getInt("id");
-                            }
-                            if (recordId != null) {
-                                String updateSql = "UPDATE api_log_insert SET API_NAME = ?, insert_time = SYSDATE, URN = ?, RRN = ?, TOTAL_HITS = ?, SUCCESS = ?, TD = ?, TD_PERCENT = ?, BD = ?, BD_PERCENT = ?, REVIEW = ?, REMARKS = ?, COMPLETED = ?, SERVER = ?, SOURCE_ID = ?, SERVER_IP = ?, START_TIME = TO_DATE(?, 'DD-MON-YYYY HH24:MI:SS'), END_TIME = TO_DATE(?, 'DD-MON-YYYY HH24:MI:SS') WHERE api_name = ? and source_id = ?";
-                                PreparedStatement updateStmt = conn.prepareStatement(updateSql);
-                                updateStmt.setString(1, apiName);
-                                updateStmt.setString(2, urn);
-                                updateStmt.setString(3, rrn);
-                                updateStmt.setInt(4, totalHits);
-                                updateStmt.setInt(5, success);
-                                updateStmt.setInt(6, td);
-                                updateStmt.setDouble(7, tdPercent);
-                                updateStmt.setInt(8, bd);
-                                updateStmt.setDouble(9, bdPercent);
-                                updateStmt.setString(10, (reviewText != null && !reviewText.isEmpty()) ? reviewText : null);
-                                updateStmt.setString(11, (remarksText != null && !remarksText.isEmpty()) ? remarksText : null);
-                                updateStmt.setString(12, isCompleted ? "No" : "Yes");
-                                updateStmt.setString(13, server);
-                                updateStmt.setString(14, sourceId);
-                                updateStmt.setString(15, serverIps);
-                                updateStmt.setString(16, m_strFormattedFromDate);
-                                updateStmt.setString(17, m_strFormattedToDate);
-                                updateStmt.setString(18, apiName);
-                                updateStmt.setString(19, sourceId);
-                                int updateResult = updateStmt.executeUpdate();
-                                if (updateStmt != null) updateStmt.close();
-                            } else {
-                                String insertSql = "INSERT INTO api_log_insert (api_name, insert_time, URN, RRN, TOTAL_HITS, SUCCESS, TD, TD_PERCENT, BD, BD_PERCENT, REVIEW, REMARKS, COMPLETED, SERVER, SOURCE_ID, SERVER_IP,START_TIME, END_TIME) VALUES (?, SYSDATE, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,TO_DATE(?, 'DD-MON-YYYY HH24:MI:SS'), TO_DATE(?, 'DD-MON-YYYY HH24:MI:SS'))";
-                                if (apiName != null && deploymentdate != null && urn != null && rrn != null && totalHits >= 0 && success >= 0 && td >= 0 && tdPercent >= 0 && bd >= 0 && bdPercent >= 0 && server != null && source != null && serverIp != null && startTime != null && endTime != null) {
-                                    insertStmt = conn.prepareStatement(insertSql);
-                                    insertStmt.setString(1, apiName);
-                                    insertStmt.setString(2, urn);
-                                    insertStmt.setString(3, rrn);
-                                    insertStmt.setInt(4, totalHits);
-                                    insertStmt.setInt(5, success);
-                                    insertStmt.setInt(6, td);
-                                    insertStmt.setDouble(7, tdPercent);
-                                    insertStmt.setInt(8, bd);
-                                    insertStmt.setDouble(9, bdPercent);
-                                    insertStmt.setString(10, (reviewText != null && !reviewText.isEmpty()) ? reviewText : "");
-                                    insertStmt.setString(11, (remarksText != null && !remarksText.isEmpty()) ? remarksText : "");
-                                    insertStmt.setString(12, isCompleted ? "No" : "Yes");
-                                    insertStmt.setString(13, server);
-                                    insertStmt.setString(14, sourceId);
-                                    insertStmt.setString(15, serverIps);
-                                    insertStmt.setString(16, m_strFormattedFromDate);
-                                    insertStmt.setString(17, m_strFormattedToDate);
-                                    int insertResult = insertStmt.executeUpdate();
-                                }
-                            }
-                            noHitsObserved = request.getParameter("chk4_" + apiName);
-                            if (noHitsObserved != null && noHitsObserved.equals("on")) {
-                                String insertNoHitsSql = "INSERT INTO no_hits_table (api_name, insert_time,source_id) VALUES (?, ?, ?)";
-                                PreparedStatement insertNoHitsStmt = conn.prepareStatement(insertNoHitsSql);
-                                insertNoHitsStmt.setString(1, apiName);
-                                insertNoHitsStmt.setString(2, deploymentdate);
-                                insertNoHitsStmt.setString(3, sourceId);
-                                int noHitsResult = insertNoHitsStmt.executeUpdate();
-                            }
-                            String selectNoHitsSql = "SELECT api_name, insert_time,source_id FROM no_hits_table";
-                            selectNoHitsStmt = conn.prepareStatement(selectNoHitsSql);
-                            noHitsRs = selectNoHitsStmt.executeQuery();
-                        }
-                    } while (rs.next());
-                    %>
-                    </tbody>
-                </table>
-            </div>
-            <%
-                    try { if (noHitsRs != null) noHitsRs.close(); } catch (SQLException e) {}
-                    try { if (selectNoHitsStmt != null) selectNoHitsStmt.close(); } catch (SQLException e) {}
-                }
-            } else if ("SYS".equals(layer)) {
-                String querySql1 = "WITH A AS (\n" +
-                    " SELECT /*+ PARALLEL(16) INDEX(eisapp.backend_log IDX_BACKEND_LOG_URN) */\n" +
-                    " api_name, MAX(urn) AS URN, TRIM(source_id) AS source_id\n" +
-                    " FROM eisapp.backend_log \n" +
-                    " WHERE api_name IN (" + transformed.toString() + ")\n";
-                if (!sourceIds.isEmpty()) {
-                    querySql1 += " AND TRIM(source_id) IN (" + sourceIds_transformed.toString() + ")\n";
-                }
-                if (!serverIp.isEmpty()) {
-                    querySql1 += " AND TRIM(SYS_IP) IN (" + serverIp_transformed.toString() + ")\n";
-                }
-                querySql1 += " AND request_date_time < TRUNC(SYSDATE)\n" +
-                    " AND error_code IS NULL\n" +
-                    " GROUP BY api_name, TRIM(source_id)\n" +
-                    "),\n" +
-                    "B AS (\r\n"
-                    + " SELECT /*+ PARALLEL(16) INDEX(eisapp.backend_log IDX_BACKEND_LOG_URN) */\r\n"
-                    + " api_name,\r\n"
-                    + " MAX(urn) AS RRN, \r\n"
-                    + " TRIM(source_id) AS source_id,\r\n"
-                    + " COUNT(1) AS TOTAL_HITS,\r\n"
-                    + " LISTAGG(DISTINCT TRIM(SYS_IP), ',') WITHIN GROUP (ORDER BY SYS_IP) AS SYS_IP,\r\n"
-                    + " SUM(CASE WHEN error_code IS NULL THEN 1 ELSE 0 END) AS SUCCESS,\r\n"
-                    + " SUM(CASE WHEN SUBSTR(error_code, 3, 3) IN ('001', '002', '007', '051', '014', '111') \r\n"
-                    + " AND error_code <> '00014' THEN 1 ELSE 0 END) AS TD,\r\n"
-                    + " ROUND(SUM(CASE WHEN SUBSTR(error_code, 3, 3) IN ('001', '002', '007', '051', '014', '111') \r\n"
-                    + " AND error_code <> '00014' THEN 1 ELSE 0 END) * 100 / COUNT(1), 2) AS TD_PERCENT,\r\n"
-                    + " SUM(CASE WHEN (SUBSTR(error_code, 3, 3) NOT IN ('001', '002', '007', '051', '014', '111') \r\n"
-                    + " OR error_code = '00014') AND error_code IS NOT NULL THEN 1 ELSE 0 END) AS BD,\r\n"
-                    + " ROUND(SUM(CASE WHEN (SUBSTR(error_code, 3, 3) NOT IN ('001', '002', '007', '051', '014', '111') \r\n"
-                    + " OR error_code = '00014') AND error_code IS NOT NULL THEN 1 ELSE 0 END) * 100 / COUNT(1), 2) AS BD_PERCENT\r\n"
-                    + " FROM eisapp.backend_log"+
-                    " WHERE api_name IN (" + transformed.toString() + ")\n";
-                if (!sourceIds.isEmpty()) {
-                    querySql1 += " AND TRIM(source_id) IN (" + sourceIds_transformed.toString() + ")\n";
-                }
-                if (!serverIp.isEmpty()) {
-                    querySql1 += " AND TRIM(SYS_IP) IN (" + serverIp_transformed.toString() + ")\n";
-                }
-                querySql1 += " AND request_date_time BETWEEN TO_DATE('" + m_strFormattedFromDate + "', 'DD-MON-YYYY HH24:MI:SS') \n" +
-                    " AND TO_DATE('" + m_strFormattedToDate + "', 'DD-MON-YYYY HH24:MI:SS')\n" +
-                    " GROUP BY api_name, TRIM(source_id)\n" +
-                    ")\n" +
-                    "SELECT /*+ USE_HASH(B A) FULL(A) FULL(B) */\r\n"
-                    + " A.*, \r\n"
-                    + " B.RRN,\r\n"
-                    + " B.SYS_IP,\r\n"
-                    + " B.TOTAL_HITS,\r\n"
-                    + " B.SUCCESS,\r\n"
-                    + " B.TD,\r\n"
-                    + " B.TD_PERCENT,\r\n"
-                    + " B.BD,\r\n"
-                    + " B.BD_PERCENT\r\n"
-                    + "FROM A\r\n"
-                    + "FULL OUTER JOIN B\r\n"
-                    + "ON A.api_name = B.api_name\r\n"
-                    + "AND A.source_id = B.source_id";
-                queryStmt1 = con.prepareStatement(querySql1);
-                rs1 = queryStmt1.executeQuery();
-                if (rs1 == null || !rs1.next()) {
-                    out.println("<div class='error-message'>No data found for the query... Inserting or updating in no_hits_table.</div>");
-                    String checkExistenceSql = "SELECT COUNT(*) FROM no_hits_table WHERE api_name = ?";
-                    String insertOrUpdateSql = "MERGE INTO no_hits_table USING DUAL ON (api_name = ? AND SOURCE_ID = ?) " +
-                        "WHEN MATCHED THEN UPDATE SET insert_time = to_date(?, 'YYYY-MM-DD') " +
-                        "WHEN NOT MATCHED THEN INSERT (api_name, insert_time,SOURCE_ID) VALUES (?, to_date(?, 'YYYY-MM-DD'),?)";
-                    try (PreparedStatement checkExistenceStmt = conn.prepareStatement(checkExistenceSql);
-                         PreparedStatement insertOrUpdateStmt = conn.prepareStatement(insertOrUpdateSql)) {
-                        for (String apiName1 : apiNamesArray) {
-                            String trimmedApiName = apiName1.trim();
-                            insertOrUpdateStmt.setString(1, trimmedApiName);
-                            insertOrUpdateStmt.setString(2, sourceIds);
-                            insertOrUpdateStmt.setString(3, deploymentdate1);
-                            insertOrUpdateStmt.setString(4, trimmedApiName);
-                            insertOrUpdateStmt.setString(5, deploymentdate1);
-                            insertOrUpdateStmt.setString(6, sourceIds);
-                            int result = insertOrUpdateStmt.executeUpdate();
-                        }
-                    } catch (SQLException e) {}
-                } else {
-            %>
-            <!-- ============ DEPLOYMENT TABLE (SYS) ============ -->
-            <div class="table-wrapper">
-                <h3><i class="fas fa-table"></i>Deployment Details — SYS Layer</h3>
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>API Name</th>
-                            <th>Source Id</th>
-                            <th>Server Ip</th>
-                            <th>Pre Deploy URN</th>
-                            <th>Post Deploy RRN</th>
-                            <th>Total Hits</th>
-                            <th>Success</th>
-                            <th>TD</th>
-                            <th>TD %</th>
-                            <th>BD</th>
-                            <th>BD %</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    <%
-                    do {
-                        apiName = rs1.getString("api_name");
-                        urn = rs1.getString("URN") != null ? rs1.getString("URN") : "N/A";
-                        rrn = rs1.getString("RRN") != null ? rs1.getString("RRN") : "N/A";
-                        totalHits = rs1.getInt("TOTAL_HITS");
-                        success = rs1.getInt("SUCCESS");
-                        td = rs1.getInt("TD");
-                        tdPercent = rs1.getDouble("TD_PERCENT");
-                        bd = rs1.getInt("BD");
-                        bdPercent = rs1.getDouble("BD_PERCENT");
-                        sourceId = rs1.getString("SOURCE_ID");
-                        serverIps = rs1.getString("SYS_IP");
-                    %>
-                        <tr>
-                            <td><%=apiName%></td>
-                            <td><%=sourceId%></td>
-                            <td class="pre-cell"><%=serverIps != null ? serverIps : "N/A"%></td>
-                            <td class="pre-cell" onclick="showrefrencegen('<%=urn%>')">
-                                <pre><%=urn%> <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></pre>
-                            </td>
-                            <td class="pre-cell" onclick="showrefrencegen('<%=rrn%>')">
-                                <pre><%=rrn%> <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></pre>
-                            </td>
-                            <td><%=totalHits%></td>
-                            <td><%=success%></td>
-                            <td><%=td%></td>
-                            <td><%=tdPercent%></td>
-                            <td><%=bd%></td>
-                            <td><%=bdPercent%></td>
-                            <td>
-                                <button class="action-btn" onclick="toggleCheckboxes(this)">Action</button>
-                            </td>
-                        </tr>
-                        <tr class="checkbox-row">
-                            <td colspan="12">
-                                <form method="post" action="<%=request.getContextPath() + "/jsp/updateFields.jsp"%>">
-                                    <input type="hidden" name="api_name" value="<%= apiName %>">
-                                    <input type="hidden" name="SOURCE_ID" value="<%= sourceId %>">
-                                    <input type="hidden" name="SERVER_IP" value="<%= serverIps %>">
-                                    <input type="hidden" name="urn" value="<%= urn %>">
-                                    <input type="hidden" name="rrn" value="<%= rrn %>">
-                                    <input type="hidden" name="totalHits" value="<%= totalHits %>">
-                                    <input type="hidden" name="success" value="<%= success %>">
-                                    <input type="hidden" name="td" value="<%= td %>">
-                                    <input type="hidden" name="tdPercent" value="<%= tdPercent %>">
-                                    <input type="hidden" name="bd" value="<%= bd %>">
-                                    <input type="hidden" name="bdPercent" value="<%= bdPercent %>">
-                                    <input type="hidden" name="serverIp" value="<%= serverIp %>">
-                                    <input type="hidden" name="startTime" value="<%= startTime %>">
-                                    <input type="hidden" name="endTime" value="<%= endTime %>">
-                                    <div>
-                                        <label>
-                                            <input type="checkbox" id="chk1_<%=counter%>" name="chk1_<%=counter%>" value="1" onclick="toggleTextbox('reviewText_<%=counter%>', this)">
-                                            Review
-                                        </label>
-                                        <label>
-                                            <input type="checkbox" id="chk2_<%=counter%>" name="chk2_<%=counter%>" value="1" onclick="toggleTextbox('remarksText_<%=counter%>', this)">
-                                            Remarks
-                                        </label>
-                                        <label>
-                                            <input type="checkbox" id="chk3_<%=counter%>" name="chk3_<%=counter%>" value="Yes">
-                                            Completed
-                                        </label>
-                                        <label>
-                                            <input type="checkbox" id="chk4_<%=counter%>" name="chk4_<%=counter%>" value="Yes">
-                                            No-hits observed
-                                        </label>
-                                    </div>
-                                    <div id="reviewText_<%= counter %>" class="textarea-container" style="display: none;">
-                                        <textarea id="reviewText_<%= counter %>" name="reviewText_<%= counter %>" placeholder="Enter your review here"></textarea>
-                                    </div>
-                                    <div id="remarksText_<%= counter %>" class="textarea-container" style="display: none;">
-                                        <textarea id="remarksText_<%= counter %>" name="remarksText_<%= counter %>" placeholder="Enter your remarks here"></textarea>
-                                    </div>
-                                    <input type="submit" value="Submit" onclick="return CheckBox('<%= counter %>')">
-                                </form>
-                            </td>
-                        </tr>
-                    <%
-                        String reviewText = request.getParameter("reviewText_" + apiName);
-                        String remarksText = request.getParameter("remarksText_" + apiName);
-                        String completedChecked = request.getParameter("chk3_" + apiName);
-                        String server = request.getParameter("server");
-                        String source = request.getParameter("sourceIDTextBox");
-                        String serverIp1 = request.getParameter("serverIp");
-                        String deploymentDate = request.getParameter("date");
-                        boolean isCompleted = (completedChecked != null && completedChecked.equals("on"));
-                        counter++;
-                        String checkExistenceSql1 = "SELECT id FROM api_log_insert WHERE api_name = ? AND (source_id = ? OR (source_id IS NULL AND ? IS NULL))";
-                        PreparedStatement checkStmt1 = conn.prepareStatement(checkExistenceSql1);
-                        checkStmt1.setString(1, apiName);
-                        checkStmt1.setString(2, sourceId);
-                        checkStmt1.setString(3, sourceId);
-                        ResultSet checkRs1 = checkStmt1.executeQuery();
-                        Integer recordId = null;
-                        if (checkRs1.next()) {
-                            recordId = checkRs1.getInt("id");
-                        }
-                        if (recordId != null) {
-                            String updateSql1 = "UPDATE api_log_insert SET API_NAME = ?, insert_time = SYSDATE, URN = ?, RRN = ?, TOTAL_HITS = ?, SUCCESS = ?, TD = ?, TD_PERCENT = ?, BD = ?, BD_PERCENT = ?, REVIEW = ?, REMARKS = ?, COMPLETED = ?, SERVER = ?, SOURCE_ID = ?, SERVER_IP = ?, START_TIME = TO_DATE(?, 'DD-MON-YYYY HH24:MI:SS'), END_TIME = TO_DATE(?, 'DD-MON-YYYY HH24:MI:SS') WHERE api_name = ? and source_id = ?";
-                            PreparedStatement updateStmt1 = conn.prepareStatement(updateSql1);
-                            updateStmt1.setString(1, apiName);
-                            updateStmt1.setString(2, urn);
-                            updateStmt1.setString(3, rrn);
-                            updateStmt1.setInt(4, totalHits);
-                            updateStmt1.setInt(5, success);
-                            updateStmt1.setInt(6, td);
-                            updateStmt1.setDouble(7, tdPercent);
-                            updateStmt1.setInt(8, bd);
-                            updateStmt1.setDouble(9, bdPercent);
-                            updateStmt1.setString(10, (reviewText != null && !reviewText.isEmpty()) ? reviewText : null);
-                            updateStmt1.setString(11, (remarksText != null && !remarksText.isEmpty()) ? remarksText : null);
-                            updateStmt1.setString(12, isCompleted ? "Yes" : "No");
-                            updateStmt1.setString(13, server);
-                            updateStmt1.setString(14, sourceId);
-                            updateStmt1.setString(15, serverIps);
-                            updateStmt1.setString(16, m_strFormattedFromDate);
-                            updateStmt1.setString(17, m_strFormattedToDate);
-                            updateStmt1.setString(18, apiName);
-                            updateStmt1.setString(19, sourceId);
-                            int updateResult1 = updateStmt1.executeUpdate();
-                            if (updateStmt1 != null) updateStmt1.close();
-                        } else {
-                            String insertSql1 = "INSERT INTO api_log_insert (api_name, insert_time, URN, RRN, TOTAL_HITS, SUCCESS, TD, TD_PERCENT, BD, BD_PERCENT, REVIEW, REMARKS, COMPLETED, SERVER, SOURCE_ID, SERVER_IP, START_TIME, END_TIME) VALUES (?, SYSDATE, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TO_DATE(?, 'DD-MON-YYYY HH24:MI:SS'), TO_DATE(?, 'DD-MON-YYYY HH24:MI:SS'))";
-                            if (apiName != null) {
-                                insertStmt1 = conn.prepareStatement(insertSql1);
-                                insertStmt1.setString(1, apiName);
-                                insertStmt1.setString(2, urn);
-                                insertStmt1.setString(3, rrn);
-                                insertStmt1.setInt(4, totalHits);
-                                insertStmt1.setInt(5, success);
-                                insertStmt1.setInt(6, td);
-                                insertStmt1.setDouble(7, tdPercent);
-                                insertStmt1.setInt(8, bd);
-                                insertStmt1.setDouble(9, bdPercent);
-                                insertStmt1.setString(10, (reviewText != null && !reviewText.isEmpty()) ? reviewText : "");
-                                insertStmt1.setString(11, (remarksText != null && !remarksText.isEmpty()) ? remarksText : "");
-                                insertStmt1.setString(12, isCompleted ? "No" : "Yes");
-                                insertStmt1.setString(13, server);
-                                insertStmt1.setString(14, sourceId);
-                                insertStmt1.setString(15, serverIps);
-                                insertStmt1.setString(16, m_strFormattedFromDate);
-                                insertStmt1.setString(17, m_strFormattedToDate);
-                                int insertResult1 = insertStmt1.executeUpdate();
-                            }
-                        }
-                        noHitsObserved = request.getParameter("chk4_" + apiName);
-                        if (noHitsObserved != null && noHitsObserved.equals("on")) {
-                            String insertNoHitsSql1 = "INSERT INTO no_hits_table (api_name, insert_time, source_id) VALUES (?, ?, ?)";
-                            PreparedStatement insertNoHitsStmt1 = conn.prepareStatement(insertNoHitsSql1);
-                            insertNoHitsStmt1.setString(1, apiName);
-                            insertNoHitsStmt1.setString(2, deploymentdate1);
-                            insertNoHitsStmt1.setString(3, sourceId);
-                            int noHitsResult1 = insertNoHitsStmt1.executeUpdate();
-                            String selectNoHitsSql1 = "SELECT api_name, insert_time,source_id FROM no_hits_table";
-                            selectNoHitsStmt = conn.prepareStatement(selectNoHitsSql1);
-                            noHitsRs = selectNoHitsStmt.executeQuery();
-                        }
-                    } while (rs1.next());
-                    %>
-                    </tbody>
-                </table>
-            </div>
-            <%
-                    try { if (noHitsRs != null) noHitsRs.close(); } catch (SQLException e) {}
-                    try { if (selectNoHitsStmt != null) selectNoHitsStmt.close(); } catch (SQLException e) {}
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        } finally {
-            try { if (rs != null) rs.close(); } catch (SQLException e) {}
-            try { if (rs1 != null) rs1.close(); } catch (SQLException e) {}
-            try { if (queryStmt != null) queryStmt.close(); } catch (SQLException e) {}
-            try { if (queryStmt1 != null) queryStmt1.close(); } catch (SQLException e) {}
-            try { if (insertStmt != null) insertStmt.close(); } catch (SQLException e) {}
-            try { if (insertStmt1 != null) insertStmt1.close(); } catch (SQLException e) {}
-            try { if (con != null) con.close(); } catch (SQLException e) {}
-            try { if (conn != null) conn.close(); } catch (SQLException e) {}
-        }
-    }
-    %>
-
-</div>
-</div>
-
-</body>
-</html>
