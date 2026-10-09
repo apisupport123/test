@@ -19,436 +19,229 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Deployment Sheet Master</title>
 
-  <!-- ============================================================
-       ✅ ALL CSS FROM CDN
-       ============================================================ -->
-  <!-- DataTables Core CSS -->
-  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" />
+  <!-- ✅ SAME paths jo tumhare existing code me the — koi change nahi -->
+  <link rel="stylesheet" href="./css/Deployment.jquery.dataTables.min.css" />
+  <link rel="stylesheet" href="./css/Deployment.buttons.dataTables.min.css" />
 
-  <!-- DataTables Buttons CSS -->
-  <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css" />
-
-  <!-- Font Awesome (icons) -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-
-  <!-- ============================================================
-       ✅ ALL JS FROM CDN — ORDER MATTERS!
-       ============================================================ -->
-  <!-- 1. jQuery FIRST -->
-  <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-
-  <!-- 2. DataTables Core SECOND -->
-  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-
-  <!-- 3. Buttons THIRD -->
-  <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
-
-  <!-- 4. Export plugins -->
-  <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
-  <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
-
-  <!-- 5. Export dependencies -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+  <!-- ✅ SAME order jo tumhare existing code me tha -->
+  <script src="./js/Deployment.jquery-3.7.0.min.js"></script>
+  <script src="./js/Deployment.1.13.6.jquery.dataTables.min.js"></script>
+  <script src="./js/Deployment.2.4.1.dataTables.buttons.min.js"></script>
+  <script src="./js/Deployment.2.4.1.buttons.html5.min.js"></script>
+  <script src="./js/Deployment.2.4.1.buttons.print.min.js"></script>
+  <script src="./js/Deployment.3.10.1.jszip.min.js"></script>
+  <script src="./js/Deployment.0.2.7.pdfmake.min.js"></script>
+  <script src="./js/Deployment.0.2.7.vfs_fonts.js"></script>
 
   <style>
+    /* ✅ Tumhare existing styles — theme-aware banaye */
     :root, [data-theme="light"] {
-      --page-brand: #F86F03;
-      --page-brand-light: #FFF4EC;
-      --page-bg: transparent;
-      --page-card: #FFFFFF;
-      --page-text: #0F172A;
-      --page-text-secondary: #334155;
-      --page-muted: #64748B;
-      --page-line: #E5E7EB;
-      --page-line-strong: #CBD5E1;
-      --page-hover: #F8FAFC;
-      --page-header: #F8FAFC;
+      --pg-bg: #f7f7f5;
+      --pg-card: #ffffff;
+      --pg-text: #0f172a;
+      --pg-text-2: #334155;
+      --pg-muted: #64748b;
+      --pg-line: #e5e7eb;
+      --pg-line-2: #cbd5e1;
+      --pg-hover: #f8fafc;
+      --pg-head: #f8fafc;
+      --pg-brand: #F86F03;
+      --pg-brand-light: #FFF4EC;
     }
-
     [data-theme="dark"] {
-      --page-brand: #FF9A3D;
-      --page-brand-light: rgba(248, 111, 3, 0.15);
-      --page-bg: transparent;
-      --page-card: #1E293B;
-      --page-text: #F1F5F9;
-      --page-text-secondary: #CBD5E1;
-      --page-muted: #94A3B8;
-      --page-line: #334155;
-      --page-line-strong: #475569;
-      --page-hover: #293548;
-      --page-header: #1A2332;
+      --pg-bg: #0F0F0F;
+      --pg-card: #1E293B;
+      --pg-text: #f1f5f9;
+      --pg-text-2: #cbd5e1;
+      --pg-muted: #94a3b8;
+      --pg-line: #334155;
+      --pg-line-2: #475569;
+      --pg-hover: #293548;
+      --pg-head: #1A2332;
+      --pg-brand: #FF9A3D;
+      --pg-brand-light: rgba(248, 111, 3, 0.15);
     }
-
-    * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: var(--page-bg);
-      color: var(--page-text);
-      font-size: 15px;
+      background-color: var(--bg) !important;
+      color: var(--pg-text);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       font-weight: 700;
     }
 
-    .deploy-page { padding: 24px 28px 48px; width: 100%; }
+    /* ✅ Page wrapper — sidebar ke right me */
+    .page-wrap {
+      padding: 24px 28px 40px;
+      width: 100%;
+    }
 
-    /* ============ HEADER ============ */
-    .deploy-head {
-      background: var(--page-card);
-      border: 1px solid var(--page-line);
-      border-radius: 16px;
-      padding: 22px 26px;
+    h1 {
+      text-align: center;
       margin-bottom: 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 16px;
-      flex-wrap: wrap;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
-    }
-    .deploy-head-left { display: flex; align-items: center; gap: 14px; }
-    .deploy-head-icon {
-      width: 48px; height: 48px;
-      border-radius: 12px;
-      background: linear-gradient(135deg, var(--page-brand), #FFA41B);
-      color: #fff;
-      display: grid; place-items: center;
-      font-size: 1.2rem;
-      box-shadow: 0 8px 20px -6px var(--page-brand);
-      flex-shrink: 0;
-    }
-    .deploy-head h1 {
-      font-size: 1.35rem; font-weight: 800;
+      font-weight: 800;
+      color: var(--pg-text);
+      font-size: 1.6rem;
       letter-spacing: -0.4px;
-      color: var(--page-text);
-      line-height: 1.2; margin: 0;
-    }
-    .deploy-head-sub {
-      font-size: 0.8rem; color: var(--page-muted);
-      font-weight: 600; margin-top: 3px;
-    }
-    .deploy-head-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-
-    /* ============ BUTTONS ============ */
-    .btn {
-      padding: 10px 18px;
-      border-radius: 10px;
-      font-size: 0.85rem;
-      font-weight: 800;
-      cursor: pointer;
-      font-family: inherit;
-      display: inline-flex; align-items: center; gap: 8px;
-      transition: all 0.2s ease;
-      border: 1.5px solid transparent;
-      text-decoration: none;
-      white-space: nowrap;
-    }
-    .btn-primary {
-      background: linear-gradient(135deg, var(--page-brand), #FFA41B);
-      color: #fff;
-      box-shadow: 0 6px 18px -6px var(--page-brand);
-    }
-    .btn-primary:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 24px -6px var(--page-brand);
-      color: #fff;
-    }
-    .btn-ghost {
-      background: var(--page-card);
-      color: var(--page-text-secondary);
-      border-color: var(--page-line-strong);
-    }
-    .btn-ghost:hover {
-      border-color: var(--page-brand);
-      color: var(--page-brand);
-      background: var(--page-brand-light);
-    }
-    .btn-success {
-      background: linear-gradient(135deg, #10B981, #059669);
-      color: #fff;
-      box-shadow: 0 6px 18px -6px #10B981;
-    }
-    .btn-success:hover {
-      transform: translateY(-2px);
-      color: #fff;
     }
 
-    /* ============ ACTION BAR ============ */
-    .deploy-actions {
-      background: var(--page-card);
-      border: 1px solid var(--page-line);
-      border-radius: 16px;
-      padding: 16px 20px;
-      margin-bottom: 20px;
+    .table-actions {
+      margin-bottom: 15px;
       display: flex;
-      gap: 12px;
+      gap: 10px;
       flex-wrap: wrap;
       align-items: center;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
-    }
-    .file-input-wrap {
-      position: relative;
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      flex: 1;
-      min-width: 240px;
-    }
-    #fileInput { display: none; }
-    .file-label {
-      flex: 1;
-      padding: 10px 16px;
-      background: var(--page-hover);
-      border: 1.5px dashed var(--page-line-strong);
-      border-radius: 10px;
-      color: var(--page-muted);
-      font-weight: 700;
-      font-size: 0.85rem;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      transition: all 0.2s ease;
-      overflow: hidden;
-    }
-    .file-label:hover {
-      border-color: var(--page-brand);
-      color: var(--page-brand);
-      background: var(--page-brand-light);
-    }
-    .file-label i { font-size: 1rem; flex-shrink: 0; }
-    .file-label span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-    /* ============ TABLE CARD ============ */
-    .deploy-table-card {
-      background: var(--page-card);
-      border: 1px solid var(--page-line);
-      border-radius: 16px;
-      padding: 20px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
-      overflow: hidden;
-    }
-    .deploy-table-title {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 0.9rem;
-      font-weight: 800;
-      color: var(--page-text);
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      margin-bottom: 16px;
-      padding-bottom: 12px;
-      border-bottom: 1px solid var(--page-line);
-    }
-    .deploy-table-title i { color: var(--page-brand); font-size: 1rem; }
-    .deploy-table-title .count-badge {
-      margin-left: auto;
-      background: var(--page-brand-light);
-      color: var(--page-brand);
-      padding: 3px 10px;
-      border-radius: 999px;
-      font-size: 0.72rem;
-      font-weight: 800;
     }
 
-    /* ==============================================================
-       ✅ DATATABLE — PROPER LINES + THEME
-       ============================================================== */
-    .dataTables_wrapper {
-      width: 100% !important;
-      overflow-x: auto !important;
-      color: var(--page-text) !important;
-      font-family: inherit !important;
-    }
-
+    /* ✅ DataTables styling — theme-aware */
     table.dataTable {
       width: 100% !important;
+      color: var(--pg-text) !important;
       border-collapse: separate !important;
       border-spacing: 0 !important;
-      margin: 0 !important;
-      color: var(--page-text) !important;
-      font-family: inherit !important;
-      font-size: 0.82rem !important;
+      font-size: 0.85rem !important;
     }
-
-    /* Header cells */
     table.dataTable thead th {
-      background-color: var(--page-header) !important;
-      color: var(--page-text-secondary) !important;
+      background-color: var(--pg-head) !important;
+      color: var(--pg-text-2) !important;
       font-weight: 800 !important;
       font-size: 0.72rem !important;
-      text-transform: uppercase !important;
-      letter-spacing: 0.5px !important;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
       padding: 14px 14px !important;
-      border-bottom: 2px solid var(--page-line-strong) !important;
-      border-top: none !important;
-      border-left: none !important;
-      border-right: none !important;
-      white-space: nowrap !important;
-      vertical-align: middle !important;
+      border-bottom: 2px solid var(--pg-line-2) !important;
+      white-space: nowrap;
       text-align: left !important;
     }
-
-    /* Body cells — proper visible lines */
     table.dataTable tbody td {
       padding: 12px 14px !important;
-      background-color: var(--page-card) !important;
-      color: var(--page-text) !important;
+      background-color: var(--pg-card) !important;
+      color: var(--pg-text) !important;
       font-weight: 700 !important;
       font-size: 0.82rem !important;
-      border-bottom: 1px solid var(--page-line) !important;
-      border-top: none !important;
-      border-left: none !important;
-      border-right: none !important;
-      white-space: nowrap !important;
-      vertical-align: middle !important;
+      border-bottom: 1px solid var(--pg-line) !important;
+      white-space: nowrap;
       text-align: left !important;
     }
-
     table.dataTable tbody tr:hover td {
-      background-color: var(--page-hover) !important;
+      background-color: var(--pg-hover) !important;
     }
-
     table.dataTable tbody tr:last-child td {
       border-bottom: none !important;
     }
 
-    table.dataTable tbody td.dataTables_empty {
-      text-align: center !important;
-      padding: 40px 20px !important;
-      color: var(--page-muted) !important;
-      font-style: italic !important;
-      font-weight: 600 !important;
+    /* ✅ Buttons */
+    .dt-buttons button, .custom-btn {
+      background-color: var(--pg-card) !important;
+      color: var(--pg-text-2) !important;
+      border: 1.5px solid var(--pg-line-2) !important;
+      padding: 9px 16px !important;
+      margin-right: 5px;
+      cursor: pointer;
+      border-radius: 10px;
+      font-weight: 800;
+      font-size: 0.82rem;
+      font-family: inherit;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .dt-buttons button:hover, .custom-btn:hover {
+      background-color: var(--pg-brand-light) !important;
+      border-color: var(--pg-brand) !important;
+      color: var(--pg-brand) !important;
     }
 
-    /* ============ SEARCH + LENGTH ============ */
-    .dataTables_length,
-    .dataTables_filter {
-      margin-bottom: 12px !important;
-      font-size: 0.85rem !important;
-      color: var(--page-muted) !important;
-      font-weight: 700 !important;
+    /* Submit button — brand orange */
+    #submitFileBtn {
+      background: linear-gradient(135deg, var(--pg-brand), #FFA41B) !important;
+      color: #fff !important;
+      border: none !important;
+      box-shadow: 0 6px 18px -6px var(--pg-brand);
     }
+    #submitFileBtn:hover {
+      transform: translateY(-2px);
+      color: #fff !important;
+    }
+
+    /* Push button */
+    #pushDataBtn {
+      background: linear-gradient(135deg, #10B981, #059669) !important;
+      color: #fff !important;
+      border: none !important;
+      padding: 12px 24px !important;
+      font-size: 0.9rem !important;
+      box-shadow: 0 6px 18px -6px #10B981;
+    }
+    #pushDataBtn:hover {
+      transform: translateY(-2px);
+      color: #fff !important;
+    }
+
+    #fileInput {
+      display: none;
+    }
+
+    .dataTables_wrapper {
+      width: 100%;
+      overflow-x: auto;
+      color: var(--pg-text);
+    }
+
+    /* Search input */
     .dataTables_filter input {
       padding: 8px 12px !important;
-      border: 1.5px solid var(--page-line-strong) !important;
+      border: 1.5px solid var(--pg-line-2) !important;
       border-radius: 8px !important;
-      background: var(--page-card) !important;
-      color: var(--page-text) !important;
+      background: var(--pg-card) !important;
+      color: var(--pg-text) !important;
       font-family: inherit !important;
       font-weight: 700 !important;
-      font-size: 0.85rem !important;
       outline: none !important;
       margin-left: 8px !important;
     }
     .dataTables_filter input:focus {
-      border-color: var(--page-brand) !important;
-      box-shadow: 0 0 0 3px var(--page-brand-light) !important;
-    }
-    .dataTables_length select {
-      padding: 6px 10px !important;
-      border: 1.5px solid var(--page-line-strong) !important;
-      border-radius: 8px !important;
-      background: var(--page-card) !important;
-      color: var(--page-text) !important;
-      font-family: inherit !important;
-      font-weight: 700 !important;
-      outline: none !important;
-      margin: 0 6px !important;
+      border-color: var(--pg-brand) !important;
+      box-shadow: 0 0 0 3px var(--pg-brand-light) !important;
     }
 
-    /* ============ PAGINATION ============ */
+    /* Pagination */
     .dataTables_paginate {
       margin-top: 16px !important;
       padding-top: 12px !important;
-      border-top: 1px solid var(--page-line) !important;
+      border-top: 1px solid var(--pg-line) !important;
       display: flex !important;
       justify-content: flex-end !important;
       gap: 4px !important;
-      flex-wrap: wrap !important;
     }
     .dataTables_paginate .paginate_button {
       padding: 7px 12px !important;
       border-radius: 8px !important;
-      border: 1.5px solid var(--page-line-strong) !important;
-      background: var(--page-card) !important;
-      color: var(--page-text-secondary) !important;
+      border: 1.5px solid var(--pg-line-2) !important;
+      background: var(--pg-card) !important;
+      color: var(--pg-text-2) !important;
       font-weight: 800 !important;
       font-size: 0.8rem !important;
       cursor: pointer !important;
       margin: 0 2px !important;
     }
-    .dataTables_paginate .paginate_button:hover {
-      background: var(--page-brand-light) !important;
-      border-color: var(--page-brand) !important;
-      color: var(--page-brand) !important;
-    }
     .dataTables_paginate .paginate_button.current {
-      background: linear-gradient(135deg, var(--page-brand), #FFA41B) !important;
-      border-color: var(--page-brand) !important;
+      background: linear-gradient(135deg, var(--pg-brand), #FFA41B) !important;
+      border-color: var(--pg-brand) !important;
       color: #fff !important;
-      box-shadow: 0 4px 12px -3px var(--page-brand) !important;
     }
-    .dataTables_paginate .paginate_button.disabled {
-      opacity: 0.4 !important;
-      cursor: not-allowed !important;
-    }
-
     .dataTables_info {
       font-size: 0.78rem !important;
-      color: var(--page-muted) !important;
-      font-weight: 700 !important;
+      color: var(--pg-muted) !important;
       padding-top: 12px !important;
     }
 
-    /* ============ EXPORT BUTTONS ============ */
-    .dt-buttons {
-      display: flex !important;
-      gap: 8px !important;
-      margin-bottom: 12px !important;
-      flex-wrap: wrap !important;
-    }
-    .dt-buttons button,
-    .dt-buttons .dt-button {
-      background: var(--page-card) !important;
-      color: var(--page-text-secondary) !important;
-      border: 1.5px solid var(--page-line-strong) !important;
-      padding: 9px 16px !important;
-      border-radius: 10px !important;
-      font-weight: 800 !important;
-      font-size: 0.82rem !important;
-      cursor: pointer !important;
-      font-family: inherit !important;
-      display: inline-flex !important;
-      align-items: center !important;
-      gap: 6px !important;
-      box-shadow: none !important;
-    }
-    .dt-buttons button:hover,
-    .dt-buttons .dt-button:hover {
-      background: var(--page-brand-light) !important;
-      border-color: var(--page-brand) !important;
-      color: var(--page-brand) !important;
-    }
-
-    /* ============ PUSH BUTTON ============ */
-    .push-wrap { margin-top: 20px; text-align: center; }
-
-    /* ============ RESPONSIVE ============ */
-    @media (max-width: 900px) {
-      .deploy-page { padding: 16px 14px 32px; }
-      .deploy-head { padding: 16px 18px; }
-      .deploy-head h1 { font-size: 1.1rem; }
-      .deploy-head-icon { width: 42px; height: 42px; font-size: 1rem; }
-      .deploy-actions { flex-direction: column; align-items: stretch; }
-      .file-input-wrap { width: 100%; }
-    }
-    @media (max-width: 480px) {
-      .deploy-head-right { width: 100%; }
-      .deploy-head-right .btn { flex: 1; justify-content: center; }
-      .btn { padding: 9px 14px; font-size: 0.8rem; }
+    /* Sample format link */
+    .sample-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
     }
   </style>
 </head>
@@ -457,117 +250,75 @@
 <%@include file="./userheader.jsp"%>
 
 <div class="new-wrapper">
-<div class="deploy-page">
+<div class="page-wrap">
 
-  <!-- ============ PAGE HEADER ============ -->
-  <div class="deploy-head">
-    <div class="deploy-head-left">
-      <div class="deploy-head-icon">
-        <i class="fas fa-rocket"></i>
-      </div>
-      <div>
-        <h1>Deployment Sheet Master</h1>
-        <div class="deploy-head-sub">Upload, review and push deployment records</div>
-      </div>
-    </div>
-    <div class="deploy-head-right">
-      <a href="<%=request.getContextPath()%>/XMLFile/Deployment_Sample_Format.xlsx"
-         class="btn btn-ghost" download>
-        <i class="fas fa-download"></i> Sample Format
-      </a>
-    </div>
+  <h1>Deployment Sheet Master</h1>
+
+  <div class="table-actions">
+    <form id="uploadForm" enctype="multipart/form-data" method="post">
+      <input type="file" id="fileInput" name="file" />
+      <button type="button" class="custom-btn" id="submitFileBtn">Submit</button>
+      <a href="<%=request.getContextPath() + "/XMLFile/Deployment_Sample_Format.xlsx"%>" class="custom-btn sample-link" download>Sample Format</a>
+    </form>
   </div>
 
-  <!-- ============ UPLOAD + ACTIONS ============ -->
-  <div class="deploy-actions">
-    <div class="file-input-wrap">
-      <label for="fileInput" class="file-label">
-        <i class="fas fa-paperclip"></i>
-        <span id="fileNameLabel">Choose Excel file (.xlsx)</span>
-      </label>
-      <input type="file" id="fileInput" name="file" accept=".xlsx,.xls" />
-    </div>
-    <button type="button" class="btn btn-primary" id="submitFileBtn">
-      <i class="fas fa-cloud-upload-alt"></i> Submit
-    </button>
-  </div>
-
-  <!-- ============ TABLE CARD ============ -->
-  <div class="deploy-table-card">
-    <div class="deploy-table-title">
-      <i class="fas fa-table"></i>
-      Deployment Records
-      <span class="count-badge" id="rowCountBadge">0</span>
-    </div>
-
-    <table id="deploymentTable" class="display nowrap" style="width:100%">
-      <thead>
+  <table id="deploymentTable" class="display nowrap" style="width:100%">
+    <thead>
+      <tr>
+        <th>EXP URL</th>
+        <th>EXP URL W.R.T SYS URL</th>
+        <th>API_NAME</th>
+        <th>SOURCE_ID</th>
+        <th>Broker</th>
+        <th>Broker EG</th>
+        <th>New/Existing/NBC</th>
+        <th>Hits in Production</th>
+        <th>Failure(More than 50%)</th>
+        <th>Success</th>
+        <th>Changes Description</th>
+        <th>Remarks</th>
+        <th>Deployment Date Time</th>
+      </tr>
+    </thead>
+    <tbody>
+      <c:forEach var="row" items="${deploymentData}">
         <tr>
-          <th>EXP URL</th>
-          <th>EXP URL W.R.T SYS URL</th>
-          <th>API_NAME</th>
-          <th>SOURCE_ID</th>
-          <th>Broker</th>
-          <th>Broker EG</th>
-          <th>New/Existing/NBC</th>
-          <th>Hits in Production</th>
-          <th>Failure (More than 50%)</th>
-          <th>Success</th>
-          <th>Changes Description</th>
-          <th>Remarks</th>
-          <th>Deployment Date Time</th>
+          <td>${row.EXP_URL}</td>
+          <td>${row.SYS_URL}</td>
+          <td>${row.API_NAME}</td>
+          <td>${row.SOURCE_ID}</td>
+          <td>${row.BROKER}</td>
+          <td>${row.BROKER_EG}</td>
+          <td>${row.STATUS}</td>
+          <td>${row.HITS}</td>
+          <td>${row.FAILURE}</td>
+          <td>${row.SUCCESS}</td>
+          <td>${row.CHANGES_DESC}</td>
+          <td>${row.REMARKS}</td>
+          <td>${row.DEPLOYMENT_DATE}</td>
         </tr>
-      </thead>
-      <tbody>
-        <c:forEach var="row" items="${deploymentData}">
-          <tr>
-            <td>${row.EXP_URL}</td>
-            <td>${row.SYS_URL}</td>
-            <td>${row.API_NAME}</td>
-            <td>${row.SOURCE_ID}</td>
-            <td>${row.BROKER}</td>
-            <td>${row.BROKER_EG}</td>
-            <td>${row.STATUS}</td>
-            <td>${row.HITS}</td>
-            <td>${row.FAILURE}</td>
-            <td>${row.SUCCESS}</td>
-            <td>${row.CHANGES_DESC}</td>
-            <td>${row.REMARKS}</td>
-            <td>${row.DEPLOYMENT_DATE}</td>
-          </tr>
-        </c:forEach>
-      </tbody>
-    </table>
-  </div>
+      </c:forEach>
+    </tbody>
+  </table>
 
-  <!-- ============ PUSH BUTTON ============ -->
-  <div class="push-wrap">
-    <button type="button" class="btn btn-success" id="pushDataBtn">
-      <i class="fas fa-arrow-up"></i> Push Data to Main Table
-    </button>
+  <div style="margin-top: 20px; text-align: center;">
+    <button type="button" class="custom-btn" id="pushDataBtn">Push Data to Main Table</button>
   </div>
 
 </div>
 </div>
 
 <script>
+  // ✅ SAME script — tumhare existing code ka
   $(document).ready(function () {
 
     // Safety check
-    if (typeof jQuery === 'undefined') {
-      console.error('❌ jQuery not loaded!');
-      alert('jQuery library failed to load. Please refresh the page.');
-      return;
-    }
     if (typeof jQuery.fn.DataTable === 'undefined') {
-      console.error('❌ DataTables not loaded!');
+      console.error('❌ DataTables not loaded — check ./js/Deployment.1.13.6.jquery.dataTables.min.js');
       alert('Table library failed to load. Please refresh the page.');
       return;
     }
 
-    // ============================================================
-    // DATATABLE INIT
-    // ============================================================
     const table = $('#deploymentTable').DataTable({
       dom: 'Bfrtip',
       paging: true,
@@ -578,63 +329,44 @@
       ordering: true,
       order: [],
       lengthChange: false,
-      language: {
-        search: '',
-        searchPlaceholder: 'Search records...',
-        emptyTable: 'No deployment records found',
-        info: 'Showing _START_–_END_ of _TOTAL_ entries',
-        infoEmpty: 'No entries',
-        infoFiltered: '(filtered from _MAX_ total)',
-        zeroRecords: 'No matching records found',
-        paginate: { previous: '‹', next: '›' }
-      },
       buttons: [
         {
           extend: 'excelHtml5',
-          text: '<i class="fas fa-file-excel"></i> Export Excel',
+          text: 'Export Excel',
           exportOptions: { columns: ':visible' }
         },
         {
           extend: 'pdfHtml5',
-          text: '<i class="fas fa-file-pdf"></i> Export PDF',
+          text: 'Export PDF',
           exportOptions: { columns: ':visible' },
           orientation: 'landscape',
           pageSize: 'A4'
         }
-      ],
-      initComplete: updateRowCount,
-      drawCallback: updateRowCount
+      ]
     });
 
-    function updateRowCount() {
-      $('#rowCountBadge').text(table.rows().count());
-    }
-
-    // ============================================================
-    // FILE INPUT LABEL
-    // ============================================================
+    // File input label
     $('#fileInput').on('change', function () {
       const file = this.files[0];
-      $('#fileNameLabel').text(file ? file.name : 'Choose Excel file (.xlsx)');
+      if (file) {
+        console.log('File chosen:', file.name);
+      }
     });
 
-    // ============================================================
-    // SUBMIT FILE
-    // ============================================================
+    // Submit file
     $('#submitFileBtn').on('click', function () {
       const file = $('#fileInput')[0].files[0];
       if (!file) {
         alert("Please choose a file first!");
         return;
       }
-
-      const $btn = $(this);
-      const originalHtml = $btn.html();
-      $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Uploading...');
-
       const formData = new FormData();
       formData.append("file", file);
       formData.append("action", "upload");
+
+      const $btn = $(this);
+      const orig = $btn.html();
+      $btn.prop('disabled', true).html('Uploading...');
 
       $.ajax({
         url: '<%=request.getContextPath()%>/DeploymentSheetServlet',
@@ -647,23 +379,17 @@
           window.location.href = '<%=request.getContextPath()%>/DeploymentSheetServlet';
         },
         error: function () {
-          alert("Upload failed. Please try again.");
-          $btn.prop('disabled', false).html(originalHtml);
+          alert("Upload failed.");
+          $btn.prop('disabled', false).html(orig);
         }
       });
     });
 
-    // ============================================================
-    // PUSH DATA
-    // ============================================================
+    // Push data
     $('#pushDataBtn').on('click', function () {
-      if (!confirm('Push all records to the main table? This action cannot be undone.')) {
-        return;
-      }
-
       const $btn = $(this);
-      const originalHtml = $btn.html();
-      $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Pushing...');
+      const orig = $btn.html();
+      $btn.prop('disabled', true).html('Pushing...');
 
       $.ajax({
         url: '<%=request.getContextPath()%>/DeploymentSheetServlet',
@@ -675,7 +401,7 @@
         },
         error: function () {
           alert("Error occurred while pushing data!");
-          $btn.prop('disabled', false).html(originalHtml);
+          $btn.prop('disabled', false).html(orig);
         }
       });
     });
