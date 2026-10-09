@@ -1,243 +1,3 @@
-package com.action;
-
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.apache.struts2.ServletActionContext;
-import com.opensymphony.xwork2.ActionSupport;
-import com.opensymphony.xwork2.ModelDriven;
-
-import com.actionform.LoginForm;
-import com.jdbc.DBUtilityAuto;
-import com.jdbc.TrippleDes;
-
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
-
-@SuppressWarnings("serial")
-public class LoginAction extends ActionSupport implements ModelDriven<LoginForm> {
-
-    private LoginForm loginForm = new LoginForm();
-
-    // JSON response ke liye
-    private Map<String, Object> jsonData = new HashMap<>();
-
-    @Override
-    public LoginForm getModel() {
-        return loginForm;
-    }
-
-    public List<String> getRolelist() {
-        return loginForm.getRolelist();
-    }
-
-    public Map<String, Object> getJsonData() {
-        return jsonData;
-    }
-
-    // ==================== DEFAULT: LOAD LOGIN PAGE ====================
-    @Override
-    public String execute() throws Exception {
-        System.out.println(">>> LoginAction.execute() called");
-
-        HttpServletRequest request = ServletActionContext.getRequest();
-        HttpSession session = request.getSession(false);
-
-        // ✅ Logout handling — agar logout=true parameter hai toh session invalidate karo
-        String logout = request.getParameter("logout");
-        if ("true".equals(logout)) {
-            System.out.println(">>> Logout requested — invalidating session");
-            if (session != null) {
-                try { session.invalidate(); } catch (Exception e) {}
-            }
-            // Fresh session create karo new rolelist ke liye
-            session = request.getSession(true);
-        }
-
-        // ✅ Populate roles
-        this.getEISRole(loginForm);
-        List<String> roles = loginForm.getRolelist();
-        System.out.println("Roles Loaded : " + roles);
-
-        // ✅ Request attribute me set karo (JSP me use hoga)
-        request.setAttribute("rolelist", roles);
-
-        // ✅ Session me bhi set karo (fallback ke liye)
-        if (session != null) {
-            session.setAttribute("rolelist", roles);
-        }
-
-        return "success";
-    }
-
-    // ==================== USER LOGIN (AJAX JSON) ====================
-    public String usersign() throws Exception {
-        System.out.println(">>> usersign() called");
-        HttpServletRequest request = ServletActionContext.getRequest();
-
-        String username = request.getParameter("m_strUserName");
-        String password = request.getParameter("m_struserPassword");
-        String role     = request.getParameter("m_strRole");
-
-        if (username == null || username.trim().isEmpty()
-                || password == null || password.trim().isEmpty()
-                || role == null || role.trim().isEmpty()) {
-            jsonData.put("status", "error");
-            jsonData.put("message", "Please fill all fields");
-            return "jsonerror";
-        }
-
-        boolean hasRole = this.checkRole(loginForm, request);
-
-        if (hasRole) {
-            HttpSession session = request.getSession();
-            session.setAttribute("role", role);
-            session.setAttribute("username", username);
-
-            jsonData.put("status", "success");
-
-            if ("EIS Bank".equals(role)) {
-                jsonData.put("redirectUrl",
-                    request.getContextPath() + "/jsp/Bankheader.jsp");
-            } else {
-                jsonData.put("redirectUrl",
-                    request.getContextPath() + "/userhomescreen.action");
-            }
-            return "jsonsuccess";
-        } else {
-            jsonData.put("status", "error");
-            jsonData.put("message", "Invalid username, password or role");
-            return "jsonerror";
-        }
-    }
-
-    // ==================== ADMIN LOGIN (AJAX JSON) ====================
-    public String adminsign() throws Exception {
-        System.out.println(">>> adminsign() called");
-        HttpServletRequest request = ServletActionContext.getRequest();
-
-        String adminUser = request.getParameter("m_stradminUserName");
-        String adminPass = request.getParameter("m_stradminPassword");
-
-        if (adminUser == null || adminUser.trim().isEmpty()
-                || adminPass == null || adminPass.trim().isEmpty()) {
-            jsonData.put("status", "error");
-            jsonData.put("message", "Please fill all fields");
-            return "jsonerror";
-        }
-
-        // ---------- Hardcoded Admin ----------
-        if ("Admin".equalsIgnoreCase(adminUser) && "admin".equals(adminPass)) {
-            request.getSession().setAttribute("role", "Admin");
-            jsonData.put("status", "success");
-            jsonData.put("redirectUrl",
-                request.getContextPath() + "/jsp/header.jsp");
-            return "jsonsuccess";
-        }
-
-        // ---------- Module Lead check ----------
-        Connection con = null;
-        Statement stmt = null;
-        ResultSet rs = null;
-        String password = null;
-        try {
-            con = DBUtilityAuto.getReportDBConnection();
-            String query = "SELECT passwords FROM a_module_leads WHERE LOWER(username) = LOWER('"
-                            + adminUser.replace("'", "''") + "')";
-            stmt = con.createStatement();
-            rs = stmt.executeQuery(query);
-            if (rs.next()) password = rs.getString("passwords");
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            if (rs != null) try { rs.close(); } catch (Exception ignored) {}
-            if (stmt != null) try { stmt.close(); } catch (Exception ignored) {}
-            if (con != null) try { con.close(); } catch (Exception ignored) {}
-        }
-
-        if (password != null && password.equals(adminPass)) {
-            request.getSession().setAttribute("role", "ModuleLead");
-            jsonData.put("status", "success");
-            jsonData.put("redirectUrl",
-                request.getContextPath() + "/jsp/moduleHeader.jsp");
-            return "jsonsuccess";
-        }
-
-        // ---------- Fail ----------
-        jsonData.put("status", "error");
-        jsonData.put("message", "Invalid admin credentials");
-        return "jsonerror";
-    }
-
-    // For REST plugin
-    public String index() throws Exception {
-        return execute();
-    }
-
-    // ==================== HELPERS ====================
-    private boolean checkRole(LoginForm loginForm, HttpServletRequest request) throws SQLException {
-        Connection con = null;
-        Statement stmt = null;
-        ResultSet rs = null;
-        try {
-            TrippleDes td = new TrippleDes();
-            int count = 0;
-
-            String user = request.getParameter("m_strUserName").replace("'", "''");
-            String pass = td.encrypt(request.getParameter("m_struserPassword").trim());
-            String role = request.getParameter("m_strRole").replace("'", "''");
-
-            String query = "SELECT COUNT(1) FROM rolemst "
-                    + "WHERE username LIKE '%" + user + "%' "
-                    + "AND password='" + pass + "' "
-                    + "AND rolename='" + role + "'";
-
-            con = DBUtilityAuto.getReportDBConnection();
-            stmt = con.createStatement();
-            rs = stmt.executeQuery(query);
-            if (rs.next()) count = rs.getInt(1);
-            return count > 0;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        } finally {
-            if (rs != null) try { rs.close(); } catch (Exception ignored) {}
-            if (stmt != null) try { stmt.close(); } catch (Exception ignored) {}
-            if (con != null) try { con.close(); } catch (Exception ignored) {}
-        }
-    }
-
-    private void getEISRole(LoginForm loginForm) throws SQLException {
-        Connection con = null;
-        Statement stmt = null;
-        ResultSet rs = null;
-        try {
-            ArrayList<String> list = new ArrayList<>();
-            con = DBUtilityAuto.getReportDBConnection();
-            stmt = con.createStatement();
-            rs = stmt.executeQuery("SELECT rolename FROM rolemst");
-            while (rs.next()) list.add(rs.getString("rolename"));
-            loginForm.setRolelist(list);
-            System.out.println("Roles loaded: " + list);
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            if (rs != null) try { rs.close(); } catch (Exception ignored) {}
-            if (stmt != null) try { stmt.close(); } catch (Exception ignored) {}
-            if (con != null) try { con.close(); } catch (Exception ignored) {}
-        }
-    }
-}
-
-
---------------------------------------------------------------------
-
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%
  // ✅ Session check
@@ -263,7 +23,7 @@ public class LoginAction extends ActionSupport implements ModelDriven<LoginForm>
   --brand:#F86F03;
   --brand-2:#FF9A3D;
   --brand-light:#FFF4EC;
-  --brand-glow:rgba(248,111,3,.35);
+  --brand-glow:rgba(248,111,3,.4);
   --ink:#0A0A0A;
   --muted:#6B7280;
   --line:#EAEAEA;
@@ -274,6 +34,12 @@ public class LoginAction extends ActionSupport implements ModelDriven<LoginForm>
   --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --sidebar-w:260px;
   --topnav-h:64px;
+  --green:#10B981;
+  --blue:#3B82F6;
+  --purple:#8B5CF6;
+  --pink:#EC4899;
+  --amber:#F59E0B;
+  --cyan:#06B6D4;
 }
 html[data-theme="dark"]{
   --ink:#F5F5F5;
@@ -305,366 +71,606 @@ h1,h2,h3,h4,h5,h6,strong,b{font-weight:800;letter-spacing:-.3px}
   stroke-linecap:round;stroke-linejoin:round;
 }
 
-/* ============ BENTO WRAPPER ============ */
+/* ============ WRAPPER ============ */
 .new-wrapper{
   margin-left:var(--sidebar-w);
   padding-top:var(--topnav-h);
   transition:margin-left .3s cubic-bezier(.4,0,.2,1);
   min-height:100vh;
 }
-html.sb-collapsed .new-wrapper{
-  margin-left:0;
-}
-.bento-wrap{
-  max-width:1400px;
+html.sb-collapsed .new-wrapper{margin-left:0}
+.dash-wrap{
+  max-width:1500px;
   margin:0 auto;
-  padding:32px 28px 60px;
+  padding:28px 28px 60px;
 }
 
-/* ============ HERO ============ */
-.hero{
-  background:linear-gradient(135deg, var(--hero-dark) 0%, var(--hero-dark-2) 100%);
-  border-radius:22px;
-  padding:44px 40px;
-  color:#fff;
-  position:relative;
-  overflow:hidden;
-  margin-bottom:24px;
-  display:grid;
-  grid-template-columns:1.5fr 1fr;
-  gap:24px;
+/* ============ WELCOME BAR ============ */
+.welcome-bar{
+  display:flex;
+  justify-content:space-between;
   align-items:center;
-  min-height:240px;
-  border:1px solid rgba(248,111,3,.08);
+  margin-bottom:24px;
+  gap:16px;
+  flex-wrap:wrap;
 }
-.hero::before{
-  content:"";position:absolute;top:-120px;right:-120px;
-  width:400px;height:400px;border-radius:50%;
-  background:radial-gradient(circle,rgba(248,111,3,.28) 0%,transparent 70%);
+.welcome-left{
+  display:flex;
+  align-items:center;
+  gap:16px;
 }
-.hero::after{
-  content:"";position:absolute;bottom:-140px;left:20%;
-  width:280px;height:280px;border-radius:50%;
-  background:radial-gradient(circle,rgba(255,154,61,.14) 0%,transparent 70%);
-}
-.hero-content{position:relative;z-index:2}
-.hero-eyebrow{
-  display:inline-flex;align-items:center;gap:8px;
-  padding:6px 12px;
-  background:rgba(255,255,255,.08);
-  border:1px solid rgba(255,255,255,.12);
-  border-radius:999px;
-  font-size:.72rem;font-weight:600;margin-bottom:18px;
-  color:#fff;
-}
-.hero-eyebrow .pulse{
-  width:6px;height:6px;border-radius:50%;
-  background:#4ADE80;box-shadow:0 0 8px #4ADE80;
-  animation:pulse 2s ease-in-out infinite;
-}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-.hero h1{
-  font-size:2.5rem;font-weight:800;
-  letter-spacing:-1.2px;line-height:1.1;margin-bottom:12px;
-  color:#fff;
-}
-.hero h1 .grad{
-  background:linear-gradient(135deg,var(--brand) 0%,var(--brand-2) 100%);
-  -webkit-background-clip:text;background-clip:text;color:transparent;
-}
-.hero p{
-  font-size:.95rem;line-height:1.6;
-  color:rgba(255,255,255,.72);
-  max-width:480px;
-}
-.hero-actions{display:flex;gap:12px;margin-top:24px;flex-wrap:wrap}
-.hero-btn{
-  padding:11px 18px;border-radius:11px;
-  font-size:.85rem;font-weight:600;cursor:pointer;
-  border:none;font-family:inherit;
-  display:inline-flex;align-items:center;gap:8px;
-  transition:all .2s ease;
-  text-decoration:none;
-}
-.hero-btn.primary{
-  background:var(--brand);color:#fff;
-  box-shadow:0 8px 20px -6px rgba(248,111,3,.5);
-}
-.hero-btn.primary:hover{background:var(--brand-2);transform:translateY(-1px)}
-.hero-btn.ghost{
-  background:rgba(255,255,255,.08);color:#fff;
-  border:1px solid rgba(255,255,255,.12);
-}
-.hero-btn.ghost:hover{background:rgba(255,255,255,.15)}
-.hero-btn .icon-svg{width:14px;height:14px}
-
-.hero-visual{
-  position:relative;z-index:2;
-  display:flex;flex-direction:column;gap:14px;
-  align-items:flex-end;
-}
-.hero-mini{
-  width:100%;max-width:280px;
-  background:rgba(255,255,255,.06);
-  border:1px solid rgba(255,255,255,.1);
-  border-radius:14px;
-  padding:14px 16px;
-  display:flex;align-items:center;gap:12px;
-  backdrop-filter:blur(8px);
-}
-.hero-mini .mi{
-  width:34px;height:34px;border-radius:9px;
+.welcome-avatar{
+  width:56px;height:56px;
+  border-radius:16px;
+  background:linear-gradient(135deg,var(--brand),var(--brand-2));
   display:grid;place-items:center;
-  background:rgba(248,111,3,.2);
-  color:var(--brand);
+  color:#fff;
+  font-size:1.4rem;
+  font-weight:900;
+  box-shadow:0 10px 30px -8px var(--brand-glow);
+  position:relative;
   flex-shrink:0;
 }
-.hero-mini .mi .icon-svg{width:16px;height:16px}
-.hero-mini .mt{
-  font-size:.85rem;font-weight:700;color:#fff;line-height:1.2;
+.welcome-avatar::after{
+  content:"";
+  position:absolute;
+  bottom:-2px;right:-2px;
+  width:16px;height:16px;
+  background:var(--green);
+  border:3px solid var(--card);
+  border-radius:50%;
+  box-shadow:0 0 8px var(--green);
 }
-.hero-mini .ms{
-  font-size:.72rem;color:rgba(255,255,255,.6);margin-top:2px;
+.welcome-text h1{
+  font-size:1.6rem;
+  font-weight:900;
+  letter-spacing:-.6px;
+  color:var(--ink);
+  margin-bottom:3px;
+  line-height:1.2;
 }
-.hero-mini.green .mi{background:rgba(74,222,128,.15);color:#4ADE80}
-.hero-mini.green .mt{color:#4ADE80}
+.welcome-text h1 .grad{
+  background:linear-gradient(135deg,var(--brand),var(--brand-2));
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent;
+}
+.welcome-text p{
+  font-size:.82rem;
+  color:var(--muted);
+  font-weight:600;
+}
+.welcome-text p b{color:var(--ink);font-weight:800}
 
-/* ============ STATS ============ */
-.stats{
-  display:grid;grid-template-columns:repeat(4,1fr);
-  gap:16px;margin-bottom:36px;
+.welcome-right{
+  display:flex;
+  align-items:center;
+  gap:12px;
 }
-.stat{
+.live-clock{
   background:var(--card);
   border:1px solid var(--line);
-  border-radius:16px;padding:20px;
-  display:flex;flex-direction:column;gap:8px;
-  transition:all .2s ease;
-  position:relative;overflow:hidden;
+  border-radius:14px;
+  padding:10px 16px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  box-shadow:0 2px 8px rgba(0,0,0,.03);
 }
-.stat::before{
-  content:"";position:absolute;top:0;left:0;
-  width:3px;height:100%;
-  background:var(--brand);
-  opacity:0;transition:opacity .2s ease;
-}
-.stat:hover{
-  border-color:var(--brand);transform:translateY(-2px);
-  box-shadow:0 10px 28px -10px rgba(248,111,3,.18);
-}
-.stat:hover::before{opacity:1}
-.stat .sicon{
-  width:36px;height:36px;
+.live-clock .clock-icon{
+  width:32px;height:32px;
+  border-radius:9px;
+  background:linear-gradient(135deg,var(--brand),var(--brand-2));
+  color:#fff;
   display:grid;place-items:center;
-  background:var(--brand-light);
-  color:var(--brand);
-  border-radius:10px;
 }
-html[data-theme="dark"] .stat .sicon{
-  background:rgba(248,111,3,.15);
+.live-clock .clock-icon .icon-svg{width:16px;height:16px}
+.live-clock .clock-text{
+  display:flex;flex-direction:column;gap:1px;
 }
-.stat .sicon .icon-svg{width:16px;height:16px}
-.stat .snum{
-  font-size:1.55rem;font-weight:800;
-  letter-spacing:-.8px;line-height:1;
+.live-clock .clock-time{
+  font-family:'JetBrains Mono',Consolas,monospace;
+  font-size:1rem;
+  font-weight:800;
   color:var(--ink);
+  letter-spacing:-.3px;
+  line-height:1.1;
 }
-.stat .slabel{
-  font-size:.78rem;color:var(--muted);font-weight:500;
+.live-clock .clock-date{
+  font-size:.68rem;
+  color:var(--muted);
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.4px;
 }
-.stat .strend{
-  position:absolute;top:20px;right:20px;
-  font-size:.68rem;font-weight:700;
-  padding:3px 8px;border-radius:999px;
-  background:rgba(74,222,128,.12);
-  color:#16A34A;
-}
-.stat .strend.warn{background:rgba(248,111,3,.12);color:var(--brand)}
 
-/* ============ SECTION HEADER ============ */
-.sec-head{
-  display:flex;align-items:center;justify-content:space-between;
-  margin:0 0 18px;
-}
-.sec-head h2{
-  font-size:1.1rem;font-weight:700;
-  letter-spacing:-.4px;
-  display:flex;align-items:center;gap:10px;
-  color:var(--ink);
-}
-.sec-head h2 .icon-svg{color:var(--brand);width:16px;height:16px}
-.sec-head .hint{
-  font-size:.76rem;color:var(--muted);font-weight:500;
-}
-.sec-head .hint b{color:var(--ink);font-weight:700}
-
-/* ============ BENTO ============ */
-.bento{
+/* ============ TOP STATS ============ */
+.stats-row{
   display:grid;
   grid-template-columns:repeat(4,1fr);
-  gap:16px;
-  margin-bottom:32px;
+  gap:14px;
+  margin-bottom:28px;
 }
-.bento-item{
+.stat-card{
   background:var(--card);
   border:1px solid var(--line);
-  border-radius:18px;
-  padding:22px;
-  display:flex;flex-direction:column;justify-content:space-between;
-  cursor:pointer;transition:all .25s ease;
-  position:relative;overflow:hidden;
-  min-height:160px;
-  text-decoration:none;
+  border-radius:16px;
+  padding:18px;
+  display:flex;
+  align-items:center;
+  gap:14px;
+  transition:all .25s ease;
+  position:relative;
+  overflow:hidden;
+  cursor:default;
+}
+.stat-card:hover{
+  transform:translateY(-3px);
+  box-shadow:0 12px 32px -10px rgba(0,0,0,.15);
+  border-color:var(--brand);
+}
+.stat-card .sicon{
+  width:46px;height:46px;
+  border-radius:12px;
+  display:grid;place-items:center;
+  flex-shrink:0;
+  position:relative;
+}
+.stat-card .sicon .icon-svg{width:20px;height:20px;stroke-width:2.4}
+.stat-card .stext{flex:1;min-width:0}
+.stat-card .snum{
+  font-size:1.4rem;
+  font-weight:900;
+  letter-spacing:-.6px;
+  line-height:1;
   color:var(--ink);
+  display:flex;
+  align-items:baseline;
+  gap:4px;
 }
-.bento-item:hover{
-  border-color:var(--brand);transform:translateY(-3px);
-  box-shadow:0 16px 40px -12px rgba(248,111,3,.22);
+.stat-card .snum small{font-size:.75rem;font-weight:700;color:var(--muted)}
+.stat-card .slabel{
+  font-size:.72rem;
+  color:var(--muted);
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.4px;
+  margin-top:3px;
 }
-.bento-item:hover .bicon{
-  background:var(--brand);color:#fff;transform:scale(1.08);
+.stat-card.s-brand .sicon{background:var(--brand-light);color:var(--brand)}
+html[data-theme="dark"] .stat-card.s-brand .sicon{background:rgba(248,111,3,.15)}
+.stat-card.s-green .sicon{background:rgba(16,185,129,.12);color:var(--green)}
+.stat-card.s-blue .sicon{background:rgba(59,130,246,.12);color:var(--blue)}
+.stat-card.s-purple .sicon{background:rgba(139,92,246,.12);color:var(--purple)}
+
+/* ============ SEARCH + FILTERS ============ */
+.controls-bar{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin-bottom:24px;
+  flex-wrap:wrap;
 }
-.bento-item:hover .bgo{opacity:1;color:var(--brand)}
-.bhead{
-  display:flex;justify-content:space-between;align-items:flex-start;
+.search-inline{
+  flex:1;
+  min-width:220px;
+  max-width:420px;
+  position:relative;
+  display:flex;
+  align-items:center;
+}
+.search-inline .icon-svg{
+  position:absolute;
+  left:14px;
+  color:var(--muted);
+  pointer-events:none;
+  width:15px;height:15px;
+}
+.search-inline input{
+  width:100%;
+  padding:12px 16px 12px 42px;
+  background:var(--card);
+  border:1.5px solid var(--line);
+  border-radius:12px;
+  color:var(--ink);
+  font-family:inherit;
+  font-size:.88rem;
+  font-weight:700;
+  outline:none;
+  transition:all .2s ease;
+}
+.search-inline input::placeholder{color:var(--muted);opacity:.7;font-weight:600}
+.search-inline input:focus{
+  border-color:var(--brand);
+  box-shadow:0 0 0 4px var(--brand-light);
+  background:var(--card);
+}
+html[data-theme="dark"] .search-inline input:focus{box-shadow:0 0 0 4px rgba(248,111,3,.15)}
+.search-inline .kbd{
+  position:absolute;
+  right:12px;
+  padding:3px 8px;
+  background:var(--bg);
+  border:1px solid var(--line);
+  border-radius:6px;
+  font-size:.65rem;
+  font-weight:800;
+  color:var(--muted);
+}
+
+.filter-tabs{
+  display:flex;
+  gap:4px;
+  background:var(--card);
+  border:1.5px solid var(--line);
+  padding:4px;
+  border-radius:12px;
+  overflow-x:auto;
+  flex-shrink:0;
+}
+.filter-tab{
+  padding:8px 14px;
+  border:none;
+  background:transparent;
+  color:var(--muted);
+  font-family:inherit;
+  font-size:.76rem;
+  font-weight:800;
+  border-radius:8px;
+  cursor:pointer;
+  transition:all .2s ease;
+  white-space:nowrap;
+  text-transform:uppercase;
+  letter-spacing:.4px;
+}
+.filter-tab:hover{color:var(--ink)}
+.filter-tab.active{
+  background:linear-gradient(135deg,var(--brand),var(--brand-2));
+  color:#fff;
+  box-shadow:0 4px 12px -3px var(--brand-glow);
+}
+
+/* ============ RECENT SECTION ============ */
+.recent-section{
+  margin-bottom:28px;
+}
+.sec-title{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:14px;
+  gap:12px;
+}
+.sec-title h3{
+  font-size:.85rem;
+  font-weight:900;
+  color:var(--ink);
+  text-transform:uppercase;
+  letter-spacing:1px;
+  display:flex;
+  align-items:center;
   gap:10px;
 }
-.bicon{
-  width:44px;height:44px;
-  display:grid;place-items:center;
-  background:var(--brand-light);
-  color:var(--brand);border-radius:12px;
-  transition:all .25s ease;flex-shrink:0;
-}
-html[data-theme="dark"] .bicon{
-  background:rgba(248,111,3,.15);
-}
-.bicon .icon-svg{width:18px;height:18px}
-.bgo{
-  color:var(--muted);
-  opacity:0;transition:opacity .25s ease;
-}
-.bgo .icon-svg{width:14px;height:14px}
-.btitle{
-  font-size:.98rem;font-weight:700;
-  letter-spacing:-.2px;margin-top:18px;line-height:1.3;
-  color:var(--ink);
-}
-.bsub{
-  font-size:.76rem;color:var(--muted);
-  font-weight:500;margin-top:5px;
-}
-.btags{
-  display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;
-}
-.btag{
-  font-size:.65rem;font-weight:700;
-  padding:3px 8px;border-radius:999px;
+.sec-title h3 .icon-svg{width:16px;height:16px;color:var(--brand)}
+.sec-title h3 .count{
   background:var(--brand-light);
   color:var(--brand);
-  text-transform:uppercase;letter-spacing:.3px;
+  padding:2px 8px;
+  border-radius:999px;
+  font-size:.65rem;
+  font-weight:800;
 }
-html[data-theme="dark"] .btag{
-  background:rgba(248,111,3,.15);
+html[data-theme="dark"] .sec-title h3 .count{background:rgba(248,111,3,.15)}
+.sec-title .line{
+  flex:1;
+  height:1px;
+  background:linear-gradient(90deg,var(--line),transparent);
 }
-.btag.gray{
-  background:var(--sidebar-hover,#F5F5F4);
+
+.recent-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+  gap:12px;
+}
+.recent-card{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:14px 16px;
+  background:var(--card);
+  border:1.5px solid var(--line);
+  border-radius:14px;
+  transition:all .25s ease;
+  position:relative;
+  overflow:hidden;
+  cursor:pointer;
+}
+.recent-card:hover{
+  border-color:var(--brand);
+  transform:translateY(-2px);
+  box-shadow:0 10px 24px -8px var(--brand-glow);
+}
+.recent-card .rc-icon{
+  width:38px;height:38px;
+  border-radius:10px;
+  background:var(--brand-light);
+  color:var(--brand);
+  display:grid;place-items:center;
+  flex-shrink:0;
+}
+html[data-theme="dark"] .recent-card .rc-icon{background:rgba(248,111,3,.15)}
+.recent-card .rc-icon .icon-svg{width:16px;height:16px}
+.recent-card .rc-text{flex:1;min-width:0}
+.recent-card .rc-name{
+  font-size:.82rem;
+  font-weight:800;
+  color:var(--ink);
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.recent-card .rc-time{
+  font-size:.65rem;
+  color:var(--muted);
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.3px;
+  margin-top:2px;
+}
+
+/* ============ MAIN BENTO GRID ============ */
+.bento-main{
+  display:grid;
+  grid-template-columns:repeat(6,1fr);
+  gap:16px;
+  margin-bottom:24px;
+}
+
+.bcard{
+  background:var(--card);
+  border:1.5px solid var(--line);
+  border-radius:20px;
+  padding:22px;
+  position:relative;
+  overflow:hidden;
+  text-decoration:none;
+  color:var(--ink);
+  transition:all .3s cubic-bezier(.4,0,.2,1);
+  cursor:pointer;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  min-height:180px;
+}
+.bcard::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:radial-gradient(circle at top right, rgba(248,111,3,.08), transparent 60%);
+  opacity:0;
+  transition:opacity .3s ease;
+  pointer-events:none;
+}
+.bcard:hover{
+  transform:translateY(-5px);
+  border-color:var(--brand);
+  box-shadow:0 20px 50px -15px var(--brand-glow);
+}
+.bcard:hover::before{opacity:1}
+.bcard:hover .bico{
+  transform:scale(1.1) rotate(-5deg);
+  background:var(--brand);
+  color:#fff;
+}
+.bcard:hover .barrow{
+  opacity:1;
+  transform:translate(4px,-4px);
+  color:var(--brand);
+}
+
+/* Card header */
+.bcard .btop{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:12px;
+  position:relative;
+  z-index:2;
+}
+.bcard .bico{
+  width:46px;height:46px;
+  border-radius:14px;
+  background:var(--brand-light);
+  color:var(--brand);
+  display:grid;place-items:center;
+  transition:all .3s cubic-bezier(.4,0,.2,1);
+  flex-shrink:0;
+}
+html[data-theme="dark"] .bcard .bico{background:rgba(248,111,3,.15)}
+.bcard .bico .icon-svg{width:20px;height:20px;stroke-width:2.4}
+
+/* Favorite star */
+.bcard .fav-btn{
+  background:transparent;
+  border:none;
+  color:var(--muted);
+  cursor:pointer;
+  padding:4px;
+  transition:all .2s ease;
+  z-index:3;
+  opacity:.4;
+}
+.bcard .fav-btn:hover,
+.bcard .fav-btn.active{
+  color:var(--amber);
+  opacity:1;
+}
+.bcard .fav-btn.active .icon-svg{fill:var(--amber);stroke:var(--amber)}
+.bcard .fav-btn .icon-svg{width:16px;height:16px}
+
+/* Card body */
+.bcard .bbody{
+  position:relative;
+  z-index:2;
+  margin-top:auto;
+}
+.bcard .btitle{
+  font-size:1rem;
+  font-weight:800;
+  letter-spacing:-.3px;
+  color:var(--ink);
+  line-height:1.3;
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.bcard .barrow{
+  opacity:0;
+  transition:all .25s ease;
   color:var(--muted);
 }
-html[data-theme="dark"] .btag.gray{
-  background:#222;color:#9CA3AF;
+.bcard .barrow .icon-svg{width:14px;height:14px}
+.bcard .bsub{
+  font-size:.75rem;
+  color:var(--muted);
+  font-weight:600;
+  margin-top:5px;
+  line-height:1.4;
+}
+.bcard .btags{
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+  margin-top:12px;
+}
+.bcard .btag{
+  font-size:.62rem;
+  font-weight:800;
+  padding:3px 8px;
+  border-radius:999px;
+  background:var(--brand-light);
+  color:var(--brand);
+  text-transform:uppercase;
+  letter-spacing:.3px;
+}
+html[data-theme="dark"] .bcard .btag{background:rgba(248,111,3,.15)}
+.bcard .btag.gray{
+  background:var(--bg);
+  color:var(--muted);
 }
 
-/* Featured large */
-.bento-item.lg{
-  grid-column:span 2;grid-row:span 2;
-  padding:30px;
-  background:linear-gradient(135deg,var(--hero-dark) 0%,var(--hero-dark-2) 100%);
+/* Card sizes */
+.bcard.feat{grid-column:span 3;grid-row:span 2;background:linear-gradient(135deg,var(--hero-dark) 0%,var(--hero-dark-2) 100%);color:#fff;border-color:transparent;min-height:260px;padding:30px}
+.bcard.feat::before{background:radial-gradient(circle at top right, rgba(248,111,3,.35), transparent 60%)}
+.bcard.feat .btitle{color:#fff;font-size:1.5rem;letter-spacing:-.6px}
+.bcard.feat .bsub{color:rgba(255,255,255,.7);font-size:.85rem;margin-top:8px}
+.bcard.feat .bico{background:rgba(248,111,3,.2);color:var(--brand);width:56px;height:56px}
+.bcard.feat .bico .icon-svg{width:24px;height:24px}
+.bcard.feat:hover .bico{background:var(--brand);color:#fff}
+.bcard.feat .btag{background:rgba(255,255,255,.12);color:#fff}
+.bcard.feat .btag.gray{background:rgba(255,255,255,.08);color:rgba(255,255,255,.7)}
+.bcard.feat .fav-btn{color:rgba(255,255,255,.5)}
+.bcard.feat .barrow{color:rgba(255,255,255,.5)}
+
+.bcard.wide{grid-column:span 3}
+.bcard.tall{grid-row:span 2}
+.bcard.med{grid-column:span 2}
+.bcard.sm{grid-column:span 1;min-height:140px}
+.bcard.sm .bico{width:38px;height:38px;border-radius:11px}
+.bcard.sm .bico .icon-svg{width:16px;height:16px}
+.bcard.sm .btitle{font-size:.85rem}
+.bcard.sm .bsub{font-size:.68rem;margin-top:3px}
+
+/* Color variants */
+.bcard.alert{
+  background:linear-gradient(135deg, #F86F03 0%, #FF9A3D 100%);
   color:#fff;border-color:transparent;
 }
-.bento-item.lg::before{
-  content:"";position:absolute;inset:auto -80px -80px auto;
-  width:300px;height:300px;border-radius:50%;
-  background:radial-gradient(circle,rgba(248,111,3,.25) 0%,transparent 70%);
-}
-.bento-item.lg:hover{
-  border-color:transparent;
-  box-shadow:0 24px 60px -12px rgba(248,111,3,.35);
-}
-.bento-item.lg .bicon{
-  background:rgba(248,111,3,.15);color:var(--brand);
-  width:54px;height:54px;
-}
-.bento-item.lg .bicon .icon-svg{width:22px;height:22px}
-.bento-item.lg .btitle{
-  font-size:1.4rem;font-weight:800;
-  letter-spacing:-.5px;margin-top:auto;
-  position:relative;z-index:2;
-  color:#fff;
-}
-.bento-item.lg .bsub{
-  color:rgba(255,255,255,.65);
-  font-size:.85rem;margin-top:8px;
-  position:relative;z-index:2;
-}
-.bento-item.lg .bgo{color:rgba(255,255,255,.5)}
-.bento-item.lg:hover .bgo{color:var(--brand)}
-.bento-item.lg .btag{
-  background:rgba(255,255,255,.1);
-  color:#fff;
-}
+.bcard.alert::before{background:radial-gradient(circle at top right, rgba(255,255,255,.25), transparent 60%)}
+.bcard.alert .bico{background:rgba(255,255,255,.2);color:#fff}
+.bcard.alert:hover .bico{background:#fff;color:var(--brand)}
+.bcard.alert .btitle{color:#fff}
+.bcard.alert .bsub{color:rgba(255,255,255,.85)}
+.bcard.alert .btag{background:rgba(255,255,255,.2);color:#fff}
+.bcard.alert .fav-btn{color:rgba(255,255,255,.6)}
 
-/* Alert orange */
-.bento-item.alert{
-  background:linear-gradient(135deg,var(--brand) 0%,var(--brand-2) 100%);
+.bcard.success{
+  background:linear-gradient(135deg, #10B981 0%, #059669 100%);
   color:#fff;border-color:transparent;
 }
-.bento-item.alert .bicon{
-  background:rgba(255,255,255,.2);color:#fff;
-}
-.bento-item.alert .bsub{color:rgba(255,255,255,.9)}
-.bento-item.alert .bgo{color:rgba(255,255,255,.7)}
-.bento-item.alert .btag{
-  background:rgba(255,255,255,.2);color:#fff;
-}
+.bcard.success::before{background:radial-gradient(circle at top right, rgba(255,255,255,.25), transparent 60%)}
+.bcard.success .bico{background:rgba(255,255,255,.2);color:#fff}
+.bcard.success:hover .bico{background:#fff;color:var(--green)}
+.bcard.success .btitle{color:#fff}
+.bcard.success .bsub{color:rgba(255,255,255,.85)}
+.bcard.success .btag{background:rgba(255,255,255,.2);color:#fff}
+.bcard.success .fav-btn{color:rgba(255,255,255,.6)}
 
-/* Medium wide */
-.bento-item.md{
-  grid-column:span 2;
+.bcard.purple{
+  background:linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%);
+  color:#fff;border-color:transparent;
 }
+.bcard.purple::before{background:radial-gradient(circle at top right, rgba(255,255,255,.25), transparent 60%)}
+.bcard.purple .bico{background:rgba(255,255,255,.2);color:#fff}
+.bcard.purple:hover .bico{background:#fff;color:var(--purple)}
+.bcard.purple .btitle{color:#fff}
+.bcard.purple .bsub{color:rgba(255,255,255,.85)}
+.bcard.purple .btag{background:rgba(255,255,255,.2);color:#fff}
+.bcard.purple .fav-btn{color:rgba(255,255,255,.6)}
+
+.bcard.blue{
+  background:linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+  color:#fff;border-color:transparent;
+}
+.bcard.blue::before{background:radial-gradient(circle at top right, rgba(255,255,255,.25), transparent 60%)}
+.bcard.blue .bico{background:rgba(255,255,255,.2);color:#fff}
+.bcard.blue:hover .bico{background:#fff;color:var(--blue)}
+.bcard.blue .btitle{color:#fff}
+.bcard.blue .bsub{color:rgba(255,255,255,.85)}
+.bcard.blue .btag{background:rgba(255,255,255,.2);color:#fff}
+.bcard.blue .fav-btn{color:rgba(255,255,255,.6)}
+
+/* Hidden (for filter) */
+.bcard.hidden{display:none}
 
 /* ============ FOOTER ============ */
 .foot{
-  margin-top:48px;padding-top:24px;
+  margin-top:40px;
+  padding-top:24px;
   border-top:1px solid var(--line);
-  display:flex;justify-content:space-between;align-items:center;
-  font-size:.8rem;color:var(--muted);
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  font-size:.75rem;
+  color:var(--muted);
+  font-weight:600;
+  flex-wrap:wrap;
+  gap:12px;
 }
 .foot .brandline b{color:var(--brand)}
 
 /* ============ RESPONSIVE ============ */
-@media (max-width:1100px){
-  .bento{grid-template-columns:repeat(3,1fr)}
-  .bento-item.lg{grid-column:span 2;grid-row:span 1}
-  .bento-item.md{grid-column:span 2}
-  .stats{grid-template-columns:repeat(2,1fr)}
+@media (max-width:1200px){
+  .bento-main{grid-template-columns:repeat(4,1fr)}
+  .bcard.feat{grid-column:span 4;grid-row:span 1}
+  .bcard.wide{grid-column:span 2}
+  .bcard.med{grid-column:span 2}
 }
-@media (max-width:800px){
+@media (max-width:900px){
   .new-wrapper{margin-left:0}
-  .hero{grid-template-columns:1fr;padding:32px 28px}
-  .hero h1{font-size:1.8rem}
-  .hero-visual{display:none}
-  .bento{grid-template-columns:repeat(2,1fr)}
-  .bento-item.lg{grid-column:span 2}
-  .bento-item.md{grid-column:span 2}
+  .stats-row{grid-template-columns:repeat(2,1fr)}
+  .bento-main{grid-template-columns:repeat(3,1fr)}
+  .bcard.feat{grid-column:span 3}
+  .bcard.wide,.bcard.med{grid-column:span 2}
 }
-@media (max-width:520px){
-  .bento-wrap{padding:20px 16px 40px}
-  .hero h1{font-size:1.5rem}
-  .bento{grid-template-columns:1fr}
-  .bento-item.lg,.bento-item.md{grid-column:span 1}
-  .stats{grid-template-columns:1fr 1fr}
-  .foot{flex-direction:column;gap:8px;text-align:center}
+@media (max-width:640px){
+  .dash-wrap{padding:20px 16px 40px}
+  .stats-row{grid-template-columns:1fr}
+  .bento-main{grid-template-columns:1fr}
+  .bcard.feat,.bcard.wide,.bcard.med,.bcard.sm{grid-column:span 1}
+  .welcome-bar{flex-direction:column;align-items:flex-start}
+  .welcome-text h1{font-size:1.3rem}
+  .recent-grid{grid-template-columns:1fr}
 }
 </style>
 </head>
@@ -674,155 +680,169 @@ html[data-theme="dark"] .btag.gray{
 
 <%
   String roleForDisplay = (String) session.getAttribute("role");
+  String userInitial = (roleForDisplay != null && roleForDisplay.length() > 0) 
+                       ? roleForDisplay.substring(0,1).toUpperCase() : "U";
 %>
 
 <div class="new-wrapper">
-<div class="bento-wrap">
+<div class="dash-wrap">
 
-  <section class="hero">
-    <div class="hero-content">
-      <div class="hero-eyebrow">
-        <span class="pulse"></span>
-        All Systems Operational
-      </div>
-      <h1>Welcome back,<br><span class="grad"><%= roleForDisplay != null ? roleForDisplay : "Operator" %></span></h1>
-      <p>Your command center for enterprise monitoring, deployments, incident management and operational dashboards — all in one place.</p>
-
-      <div class="hero-actions">
-        <button class="hero-btn primary" onclick="focusSidebarSearch()">
-          <svg class="icon-svg" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          Search Dashboards
-        </button>
-        <a class="hero-btn ghost" href="<%=request.getContextPath()%>/jsp/TicketHome.jsp?&role=<%=roleForDisplay%>" target="_blank" rel="noopener noreferrer">
-          <svg class="icon-svg" viewBox="0 0 24 24"><path d="M2 9a3 3 0 0 1 3-3h14a3 3 0 0 1 3 3v.5a2.5 2.5 0 0 0 0 5V15a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3v-.5a2.5 2.5 0 0 0 0-5z"/></svg>
-          Raise Ticket
-        </a>
+  <!-- ============ WELCOME BAR ============ -->
+  <section class="welcome-bar">
+    <div class="welcome-left">
+      <div class="welcome-avatar"><%= userInitial %></div>
+      <div class="welcome-text">
+        <h1><span id="greeting">Welcome back</span>, <span class="grad"><%= roleForDisplay != null ? roleForDisplay : "Operator" %></span></h1>
+        <p>You have <b>10+ dashboards</b> ready · <b>All systems operational</b></p>
       </div>
     </div>
-
-    <div class="hero-visual">
-      <div class="hero-mini">
-        <div class="mi">
-          <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    <div class="welcome-right">
+      <div class="live-clock">
+        <div class="clock-icon">
+          <svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
         </div>
-        <div>
-          <div class="mt">Secure Session</div>
-          <div class="ms">Encrypted connection</div>
-        </div>
-      </div>
-      <div class="hero-mini green">
-        <div class="mi">
-          <svg class="icon-svg" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-        </div>
-        <div>
-          <div class="mt">99.98% Uptime</div>
-          <div class="ms">Last 30 days</div>
-        </div>
-      </div>
-      <div class="hero-mini">
-        <div class="mi">
-          <svg class="icon-svg" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-        </div>
-        <div>
-          <div class="mt">Live Monitoring</div>
-          <div class="ms">Real-time alerts active</div>
+        <div class="clock-text">
+          <div class="clock-time" id="liveClock">--:--:--</div>
+          <div class="clock-date" id="liveDate">---</div>
         </div>
       </div>
     </div>
   </section>
 
-  <section class="stats">
-    <div class="stat">
+  <!-- ============ STATS ROW ============ -->
+  <section class="stats-row">
+    <div class="stat-card s-brand">
       <div class="sicon">
         <svg class="icon-svg" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
       </div>
-      <div class="snum">24×7</div>
-      <div class="slabel">Monitoring active</div>
-      <div class="strend">LIVE</div>
+      <div class="stext">
+        <div class="snum"><span data-count="24">0</span><small>×7</small></div>
+        <div class="slabel">Live Monitoring</div>
+      </div>
     </div>
-    <div class="stat">
+    <div class="stat-card s-green">
       <div class="sicon">
         <svg class="icon-svg" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
       </div>
-      <div class="snum">100+</div>
-      <div class="slabel">Services tracked</div>
-      <div class="strend">+12</div>
+      <div class="stext">
+        <div class="snum"><span data-count="100">0</span><small>+</small></div>
+        <div class="slabel">Services Tracked</div>
+      </div>
     </div>
-    <div class="stat">
+    <div class="stat-card s-blue">
       <div class="sicon">
         <svg class="icon-svg" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
       </div>
-      <div class="snum">&lt; 2s</div>
-      <div class="slabel">Alert response time</div>
-      <div class="strend">FAST</div>
-    </div>
-    <div class="stat">
-      <div class="sicon">
-        <svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <div class="stext">
+        <div class="snum">&lt;<span data-count="2">0</span><small>s</small></div>
+        <div class="slabel">Alert Response</div>
       </div>
-      <div class="snum">365d</div>
-      <div class="slabel">Data retention</div>
-      <div class="strend warn">ARCHIVE</div>
+    </div>
+    <div class="stat-card s-purple">
+      <div class="sicon">
+        <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      <div class="stext">
+        <div class="snum"><span data-count="365">0</span><small>d</small></div>
+        <div class="slabel">Data Retention</div>
+      </div>
     </div>
   </section>
 
-  <div class="sec-head">
-    <h2>
-      <svg class="icon-svg" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-      Quick Access
-    </h2>
-    <span class="hint">Press <b>Ctrl + K</b> for full search</span>
-  </div>
+  <!-- ============ RECENT SECTION ============ -->
+  <section class="recent-section" id="recentSection" style="display:none;">
+    <div class="sec-title">
+      <h3>
+        <svg class="icon-svg" viewBox="0 0 24 24"><polyline points="12 8 12 12 15 15"/><circle cx="12" cy="12" r="10"/></svg>
+        Recently Visited
+        <span class="count" id="recentCount">0</span>
+      </h3>
+      <span class="line"></span>
+    </div>
+    <div class="recent-grid" id="recentGrid">
+      <!-- JS se populate hoga -->
+    </div>
+  </section>
 
-  <section class="bento">
+  <!-- ============ CONTROLS BAR ============ -->
+  <section class="controls-bar">
+    <div class="search-inline">
+      <svg class="icon-svg" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="dashSearch" placeholder="Search dashboards, reports, tools..." autocomplete="off">
+      <span class="kbd">Ctrl K</span>
+    </div>
+    <div class="filter-tabs">
+      <button class="filter-tab active" data-cat="all">All</button>
+      <button class="filter-tab" data-cat="monitor">Monitoring</button>
+      <button class="filter-tab" data-cat="ops">Ops</button>
+      <button class="filter-tab" data-cat="tools">Tools</button>
+      <button class="filter-tab" data-cat="fav">★ Favorites</button>
+    </div>
+  </section>
 
-    <a class="bento-item lg" href="<%=request.getContextPath()%>/jsp/CombinedServiceWise&HundreadPerFailure.jsp" target="_blank" rel="noopener noreferrer">
-      <div class="bhead">
-        <div class="bicon">
+  <!-- ============ MAIN BENTO GRID ============ -->
+  <section class="bento-main" id="bentoGrid">
+
+    <!-- Featured: EIS Command Center -->
+    <a class="bcard feat" data-cat="monitor" data-name="EIS Command Center" href="<%=request.getContextPath()%>/jsp/CombinedServiceWise&HundreadPerFailure.jsp" target="_blank" rel="noopener noreferrer">
+      <div class="btop">
+        <div class="bico">
           <svg class="icon-svg" viewBox="0 0 24 24"><path d="M4.93 4.93a10 10 0 0 0 0 14.14M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M8.46 8.46a5 5 0 0 0 0 7.07M15.54 8.46a5 5 0 0 1 0 7.07"/><circle cx="12" cy="12" r="1.5"/></svg>
         </div>
-        <span class="bgo">
-          <svg class="icon-svg" viewBox="0 0 24 24"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
-        </span>
+        <button class="fav-btn" data-fav="EIS Command Center" title="Add to favorites" onclick="event.preventDefault(); event.stopPropagation(); toggleFav(this);">
+          <svg class="icon-svg" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </button>
       </div>
-      <div>
-        <div class="btitle">EIS Command Center</div>
-        <div class="bsub">Combined service-wise &amp; 100% failure monitoring</div>
+      <div class="bbody">
+        <div class="btitle">
+          EIS Command Center
+          <span class="barrow"><svg class="icon-svg" viewBox="0 0 24 24"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg></span>
+        </div>
+        <div class="bsub">Combined service-wise & 100% failure monitoring dashboard</div>
         <div class="btags">
           <span class="btag">Featured</span>
-          <span class="btag">Real-time</span>
+          <span class="btag gray">Real-time</span>
+          <span class="btag gray">Critical</span>
         </div>
       </div>
     </a>
 
-    <a class="bento-item alert" href="<%=request.getContextPath()%>/ErrorDashboard" target="_blank" rel="noopener noreferrer">
-      <div class="bhead">
-        <div class="bicon">
+    <!-- Error Dashboard (Alert) -->
+    <a class="bcard alert med" data-cat="monitor" data-name="Error Dashboard" href="<%=request.getContextPath()%>/ErrorDashboard" target="_blank" rel="noopener noreferrer">
+      <div class="btop">
+        <div class="bico">
           <svg class="icon-svg" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
         </div>
-        <span class="bgo">
-          <svg class="icon-svg" viewBox="0 0 24 24"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
-        </span>
+        <button class="fav-btn" data-fav="Error Dashboard" title="Add to favorites" onclick="event.preventDefault(); event.stopPropagation(); toggleFav(this);">
+          <svg class="icon-svg" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </button>
       </div>
-      <div>
-        <div class="btitle">Error Dashboard</div>
+      <div class="bbody">
+        <div class="btitle">
+          Error Dashboard
+          <span class="barrow"><svg class="icon-svg" viewBox="0 0 24 24"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg></span>
+        </div>
         <div class="bsub">Live error tracking</div>
         <div class="btags"><span class="btag">Critical</span></div>
       </div>
     </a>
 
-    <a class="bento-item md" href="<%=request.getContextPath()%>/jsp/AutoRefreshExpSysServiceWise.jsp" target="_blank" rel="noopener noreferrer">
-      <div class="bhead">
-        <div class="bicon">
+    <!-- EXP SYS Service Wise -->
+    <a class="bcard wide" data-cat="monitor" data-name="EXP SYS Service Wise" href="<%=request.getContextPath()%>/jsp/AutoRefreshExpSysServiceWise.jsp" target="_blank" rel="noopener noreferrer">
+      <div class="btop">
+        <div class="bico">
           <svg class="icon-svg" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
         </div>
-        <span class="bgo">
-          <svg class="icon-svg" viewBox="0 0 24 24"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
-        </span>
+        <button class="fav-btn" data-fav="EXP SYS Service Wise" title="Add to favorites" onclick="event.preventDefault(); event.stopPropagation(); toggleFav(this);">
+          <svg class="icon-svg" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </button>
       </div>
-      <div>
-        <div class="btitle">EXP SYS Service Wise Failure</div>
-        <div class="bsub">Auto-refresh live view of EXP &amp; SYS services failing</div>
+      <div class="bbody">
+        <div class="btitle">
+          EXP SYS Service Wise Failure
+          <span class="barrow"><svg class="icon-svg" viewBox="0 0 24 24"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg></span>
+        </div>
+        <div class="bsub">Auto-refresh live view of EXP & SYS services failing</div>
         <div class="btags">
           <span class="btag">Live</span>
           <span class="btag gray">Auto Refresh</span>
@@ -830,115 +850,160 @@ html[data-theme="dark"] .btag.gray{
       </div>
     </a>
 
-    <a class="bento-item" href="<%=request.getContextPath()%>/AtmCardServlet" target="_blank" rel="noopener noreferrer">
-      <div class="bhead">
-        <div class="bicon">
+    <!-- ATM IP Port -->
+    <a class="bcard sm" data-cat="monitor" data-name="ATM IP Port Portal" href="<%=request.getContextPath()%>/AtmCardServlet" target="_blank" rel="noopener noreferrer">
+      <div class="btop">
+        <div class="bico">
           <svg class="icon-svg" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
         </div>
-        <span class="bgo">
-          <svg class="icon-svg" viewBox="0 0 24 24"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
-        </span>
+        <button class="fav-btn" data-fav="ATM IP Port Portal" title="Add to favorites" onclick="event.preventDefault(); event.stopPropagation(); toggleFav(this);">
+          <svg class="icon-svg" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </button>
       </div>
-      <div>
-        <div class="btitle">ATM IP Port Portal</div>
+      <div class="bbody">
+        <div class="btitle">ATM IP Port</div>
         <div class="bsub">Live ATM services</div>
       </div>
     </a>
 
-    <a class="bento-item" href="<%=request.getContextPath()%>/jsp/TransactionEndPointBank.jsp" target="_blank" rel="noopener noreferrer">
-      <div class="bhead">
-        <div class="bicon">
+    <!-- Transaction End Point -->
+    <a class="bcard sm" data-cat="monitor" data-name="Transaction End Point" href="<%=request.getContextPath()%>/jsp/TransactionEndPointBank.jsp" target="_blank" rel="noopener noreferrer">
+      <div class="btop">
+        <div class="bico">
           <svg class="icon-svg" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
         </div>
-        <span class="bgo">
-          <svg class="icon-svg" viewBox="0 0 24 24"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
-        </span>
+        <button class="fav-btn" data-fav="Transaction End Point" title="Add to favorites" onclick="event.preventDefault(); event.stopPropagation(); toggleFav(this);">
+          <svg class="icon-svg" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </button>
       </div>
-      <div>
-        <div class="btitle">Transaction End Point</div>
-        <div class="bsub">Txn endpoint chart</div>
+      <div class="bbody">
+        <div class="btitle">Txn End Point</div>
+        <div class="bsub">Txn chart</div>
       </div>
     </a>
 
-    <a class="bento-item" href="<%=request.getContextPath()%>/jsp/PortStatus.jsp" target="_blank" rel="noopener noreferrer">
-      <div class="bhead">
-        <div class="bicon">
+    <!-- Service Status -->
+    <a class="bcard sm" data-cat="ops" data-name="Service Status" href="<%=request.getContextPath()%>/jsp/PortStatus.jsp" target="_blank" rel="noopener noreferrer">
+      <div class="btop">
+        <div class="bico">
           <svg class="icon-svg" viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
         </div>
-        <span class="bgo">
-          <svg class="icon-svg" viewBox="0 0 24 24"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
-        </span>
+        <button class="fav-btn" data-fav="Service Status" title="Add to favorites" onclick="event.preventDefault(); event.stopPropagation(); toggleFav(this);">
+          <svg class="icon-svg" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </button>
       </div>
-      <div>
+      <div class="bbody">
         <div class="btitle">Service Status</div>
         <div class="bsub">Port monitoring</div>
       </div>
     </a>
 
-    <a class="bento-item" href="<%=request.getContextPath()%>/jsp/DRChecklistHomePage.jsp" target="_blank" rel="noopener noreferrer">
-      <div class="bhead">
-        <div class="bicon">
+    <!-- DR Checklist -->
+    <a class="bcard sm" data-cat="ops" data-name="DR Checklist" href="<%=request.getContextPath()%>/jsp/DRChecklistHomePage.jsp" target="_blank" rel="noopener noreferrer">
+      <div class="btop">
+        <div class="bico">
           <svg class="icon-svg" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
         </div>
-        <span class="bgo">
-          <svg class="icon-svg" viewBox="0 0 24 24"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
-        </span>
+        <button class="fav-btn" data-fav="DR Checklist" title="Add to favorites" onclick="event.preventDefault(); event.stopPropagation(); toggleFav(this);">
+          <svg class="icon-svg" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </button>
       </div>
-      <div>
+      <div class="bbody">
         <div class="btitle">DR Checklist</div>
         <div class="bsub">Module checklist</div>
       </div>
     </a>
 
-    <a class="bento-item" href="<%=request.getContextPath()%>/jsp/TicketHome.jsp?&role=<%=roleForDisplay%>" target="_blank" rel="noopener noreferrer">
-      <div class="bhead">
-        <div class="bicon">
+    <!-- Ticketing Portal -->
+    <a class="bcard sm" data-cat="ops" data-name="Ticketing Portal" href="<%=request.getContextPath()%>/jsp/TicketHome.jsp?&role=<%=roleForDisplay%>" target="_blank" rel="noopener noreferrer">
+      <div class="btop">
+        <div class="bico">
           <svg class="icon-svg" viewBox="0 0 24 24"><path d="M2 9a3 3 0 0 1 3-3h14a3 3 0 0 1 3 3v.5a2.5 2.5 0 0 0 0 5V15a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3v-.5a2.5 2.5 0 0 0 0-5z"/></svg>
         </div>
-        <span class="bgo">
-          <svg class="icon-svg" viewBox="0 0 24 24"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
-        </span>
+        <button class="fav-btn" data-fav="Ticketing Portal" title="Add to favorites" onclick="event.preventDefault(); event.stopPropagation(); toggleFav(this);">
+          <svg class="icon-svg" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </button>
       </div>
-      <div>
+      <div class="bbody">
         <div class="btitle">Ticketing Portal</div>
-        <div class="bsub">Raise / track tickets</div>
+        <div class="bsub">Raise tickets</div>
       </div>
     </a>
 
-    <a class="bento-item" href="<%=request.getContextPath()%>/DeploymentSheetServlet" target="_blank" rel="noopener noreferrer">
-      <div class="bhead">
-        <div class="bicon">
+    <!-- Add Deployment (Success color) -->
+    <a class="bcard success med" data-cat="ops" data-name="Add Deployment" href="<%=request.getContextPath()%>/DeploymentSheetServlet" target="_blank" rel="noopener noreferrer">
+      <div class="btop">
+        <div class="bico">
           <svg class="icon-svg" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         </div>
-        <span class="bgo">
-          <svg class="icon-svg" viewBox="0 0 24 24"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
-        </span>
+        <button class="fav-btn" data-fav="Add Deployment" title="Add to favorites" onclick="event.preventDefault(); event.stopPropagation(); toggleFav(this);">
+          <svg class="icon-svg" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </button>
       </div>
-      <div>
-        <div class="btitle">Add Deployment</div>
-        <div class="bsub">Log new deployment</div>
+      <div class="bbody">
+        <div class="btitle">
+          Add Deployment
+          <span class="barrow"><svg class="icon-svg" viewBox="0 0 24 24"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg></span>
+        </div>
+        <div class="bsub">Log new deployment to the system</div>
+        <div class="btags"><span class="btag">New</span></div>
       </div>
     </a>
 
-    <a class="bento-item" href="<%=request.getContextPath()%>/jsp/DailyStatisticsReport.jsp" target="_blank" rel="noopener noreferrer">
-      <div class="bhead">
-        <div class="bicon">
+    <!-- Daily Statistics (Purple) -->
+    <a class="bcard purple sm" data-cat="tools" data-name="Daily Statistics" href="<%=request.getContextPath()%>/jsp/DailyStatisticsReport.jsp" target="_blank" rel="noopener noreferrer">
+      <div class="btop">
+        <div class="bico">
           <svg class="icon-svg" viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
         </div>
-        <span class="bgo">
-          <svg class="icon-svg" viewBox="0 0 24 24"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
-        </span>
+        <button class="fav-btn" data-fav="Daily Statistics" title="Add to favorites" onclick="event.preventDefault(); event.stopPropagation(); toggleFav(this);">
+          <svg class="icon-svg" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </button>
       </div>
-      <div>
-        <div class="btitle">Daily Statistics</div>
-        <div class="bsub">Night shift report</div>
+      <div class="bbody">
+        <div class="btitle">Daily Stats</div>
+        <div class="bsub">Night shift</div>
+      </div>
+    </a>
+
+    <!-- Flash Report (Blue) -->
+    <a class="bcard blue sm" data-cat="tools" data-name="Flash Report" href="<%=request.getContextPath()%>/jsp/FlashReport.jsp" target="_blank" rel="noopener noreferrer">
+      <div class="btop">
+        <div class="bico">
+          <svg class="icon-svg" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        </div>
+        <button class="fav-btn" data-fav="Flash Report" title="Add to favorites" onclick="event.preventDefault(); event.stopPropagation(); toggleFav(this);">
+          <svg class="icon-svg" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </button>
+      </div>
+      <div class="bbody">
+        <div class="btitle">Flash Report</div>
+        <div class="bsub">Quick summary</div>
+      </div>
+    </a>
+
+    <!-- EIS Query Console -->
+    <a class="bcard sm" data-cat="tools" data-name="EIS Query Console" href="<%=request.getContextPath()%>/jsp/query.jsp" target="_blank" rel="noopener noreferrer">
+      <div class="btop">
+        <div class="bico">
+          <svg class="icon-svg" viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+        </div>
+        <button class="fav-btn" data-fav="EIS Query Console" title="Add to favorites" onclick="event.preventDefault(); event.stopPropagation(); toggleFav(this);">
+          <svg class="icon-svg" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </button>
+      </div>
+      <div class="bbody">
+        <div class="btitle">Query Console</div>
+        <div class="bsub">Run queries</div>
       </div>
     </a>
 
   </section>
 
+  <!-- ============ FOOTER ============ -->
   <footer class="foot">
     <div class="brandline"><b>EIS Portal</b> · Internal use only</div>
+    <div id="footTime">Loading...</div>
     <div>Designed &amp; Developed by EIS Automation Team</div>
   </footer>
 
@@ -947,52 +1012,271 @@ html[data-theme="dark"] .btag.gray{
 
 <script>
 /* ============================================================
-   ✅ LOGOUT HANDLER — sabse pehle register karo (capture phase)
+   ✅ LOGOUT HANDLER (capture phase)
    ============================================================ */
 document.addEventListener('click', function(e){
-  // Logout link ya home button dhoondo
   var target = e.target.closest('.sb-logout, a[href*="login.action"], .sb-home-btn, a[href*="userhomescreen.action"]');
-
   if(target){
     e.preventDefault();
     e.stopPropagation();
-
-    // ✅ Logout flag set — back-block disable
     window.__logoutInProgress = true;
-
-    // Storage clear
     try{
       sessionStorage.clear();
       localStorage.removeItem('eis-sidebar-closed');
     }catch(err){}
-
-    // Check karo: logout ya home
     var isLogout = target.classList.contains('sb-logout') 
                 || (target.href && target.href.indexOf('login.action') !== -1);
-
     if(isLogout){
-      // ✅ Logout — session invalidate hoga
       window.location.replace('<%=request.getContextPath()%>/login.action?logout=true');
     } else {
-      // ✅ Home button — same page reload
       window.location.href = '<%=request.getContextPath()%>/userhomescreen.action';
     }
   }
-}, true);  // ← 'true' matlab capture phase — kisi aur script se pehle chalega
+}, true);
 
 /* ============================================================
-   ✅ BACK BUTTON BLOCK — logout exception ke saath
+   ✅ BACK BUTTON BLOCK
    ============================================================ */
 (function(){
   window.history.pushState({ page: 'home' }, '', window.location.href);
-
   window.addEventListener('popstate', function(e){
-    // Agar logout ho raha hai toh block mat karo
     if(window.__logoutInProgress === true) return;
-    // Warna back block karo
     window.history.pushState({ page: 'home' }, '', window.location.href);
   });
 })();
+
+/* ============================================================
+   ✅ LIVE CLOCK
+   ============================================================ */
+function updateClock(){
+  var now = new Date();
+  var hh = String(now.getHours()).padStart(2,'0');
+  var mm = String(now.getMinutes()).padStart(2,'0');
+  var ss = String(now.getSeconds()).padStart(2,'0');
+  var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var clockEl = document.getElementById('liveClock');
+  var dateEl = document.getElementById('liveDate');
+  if(clockEl) clockEl.textContent = hh + ':' + mm + ':' + ss;
+  if(dateEl) dateEl.textContent = days[now.getDay()] + ', ' + now.getDate() + ' ' + months[now.getMonth()] + ' ' + now.getFullYear();
+  var footEl = document.getElementById('footTime');
+  if(footEl) footEl.textContent = 'Session active · ' + hh + ':' + mm;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+/* ============================================================
+   ✅ TIME-BASED GREETING
+   ============================================================ */
+(function(){
+  var h = new Date().getHours();
+  var greet = 'Welcome back';
+  if(h < 12) greet = 'Good morning';
+  else if(h < 17) greet = 'Good afternoon';
+  else if(h < 21) greet = 'Good evening';
+  else greet = 'Good night';
+  var el = document.getElementById('greeting');
+  if(el) el.textContent = greet;
+})();
+
+/* ============================================================
+   ✅ ANIMATED COUNTERS
+   ============================================================ */
+(function(){
+  document.querySelectorAll('[data-count]').forEach(function(el){
+    var target = parseInt(el.getAttribute('data-count'));
+    var current = 0;
+    var step = Math.max(1, Math.floor(target / 40));
+    var interval = setInterval(function(){
+      current += step;
+      if(current >= target){
+        current = target;
+        clearInterval(interval);
+      }
+      el.textContent = current;
+    }, 25);
+  });
+})();
+
+/* ============================================================
+   ✅ FAVORITES (localStorage)
+   ============================================================ */
+function getFavs(){
+  try{
+    var f = JSON.parse(localStorage.getItem('eis-favs') || '[]');
+    return Array.isArray(f) ? f : [];
+  }catch(e){ return []; }
+}
+function setFavs(arr){
+  try{ localStorage.setItem('eis-favs', JSON.stringify(arr)); }catch(e){}
+}
+function toggleFav(btn){
+  var name = btn.getAttribute('data-fav');
+  var favs = getFavs();
+  var idx = favs.indexOf(name);
+  if(idx === -1){
+    favs.push(name);
+    btn.classList.add('active');
+  } else {
+    favs.splice(idx, 1);
+    btn.classList.remove('active');
+  }
+  setFavs(favs);
+  applyFilters();
+}
+function markFavs(){
+  var favs = getFavs();
+  document.querySelectorAll('.fav-btn').forEach(function(btn){
+    var n = btn.getAttribute('data-fav');
+    if(favs.indexOf(n) !== -1) btn.classList.add('active');
+    else btn.classList.remove('active');
+  });
+}
+markFavs();
+
+/* ============================================================
+   ✅ FILTER + SEARCH
+   ============================================================ */
+var currentCat = 'all';
+var currentSearch = '';
+
+function applyFilters(){
+  var favs = getFavs();
+  document.querySelectorAll('#bentoGrid .bcard').forEach(function(card){
+    var cat = card.getAttribute('data-cat') || '';
+    var name = (card.getAttribute('data-name') || '').toLowerCase();
+    var cardText = card.innerText.toLowerCase();
+
+    var catMatch = (currentCat === 'all') 
+                || (currentCat === 'fav' && favs.indexOf(card.getAttribute('data-name')) !== -1)
+                || (currentCat === cat);
+    var searchMatch = !currentSearch || cardText.indexOf(currentSearch) !== -1;
+
+    if(catMatch && searchMatch){
+      card.classList.remove('hidden');
+    } else {
+      card.classList.add('hidden');
+    }
+  });
+}
+
+document.querySelectorAll('.filter-tab').forEach(function(tab){
+  tab.addEventListener('click', function(){
+    document.querySelectorAll('.filter-tab').forEach(function(t){ t.classList.remove('active'); });
+    tab.classList.add('active');
+    currentCat = tab.getAttribute('data-cat');
+    applyFilters();
+  });
+});
+
+var searchInput = document.getElementById('dashSearch');
+if(searchInput){
+  searchInput.addEventListener('input', function(){
+    currentSearch = this.value.toLowerCase().trim();
+    applyFilters();
+  });
+}
+
+/* Ctrl+K */
+document.addEventListener('keydown', function(e){
+  if((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k'){
+    e.preventDefault();
+    if(searchInput){ searchInput.focus(); }
+  }
+});
+
+/* ============================================================
+   ✅ RECENT VISITS (localStorage)
+   ============================================================ */
+function recordVisit(name, url){
+  try{
+    var recents = JSON.parse(localStorage.getItem('eis-recents') || '[]');
+    recents = recents.filter(function(r){ return r.name !== name; });
+    recents.unshift({ name: name, url: url, time: Date.now() });
+    recents = recents.slice(0, 4);
+    localStorage.setItem('eis-recents', JSON.stringify(recents));
+  }catch(e){}
+}
+
+function renderRecents(){
+  var recents = [];
+  try{ recents = JSON.parse(localStorage.getItem('eis-recents') || '[]'); }catch(e){}
+  var section = document.getElementById('recentSection');
+  var grid = document.getElementById('recentGrid');
+  var count = document.getElementById('recentCount');
+  if(!section || !grid) return;
+
+  if(recents.length === 0){
+    section.style.display = 'none';
+    return;
+  }
+  section.style.display = 'block';
+  if(count) count.textContent = recents.length;
+
+  grid.innerHTML = '';
+  var icons = {
+    'EIS Command Center': 'M4.93 4.93a10 10 0 0 0 0 14.14M19.07 4.93a10 10 0 0 1 0 14.14',
+    'Error Dashboard': 'M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z',
+    'ATM IP Port Portal': 'M2 5h20v14H2z M2 10h20',
+    'Transaction End Point': 'M12 1v22 M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6',
+    'Service Status': 'M18 20V10M12 20V4M6 20v-6',
+    'DR Checklist': 'M9 11l3 3L22 4 M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11',
+    'Ticketing Portal': 'M2 9a3 3 0 0 1 3-3h14a3 3 0 0 1 3 3v.5a2.5 2.5 0 0 0 0 5V15a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3v-.5a2.5 2.5 0 0 0 0-5z',
+    'Add Deployment': 'M12 5v14M5 12h14',
+    'Daily Statistics': 'M21.21 15.89A10 10 0 1 1 8 2.83',
+    'Flash Report': 'M13 2L3 14h9l-1 8 10-12h-9l1-8z',
+    'EIS Query Console': 'M4 17l6-6-6-6 M12 19h8'
+  };
+
+  recents.forEach(function(r){
+    var timeAgo = '';
+    var diff = Date.now() - r.time;
+    if(diff < 60000) timeAgo = 'just now';
+    else if(diff < 3600000) timeAgo = Math.floor(diff/60000) + 'm ago';
+    else if(diff < 86400000) timeAgo = Math.floor(diff/3600000) + 'h ago';
+    else timeAgo = Math.floor(diff/86400000) + 'd ago';
+
+    var iconPath = icons[r.name] || 'M13 2L3 14h9l-1 8 10-12h-9l1-8z';
+    var card = document.createElement('a');
+    card.className = 'recent-card';
+    card.href = r.url;
+    card.target = '_blank';
+    card.rel = 'noopener noreferrer';
+    card.innerHTML = 
+      '<span class="rc-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="' + iconPath + '"/></svg></span>' +
+      '<span class="rc-text">' +
+        '<span class="rc-name">' + r.name + '</span>' +
+        '<span class="rc-time">' + timeAgo + '</span>' +
+      '</span>';
+    grid.appendChild(card);
+  });
+}
+renderRecents();
+
+/* Click pe recent record karo */
+document.querySelectorAll('#bentoGrid .bcard').forEach(function(card){
+  card.addEventListener('click', function(){
+    var name = card.getAttribute('data-name') || '';
+    var url = card.href || '';
+    if(name && url){
+      recordVisit(name, url);
+    }
+  });
+});
+
+/* ============================================================
+   ✅ ENTER key search
+   ============================================================ */
+if(searchInput){
+  searchInput.addEventListener('keydown', function(e){
+    if(e.key === 'Escape'){
+      this.value = '';
+      currentSearch = '';
+      applyFilters();
+      this.blur();
+    }
+  });
+}
 </script>
 
 </body>
