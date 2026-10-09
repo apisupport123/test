@@ -1,10 +1,12 @@
 <%@page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%
+ // ✅ Session check
  if(session == null || session.getAttribute("role") == null) {
      response.sendRedirect(request.getContextPath() + "/login.action");
      return;
  }
+ // ✅ Cache headers
  response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0, private");
  response.setHeader("Pragma", "no-cache");
  response.setDateHeader("Expires", 0);
@@ -16,9 +18,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Deployment Sheet Master</title>
 
+<!-- DataTables CSS (original — as-is) -->
 <link rel="stylesheet" href="<%=request.getContextPath()%>/css/Deployment.jquery.dataTables.min.css" />
 <link rel="stylesheet" href="<%=request.getContextPath()%>/css/Deployment.buttons.dataTables.min.css" />
 
+<!-- Scripts -->
 <script src="<%=request.getContextPath()%>/js/Deployment.jquery-3.7.0.min.js"></script>
 <script src="<%=request.getContextPath()%>/js/Deployment.1.13.6.jquery.dataTables.min.js"></script>
 <script src="<%=request.getContextPath()%>/js/Deployment.2.4.1.dataTables.buttons.min.js"></script>
@@ -30,232 +34,177 @@
 
 <style>
 /* ============================================================
-   RESET & BASE
+   BASE
    ============================================================ */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: var(--bg);
-    color: var(--ink);
+    font-family: var(--font-stack, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif);
+    background: var(--bg) !important;
+    color: var(--ink) !important;
+    margin: 0 !important;
+    padding: 0 !important;
     font-weight: 700;
-    font-size: 14px;
-    line-height: 1.5;
+    font-size: 15px;
 }
 
-/* ============================================================
-   PAGE WRAPPER
-   ============================================================ */
-.page-wrap {
-    padding: 24px 32px 48px 32px;
-    max-width: 1600px;
-    margin: 0 auto;
+.page-container {
+    padding: 24px 28px 60px;
+    max-width: 100%;
     width: 100%;
 }
 
 /* ============================================================
    PAGE HEADER
    ============================================================ */
-.page-header {
+.page-head {
+    margin-bottom: 22px;
+}
+.page-head .ttl {
     display: flex;
     align-items: center;
-    gap: 14px;
-    margin-bottom: 24px;
-    padding-bottom: 18px;
-    border-bottom: 2px solid var(--line);
+    gap: 12px;
+    font-weight: 800;
+    font-size: 1.5rem;
+    letter-spacing: -0.5px;
+    color: var(--ink);
+    line-height: 1.2;
+    margin: 0;
 }
-
-.page-header .header-icon {
-    width: 48px;
-    height: 48px;
+.page-head .ttl .ttl-icon {
+    width: 42px;
+    height: 42px;
     display: grid;
     place-items: center;
-    background: linear-gradient(135deg, var(--brand), var(--brand-2, #FF9A3D));
-    color: #fff;
-    border-radius: 14px;
-    font-size: 20px;
+    background: var(--brand-light);
+    color: var(--brand);
+    border-radius: 12px;
+    font-size: 1.05rem;
     flex-shrink: 0;
-    box-shadow: 0 8px 20px -6px var(--brand);
 }
-
-.page-header .header-text {
-    flex: 1;
-    min-width: 0;
+html[data-theme="dark"] .page-head .ttl .ttl-icon {
+    background: rgba(248,111,3,.15);
 }
-
-.page-header h1 {
-    font-size: 22px;
-    font-weight: 800;
-    color: var(--ink);
-    letter-spacing: -0.4px;
-    line-height: 1.2;
-    margin-bottom: 4px;
-}
-
-.page-header p {
-    font-size: 13px;
+.page-head .sub {
     color: var(--muted);
+    font-size: 0.88rem;
+    margin: 6px 0 0 54px;
     font-weight: 600;
-    margin: 0;
 }
 
 /* ============================================================
    ACTION BAR
    ============================================================ */
 .action-bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    padding: 18px 22px;
     background: var(--card);
     border: 1.5px solid var(--line);
-    border-radius: 16px;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03);
-}
-
-html[data-theme="dark"] .action-bar {
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
-}
-
-.action-bar .upload-section {
+    border-radius: 14px;
+    padding: 18px 22px;
+    margin-bottom: 22px;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 14px;
     flex-wrap: wrap;
 }
 
-/* File input */
-.file-input-wrapper {
-    position: relative;
-    display: inline-block;
-}
-
-.file-input-wrapper input[type="file"] {
-    position: absolute;
-    left: -9999px;
-    opacity: 0;
-}
-
-.file-input-label {
-    display: inline-flex;
+.action-bar form {
+    display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 11px 18px;
+    gap: 14px;
+    flex-wrap: wrap;
+    width: 100%;
+}
+
+.file-input-wrap {
+    position: relative;
+    flex: 1;
+    min-width: 260px;
+    max-width: 420px;
+}
+.file-input-wrap input[type="file"] {
+    width: 100%;
+    padding: 10px 14px;
     background: var(--bg);
-    border: 1.5px dashed var(--line);
-    border-radius: 12px;
-    color: var(--muted);
-    font-size: 13px;
+    border: 1.5px solid var(--line);
+    border-radius: 10px;
+    color: var(--ink);
+    font-family: inherit;
+    font-size: 0.85rem;
     font-weight: 700;
     cursor: pointer;
-    transition: all 0.2s ease;
-    min-width: 260px;
-    max-width: 340px;
+    transition: all .2s ease;
 }
-
-.file-input-label:hover {
-    border-color: var(--brand);
-    color: var(--brand);
+.file-input-wrap input[type="file"]:hover { border-color: var(--brand); }
+.file-input-wrap input[type="file"]::file-selector-button {
+    padding: 7px 14px;
+    border-radius: 8px;
     background: var(--brand-light);
-}
-
-html[data-theme="dark"] .file-input-label:hover {
-    background: rgba(248, 111, 3, 0.1);
-}
-
-.file-input-label.has-file {
-    border-color: var(--brand);
-    border-style: solid;
     color: var(--brand);
-    background: var(--brand-light);
-}
-
-html[data-theme="dark"] .file-input-label.has-file {
-    background: rgba(248, 111, 3, 0.15);
-}
-
-.file-input-label i {
-    font-size: 14px;
-    flex-shrink: 0;
-}
-
-.file-input-label .file-name {
-    flex: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    text-align: left;
-}
-
-/* Buttons */
-.btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 11px 22px;
-    border-radius: 12px;
     border: none;
     font-family: inherit;
-    font-size: 13px;
     font-weight: 800;
-    letter-spacing: 0.3px;
-    text-transform: uppercase;
+    font-size: 0.75rem;
     cursor: pointer;
-    transition: all 0.2s ease;
-    text-decoration: none;
-    white-space: nowrap;
-    line-height: 1;
-    height: 44px;
+    margin-right: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    transition: all .2s ease;
 }
-
-.btn-primary {
-    background: linear-gradient(135deg, var(--brand), var(--brand-2, #FF9A3D));
+.file-input-wrap input[type="file"]::file-selector-button:hover {
+    background: var(--brand);
     color: #fff;
-    box-shadow: 0 6px 18px -6px var(--brand);
+}
+html[data-theme="dark"] .file-input-wrap input[type="file"]::file-selector-button {
+    background: rgba(248,111,3,.15);
 }
 
-.btn-primary:hover {
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+.btn-action {
+    padding: 11px 20px;
+    border-radius: 10px;
+    border: none;
+    background: linear-gradient(135deg, #F86F03 0%, #FF9A3D 100%);
+    color: #fff;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: 800;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: all .2s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 6px 18px -6px #F86F03;
+    white-space: nowrap;
+}
+.btn-action:hover {
     transform: translateY(-2px);
-    box-shadow: 0 10px 26px -6px var(--brand);
+    box-shadow: 0 10px 24px -6px #F86F03;
 }
-
-.btn-secondary {
+.btn-action.secondary {
     background: var(--card);
     color: var(--ink);
     border: 1.5px solid var(--line);
+    box-shadow: none;
 }
-
-.btn-secondary:hover {
-    border-color: var(--brand);
-    color: var(--brand);
-    background: var(--brand-light);
-}
-
-html[data-theme="dark"] .btn-secondary:hover {
-    background: rgba(248, 111, 3, 0.1);
-}
-
-.btn-success {
-    background: linear-gradient(135deg, #10B981, #059669);
+.btn-action.secondary:hover {
+    background: var(--brand);
     color: #fff;
+    border-color: var(--brand);
+    box-shadow: 0 6px 18px -6px #F86F03;
+}
+.btn-action.push-btn {
+    background: linear-gradient(135deg, #10B981 0%, #059669 100%);
     box-shadow: 0 6px 18px -6px #10B981;
+    padding: 14px 28px;
+    font-size: 0.85rem;
 }
-
-.btn-success:hover {
-    transform: translateY(-2px);
+.btn-action.push-btn:hover {
     box-shadow: 0 10px 26px -6px #10B981;
-}
-
-.btn i {
-    font-size: 14px;
 }
 
 /* ============================================================
@@ -264,48 +213,51 @@ html[data-theme="dark"] .btn-secondary:hover {
 .table-card {
     background: var(--card);
     border: 1.5px solid var(--line);
-    border-radius: 18px;
+    border-radius: 16px;
     padding: 22px;
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
     overflow: hidden;
-    margin-bottom: 24px;
+    box-shadow: 0 4px 20px rgba(0,0,0,.03);
 }
-
 html[data-theme="dark"] .table-card {
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 4px 20px rgba(0,0,0,.3);
 }
 
-/* DataTables Controls */
+/* ============================================================
+   DATATABLES OVERRIDES — THEME-AWARE (working with original CSS)
+   ============================================================ */
+
+/* Wrapper */
 .dataTables_wrapper {
+    width: 100%;
     color: var(--ink);
+    font-size: 0.85rem;
+    font-weight: 700;
 }
-
 .dataTables_wrapper::after {
     content: "";
     display: table;
     clear: both;
 }
 
-/* Top row: length + filter */
+/* Top row — length + filter */
 .dataTables_wrapper .dataTables_length,
 .dataTables_wrapper .dataTables_filter {
     margin-bottom: 16px;
     color: var(--muted);
-    font-size: 13px;
     font-weight: 700;
+    font-size: 0.82rem;
+}
+.dataTables_wrapper .dataTables_filter {
+    text-align: right;
+}
+.dataTables_wrapper .dataTables_length label,
+.dataTables_wrapper .dataTables_filter label {
     display: inline-flex;
     align-items: center;
     gap: 8px;
+    font-weight: 700;
+    color: var(--muted);
 }
-
-.dataTables_wrapper .dataTables_length {
-    float: left;
-}
-
-.dataTables_wrapper .dataTables_filter {
-    float: right;
-}
-
 .dataTables_wrapper .dataTables_filter input {
     padding: 9px 14px;
     background: var(--bg);
@@ -313,174 +265,150 @@ html[data-theme="dark"] .table-card {
     border-radius: 10px;
     color: var(--ink);
     font-family: inherit;
-    font-size: 13px;
+    font-size: 0.85rem;
     font-weight: 700;
     outline: none;
-    transition: all 0.2s ease;
-    margin-left: 4px;
+    transition: all .2s ease;
     min-width: 200px;
 }
-
 .dataTables_wrapper .dataTables_filter input:focus {
     border-color: var(--brand);
     box-shadow: 0 0 0 4px var(--brand-light);
 }
-
 html[data-theme="dark"] .dataTables_wrapper .dataTables_filter input:focus {
-    box-shadow: 0 0 0 4px rgba(248, 111, 3, 0.15);
+    box-shadow: 0 0 0 4px rgba(248,111,3,.15);
 }
-
 .dataTables_wrapper .dataTables_length select {
-    padding: 9px 32px 9px 12px;
+    padding: 8px 12px;
     background: var(--bg);
     border: 1.5px solid var(--line);
-    border-radius: 10px;
+    border-radius: 8px;
     color: var(--ink);
     font-family: inherit;
-    font-size: 13px;
     font-weight: 700;
+    font-size: 0.85rem;
     cursor: pointer;
     outline: none;
-    appearance: none;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
-    background-repeat: no-repeat;
-    background-position: right 12px center;
+    min-width: 70px;
 }
 
-/* Buttons row (Export Excel/PDF/Print) */
-.dataTables_wrapper .dt-buttons {
+/* Buttons row */
+.dt-buttons {
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
     margin-bottom: 16px;
-    clear: both;
 }
-
-.dataTables_wrapper .dt-buttons .dt-button {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 18px;
-    border-radius: 10px;
-    border: 1.5px solid var(--line);
-    background: var(--card);
-    color: var(--ink);
-    font-family: inherit;
-    font-size: 12px;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    text-decoration: none;
-    line-height: 1;
+.dt-buttons .dt-button {
+    padding: 10px 18px !important;
+    border-radius: 10px !important;
+    border: 1.5px solid var(--line) !important;
+    background: var(--card) !important;
+    color: var(--ink) !important;
+    cursor: pointer !important;
+    font-family: inherit !important;
+    font-weight: 800 !important;
+    font-size: 0.78rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.4px !important;
+    transition: all .2s ease !important;
+    box-shadow: none !important;
 }
-
-.dataTables_wrapper .dt-buttons .dt-button:hover {
-    background: var(--brand);
-    border-color: var(--brand);
-    color: #fff;
+.dt-buttons .dt-button:hover {
+    background: var(--brand) !important;
+    border-color: var(--brand) !important;
+    color: #fff !important;
     transform: translateY(-1px);
-    box-shadow: 0 6px 16px -6px var(--brand);
+    box-shadow: 0 6px 18px -6px var(--brand) !important;
 }
-
-.dataTables_wrapper .dt-buttons .dt-button i {
-    font-size: 13px;
+.dt-buttons .dt-button:active {
+    transform: translateY(0);
 }
 
 /* ============================================================
-   DATA TABLE
+   TABLE — PROPER STRUCTURE
    ============================================================ */
 table.dataTable {
     width: 100% !important;
     border-collapse: collapse !important;
-    color: var(--ink) !important;
-    font-size: 13px;
+    border-spacing: 0 !important;
     margin: 0 !important;
+    clear: both;
+    border-bottom: none !important;
 }
 
+/* Header */
 table.dataTable thead {
     background: var(--bg);
 }
-
 table.dataTable thead th {
     background: var(--bg) !important;
     color: var(--muted) !important;
     font-weight: 800 !important;
-    font-size: 11px !important;
+    font-size: 0.72rem !important;
     text-transform: uppercase;
-    letter-spacing: 0.6px;
+    letter-spacing: 0.5px;
+    text-align: left !important;
+    padding: 14px 16px !important;
     border-bottom: 1.5px solid var(--line) !important;
     border-top: none !important;
-    padding: 14px 16px !important;
     white-space: nowrap;
-    text-align: left;
     vertical-align: middle;
+    position: relative;
 }
 
-table.dataTable thead th:first-child {
-    border-top-left-radius: 10px;
-    border-bottom-left-radius: 10px;
-}
-
-table.dataTable thead th:last-child {
-    border-top-right-radius: 10px;
-    border-bottom-right-radius: 10px;
-}
-
+/* Body rows */
 table.dataTable tbody tr {
     background: var(--card) !important;
-    transition: background 0.15s ease;
+    transition: background .15s ease;
 }
-
+table.dataTable tbody tr:nth-child(even) {
+    background: var(--card) !important;
+}
 table.dataTable tbody tr:hover {
     background: var(--bg) !important;
 }
-
 html[data-theme="dark"] table.dataTable tbody tr:hover {
-    background: rgba(255, 255, 255, 0.04) !important;
+    background: rgba(255,255,255,.03) !important;
 }
-
 table.dataTable tbody td {
     padding: 13px 16px !important;
     vertical-align: middle;
     color: var(--ink) !important;
-    border-bottom: 1px solid var(--line);
+    border-bottom: 1px solid var(--line) !important;
     font-weight: 700;
+    font-size: 0.83rem;
     white-space: nowrap;
-    font-size: 13px;
     text-align: left;
 }
-
 table.dataTable tbody tr:last-child td {
-    border-bottom: none;
+    border-bottom: none !important;
 }
 
+/* Remove default DataTables bottom border */
 table.dataTable.no-footer {
     border-bottom: none !important;
 }
 
-/* Sorting icons */
+/* Sorting indicators */
 table.dataTable thead .sorting,
 table.dataTable thead .sorting_asc,
 table.dataTable thead .sorting_desc {
     cursor: pointer;
     position: relative;
 }
-
 table.dataTable thead .sorting:before,
 table.dataTable thead .sorting:after,
 table.dataTable thead .sorting_asc:before,
 table.dataTable thead .sorting_asc:after,
 table.dataTable thead .sorting_desc:before,
 table.dataTable thead .sorting_desc:after {
-    opacity: 0.3;
-    color: var(--muted);
+    opacity: 0.25;
+    font-size: 0.7rem;
 }
-
 table.dataTable thead .sorting_asc:before,
 table.dataTable thead .sorting_desc:after {
-    opacity: 0.9;
+    opacity: 0.85;
     color: var(--brand);
 }
 
@@ -488,147 +416,99 @@ table.dataTable thead .sorting_desc:after {
    PAGINATION
    ============================================================ */
 .dataTables_wrapper .dataTables_paginate {
-    margin-top: 20px;
-    padding: 4px 0;
-    float: right;
-    clear: both;
+    margin-top: 18px;
+    padding: 6px 0;
+    text-align: right;
 }
-
 .dataTables_wrapper .dataTables_paginate .paginate_button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 38px;
-    height: 38px;
-    padding: 0 12px !important;
-    margin: 0 3px !important;
-    border-radius: 10px !important;
+    display: inline-block;
+    padding: 8px 14px !important;
+    margin: 0 2px !important;
+    border-radius: 8px !important;
     background: var(--card) !important;
     border: 1.5px solid var(--line) !important;
     color: var(--ink) !important;
     font-weight: 800 !important;
-    font-size: 13px !important;
+    font-size: 0.78rem !important;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: all .15s ease;
     text-decoration: none !important;
-    line-height: 1;
+    min-width: 36px;
+    text-align: center;
 }
-
 .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
     background: var(--brand) !important;
     border-color: var(--brand) !important;
     color: #fff !important;
 }
-
 .dataTables_wrapper .dataTables_paginate .paginate_button.current,
 .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
-    background: linear-gradient(135deg, var(--brand), var(--brand-2, #FF9A3D)) !important;
-    border-color: var(--brand) !important;
+    background: linear-gradient(135deg, #F86F03, #FF9A3D) !important;
+    border-color: #F86F03 !important;
     color: #fff !important;
-    box-shadow: 0 4px 12px -3px var(--brand);
+    box-shadow: 0 4px 12px -3px #F86F03;
 }
-
 .dataTables_wrapper .dataTables_paginate .paginate_button.disabled,
 .dataTables_wrapper .dataTables_paginate .paginate_button.disabled:hover {
     opacity: 0.35 !important;
     cursor: not-allowed !important;
     background: var(--card) !important;
     color: var(--muted) !important;
-    border-color: var(--line) !important;
 }
 
 /* Info text */
 .dataTables_wrapper .dataTables_info {
-    margin-top: 20px;
-    padding-top: 4px;
+    margin-top: 16px;
+    padding: 6px 0;
     color: var(--muted);
-    font-size: 13px;
+    font-size: 0.8rem;
     font-weight: 700;
     float: left;
-    clear: both;
 }
 
 /* ============================================================
    PUSH BUTTON ROW
    ============================================================ */
-.push-section {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 8px 0;
-}
-
-.push-section .btn {
-    padding: 14px 32px;
-    font-size: 14px;
-    height: 50px;
+.push-row {
+    margin-top: 28px;
+    text-align: center;
 }
 
 /* ============================================================
    RESPONSIVE
    ============================================================ */
 @media (max-width: 900px) {
-    .page-wrap {
-        padding: 16px 16px 32px 16px;
-    }
+    .page-container { padding: 16px 14px 40px; }
+    .page-head .ttl { font-size: 1.2rem; }
+    .page-head .ttl .ttl-icon { width: 36px; height: 36px; font-size: 0.9rem; }
+    .page-head .sub { margin-left: 48px; font-size: 0.8rem; }
 
-    .page-header h1 {
-        font-size: 18px;
-    }
+    .action-bar { flex-direction: column; align-items: stretch; }
+    .action-bar form { flex-direction: column; align-items: stretch; }
+    .file-input-wrap { max-width: 100%; }
+    .btn-action { width: 100%; justify-content: center; }
 
-    .page-header .header-icon {
-        width: 42px;
-        height: 42px;
-        font-size: 18px;
-    }
+    .dataTables_wrapper .dataTables_filter { text-align: left; margin-top: 10px; }
+    .dataTables_wrapper .dataTables_filter input { min-width: 100%; width: 100%; }
+    .dataTables_wrapper .dataTables_length { float: none; }
+    .dataTables_wrapper .dataTables_info { float: none; text-align: center; }
+    .dataTables_wrapper .dataTables_paginate { text-align: center; }
+    .dt-buttons { flex-direction: column; }
+    .dt-buttons .dt-button { width: 100%; }
+}
 
-    .action-bar {
-        flex-direction: column;
-        align-items: stretch;
-        padding: 16px;
-    }
+/* ============================================================
+   FIX: DataTables default float issues
+   ============================================================ */
+.dataTables_wrapper .dataTables_length { float: left; }
+.dataTables_wrapper .dataTables_filter { float: right; }
+.dataTables_wrapper .dataTables_info { clear: both; }
+.dataTables_wrapper .dataTables_paginate { float: right; }
 
-    .action-bar .upload-section {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .file-input-label {
-        max-width: 100%;
-        width: 100%;
-    }
-
-    .btn {
-        width: 100%;
-    }
-
-    .dataTables_wrapper .dataTables_length,
-    .dataTables_wrapper .dataTables_filter {
-        float: none;
-        display: flex;
-        width: 100%;
-        margin-bottom: 12px;
-    }
-
-    .dataTables_wrapper .dataTables_filter input {
-        flex: 1;
-        min-width: 0;
-    }
-
-    .dataTables_wrapper .dt-buttons {
-        flex-direction: column;
-    }
-
-    .dataTables_wrapper .dt-buttons .dt-button {
-        width: 100%;
-        justify-content: center;
-    }
-
-    .dataTables_wrapper .dataTables_info,
-    .dataTables_wrapper .dataTables_paginate {
-        float: none;
-        text-align: center;
-    }
+/* Prevent Bootstrap-style conflicts */
+table.dataTable > tbody > tr > td,
+table.dataTable > thead > tr > th {
+    box-sizing: border-box;
 }
 </style>
 </head>
@@ -637,39 +517,34 @@ table.dataTable thead .sorting_desc:after {
 <%@include file="../userheader.jsp"%>
 
 <div class="new-wrapper">
-<div class="page-wrap">
+<div class="page-container">
 
     <!-- ============ PAGE HEADER ============ -->
-    <div class="page-header">
-        <div class="header-icon">
-            <i class="fas fa-rocket"></i>
-        </div>
-        <div class="header-text">
-            <h1>Deployment Sheet Master</h1>
-            <p>Upload, review, and push deployment records to the main table</p>
-        </div>
+    <div class="page-head">
+        <h1 class="ttl">
+            <span class="ttl-icon"><i class="fas fa-rocket"></i></span>
+            Deployment Sheet Master
+        </h1>
+        <p class="sub">Upload, review, and push deployment records to the main table</p>
     </div>
 
     <!-- ============ ACTION BAR ============ -->
     <div class="action-bar">
-        <form id="uploadForm" enctype="multipart/form-data" method="post" class="upload-section">
-            <div class="file-input-wrapper">
+        <form id="uploadForm" enctype="multipart/form-data" method="post">
+            <div class="file-input-wrap">
                 <input type="file" id="fileInput" name="file" accept=".xlsx,.xls,.csv" />
-                <label for="fileInput" class="file-input-label" id="fileLabel">
-                    <i class="fas fa-paperclip"></i>
-                    <span class="file-name" id="fileNameText">Choose Excel file...</span>
-                </label>
             </div>
-            <button type="button" class="btn btn-primary" id="submitFileBtn">
+            <button type="button" class="btn-action" id="submitFileBtn">
                 <i class="fas fa-upload"></i> Submit
             </button>
-            <a href="<%=request.getContextPath()%>/XMLFile/Deployment_Sample_Format.xlsx" class="btn btn-secondary" download>
-                <i class="fas fa-download"></i> Sample
+            <a href="<%=request.getContextPath()%>/XMLFile/Deployment_Sample_Format.xlsx"
+               class="btn-action secondary" download>
+                <i class="fas fa-download"></i> Sample Format
             </a>
         </form>
     </div>
 
-    <!-- ============ TABLE CARD ============ -->
+    <!-- ============ TABLE ============ -->
     <div class="table-card">
         <table id="deploymentTable" class="display nowrap" style="width:100%">
             <thead>
@@ -712,8 +587,8 @@ table.dataTable thead .sorting_desc:after {
     </div>
 
     <!-- ============ PUSH BUTTON ============ -->
-    <div class="push-section">
-        <button type="button" class="btn btn-success" id="pushDataBtn">
+    <div class="push-row">
+        <button type="button" class="btn-action push-btn" id="pushDataBtn">
             <i class="fas fa-cloud-upload-alt"></i> Push Data to Main Table
         </button>
     </div>
@@ -724,11 +599,9 @@ table.dataTable thead .sorting_desc:after {
 <script>
 $(document).ready(function () {
 
-    /* ============================================================
-       DATATABLES INIT
-       ============================================================ */
-    var table = $('#deploymentTable').DataTable({
-        dom: '<"dt-top"lfB>rt<"dt-bottom"ip>',
+    // ✅ DataTables init
+    const table = $('#deploymentTable').DataTable({
+        dom: 'Bfrtip',
         paging: true,
         scrollX: true,
         responsive: false,
@@ -736,38 +609,34 @@ $(document).ready(function () {
         searching: true,
         ordering: true,
         order: [],
-        lengthMenu: [[10, 15, 25, 50, 100, -1], [10, 15, 25, 50, 100, "All"]],
+        lengthChange: true,
+        autoWidth: false,
         buttons: [
             {
                 extend: 'excelHtml5',
                 text: '<i class="fas fa-file-excel"></i> Export Excel',
-                exportOptions: { columns: ':visible' },
-                className: 'dt-button'
+                exportOptions: { columns: ':visible' }
             },
             {
                 extend: 'pdfHtml5',
                 text: '<i class="fas fa-file-pdf"></i> Export PDF',
                 exportOptions: { columns: ':visible' },
                 orientation: 'landscape',
-                pageSize: 'A4',
-                className: 'dt-button'
+                pageSize: 'A4'
             },
             {
                 extend: 'print',
                 text: '<i class="fas fa-print"></i> Print',
-                exportOptions: { columns: ':visible' },
-                className: 'dt-button'
+                exportOptions: { columns: ':visible' }
             }
         ],
         language: {
             search: "",
-            searchPlaceholder: "Search...",
+            searchPlaceholder: "Search records...",
             lengthMenu: "Show _MENU_ entries",
             info: "Showing _START_ to _END_ of _TOTAL_ entries",
             infoEmpty: "No entries",
             infoFiltered: "(filtered from _MAX_ total)",
-            zeroRecords: "No matching records found",
-            emptyTable: "No data available",
             paginate: {
                 first: "First",
                 last: "Last",
@@ -777,40 +646,20 @@ $(document).ready(function () {
         }
     });
 
-    /* ============================================================
-       FILE INPUT LABEL UPDATE
-       ============================================================ */
-    $('#fileInput').on('change', function () {
-        var fileName = this.files[0] ? this.files[0].name : 'Choose Excel file...';
-        $('#fileNameText').text(fileName);
-        if (this.files[0]) {
-            $('#fileLabel').addClass('has-file');
-        } else {
-            $('#fileLabel').removeClass('has-file');
-        }
-    });
-
-    /* ============================================================
-       UPLOAD FILE
-       ============================================================ */
+    // ✅ Submit file (upload)
     $('#submitFileBtn').on('click', function () {
-        var file = $('#fileInput')[0].files[0];
+        const file = $('#fileInput')[0].files[0];
         if (!file) {
-            alert('Please choose a file first!');
+            alert("Please choose a file first!");
             return;
         }
-
-        var formData = new FormData();
-        formData.append('file', file);
-        formData.append('action', 'upload');
-
-        var $btn = $(this);
-        var origHtml = $btn.html();
-        $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Uploading...');
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("action", "upload");
 
         $.ajax({
             url: '<%=request.getContextPath()%>/DeploymentSheetServlet',
-            type: 'POST',
+            type: "POST",
             data: formData,
             processData: false,
             contentType: false,
@@ -819,39 +668,29 @@ $(document).ready(function () {
                 window.location.href = '<%=request.getContextPath()%>/DeploymentSheetServlet';
             },
             error: function () {
-                alert('Error occurred while uploading file!');
-                $btn.prop('disabled', false).html(origHtml);
+                alert("Error occurred while uploading file!");
             }
         });
     });
 
-    /* ============================================================
-       PUSH DATA
-       ============================================================ */
+    // ✅ Push data
     $('#pushDataBtn').on('click', function () {
-        if (!confirm('Are you sure you want to push data to main table?')) {
+        if (!confirm("Are you sure you want to push data to main table?")) {
             return;
         }
-
-        var $btn = $(this);
-        var origHtml = $btn.html();
-        $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Pushing...');
-
         $.ajax({
             url: '<%=request.getContextPath()%>/DeploymentSheetServlet',
-            type: 'POST',
-            data: { action: 'push' },
+            type: "POST",
+            data: { action: "push" },
             success: function (res) {
                 alert(res);
                 window.location.href = '<%=request.getContextPath()%>/DeploymentSheetServlet';
             },
             error: function () {
-                alert('Error occurred while pushing data!');
-                $btn.prop('disabled', false).html(origHtml);
+                alert("Error occurred while pushing data!");
             }
         });
     });
-
 });
 </script>
 
