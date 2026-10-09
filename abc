@@ -56,9 +56,11 @@
     --elevated: #f8fafc;
     --hover: #f1f5f9;
 
-    --success: #10b981;
-    --warning: #f59e0b;
-    --danger: #ef4444;
+    /* ✅ Dropdown specific */
+    --dropdown-bg: #ffffff;
+    --dropdown-text: #0f172a;
+    --dropdown-border: #e2e8f0;
+    --dropdown-hover: #FFF4EC;
 }
 [data-theme="dark"] {
     --brand: #FF9A3D;
@@ -74,9 +76,11 @@
     --elevated: #293548;
     --hover: #334155;
 
-    --success: #34d399;
-    --warning: #fbbf24;
-    --danger: #f87171;
+    /* ✅ Dropdown specific — dark */
+    --dropdown-bg: #1e293b;
+    --dropdown-text: #f1f5f9;
+    --dropdown-border: #475569;
+    --dropdown-hover: rgba(248, 111, 3, 0.2);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -224,10 +228,9 @@ html, body {
 }
 
 /* ============================================================
-   INPUT / TEXTAREA / SELECT — BASE
+   ✅ INPUT / TEXTAREA — BASE
    ============================================================ */
 .form-grid .form-control,
-.form-grid select,
 .form-grid input[type="text"],
 .form-grid input[type="date"],
 .form-grid input[type="time"],
@@ -243,13 +246,9 @@ html, body {
     font-weight: 600;
     outline: none;
     transition: all .2s ease;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    appearance: none;
 }
 
 .form-grid .form-control:focus,
-.form-grid select:focus,
 .form-grid input:focus,
 .form-grid textarea:focus {
     border-color: var(--brand);
@@ -264,38 +263,70 @@ html, body {
 }
 
 /* ============================================================
-   ✅ SELECT (DROPDOWN) — FULLY FIXED
+   ✅ SELECT DROPDOWN — FULLY FIXED (visible data + no halfcut)
    ============================================================ */
 .form-grid select {
+    width: 100%;
+    padding: 12px 38px 12px 14px;
+    background-color: var(--dropdown-bg);
+    border: 1.5px solid var(--line);
+    border-radius: 10px;
+    color: var(--dropdown-text);
+    font-family: inherit;
+    font-size: .9rem;
+    font-weight: 600;
+    outline: none;
+    transition: all .2s ease;
     cursor: pointer;
-    padding-right: 40px;
-    background-color: var(--elevated);
+
+    /* ✅ Native dropdown restore — appearance none hata diya */
+    -webkit-appearance: menulist;
+    -moz-appearance: menulist;
+    appearance: menulist;
+
+    /* ✅ Custom arrow — background-image */
     background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23F86F03' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
     background-repeat: no-repeat;
     background-position: right 14px center;
     background-size: 14px 14px;
-    color: var(--ink);
-    font-weight: 700;
-    line-height: 1.4;
+
+    /* ✅ Text visibility */
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
 }
 
-/* ✅ Dropdown options — LIGHT theme */
+.form-grid select:focus {
+    border-color: var(--brand);
+    background-color: var(--card);
+    box-shadow: 0 0 0 4px var(--brand-light);
+}
+
+/* ✅ Dropdown OPTIONS — LIGHT theme */
 .form-grid select option {
     background-color: #ffffff;
     color: #0f172a;
     padding: 12px 14px;
     font-weight: 600;
     font-size: .9rem;
-    line-height: 1.5;
+    line-height: 2;
+    min-height: 36px;
 }
 
-/* ✅ Dropdown options — DARK theme */
-html[data-theme="dark"] .form-grid select option {
+/* ✅ Dropdown OPTIONS — DARK theme (browser on Android/Chrome/Firefox) */
+html[data-theme="dark"] .form-grid select,
+[data-theme="dark"] .form-grid select {
+    color-scheme: dark;
+}
+html[data-theme="dark"] .form-grid select option,
+[data-theme="dark"] .form-grid select option {
     background-color: #1e293b;
     color: #f1f5f9;
+    padding: 12px 14px;
+    font-weight: 600;
 }
 
-/* ✅ Selected option highlight */
+/* ✅ Selected option — highlight */
 .form-grid select option:checked {
     background: linear-gradient(135deg, #F86F03, #FFA41B) !important;
     color: #ffffff !important;
@@ -308,22 +339,26 @@ html[data-theme="dark"] .form-grid select option {
     font-style: italic;
 }
 
-/* ✅ Firefox specific fix */
+/* ✅ Firefox specific */
 @-moz-document url-prefix() {
     .form-grid select {
-        color: var(--ink);
-        background-color: var(--elevated);
+        background-color: var(--dropdown-bg);
+        color: var(--dropdown-text);
+        padding: 12px 38px 12px 14px;
+        line-height: 1.4;
     }
     .form-grid select option {
-        background-color: var(--card);
-        color: var(--ink);
+        background-color: var(--dropdown-bg);
+        color: var(--dropdown-text);
+        padding: 10px;
     }
 }
 
-/* ✅ Safari / Chrome option hover (best-effort) */
-.form-grid select option:hover {
-    background-color: #F86F03 !important;
-    color: #ffffff !important;
+/* ✅ Webkit — force color-scheme dark on dark theme */
+@media (prefers-color-scheme: dark) {
+    html[data-theme="dark"] .form-grid select {
+        color-scheme: dark;
+    }
 }
 
 /* ============================================================
@@ -339,8 +374,6 @@ html[data-theme="dark"] .form-grid select option {
     width: 18px; height: 18px;
     accent-color: var(--brand);
     cursor: pointer;
-    -webkit-appearance: checkbox;
-    appearance: checkbox;
 }
 .form-grid .checkbox-field label {
     text-transform: none;
@@ -437,9 +470,6 @@ html[data-theme="dark"] .form-grid select option {
 .table-wrapper table.table tbody tr:hover {
     background: var(--hover);
 }
-.table-wrapper table.table tbody tr:nth-child(even) {
-    background: transparent;
-}
 .table-wrapper table.table tbody td.pre-cell {
     font-family: 'Courier New', monospace;
     font-size: .8rem;
@@ -473,7 +503,6 @@ html[data-theme="dark"] .form-grid select option {
     height: 16px;
 }
 
-/* Action button in table */
 .table-wrapper table.table tbody .action-btn {
     padding: 7px 16px;
     background: var(--brand);
@@ -495,7 +524,6 @@ html[data-theme="dark"] .form-grid select option {
     box-shadow: 0 4px 12px -4px var(--brand);
 }
 
-/* Checkbox row (hidden by default) */
 .table-wrapper table.table tbody tr.checkbox-row {
     display: none;
     background: var(--brand-light);
@@ -583,7 +611,7 @@ html[data-theme="dark"] .form-grid select option {
 .error-message {
     padding: 12px 16px;
     background: rgba(239, 68, 68, 0.1);
-    color: var(--danger);
+    color: #ef4444;
     border-radius: 10px;
     font-size: .88rem;
     font-weight: 700;
