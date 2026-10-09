@@ -1,7 +1,515 @@
-DeploymentSheetServlet:1537 Uncaught TypeError: $(...).DataTable is not a function
-    at HTMLDocument.<anonymous> (DeploymentSheetServlet:1537:41)
-    at j (jquery.min.js:2:26911)
-    at Object.fireWith [as resolveWith] (jquery.min.js:2:27724)
-    at n.ready (jquery.min.js:2:29518)
-    at HTMLDocument.I (jquery.min.js:2:29709)
-:8085/favicon.ico:1  Failed to load resource: the server responded with a status of 404 ()
+<%@ page import="java.util.List" %>
+<%@ page import="com.beans.DeploymentSheetBean" %>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Deployment Sheet Master</title>
+
+  <!-- DataTables CSS -->
+  <!-- <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" /> -->
+  <link rel="stylesheet" href="./css/Deployment.jquery.dataTables.min.css" />
+  <!-- DataTables Buttons CSS -->
+  <link rel="stylesheet" href="./css/Deployment.buttons.dataTables.min.css" />
+
+   <!-- Scripts -->
+  <script src="./js/Deployment.jquery-3.7.0.min.js"></script>
+  <script src="./js/Deployment.1.13.6.jquery.dataTables.min.js"></script>
+  <script src="./js/Deployment.2.4.1.dataTables.buttons.min.js"></script>
+  <script src="./js/Deployment.2.4.1.buttons.html5.min.js"></script>
+  <script src="./js/Deployment.2.4.1.buttons.print.min.js"></script>
+  <script src="./js/Deployment.3.10.1.jszip.min.js"></script>
+  <script src="./js/Deployment.0.2.7.pdfmake.min.js"></script>
+  <script src="./js/Deployment.0.2.7.vfs_fonts.js"></script>
+  <style>
+    body {
+      background-color: #121212;
+      color: #eee;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 20px;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+      font-weight: 700;
+      color: #f0f0f0;
+    }
+
+    .table-actions {
+      margin-bottom: 15px;
+    }
+
+    table.dataTable {
+      width: 100% !important;
+      color: #eee;
+    }
+    table.dataTable thead th {
+      background-color: #1f1f1f;
+      color: #eee;
+      font-weight: 600;
+      border-bottom: 2px solid #444;
+    }
+    table.dataTable tbody tr {
+      background-color: #222;
+      border-bottom: 1px solid #333;
+    }
+    table.dataTable tbody tr:hover {
+      background-color: #333;
+    }
+    td, th {
+      padding: 8px 10px;
+      text-align: center;
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+
+    /* Buttons styling */
+    .dt-buttons button, #deleteSelected {
+      background-color: #333;
+      color: #eee;
+      border: none;
+      padding: 6px 12px;
+      margin-right: 5px;
+      cursor: pointer;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+    .dt-buttons button:hover, #deleteSelected:hover {
+      background-color: #555;
+    }
+    #deleteSelected {
+      background-color: #dc3545;
+    }
+    #deleteSelected:hover {
+      background-color: #b52d3a;
+    }
+
+    /* Checkbox styling */
+    input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+
+    /* Update button */
+    .update-btn {
+      background-color: #0d6efd;
+      border: none;
+      color: white;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .update-btn:hover {
+      background-color: #0056b3;
+    }
+
+    /* Popup Modal */
+    #updateModal {
+      display: none;
+      position: fixed;
+      z-index: 9999;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.7);
+      align-items: center;
+      justify-content: center;
+    }
+    #updateModal .modal-content {
+      background-color: #222;
+      padding: 20px;
+      border-radius: 8px;
+      max-width: 600px;
+      margin: auto;
+      color: #eee;
+      font-size: 14px;
+    }
+    #updateModal label {
+      display: block;
+      margin-top: 10px;
+      font-weight: 600;
+    }
+    #updateModal input[type="text"],
+    #updateModal input[type="datetime-local"],
+    #updateModal select,
+    #updateModal textarea {
+      width: 100%;
+      padding: 6px;
+      margin-top: 4px;
+      border-radius: 4px;
+      border: 1px solid #555;
+      background-color: #1e1e1e;
+      color: #eee;
+      font-size: 14px;
+    }
+    #updateModal textarea {
+      height: 60px;
+    }
+    .modal-buttons {
+      margin-top: 15px;
+      text-align: right;
+    }
+    .modal-buttons button {
+      background-color: #0d6efd;
+      border: none;
+      color: white;
+      padding: 8px 14px;
+      margin-left: 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .modal-buttons button.cancel-btn {
+      background-color: #6c757d;
+    }
+    .modal-buttons button.cancel-btn:hover {
+      background-color: #5a6268;
+    }
+    .modal-buttons button:hover {
+      background-color: #0056b3;
+    }
+
+    /* Horizontal Scroll */
+    .dataTables_wrapper {
+      width: 100%;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Deployment Sheet Master</h1>
+
+  <div class="table-actions">
+    <button id="deleteSelected">Delete Selected</button>
+  </div>
+
+  <table id="deploymentTable" class="display nowrap" style="width:100%">
+    <thead>
+      <tr>
+        <th><input type="checkbox" id="deleteAll" title="Delete All"/></th>
+        <th>EXP URL</th>
+        <th>EXP URL W.R.T SYS URL</th>
+        <th>API_NAME</th>
+        <th>SOURCE_ID</th>
+        <th>Broker</th>
+        <th>Broker EG</th>
+        <th>New/Existing/NBC</th>
+        <th>Hits in Production</th>
+        <th>Failure(More than 50%)</th>
+        <th>Success</th>
+        <th>Changes Description</th>
+        <th>Remarks</th>
+        <th>Deployment Date Time</th>
+        <th>Update</th>
+      </tr>
+    </thead>
+    <tbody>
+      <%
+            List<DeploymentSheetBean> deploymentData = (List<DeploymentSheetBean>) request.getAttribute("deploymentData");
+            if (deploymentData != null) {
+              for (DeploymentSheetBean bean : deploymentData) {
+          %>
+          <tr data-srno="<%= bean.getM_strSr_No() %>">
+            <td><input type="checkbox" class="rowCheckbox" name="Result" value="<%= bean.getM_strSr_No() %>"/></td>
+            <td><%= bean.getM_strExp_Sys_Url() %></td>
+            <td><%= bean.getM_strExpUrl_WRT_SysUrl() %></td>
+            <td><%= bean.getM_strApi_Name() %></td>
+            <td><%= bean.getM_strSourceID() %></td>
+            <td><%= bean.getM_strBroker() %></td>
+            <td><%= bean.getM_strBroker_Eg() %></td>
+            <td><%= bean.getM_strNew_Existing_NBC() %></td>
+            <td><%= bean.getM_strHitsinproduction() %></td>
+            <td><%= bean.getM_strFailure() %></td>
+            <td><%= bean.getM_strSuccess() %></td>
+            <td><%= bean.getM_changes_Description() %></td>
+            <td><%= bean.getM_strRemarks() %></td>
+            <td><%= bean.getM_strDeployment_Date_Time() %></td>
+            <td><button class="update-btn">Update</button></td>
+            
+          </tr>
+          <%  }
+            }
+          %>
+       
+    </tbody>
+  </table>
+
+  <!-- Update Modal -->
+ <!--  <div id="updateModal">
+    <div class="modal-content">
+      <h2>Update Deployment Entry</h2>
+      <form id="updateForm">
+        <label>EXP URL</label>
+        <input type="text" id="expUrl" required />
+
+        <label>EXP URL W.R.T SYS URL</label>
+        <input type="text" id="expUrlSys" required />
+
+        <label>API_NAME</label>
+        <input type="text" id="apiName" required />
+
+        <label>SOURCE_ID</label>
+        <input type="text" id="sourceId" required />
+
+        <label>Broker</label>
+        <input type="text" id="broker" required />
+
+        <label>Broker EG</label>
+        <input type="text" id="brokerEg" required />
+
+        <label>New/Existing/NBC</label>
+        <select id="newExisting" required>
+          <option value="New">New</option>
+          <option value="Existing">Existing</option>
+          <option value="NBC">NBC</option>
+        </select>
+
+        <label>Hits in Production</label>
+        <input type="text" id="hitsProd" required />
+
+        <label>Failure (More than 50%)</label>
+        <input type="text" id="failure" required />
+
+        <label>Success</label>
+        <input type="text" id="success" required />
+
+        <label>Changes Description</label>
+        <textarea id="changesDesc" required></textarea>
+
+        <label>Remarks</label>
+        <textarea id="remarks"></textarea>
+
+        <label>Deployment Date Time</label>
+        <input type="datetime-local" id="deploymentDateTime" required />
+
+        <div class="modal-buttons">
+          <button type="button" class="cancel-btn">Cancel</button>
+          <button type="submit">Update</button>
+        </div>
+      </form>
+    </div>
+  </div>
+ -->
+  
+  <!-- Update Modal -->
+<div id="updateModal">
+  <div class="modal-content">
+    <h2>Update Deployment Entry</h2>
+    <form id="updateForm" method="post" action="<%=request.getContextPath()%>/ViewDeploymentSheetActionServ">
+      <input type="hidden" name="action" value="update"/>
+      <input type="hidden" name="m_strSr_No" id="srNo"/>
+
+      <label>Hits in Production</label>
+      <input type="text" name="m_strHitsinproduction" id="hitsProd" required/>
+
+      <label>Failure (More than 50%)</label>
+      <input type="text" name="m_strFailure" id="failure" required/>
+
+      <label>Success</label>
+      <input type="text" name="m_strSuccess" id="success" required/>
+
+      <label>Changes Description</label>
+      <textarea name="changes" id="changesDesc" required></textarea>
+
+      <label>Remarks</label>
+      <textarea name="remarks" id="remarks"></textarea>
+
+      <div class="modal-buttons">
+        <button type="button" class="cancel-btn">Cancel</button>
+        <button type="submit" class="save-btn">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+  <script>
+    $(document).ready(function () {
+      const table = $('#deploymentTable').DataTable({
+        dom: 'Bfrtip',
+        paging: true,
+        scrollX: true,
+        responsive: false,
+        pageLength: 15,
+        searching: true,
+        ordering: true,
+        order: [],
+        lengthChange: false,
+        buttons: [
+          {
+            extend: 'excelHtml5',
+            text: 'Export Excel',
+            exportOptions: { columns: ':not(:first-child):not(:last-child)' }
+          },
+          {
+            extend: 'pdfHtml5',
+            text: 'Export PDF',
+            exportOptions: { columns: ':not(:first-child):not(:last-child)' },
+            orientation: 'landscape',
+            pageSize: 'A4'
+          }
+        ],
+        columnDefs: [
+          { orderable: false, targets: [0, 14] }
+        ]
+      });
+
+      $('#deleteAll').on('click', function () {
+        $('.rowCheckbox').prop('checked', this.checked);
+      });
+
+     /*  $('#deleteSelected').on('click', function () {
+        const selectedRows = [];
+        $('#deploymentTable tbody input.rowCheckbox:checked').each(function () {
+          selectedRows.push($(this).closest('tr'));
+        });
+        if (!selectedRows.length) {
+          alert("Please select at least one row to delete.");
+          return;
+        }
+        if (!confirm(`Delete ${selectedRows.length} record(s)?`)) return;
+
+        selectedRows.forEach(function (row) {
+          table.row(row).remove();
+        });
+        table.draw(false);
+        $('#deleteAll').prop('checked', false);
+      }); */
+      
+      $('#deleteSelected').on('click', function () {
+    	      const selectedRows = $('#deploymentTable tbody input.rowCheckbox:checked');
+    	      if (!selectedRows.length) {
+    	          alert("Please select at least one row to delete.");
+    	          return;
+    	      }
+    	      if (!confirm(`Delete ${selectedRows.length} record(s)?`)) return;
+
+    	      // Collect SR_NO values
+    	      const ids = selectedRows.map(function () {
+    	          return $(this).val();
+    	      }).get();
+
+    	      $.ajax({
+    	          url: '<%=request.getContextPath()%>/ViewDeploymentSheetActionServ',
+    	          type: 'POST',
+    	          data: {
+    	              action: 'delete',
+    	              Result: ids.join(',')   // send like "101,102,103"
+    	          },
+    	          success: function (resp) {
+    	              // If servlet deletion was successful, remove rows from table
+    	              selectedRows.each(function () {
+    	                  table.row($(this).closest('tr')).remove();
+    	              });
+    	              table.draw(false);
+    	              $('#deleteAll').prop('checked', false);
+    	              alert("Selected record(s) deleted successfully!");
+    	          },
+    	          error: function (xhr, status, err) {
+    	              alert("Error deleting records: " + xhr.responseText);
+    	          }
+    	      });
+    	  });
+
+      const modal = $('#updateModal');
+      const form = $('#updateForm');
+      let currentRow = null;
+
+     /*  $('#deploymentTable tbody').on('click', '.update-btn', function () {
+        currentRow = table.row($(this).closest('tr'));
+        const data = currentRow.data();
+        $('#expUrl').val(data[1]);
+        $('#expUrlSys').val(data[2]);
+        $('#apiName').val(data[3]);
+        $('#sourceId').val(data[4]);
+        $('#broker').val(data[5]);
+        $('#brokerEg').val(data[6]);
+        $('#newExisting').val(data[7]);
+        $('#hitsProd').val(data[8]);
+        $('#failure').val(data[9]);
+        $('#success').val(data[10]);
+        $('#changesDesc').val(data[11]);
+        $('#remarks').val(data[12]);
+        $('#deploymentDateTime').val(data[13].replace(' ', 'T'));
+        modal.show();
+      });
+
+      $('.cancel-btn').on('click', function () {
+        modal.hide();
+        currentRow = null;
+        form.trigger('reset');
+      });
+
+      form.on('submit', function (e) {
+        e.preventDefault();
+        if (!currentRow) return;
+        const updatedData = [
+          '<input type="checkbox" class="rowCheckbox" />',
+          $('#expUrl').val(),
+          $('#expUrlSys').val(),
+          $('#apiName').val(),
+          $('#sourceId').val(),
+          $('#broker').val(),
+          $('#brokerEg').val(),
+          $('#newExisting').val(),
+          $('#hitsProd').val(),
+          $('#failure').val(),
+          $('#success').val(),
+          $('#changesDesc').val(),
+          $('#remarks').val(),
+          $('#deploymentDateTime').val().replace('T', ' '),
+          '<button class="update-btn">Update</button>'
+        ];
+        currentRow.data(updatedData).draw(false);
+        modal.hide();
+        form.trigger('reset');
+        currentRow = null;
+      });
+
+      modal.on('click', function (e) {
+        if (e.target === this) {
+          modal.hide();
+          form.trigger('reset');
+          currentRow = null;
+        }
+      });
+ */
+ 
+ $('#deploymentTable tbody').on('click', '.update-btn', function () {
+	     currentRow = $(this).closest('tr');
+	     $('#srNo').val(currentRow.data('srno'));
+	     $('#hitsProd').val(currentRow.find('td').eq(8).text());
+	     $('#failure').val(currentRow.find('td').eq(9).text());
+	     $('#success').val(currentRow.find('td').eq(10).text());
+	     $('#changesDesc').val(currentRow.find('td').eq(11).text());
+	     $('#remarks').val(currentRow.find('td').eq(12).text());
+	     modal.show();
+	   });
+
+	 $('.cancel-btn').on('click', function () {
+	     modal.hide();
+	     $('#updateForm')[0].reset();
+	   });
+
+	   modal.on('click', function (e) {
+	     if (e.target === this) {
+	       modal.hide();
+	       $('#updateForm')[0].reset();
+	     }
+	   });
+      $('#deploymentTable tbody').on('change', '.rowCheckbox', function () {
+        if (!this.checked) {
+          $('#deleteAll').prop('checked', false);
+        } else if ($('.rowCheckbox:checked').length === $('.rowCheckbox').length) {
+          $('#deleteAll').prop('checked', true);
+        }
+      });
+    });
+  </script>
+</body>
+</html>
