@@ -20,7 +20,7 @@
 <html lang="en">
 <head>
 <%
-    // ✅ Session check (EXP jaisa)
+    // ✅ Session check (EXP jaisa — sabse pehle)
     if(session == null || session.getAttribute("role") == null) {
         response.sendRedirect(request.getContextPath() + "/login.action");
         return;
@@ -414,14 +414,21 @@
             min-height: 100vh; font-size: 17px; overflow-x: hidden; width: 100%;
             transition: background 0.3s ease, color 0.3s ease;
         }
+
+        /* ✅ EXP jaisa content wrapper */
+        .new-wrapper { width: 100%; }
+        .exp-content { padding: 20px 24px 40px; max-width: 100%; width: 100%; }
+
         .topbar {
-            background: var(--bg-header); border-bottom: 1px solid var(--border);
+            background: var(--bg-header); border: 1px solid var(--border);
+            border-radius: 14px;
             padding: 0.7rem 1.25rem; display: flex; align-items: center;
             justify-content: space-between; gap: 1rem; flex-wrap: wrap;
-            box-shadow: var(--shadow-sm); position: relative;
+            box-shadow: var(--shadow-sm); margin-bottom: 16px; position: relative;
+            overflow: hidden;
         }
         .topbar::after {
-            content: ''; position: absolute; bottom: -1px; left: 0; right: 0;
+            content: ''; position: absolute; bottom: 0; left: 0; right: 0;
             height: 2px; background: linear-gradient(90deg, var(--isolated) 0%, var(--primary) 50%, var(--info) 100%);
             opacity: 0.6;
         }
@@ -457,10 +464,13 @@
             cursor: pointer; transition: all 0.2s ease; font-size: 0.9rem;
         }
         .icon-btn:hover { background: var(--primary); color: white; border-color: var(--primary); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35); }
+
+        /* STATS BAR — card style (EXP jaisa) */
         .stats-bar {
-            background: var(--bg-card); border-bottom: 1px solid var(--border);
-            padding: 0.7rem 1.25rem; display: grid;
-            grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0.6rem;
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 14px; padding: 0.7rem 1rem;
+            display: grid; grid-template-columns: repeat(6, minmax(0, 1fr));
+            gap: 0.6rem; margin-bottom: 16px; box-shadow: var(--shadow-sm);
         }
         .stat-mini {
             display: flex; align-items: center; gap: 0.7rem;
@@ -488,18 +498,22 @@
         .stat-mini-text { display: flex; flex-direction: column; min-width: 0; }
         .stat-mini-value { font-size: 1.3rem; font-weight: 800; color: var(--text-primary); line-height: 1; }
         .stat-mini-label { font-size: 0.72rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+
+        /* MAIN LAYOUT */
         .main-content {
-            display: grid; grid-template-columns: 400px minmax(0, 1fr);
-            gap: 1rem; padding: 1rem 1.25rem; align-items: stretch; width: 100%;
-            min-height: calc(100vh - 128px);
+            display: grid; grid-template-columns: 380px minmax(0, 1fr);
+            gap: 16px; align-items: start; width: 100%;
         }
-        .left-panel { display: flex; flex-direction: column; gap: 0.85rem; min-width: 0; height: 100%; max-height: calc(100vh - 145px); }
-        .right-panel { min-width: 0; height: 100%; max-height: calc(100vh - 145px); overflow-y: auto; padding-right: 0.25rem; }
+        .left-panel { display: flex; flex-direction: column; gap: 0.85rem; min-width: 0; }
+        .right-panel { min-width: 0; }
+
         .card {
             background: var(--bg-card); border: 1px solid var(--border);
             border-radius: 0.85rem; box-shadow: var(--shadow-sm); overflow: hidden;
             transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
         }
+
+        /* TIME FILTER */
         .time-filter-header {
             padding: 0.8rem 1rem; display: flex; justify-content: space-between; align-items: center;
             cursor: pointer; background: var(--bg-elevated); transition: background 0.2s ease;
@@ -532,6 +546,8 @@
         }
         .quick-filter-btn:hover { background: var(--bg-hover); border-color: var(--primary); color: var(--primary); }
         .quick-filter-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+        /* BUTTONS */
         .btn {
             background: var(--bg-elevated); color: var(--text-secondary);
             border: 1px solid var(--border-strong); padding: 0.55rem 1rem;
@@ -549,11 +565,8 @@
         .btn.success:hover { color: white; opacity: 0.9; }
         .controls-row { display: flex; gap: 0.45rem; flex-wrap: wrap; padding: 0.7rem; }
         .controls-row .btn { flex: 1; justify-content: center; }
-        .left-panel > .card { flex-shrink: 0; }
-        .left-panel > .impacted-section {
-            flex: 1 1 0; min-height: 140px;
-            display: flex; flex-direction: column; overflow: hidden;
-        }
+
+        /* IMPACTED */
         .impacted-section { border-left: 5px solid var(--danger); }
         .impacted-section.isolated { border-left-color: var(--isolated); }
         .impacted-header {
@@ -570,7 +583,7 @@
             box-shadow: 0 2px 6px rgba(239, 68, 68, 0.3);
         }
         .impacted-count.isolated { background: var(--isolated); box-shadow: 0 2px 6px rgba(139, 92, 246, 0.3); }
-        .impacted-content { padding: 0.65rem 0.85rem 0.85rem; flex: 1; overflow-y: auto; min-height: 0; }
+        .impacted-content { padding: 0.65rem 0.85rem 0.85rem; max-height: 280px; overflow-y: auto; }
         .impacted-list { display: flex; flex-direction: column; gap: 0.45rem; }
         .impacted-server-item {
             background: var(--bg-elevated); border: 1px solid var(--border);
@@ -593,6 +606,8 @@
         .impacted-hits.critical { background: var(--danger); }
         .impacted-hits.warning { background: var(--warning); }
         .impacted-hits.isolated { background: var(--isolated); }
+
+        /* BROKER CARDS */
         .broker-cards-container {
             display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
             gap: 0.9rem; width: 100%;
@@ -698,7 +713,7 @@
             display: flex; flex-direction: column;
             align-items: center; justify-content: center;
             text-align: center; color: var(--text-muted);
-            padding: 1rem; height: 100%; min-height: 120px; font-size: 0.9rem;
+            padding: 1.5rem 1rem; min-height: 120px;
         }
         .no-impacted i { font-size: 1.75rem; margin-bottom: 0.5rem; display: block; }
         .no-impacted p { margin-bottom: 0.2rem; font-weight: 700; color: var(--text-secondary); font-size: 0.95rem; }
@@ -748,30 +763,23 @@
         }
         @media (max-width: 1200px) {
             .stats-bar { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-            .main-content { grid-template-columns: 360px minmax(0, 1fr); }
+            .main-content { grid-template-columns: 340px minmax(0, 1fr); }
             .broker-cards-container { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
         }
         @media (max-width: 1024px) {
-            html, body { overflow-x: hidden; overflow-y: auto; }
-            .main-content { grid-template-columns: 1fr; padding: 0.85rem; min-height: auto; align-items: stretch; }
-            .left-panel, .right-panel { width: 100%; height: auto; max-height: none; overflow-y: visible; }
-            .left-panel > .impacted-section { flex: 0 0 auto; min-height: 220px; max-height: 320px; }
-            .impacted-content { max-height: 220px; }
+            .main-content { grid-template-columns: 1fr; }
             .broker-cards-container { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
-            .topbar { padding: 0.6rem 1rem; }
-            .topbar-center { justify-content: flex-start; }
         }
         @media (max-width: 768px) {
             body { font-size: 16px; }
-            .stats-bar { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 0.6rem 0.85rem; }
-            .stat-mini-value { font-size: 1.15rem; }
+            .exp-content { padding: 16px 14px 32px; }
+            .stats-bar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
             .broker-cards-container { grid-template-columns: 1fr; gap: 0.8rem; }
             .server-list { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
             .topbar-center { display: none; }
             .brand-sub { display: none; }
         }
         @media (max-width: 480px) {
-            .stats-bar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
             .controls-row { flex-direction: column; }
             .controls-row .btn { width: 100%; }
             .quick-filter-buttons { flex-direction: column; }
@@ -786,6 +794,12 @@
     <script type="text/javascript" src="../js/xlsx.full.min.js"></script>
 </head>
 <body>
+
+<%-- ✅ userheader include — EXP jaisa --%>
+<%@include file="../userheader.jsp"%>
+
+<div class="new-wrapper">
+<div class="exp-content">
 
 <div id="chromeVoiceOverlay" style="display: none;">
     <div class="overlay-box">
@@ -803,7 +817,7 @@
         for (Map.Entry<String, List<String>> entry : criticalServersByBroker.entrySet()) {
             if (brokerIndex > 0) jsBrokerMap.append(",");
             String broker = entry.getKey().replace("'", "\\'").replace("\"", "&quot;");
-            jsBrokerMap.append("\"").append(broker).append("\":["); // ✅ FIXED: ":[" not ":["
+            jsBrokerMap.append("\"").append(broker).append("\":[");
             List<String> ips = entry.getValue();
             for (int i = 0; i < ips.size(); i++) {
                 if (i > 0) jsBrokerMap.append(",");
@@ -924,7 +938,7 @@
                 </form>
                 <div class="quick-filter-buttons">
                     <button type="button" class="quick-filter-btn" onclick="setQuickFilter(10)">10m</button>
-                    <button type="button" class="quick-filter-btn" onclick="setQuickFilter(15)">15m</button>
+                    <button type="button" class="quick-filter-btn" onclick="setQuickFilter(20)">20m</button>
                     <button type="button" class="quick-filter-btn" onclick="setQuickFilter(30)">30m</button>
                     <button type="button" class="quick-filter-btn" onclick="setQuickFilter(60)">1h</button>
                     <button type="button" class="quick-filter-btn" onclick="setQuickFilter(120)">2h</button>
@@ -1071,360 +1085,391 @@
     </div>
 </div>
 
+</div>
+</div>
+
 <script>
-    // ============================================================
-    // THEME TOGGLE
-    // ============================================================
-    function applyTheme(theme) {
-        document.documentElement.setAttribute('data-theme', theme);
-        const icon = document.getElementById('themeIcon');
-        if (icon) icon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
-        try { localStorage.setItem('expTheme', theme); } catch(e) {}
-    }
-    function toggleTheme() {
-        const current = document.documentElement.getAttribute('data-theme') || 'light';
-        applyTheme(current === 'dark' ? 'light' : 'dark');
-    }
-    (function() {
-        try {
-            const saved = localStorage.getItem('expTheme');
-            if (saved === 'dark' || saved === 'light') applyTheme(saved);
-            else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) applyTheme('dark');
-            else applyTheme('light');
-        } catch(e) { applyTheme('light'); }
-    })();
+/* ============ BACK BUTTON BLOCK (EXP jaisa) ============ */
+(function(){
+    window.history.pushState({ page: 'sys' }, '', window.location.href);
+    window.addEventListener('popstate', function(e){
+        if(window.__logoutInProgress === true) return;
+        window.history.pushState({ page: 'sys' }, '', window.location.href);
+    });
+})();
 
-    // ============================================================
-    // VOICE ALERT SYSTEM
-    // ============================================================
-    let speechSynthesis = window.speechSynthesis;
-    let isVoiceEnabled = true;
-    let isMuted = false;
-    let isPlaying = false;
-    let voices = [];
-    let userInteracted = false;
-    let voiceInitialized = false;
-    let voicePlayCount = 0;
-    const MAX_VOICE_PLAYS = 3;
-
-    const criticalServersByBroker = { <%= jsBrokerMap.toString() %> };
-    const hasUserInteracted = localStorage.getItem('voiceEnabled') === 'true' || localStorage.getItem('chromeVoiceEnabled') === 'true';
-
-    function cleanForPronunciation(text) {
-        if (!text) return '';
-        let cleaned = text.replace(/SYS/gi, 'S Y S');
-        cleaned = cleaned.replace(/NP_SPL/gi, 'N P S P L');
-        cleaned = cleaned.replace(/_/g, ' ');
-        cleaned = cleaned.replace(/\./g, ' dot ');
-        return cleaned;
-    }
-
-    function buildSequentialMessage() {
-        const brokerKeys = Object.keys(criticalServersByBroker);
-        if (brokerKeys.length === 0) return '';
-        let fullMessage = 'Alert! ';
-        let messageParts = [];
-        for (let i = 0; i < brokerKeys.length; i++) {
-            let broker = brokerKeys[i];
-            let servers = criticalServersByBroker[broker];
-            let cleanBroker = cleanForPronunciation(broker);
-            if (servers.length === 1) messageParts.push(cleanBroker + ' server ' + cleanForPronunciation(servers[0]));
-            else {
-                let serverList = servers.map(s => cleanForPronunciation(s)).join(', ');
-                messageParts.push(cleanBroker + ' servers ' + serverList);
-            }
-        }
-        if (messageParts.length === 1) return fullMessage + messageParts[0];
-        return fullMessage + messageParts.join(', then ');
-    }
-
-    function getTotalCriticalCount() {
-        let count = 0;
-        for (let broker in criticalServersByBroker) count += criticalServersByBroker[broker].length;
-        return count;
-    }
-
-    function loadVoices() { try { voices = speechSynthesis.getVoices(); } catch(e) {} }
-    if (speechSynthesis) {
-        loadVoices();
-        if (speechSynthesis.onvoiceschanged !== undefined) speechSynthesis.onvoiceschanged = loadVoices;
-    }
-
-    function getBestVoice() {
-        if (voices.length === 0) return null;
-        const preferred = ['Google UK English Female','Google US English','Microsoft David','Microsoft Zira','Samantha','Alex','Google UK English Male','en-US','en-GB','English'];
-        for (let p of preferred) {
-            let voice = voices.find(v => v.name.includes(p) || v.lang.includes(p));
-            if (voice) return voice;
-        }
-        return voices.find(v => v.lang.startsWith('en'));
-    }
-
-    function updateVoiceUI() {
-        const muteIcon = document.getElementById('muteIcon');
-        const muteBtn = document.getElementById('muteBtn');
-        if (!muteIcon || !muteBtn) return;
-        if (isMuted) {
-            muteIcon.className = 'fas fa-volume-mute';
-            muteBtn.style.color = 'var(--danger)';
-            muteBtn.style.borderColor = 'var(--danger)';
+/* ✅ Logout handler — capture phase (EXP jaisa) */
+document.addEventListener('click', function(e){
+    var target = e.target.closest('.sb-logout, a[href*="login.action"], .sb-home-btn, a[href*="userhomescreen.action"]');
+    if(target){
+        e.preventDefault();
+        e.stopPropagation();
+        window.__logoutInProgress = true;
+        try{
+            sessionStorage.clear();
+            localStorage.removeItem('eis-sidebar-closed');
+        }catch(err){}
+        var isLogout = target.classList.contains('sb-logout') || (target.href && target.href.indexOf('login.action') !== -1);
+        if(isLogout){
+            window.location.replace('<%=request.getContextPath()%>/login.action?logout=true');
         } else {
-            muteIcon.className = 'fas fa-volume-up';
-            const criticalCount = getTotalCriticalCount();
-            muteBtn.style.color = criticalCount > 0 ? 'var(--danger)' : '';
-            muteBtn.style.borderColor = criticalCount > 0 ? 'var(--danger)' : '';
+            window.location.href = '<%=request.getContextPath()%>/userhomescreen.action';
         }
     }
+}, true);
 
-    function speakMessage(message, callback) {
-        if (!isVoiceEnabled || isMuted || !speechSynthesis || !message) { if (callback) callback(); return false; }
-        try { speechSynthesis.cancel(); } catch(e) {}
-        try {
-            const utterance = new SpeechSynthesisUtterance(message);
-            utterance.rate = 0.85; utterance.pitch = 1.1; utterance.volume = 1; utterance.lang = 'en-US';
-            const bestVoice = getBestVoice();
-            if (bestVoice) utterance.voice = bestVoice;
-            utterance.onerror = function() { if(callback) callback(); };
-            utterance.onend = function() { if(callback) callback(); };
-            setTimeout(() => { try { speechSynthesis.speak(utterance); } catch(e) { if(callback) callback(); } }, 50);
-            return true;
-        } catch(e) { if(callback) callback(); return false; }
+// ============================================================
+// THEME TOGGLE
+// ============================================================
+function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    const icon = document.getElementById('themeIcon');
+    if (icon) icon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+    try { localStorage.setItem('expTheme', theme); } catch(e) {}
+}
+function toggleTheme() {
+    const current = document.documentElement.getAttribute('data-theme') || 'light';
+    applyTheme(current === 'dark' ? 'light' : 'dark');
+}
+(function() {
+    try {
+        const saved = localStorage.getItem('expTheme');
+        if (saved === 'dark' || saved === 'light') applyTheme(saved);
+        else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) applyTheme('dark');
+        else applyTheme('light');
+    } catch(e) { applyTheme('light'); }
+})();
+
+// ============================================================
+// VOICE ALERT SYSTEM
+// ============================================================
+let speechSynthesis = window.speechSynthesis;
+let isVoiceEnabled = true;
+let isMuted = false;
+let isPlaying = false;
+let voices = [];
+let userInteracted = false;
+let voiceInitialized = false;
+let voicePlayCount = 0;
+const MAX_VOICE_PLAYS = 3;
+
+const criticalServersByBroker = { <%= jsBrokerMap.toString() %> };
+const hasUserInteracted = localStorage.getItem('voiceEnabled') === 'true' || localStorage.getItem('chromeVoiceEnabled') === 'true';
+
+function cleanForPronunciation(text) {
+    if (!text) return '';
+    let cleaned = text.replace(/SYS/gi, 'S Y S');
+    cleaned = cleaned.replace(/NP_SPL/gi, 'N P S P L');
+    cleaned = cleaned.replace(/_/g, ' ');
+    cleaned = cleaned.replace(/\./g, ' dot ');
+    return cleaned;
+}
+
+function buildSequentialMessage() {
+    const brokerKeys = Object.keys(criticalServersByBroker);
+    if (brokerKeys.length === 0) return '';
+    let fullMessage = 'Alert! ';
+    let messageParts = [];
+    for (let i = 0; i < brokerKeys.length; i++) {
+        let broker = brokerKeys[i];
+        let servers = criticalServersByBroker[broker];
+        let cleanBroker = cleanForPronunciation(broker);
+        if (servers.length === 1) messageParts.push(cleanBroker + ' server ' + cleanForPronunciation(servers[0]));
+        else {
+            let serverList = servers.map(s => cleanForPronunciation(s)).join(', ');
+            messageParts.push(cleanBroker + ' servers ' + serverList);
+        }
     }
+    if (messageParts.length === 1) return fullMessage + messageParts[0];
+    return fullMessage + messageParts.join(', then ');
+}
 
-    function playVoiceAlert() {
-        if (voicePlayCount >= MAX_VOICE_PLAYS) return;
+function getTotalCriticalCount() {
+    let count = 0;
+    for (let broker in criticalServersByBroker) count += criticalServersByBroker[broker].length;
+    return count;
+}
+
+function loadVoices() { try { voices = speechSynthesis.getVoices(); } catch(e) {} }
+if (speechSynthesis) {
+    loadVoices();
+    if (speechSynthesis.onvoiceschanged !== undefined) speechSynthesis.onvoiceschanged = loadVoices;
+}
+
+function getBestVoice() {
+    if (voices.length === 0) return null;
+    const preferred = ['Google UK English Female','Google US English','Microsoft David','Microsoft Zira','Samantha','Alex','Google UK English Male','en-US','en-GB','English'];
+    for (let p of preferred) {
+        let voice = voices.find(v => v.name.includes(p) || v.lang.includes(p));
+        if (voice) return voice;
+    }
+    return voices.find(v => v.lang.startsWith('en'));
+}
+
+function updateVoiceUI() {
+    const muteIcon = document.getElementById('muteIcon');
+    const muteBtn = document.getElementById('muteBtn');
+    if (!muteIcon || !muteBtn) return;
+    if (isMuted) {
+        muteIcon.className = 'fas fa-volume-mute';
+        muteBtn.style.color = 'var(--danger)';
+        muteBtn.style.borderColor = 'var(--danger)';
+    } else {
+        muteIcon.className = 'fas fa-volume-up';
         const criticalCount = getTotalCriticalCount();
-        if (criticalCount === 0) return;
-        if (!isVoiceEnabled || isMuted) return;
-        const message = buildSequentialMessage();
-        isPlaying = true;
-        voicePlayCount++;
-        speakMessage(message, function() { isPlaying = false; updateVoiceUI(); });
-        updateVoiceUI();
+        muteBtn.style.color = criticalCount > 0 ? 'var(--danger)' : '';
+        muteBtn.style.borderColor = criticalCount > 0 ? 'var(--danger)' : '';
+    }
+}
+
+function speakMessage(message, callback) {
+    if (!isVoiceEnabled || isMuted || !speechSynthesis || !message) { if (callback) callback(); return false; }
+    try { speechSynthesis.cancel(); } catch(e) {}
+    try {
+        const utterance = new SpeechSynthesisUtterance(message);
+        utterance.rate = 0.85; utterance.pitch = 1.1; utterance.volume = 1; utterance.lang = 'en-US';
+        const bestVoice = getBestVoice();
+        if (bestVoice) utterance.voice = bestVoice;
+        utterance.onerror = function() { if(callback) callback(); };
+        utterance.onend = function() { if(callback) callback(); };
+        setTimeout(() => { try { speechSynthesis.speak(utterance); } catch(e) { if(callback) callback(); } }, 50);
+        return true;
+    } catch(e) { if(callback) callback(); return false; }
+}
+
+function playVoiceAlert() {
+    if (voicePlayCount >= MAX_VOICE_PLAYS) return;
+    const criticalCount = getTotalCriticalCount();
+    if (criticalCount === 0) return;
+    if (!isVoiceEnabled || isMuted) return;
+    const message = buildSequentialMessage();
+    isPlaying = true;
+    voicePlayCount++;
+    speakMessage(message, function() { isPlaying = false; updateVoiceUI(); });
+    updateVoiceUI();
+}
+
+function toggleMute() {
+    isMuted = !isMuted;
+    saveVoicePreferences();
+    if (isMuted) try { speechSynthesis.cancel(); } catch(e) {}
+    isPlaying = false;
+    updateVoiceUI();
+}
+
+function loadVoicePreferences() {
+    try {
+        const saved = localStorage.getItem('voiceEnabled');
+        if (saved !== null) isVoiceEnabled = saved === 'true';
+        const muted = localStorage.getItem('voiceMuted');
+        if (muted !== null) isMuted = muted === 'true';
+    } catch(e) {}
+}
+function saveVoicePreferences() {
+    try {
+        localStorage.setItem('voiceEnabled', isVoiceEnabled);
+        localStorage.setItem('voiceMuted', isMuted);
+    } catch(e) {}
+}
+function testVoice() {
+    if (!userInteracted) { showOverlayAndInitialize(); return; }
+    if (!isVoiceEnabled) { alert('Voice system active. Click Unmute if muted.'); return; }
+    if (isMuted) { alert('Please unmute first'); return; }
+    speakMessage('Voice alert system is working correctly. This is a test message.', function() { alert('Voice test completed!'); });
+}
+function showOverlayAndInitialize() { document.getElementById('chromeVoiceOverlay').style.display = 'flex'; }
+function hideOverlayAndInitialize() {
+    document.getElementById('chromeVoiceOverlay').style.display = 'none';
+    initializeVoiceSystem();
+}
+function initializeVoiceSystem() {
+    if (voiceInitialized) return;
+    voiceInitialized = true;
+    userInteracted = true;
+    localStorage.setItem('voiceEnabled', 'true');
+    localStorage.setItem('chromeVoiceEnabled', 'true');
+    loadVoicePreferences();
+    updateVoiceUI();
+    try {
+        const silent = new SpeechSynthesisUtterance('');
+        silent.volume = 0;
+        speechSynthesis.speak(silent);
+    } catch(e) {}
+    setTimeout(function() {
+        if (getTotalCriticalCount() > 0 && !isMuted && voicePlayCount < MAX_VOICE_PLAYS) playVoiceAlert();
+    }, 1500);
+}
+function playRefreshVoiceAnnouncement() {
+    if (getTotalCriticalCount() > 0 && isVoiceEnabled && !isMuted && userInteracted && voicePlayCount < MAX_VOICE_PLAYS) {
+        setTimeout(playVoiceAlert, 1500);
+    }
+}
+
+// ============================================================
+// TIMER — EXP jaisa (filter preserve)
+// ============================================================
+function countdown(elementName, minutes, seconds) {
+    var element = document.getElementById(elementName);
+    if (!element) return;
+    var endTime = (+new Date) + 1000 * (60 * minutes + seconds);
+    function twoDigits(n) { return (n <= 9 ? "0" + n : n); }
+    function updateTimer() {
+        var msLeft = endTime - (+new Date);
+        if (msLeft < 1000) {
+            element.innerHTML = "...";
+            var rt = document.getElementById('refreshTimer');
+            if (rt) rt.classList.add('warning-state');
+            setTimeout(function() {
+                window.location.href = window.location.pathname + window.location.search;
+            }, 1000);
+        } else {
+            var time = new Date(msLeft);
+            var hours = time.getUTCHours();
+            var mins = time.getUTCMinutes();
+            element.innerHTML = (hours ? hours + ':' + twoDigits(mins) : mins) + ':' + twoDigits(time.getUTCSeconds());
+            var rt = document.getElementById('refreshTimer');
+            if (rt) {
+                if (msLeft < 60000) rt.classList.add('warning-state');
+                else rt.classList.remove('warning-state');
+            }
+            setTimeout(updateTimer, time.getUTCMilliseconds() + 500);
+        }
+    }
+    updateTimer();
+}
+
+// ============================================================
+// UI FUNCTIONS
+// ============================================================
+function toggleTimeFilter() {
+    var content = document.getElementById('timeFilterContent');
+    var toggle = document.querySelector('.time-filter-toggle');
+    if (content) content.classList.toggle('expanded');
+    if (toggle) toggle.classList.toggle('expanded');
+}
+function resetTimeFilter() {
+    window.location.href = window.location.pathname;
+}
+function setQuickFilter(minutes) {
+    var now = new Date();
+    var start = new Date(now.getTime() - minutes * 60000);
+    document.getElementById('fromDateTime').value = formatDateForInput(start);
+    document.getElementById('toDateTime').value = formatDateForInput(now);
+    document.querySelectorAll('.quick-filter-btn').forEach(b => b.classList.remove('active'));
+    if (event && event.target) event.target.classList.add('active');
+    document.getElementById('timeFilterForm').submit();
+}
+function formatDateForInput(date) {
+    var y = date.getFullYear();
+    var m = String(date.getMonth()+1).padStart(2,'0');
+    var d = String(date.getDate()).padStart(2,'0');
+    var h = String(date.getHours()).padStart(2,'0');
+    var min = String(date.getMinutes()).padStart(2,'0');
+    return y + '-' + m + '-' + d + 'T' + h + ':' + min;
+}
+function toggleBlinking() {
+    var body = document.body;
+    var icon = document.getElementById('blinkIcon');
+    if (body.classList.contains('no-blink')) {
+        body.classList.remove('no-blink');
+        if (icon) icon.className = 'fas fa-eye';
+        localStorage.setItem('blinkingEnabled', 'true');
+    } else {
+        body.classList.add('no-blink');
+        if (icon) icon.className = 'fas fa-eye-slash';
+        localStorage.setItem('blinkingEnabled', 'false');
+    }
+}
+function showIsolatedOnly() {
+    var cards = document.querySelectorAll('.broker-card');
+    var isolatedCount = 0;
+    cards.forEach(function(card) {
+        if (card.classList.contains('isolated')) { card.style.display = 'flex'; isolatedCount++; }
+        else card.style.display = 'none';
+    });
+    var showAllBtn = document.getElementById('showAllBtn');
+    if (showAllBtn) showAllBtn.style.display = 'inline-flex';
+    var container = document.getElementById('brokerCardsContainer');
+    var existing = document.getElementById('noIsolatedMessage');
+    if (isolatedCount === 0 && !existing) {
+        var div = document.createElement('div');
+        div.id = 'noIsolatedMessage';
+        div.className = 'card';
+        div.style.cssText = 'grid-column: 1 / -1; text-align: center; padding: 3rem 1.5rem;';
+        div.innerHTML = '<i class="fas fa-shield-alt" style="font-size: 3rem; color: var(--text-faint); margin-bottom: 0.9rem;"></i><h3 style="color: var(--text-secondary); margin-bottom: 0.5rem; font-size: 1.15rem;">No Isolated Brokers</h3><button class="btn primary" onclick="showAllBrokers()" style="margin-top: 1rem;"><i class="fas fa-globe"></i> Show All</button>';
+        container.appendChild(div);
+    } else if (existing && isolatedCount > 0) existing.remove();
+}
+function showAllBrokers() {
+    document.querySelectorAll('.broker-card').forEach(c => c.style.display = 'flex');
+    var showAllBtn = document.getElementById('showAllBtn');
+    if (showAllBtn) showAllBtn.style.display = 'none';
+    var msg = document.getElementById('noIsolatedMessage');
+    if (msg) msg.remove();
+}
+function openNewPage() {
+    window.open('<%= request.getContextPath() + "/jsp/A_EXP_SERVERWISE_COUNT_LDAP.jsp" %>', '_blank');
+}
+
+document.addEventListener('keydown', function(e) {
+    var isRefreshKey = (e.key === 'F5') || (e.ctrlKey && (e.key === 'r' || e.key === 'R')) || (e.metaKey && (e.key === 'r' || e.key === 'R'));
+    if (isRefreshKey) {
+        var hasFilter = window.location.search && window.location.search.length > 1;
+        if (hasFilter) { e.preventDefault(); window.location.href = window.location.pathname; return false; }
+    }
+    if (e.ctrlKey && e.key === 'b') { e.preventDefault(); toggleBlinking(); }
+    if (e.ctrlKey && e.key === 'i') { e.preventDefault(); showIsolatedOnly(); }
+    if (e.ctrlKey && e.key === 'a') { e.preventDefault(); showAllBrokers(); }
+    if (e.ctrlKey && e.key === 'v') { e.preventDefault(); testVoice(); }
+    if (e.ctrlKey && e.key === 'm') { e.preventDefault(); toggleMute(); }
+    if (e.ctrlKey && e.key === 'd') { e.preventDefault(); toggleTheme(); }
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    var overlay = document.getElementById('chromeVoiceOverlay');
+    var enableBtn = document.getElementById('enableVoiceNowBtn');
+    if (overlay) overlay.addEventListener('click', function(e) {
+        if (e.target === overlay || e.target === enableBtn) hideOverlayAndInitialize();
+    });
+    if (enableBtn) enableBtn.addEventListener('click', hideOverlayAndInitialize);
+
+    var blinkingPref = localStorage.getItem('blinkingEnabled');
+    if (blinkingPref === 'false') {
+        document.body.classList.add('no-blink');
+        var bi = document.getElementById('blinkIcon');
+        if (bi) bi.className = 'fas fa-eye-slash';
     }
 
-    function toggleMute() {
-        isMuted = !isMuted;
-        saveVoicePreferences();
-        if (isMuted) try { speechSynthesis.cancel(); } catch(e) {}
-        isPlaying = false;
-        updateVoiceUI();
+    countdown('ten-countdown', 10, 0);
+
+    var urlParams = new URLSearchParams(window.location.search);
+    var fromDateTime = urlParams.get('fromDateTime');
+    var toDateTime = urlParams.get('toDateTime');
+    if (fromDateTime && toDateTime) {
+        var diffMinutes = Math.round((new Date(toDateTime) - new Date(fromDateTime)) / (1000 * 60));
+        document.querySelectorAll('.quick-filter-btn').forEach(function(btn) {
+            btn.classList.remove('active');
+            var match = btn.getAttribute('onclick')?.match(/\d+/);
+            var minutes = match ? parseInt(match[0]) : 60;
+            if (Math.abs(diffMinutes - minutes) < 5) btn.classList.add('active');
+        });
     }
 
-    function loadVoicePreferences() {
-        try {
-            const saved = localStorage.getItem('voiceEnabled');
-            if (saved !== null) isVoiceEnabled = saved === 'true';
-            const muted = localStorage.getItem('voiceMuted');
-            if (muted !== null) isMuted = muted === 'true';
-        } catch(e) {}
-    }
-    function saveVoicePreferences() {
-        try {
-            localStorage.setItem('voiceEnabled', isVoiceEnabled);
-            localStorage.setItem('voiceMuted', isMuted);
-        } catch(e) {}
-    }
-    function testVoice() {
-        if (!userInteracted) { showOverlayAndInitialize(); return; }
-        if (!isVoiceEnabled) { alert('Voice system active. Click Unmute if muted.'); return; }
-        if (isMuted) { alert('Please unmute first'); return; }
-        speakMessage('Voice alert system is working correctly. This is a test message.', function() { alert('Voice test completed!'); });
-    }
-    function showOverlayAndInitialize() { document.getElementById('chromeVoiceOverlay').style.display = 'flex'; }
-    function hideOverlayAndInitialize() {
-        document.getElementById('chromeVoiceOverlay').style.display = 'none';
-        initializeVoiceSystem();
-    }
-    function initializeVoiceSystem() {
-        if (voiceInitialized) return;
-        voiceInitialized = true;
+    if (hasUserInteracted) {
         userInteracted = true;
-        localStorage.setItem('voiceEnabled', 'true');
-        localStorage.setItem('chromeVoiceEnabled', 'true');
+        voiceInitialized = true;
         loadVoicePreferences();
         updateVoiceUI();
-        try {
-            const silent = new SpeechSynthesisUtterance('');
-            silent.volume = 0;
-            speechSynthesis.speak(silent);
-        } catch(e) {}
-        setTimeout(function() {
-            if (getTotalCriticalCount() > 0 && !isMuted && voicePlayCount < MAX_VOICE_PLAYS) playVoiceAlert();
-        }, 1500);
+        setTimeout(playRefreshVoiceAnnouncement, 1500);
+    } else {
+        setTimeout(function() { if (!userInteracted) showOverlayAndInitialize(); }, 500);
     }
-    function playRefreshVoiceAnnouncement() {
-        if (getTotalCriticalCount() > 0 && isVoiceEnabled && !isMuted && userInteracted && voicePlayCount < MAX_VOICE_PLAYS) {
-            setTimeout(playVoiceAlert, 1500);
-        }
-    }
+});
 
-    // ============================================================
-    // TIMER — EXP jaisa (filter preserve)
-    // ============================================================
-    function countdown(elementName, minutes, seconds) {
-        var element = document.getElementById(elementName);
-        if (!element) return;
-        var endTime = (+new Date) + 1000 * (60 * minutes + seconds);
-        function twoDigits(n) { return (n <= 9 ? "0" + n : n); }
-        function updateTimer() {
-            var msLeft = endTime - (+new Date);
-            if (msLeft < 1000) {
-                element.innerHTML = "...";
-                var rt = document.getElementById('refreshTimer');
-                if (rt) rt.classList.add('warning-state');
-                setTimeout(function() {
-                    // ✅ Filter params preserve karo (EXP jaisa)
-                    window.location.href = window.location.pathname + window.location.search;
-                }, 1000);
-            } else {
-                var time = new Date(msLeft);
-                var hours = time.getUTCHours();
-                var mins = time.getUTCMinutes();
-                element.innerHTML = (hours ? hours + ':' + twoDigits(mins) : mins) + ':' + twoDigits(time.getUTCSeconds());
-                var rt = document.getElementById('refreshTimer');
-                if (rt) {
-                    if (msLeft < 60000) rt.classList.add('warning-state');
-                    else rt.classList.remove('warning-state');
-                }
-                setTimeout(updateTimer, time.getUTCMilliseconds() + 500);
-            }
-        }
-        updateTimer();
-    }
-
-    // ============================================================
-    // UI FUNCTIONS
-    // ============================================================
-    function toggleTimeFilter() {
-        var content = document.getElementById('timeFilterContent');
-        var toggle = document.querySelector('.time-filter-toggle');
-        if (content) content.classList.toggle('expanded');
-        if (toggle) toggle.classList.toggle('expanded');
-    }
-    function resetTimeFilter() {
-        window.location.href = window.location.pathname;
-    }
-    function setQuickFilter(minutes) {
-        var now = new Date();
-        var start = new Date(now.getTime() - minutes * 60000);
-        document.getElementById('fromDateTime').value = formatDateForInput(start);
-        document.getElementById('toDateTime').value = formatDateForInput(now);
-        document.querySelectorAll('.quick-filter-btn').forEach(b => b.classList.remove('active'));
-        if (event && event.target) event.target.classList.add('active');
-        document.getElementById('timeFilterForm').submit();
-    }
-    function formatDateForInput(date) {
-        var y = date.getFullYear();
-        var m = String(date.getMonth()+1).padStart(2,'0');
-        var d = String(date.getDate()).padStart(2,'0');
-        var h = String(date.getHours()).padStart(2,'0');
-        var min = String(date.getMinutes()).padStart(2,'0');
-        return y + '-' + m + '-' + d + 'T' + h + ':' + min;
-    }
-    function toggleBlinking() {
-        var body = document.body;
-        var icon = document.getElementById('blinkIcon');
-        if (body.classList.contains('no-blink')) {
-            body.classList.remove('no-blink');
-            if (icon) icon.className = 'fas fa-eye';
-            localStorage.setItem('blinkingEnabled', 'true');
-        } else {
-            body.classList.add('no-blink');
-            if (icon) icon.className = 'fas fa-eye-slash';
-            localStorage.setItem('blinkingEnabled', 'false');
-        }
-    }
-    function showIsolatedOnly() {
-        var cards = document.querySelectorAll('.broker-card');
-        var isolatedCount = 0;
-        cards.forEach(function(card) {
-            if (card.classList.contains('isolated')) { card.style.display = 'flex'; isolatedCount++; }
-            else card.style.display = 'none';
-        });
-        var showAllBtn = document.getElementById('showAllBtn');
-        if (showAllBtn) showAllBtn.style.display = 'inline-flex';
-        var container = document.getElementById('brokerCardsContainer');
-        var existing = document.getElementById('noIsolatedMessage');
-        if (isolatedCount === 0 && !existing) {
-            var div = document.createElement('div');
-            div.id = 'noIsolatedMessage';
-            div.className = 'card';
-            div.style.cssText = 'grid-column: 1 / -1; text-align: center; padding: 3rem 1.5rem;';
-            div.innerHTML = '<i class="fas fa-shield-alt" style="font-size: 3rem; color: var(--text-faint); margin-bottom: 0.9rem;"></i><h3 style="color: var(--text-secondary); margin-bottom: 0.5rem; font-size: 1.15rem;">No Isolated Brokers</h3><button class="btn primary" onclick="showAllBrokers()" style="margin-top: 1rem;"><i class="fas fa-globe"></i> Show All</button>';
-            container.appendChild(div);
-        } else if (existing && isolatedCount > 0) existing.remove();
-    }
-    function showAllBrokers() {
-        document.querySelectorAll('.broker-card').forEach(c => c.style.display = 'flex');
-        var showAllBtn = document.getElementById('showAllBtn');
-        if (showAllBtn) showAllBtn.style.display = 'none';
-        var msg = document.getElementById('noIsolatedMessage');
-        if (msg) msg.remove();
-    }
-    function openNewPage() {
-        window.open('<%= request.getContextPath() + "/jsp/A_EXP_SERVERWISE_COUNT_LDAP.jsp" %>', '_blank');
-    }
-
-    document.addEventListener('keydown', function(e) {
-        var isRefreshKey = (e.key === 'F5') || (e.ctrlKey && (e.key === 'r' || e.key === 'R')) || (e.metaKey && (e.key === 'r' || e.key === 'R'));
-        if (isRefreshKey) {
-            var hasFilter = window.location.search && window.location.search.length > 1;
-            if (hasFilter) { e.preventDefault(); window.location.href = window.location.pathname; return false; }
-        }
-        if (e.ctrlKey && e.key === 'b') { e.preventDefault(); toggleBlinking(); }
-        if (e.ctrlKey && e.key === 'i') { e.preventDefault(); showIsolatedOnly(); }
-        if (e.ctrlKey && e.key === 'a') { e.preventDefault(); showAllBrokers(); }
-        if (e.ctrlKey && e.key === 'v') { e.preventDefault(); testVoice(); }
-        if (e.ctrlKey && e.key === 'm') { e.preventDefault(); toggleMute(); }
-        if (e.ctrlKey && e.key === 'd') { e.preventDefault(); toggleTheme(); }
-    });
-
-    document.addEventListener('DOMContentLoaded', function() {
-        var overlay = document.getElementById('chromeVoiceOverlay');
-        var enableBtn = document.getElementById('enableVoiceNowBtn');
-        if (overlay) overlay.addEventListener('click', function(e) {
-            if (e.target === overlay || e.target === enableBtn) hideOverlayAndInitialize();
-        });
-        if (enableBtn) enableBtn.addEventListener('click', hideOverlayAndInitialize);
-
-        var blinkingPref = localStorage.getItem('blinkingEnabled');
-        if (blinkingPref === 'false') {
-            document.body.classList.add('no-blink');
-            var bi = document.getElementById('blinkIcon');
-            if (bi) bi.className = 'fas fa-eye-slash';
-        }
-
-        countdown('ten-countdown', 10, 0);
-
-        var urlParams = new URLSearchParams(window.location.search);
-        var fromDateTime = urlParams.get('fromDateTime');
-        var toDateTime = urlParams.get('toDateTime');
-        if (fromDateTime && toDateTime) {
-            var diffMinutes = Math.round((new Date(toDateTime) - new Date(fromDateTime)) / (1000 * 60));
-            document.querySelectorAll('.quick-filter-btn').forEach(function(btn) {
-                btn.classList.remove('active');
-                var match = btn.getAttribute('onclick')?.match(/\d+/);
-                var minutes = match ? parseInt(match[0]) : 60;
-                if (Math.abs(diffMinutes - minutes) < 5) btn.classList.add('active');
-            });
-        }
-
-        if (hasUserInteracted) {
-            userInteracted = true;
-            voiceInitialized = true;
-            loadVoicePreferences();
-            updateVoiceUI();
-            setTimeout(playRefreshVoiceAnnouncement, 1500);
-        } else {
-            setTimeout(function() { if (!userInteracted) showOverlayAndInitialize(); }, 500);
-        }
-    });
-
-    window.addEventListener('beforeunload', function() {
-        saveVoicePreferences();
-        try { speechSynthesis.cancel(); } catch(e) {}
-    });
+window.addEventListener('beforeunload', function() {
+    saveVoicePreferences();
+    try { speechSynthesis.cancel(); } catch(e) {}
+});
 </script>
 
 </body>
