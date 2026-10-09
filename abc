@@ -1,94 +1,793 @@
 package com.action;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-
 import org.apache.struts2.ActionSupport;
-import org.apache.struts2.action.Action;
-import org.apache.struts2.dispatcher.mapper.ActionMapping;
+import org.apache.struts2.ServletActionContext;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
-import com.actionform.KPIActionFoms;
-import com.jdbc.DBUtilityAuto;
 
 @SuppressWarnings("serial")
 public class UserHomeScreenAction extends ActionSupport {
-	public String execute(ActionMapping mapping, Action form, HttpServletRequest request,
-			HttpServletResponse response) throws Exception {
-		KPIActionFoms l_obj = (KPIActionFoms) form;
-		HttpSession session = request.getSession(false);
-		String m_strrole = (String) session.getAttribute("role");
-		System.out.print("Role: " + m_strrole);
-		if(m_strrole==null || m_strrole.equals("")) {
-			return "session";
-		}
-		this.showrolewisemenu(l_obj, request, m_strrole);
-		return "success";
-	}
 
-	private void showrolewisemenu(KPIActionFoms l_obj, HttpServletRequest request, String Role) throws SQLException {
-		//Connection con = DBUtility.getReportDBConnection();
-		Connection con = DBUtilityAuto.getReportDBConnection();
-		Statement l_objstatement = null;
-		ResultSet l_bjres = null;
-		try {
-			String query = "select role_id  from rolemst where rolename='" + Role + "'";
-			System.out.print("New:" + query);
-			l_objstatement = con.createStatement();
-			l_bjres = l_objstatement.executeQuery(query);
-			if (l_bjres != null) {
-				while (l_bjres.next()) {
-					Role = l_bjres.getString("role_id");
+    @Override
+    public String execute() throws Exception {
+        HttpServletRequest request = ServletActionContext.getRequest();
+        HttpSession session = request.getSession(false);
 
-				}
-			}
-			query = "select * from rolewisesettingmst where Role='" + Role + "'";
-			System.out.print("New:" + query);
-			l_objstatement = con.createStatement();
-			l_bjres = l_objstatement.executeQuery(query);
-			if (l_bjres != null) {
-				while (l_bjres.next()) {
+        // ✅ Session check — agar session nahi hai toh login pe bhejo
+        if (session == null || session.getAttribute("role") == null
+                || ((String) session.getAttribute("role")).isEmpty()) {
+            System.out.println(">>> UserHomeScreenAction: No valid session — redirecting to login");
+            return "session";
+        }
 
-					l_obj.setM_strflagKPI(l_bjres.getString("KPI"));
-					l_obj.setM_strflagReports(l_bjres.getString("Reports"));
-					l_obj.setM_strflagExpMonitoringPortal(l_bjres.getString("ExpMonitoringPortal"));
-					l_obj.setM_strflagSYSMonitoringPortal(l_bjres.getString("SYSMonitoringPortal"));
-					l_obj.setM_strflagTop20Service(l_bjres.getString("Top20Service"));
-					l_obj.setM_strflagEPayAndVAN(l_bjres.getString("EPayAndVAN"));
-					l_obj.setM_strflagAdharVault(l_bjres.getString("AdharVault"));
-					l_obj.setM_strflaghundreadpercentagefailure(l_bjres.getString("hundreadpercentagefailure"));
-					l_obj.setM_strflagEISAPPIssue(l_bjres.getString("EISAPPIssue"));
-					l_obj.setM_strflagSearchGen5Referenceno(l_bjres.getString("SearchGen5Referenceno"));
-					l_obj.setM_strAdochChecklist(l_bjres.getString("ADOCH_CHECKLIST"));
-					l_obj.setM_strScoreChecklist(l_bjres.getString("SCORE_CHECKLIST"));
-					l_obj.setM_strMonitoringChecklist(l_bjres.getString("MONITORING_CHECKLIST"));
-					l_obj.setM_strMailsChecklist(l_bjres.getString("MAILS_CHECKLIST"));
-					l_obj.setM_strProblemChecklist(l_bjres.getString("PROBLEM_CHECKLIST"));;
-					l_obj.setM_strdeploymentsheet(l_bjres.getString("deployment_sheet"));
-					String arr[] = l_bjres.getString("SOP_Read_Write").split("/");
-					l_obj.setM_strflagSOP_Read(arr[0]);
-					l_obj.setM_strflagSOP_Write(arr[1]);
-				}
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		} finally {
-			if (l_bjres != null) {
-				l_bjres.close();
+        String role = (String) session.getAttribute("role");
+        System.out.println(">>> UserHomeScreenAction: Role = " + role);
 
-			}
-			if (l_objstatement != null) {
-				l_objstatement.close();
+        // ✅ Strict cache headers — browser back pe login page dikhne se rokne ke liye
+        HttpServletResponse response = ServletActionContext.getResponse();
+        response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0, private");
+        response.setHeader("Pragma", "no-cache");
+        response.setHeader("Expires", "0");
 
-			}
-			if (con != null) {
-				con.close();
+        return "success";
+    }
+}
 
-			}
-		}
-	}
+
+---------------------------------------------------------------------------------
+
+
+<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%
+ // ✅ Session check — agar session nahi hai toh login pe bhejo
+ if(session == null || session.getAttribute("role") == null) {
+     response.sendRedirect(request.getContextPath() + "/login.action");
+     return;
+ }
+
+ // ✅ Strict cache headers — browser back fix
+ response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0, private");
+ response.setHeader("Pragma", "no-cache");
+ response.setDateHeader("Expires", 0);
+%>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<title>EIS Portal — Home</title>
+<script src="<%=request.getContextPath()%>/js/jquery.min.js"></script>
+<style>
+:root{
+  --brand:#F86F03;
+  --brand-2:#FF9A3D;
+  --brand-light:#FFF4EC;
+  --brand-glow:rgba(248,111,3,.35);
+  --ink:#0A0A0A;
+  --muted:#6B7280;
+  --line:#EAEAEA;
+  --bg:#F7F7F5;
+  --card:#FFFFFF;
+  --hero-dark:#1A1A1A;
+  --hero-dark-2:#2A2A2A;
+  --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --sidebar-w:260px;
+  --topnav-h:64px;
+}
+html[data-theme="dark"]{
+  --ink:#F5F5F5;
+  --muted:#9CA3AF;
+  --line:#272727;
+  --bg:#0F0F0F;
+  --card:#161616;
+  --hero-dark:#0B0B0B;
+  --hero-dark-2:#1A1A1A;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:var(--font-stack);
+  font-weight:700;
+  background:var(--bg);
+  color:var(--ink);
+  -webkit-font-smoothing:antialiased;
+  min-height:100vh;
+  transition:background .3s ease,color .3s ease;
+}
+a{color:inherit;text-decoration:none}
+h1,h2,h3,h4,h5,h6,strong,b{font-weight:800;letter-spacing:-.3px}
+
+.icon-svg{
+  width:16px;height:16px;
+  display:inline-block;flex-shrink:0;
+  stroke:currentColor;fill:none;
+  stroke-width:2.2;
+  stroke-linecap:round;stroke-linejoin:round;
+}
+
+/* ============ BENTO WRAPPER ============ */
+.new-wrapper{
+  margin-left:var(--sidebar-w);
+  padding-top:var(--topnav-h);
+  transition:margin-left .3s cubic-bezier(.4,0,.2,1);
+  min-height:100vh;
+}
+html.sb-collapsed .new-wrapper{
+  margin-left:0;
+}
+.bento-wrap{
+  max-width:1400px;
+  margin:0 auto;
+  padding:32px 28px 60px;
+}
+
+/* ============ HERO ============ */
+.hero{
+  background:linear-gradient(135deg, var(--hero-dark) 0%, var(--hero-dark-2) 100%);
+  border-radius:22px;
+  padding:44px 40px;
+  color:#fff;
+  position:relative;
+  overflow:hidden;
+  margin-bottom:24px;
+  display:grid;
+  grid-template-columns:1.5fr 1fr;
+  gap:24px;
+  align-items:center;
+  min-height:240px;
+  border:1px solid rgba(248,111,3,.08);
+}
+.hero::before{
+  content:"";position:absolute;top:-120px;right:-120px;
+  width:400px;height:400px;border-radius:50%;
+  background:radial-gradient(circle,rgba(248,111,3,.28) 0%,transparent 70%);
+}
+.hero::after{
+  content:"";position:absolute;bottom:-140px;left:20%;
+  width:280px;height:280px;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,154,61,.14) 0%,transparent 70%);
+}
+.hero-content{position:relative;z-index:2}
+.hero-eyebrow{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:6px 12px;
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:999px;
+  font-size:.72rem;font-weight:600;margin-bottom:18px;
+  color:#fff;
+}
+.hero-eyebrow .pulse{
+  width:6px;height:6px;border-radius:50%;
+  background:#4ADE80;box-shadow:0 0 8px #4ADE80;
+  animation:pulse 2s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.hero h1{
+  font-size:2.5rem;font-weight:800;
+  letter-spacing:-1.2px;line-height:1.1;margin-bottom:12px;
+  color:#fff;
+}
+.hero h1 .grad{
+  background:linear-gradient(135deg,var(--brand) 0%,var(--brand-2) 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.hero p{
+  font-size:.95rem;line-height:1.6;
+  color:rgba(255,255,255,.72);
+  max-width:480px;
+}
+.hero-actions{display:flex;gap:12px;margin-top:24px;flex-wrap:wrap}
+.hero-btn{
+  padding:11px 18px;border-radius:11px;
+  font-size:.85rem;font-weight:600;cursor:pointer;
+  border:none;font-family:inherit;
+  display:inline-flex;align-items:center;gap:8px;
+  transition:all .2s ease;
+  text-decoration:none;
+}
+.hero-btn.primary{
+  background:var(--brand);color:#fff;
+  box-shadow:0 8px 20px -6px rgba(248,111,3,.5);
+}
+.hero-btn.primary:hover{background:var(--brand-2);transform:translateY(-1px)}
+.hero-btn.ghost{
+  background:rgba(255,255,255,.08);color:#fff;
+  border:1px solid rgba(255,255,255,.12);
+}
+.hero-btn.ghost:hover{background:rgba(255,255,255,.15)}
+.hero-btn .icon-svg{width:14px;height:14px}
+
+.hero-visual{
+  position:relative;z-index:2;
+  display:flex;flex-direction:column;gap:14px;
+  align-items:flex-end;
+}
+.hero-mini{
+  width:100%;max-width:280px;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:14px;
+  padding:14px 16px;
+  display:flex;align-items:center;gap:12px;
+  backdrop-filter:blur(8px);
+}
+.hero-mini .mi{
+  width:34px;height:34px;border-radius:9px;
+  display:grid;place-items:center;
+  background:rgba(248,111,3,.2);
+  color:var(--brand);
+  flex-shrink:0;
+}
+.hero-mini .mi .icon-svg{width:16px;height:16px}
+.hero-mini .mt{
+  font-size:.85rem;font-weight:700;color:#fff;line-height:1.2;
+}
+.hero-mini .ms{
+  font-size:.72rem;color:rgba(255,255,255,.6);margin-top:2px;
+}
+.hero-mini.green .mi{background:rgba(74,222,128,.15);color:#4ADE80}
+.hero-mini.green .mt{color:#4ADE80}
+
+/* ============ STATS ============ */
+.stats{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  gap:16px;margin-bottom:36px;
+}
+.stat{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:16px;padding:20px;
+  display:flex;flex-direction:column;gap:8px;
+  transition:all .2s ease;
+  position:relative;overflow:hidden;
+}
+.stat::before{
+  content:"";position:absolute;top:0;left:0;
+  width:3px;height:100%;
+  background:var(--brand);
+  opacity:0;transition:opacity .2s ease;
+}
+.stat:hover{
+  border-color:var(--brand);transform:translateY(-2px);
+  box-shadow:0 10px 28px -10px rgba(248,111,3,.18);
+}
+.stat:hover::before{opacity:1}
+.stat .sicon{
+  width:36px;height:36px;
+  display:grid;place-items:center;
+  background:var(--brand-light);
+  color:var(--brand);
+  border-radius:10px;
+}
+html[data-theme="dark"] .stat .sicon{
+  background:rgba(248,111,3,.15);
+}
+.stat .sicon .icon-svg{width:16px;height:16px}
+.stat .snum{
+  font-size:1.55rem;font-weight:800;
+  letter-spacing:-.8px;line-height:1;
+  color:var(--ink);
+}
+.stat .slabel{
+  font-size:.78rem;color:var(--muted);font-weight:500;
+}
+.stat .strend{
+  position:absolute;top:20px;right:20px;
+  font-size:.68rem;font-weight:700;
+  padding:3px 8px;border-radius:999px;
+  background:rgba(74,222,128,.12);
+  color:#16A34A;
+}
+.stat .strend.warn{background:rgba(248,111,3,.12);color:var(--brand)}
+
+/* ============ SECTION HEADER ============ */
+.sec-head{
+  display:flex;align-items:center;justify-content:space-between;
+  margin:0 0 18px;
+}
+.sec-head h2{
+  font-size:1.1rem;font-weight:700;
+  letter-spacing:-.4px;
+  display:flex;align-items:center;gap:10px;
+  color:var(--ink);
+}
+.sec-head h2 .icon-svg{color:var(--brand);width:16px;height:16px}
+.sec-head .hint{
+  font-size:.76rem;color:var(--muted);font-weight:500;
+}
+.sec-head .hint b{color:var(--ink);font-weight:700}
+
+/* ============ BENTO ============ */
+.bento{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:16px;
+  margin-bottom:32px;
+}
+.bento-item{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:22px;
+  display:flex;flex-direction:column;justify-content:space-between;
+  cursor:pointer;transition:all .25s ease;
+  position:relative;overflow:hidden;
+  min-height:160px;
+  text-decoration:none;
+  color:var(--ink);
+}
+.bento-item:hover{
+  border-color:var(--brand);transform:translateY(-3px);
+  box-shadow:0 16px 40px -12px rgba(248,111,3,.22);
+}
+.bento-item:hover .bicon{
+  background:var(--brand);color:#fff;transform:scale(1.08);
+}
+.bento-item:hover .bgo{opacity:1;color:var(--brand)}
+.bhead{
+  display:flex;justify-content:space-between;align-items:flex-start;
+  gap:10px;
+}
+.bicon{
+  width:44px;height:44px;
+  display:grid;place-items:center;
+  background:var(--brand-light);
+  color:var(--brand);border-radius:12px;
+  transition:all .25s ease;flex-shrink:0;
+}
+html[data-theme="dark"] .bicon{
+  background:rgba(248,111,3,.15);
+}
+.bicon .icon-svg{width:18px;height:18px}
+.bgo{
+  color:var(--muted);
+  opacity:0;transition:opacity .25s ease;
+}
+.bgo .icon-svg{width:14px;height:14px}
+.btitle{
+  font-size:.98rem;font-weight:700;
+  letter-spacing:-.2px;margin-top:18px;line-height:1.3;
+  color:var(--ink);
+}
+.bsub{
+  font-size:.76rem;color:var(--muted);
+  font-weight:500;margin-top:5px;
+}
+.btags{
+  display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;
+}
+.btag{
+  font-size:.65rem;font-weight:700;
+  padding:3px 8px;border-radius:999px;
+  background:var(--brand-light);
+  color:var(--brand);
+  text-transform:uppercase;letter-spacing:.3px;
+}
+html[data-theme="dark"] .btag{
+  background:rgba(248,111,3,.15);
+}
+.btag.gray{
+  background:var(--sidebar-hover,#F5F5F4);
+  color:var(--muted);
+}
+html[data-theme="dark"] .btag.gray{
+  background:#222;color:#9CA3AF;
+}
+
+/* Featured large */
+.bento-item.lg{
+  grid-column:span 2;grid-row:span 2;
+  padding:30px;
+  background:linear-gradient(135deg,var(--hero-dark) 0%,var(--hero-dark-2) 100%);
+  color:#fff;border-color:transparent;
+}
+.bento-item.lg::before{
+  content:"";position:absolute;inset:auto -80px -80px auto;
+  width:300px;height:300px;border-radius:50%;
+  background:radial-gradient(circle,rgba(248,111,3,.25) 0%,transparent 70%);
+}
+.bento-item.lg:hover{
+  border-color:transparent;
+  box-shadow:0 24px 60px -12px rgba(248,111,3,.35);
+}
+.bento-item.lg .bicon{
+  background:rgba(248,111,3,.15);color:var(--brand);
+  width:54px;height:54px;
+}
+.bento-item.lg .bicon .icon-svg{width:22px;height:22px}
+.bento-item.lg .btitle{
+  font-size:1.4rem;font-weight:800;
+  letter-spacing:-.5px;margin-top:auto;
+  position:relative;z-index:2;
+  color:#fff;
+}
+.bento-item.lg .bsub{
+  color:rgba(255,255,255,.65);
+  font-size:.85rem;margin-top:8px;
+  position:relative;z-index:2;
+}
+.bento-item.lg .bgo{color:rgba(255,255,255,.5)}
+.bento-item.lg:hover .bgo{color:var(--brand)}
+.bento-item.lg .btag{
+  background:rgba(255,255,255,.1);
+  color:#fff;
+}
+
+/* Alert orange */
+.bento-item.alert{
+  background:linear-gradient(135deg,var(--brand) 0%,var(--brand-2) 100%);
+  color:#fff;border-color:transparent;
+}
+.bento-item.alert .bicon{
+  background:rgba(255,255,255,.2);color:#fff;
+}
+.bento-item.alert .bsub{color:rgba(255,255,255,.9)}
+.bento-item.alert .bgo{color:rgba(255,255,255,.7)}
+.bento-item.alert .btag{
+  background:rgba(255,255,255,.2);color:#fff;
+}
+
+/* Medium wide */
+.bento-item.md{
+  grid-column:span 2;
+}
+
+/* ============ FOOTER ============ */
+.foot{
+  margin-top:48px;padding-top:24px;
+  border-top:1px solid var(--line);
+  display:flex;justify-content:space-between;align-items:center;
+  font-size:.8rem;color:var(--muted);
+}
+.foot .brandline b{color:var(--brand)}
+
+/* ============ RESPONSIVE ============ */
+@media (max-width:1100px){
+  .bento{grid-template-columns:repeat(3,1fr)}
+  .bento-item.lg{grid-column:span 2;grid-row:span 1}
+  .bento-item.md{grid-column:span 2}
+  .stats{grid-template-columns:repeat(2,1fr)}
+}
+@media (max-width:800px){
+  .new-wrapper{margin-left:0}
+  .hero{grid-template-columns:1fr;padding:32px 28px}
+  .hero h1{font-size:1.8rem}
+  .hero-visual{display:none}
+  .bento{grid-template-columns:repeat(2,1fr)}
+  .bento-item.lg{grid-column:span 2}
+  .bento-item.md{grid-column:span 2}
+}
+@media (max-width:520px){
+  .bento-wrap{padding:20px 16px 40px}
+  .hero h1{font-size:1.5rem}
+  .bento{grid-template-columns:1fr}
+  .bento-item.lg,.bento-item.md{grid-column:span 1}
+  .stats{grid-template-columns:1fr 1fr}
+  .foot{flex-direction:column;gap:8px;text-align:center}
+}
+</style>
+</head>
+<body>
+
+<%@include file="./userheader.jsp"%>
+
+<%
+  String roleForDisplay = (String) session.getAttribute("role");
+%>
+
+<div class="new-wrapper">
+<div class="bento-wrap">
+
+  <section class="hero">
+    <div class="hero-content">
+      <div class="hero-eyebrow">
+        <span class="pulse"></span>
+        All Systems Operational
+      </div>
+      <h1>Welcome back,<br><span class="grad"><%= roleForDisplay != null ? roleForDisplay : "Operator" %></span></h1>
+      <p>Your command center for enterprise monitoring, deployments, incident management and operational dashboards — all in one place.</p>
+
+      <div class="hero-actions">
+        <button class="hero-btn primary" onclick="focusSidebarSearch()">
+          <svg class="icon-svg" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          Search Dashboards
+        </button>
+        <a class="hero-btn ghost" href="<%=request.getContextPath()%>/jsp/TicketHome.jsp?&role=<%=roleForDisplay%>" target="_blank" rel="noopener noreferrer">
+          <svg class="icon-svg" viewBox="0 0 24 24"><path d="M2 9a3 3 0 0 1 3-3h14a3 3 0 0 1 3 3v.5a2.5 2.5 0 0 0 0 5V15a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3v-.5a2.5 2.5 0 0 0 0-5z"/></svg>
+          Raise Ticket
+        </a>
+      </div>
+    </div>
+
+    <div class="hero-visual">
+      <div class="hero-mini">
+        <div class="mi">
+          <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <div>
+          <div class="mt">Secure Session</div>
+          <div class="ms">Encrypted connection</div>
+        </div>
+      </div>
+      <div class="hero-mini green">
+        <div class="mi">
+          <svg class="icon-svg" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        </div>
+        <div>
+          <div class="mt">99.98% Uptime</div>
+          <div class="ms">Last 30 days</div>
+        </div>
+      </div>
+      <div class="hero-mini">
+        <div class="mi">
+          <svg class="icon-svg" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        </div>
+        <div>
+          <div class="mt">Live Monitoring</div>
+          <div class="ms">Real-time alerts active</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="stats">
+    <div class="stat">
+      <div class="sicon">
+        <svg class="icon-svg" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      </div>
+      <div class="snum">24×7</div>
+      <div class="slabel">Monitoring active</div>
+      <div class="strend">LIVE</div>
+    </div>
+    <div class="stat">
+      <div class="sicon">
+        <svg class="icon-svg" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      </div>
+      <div class="snum">100+</div>
+      <div class="slabel">Services tracked</div>
+      <div class="strend">+12</div>
+    </div>
+    <div class="stat">
+      <div class="sicon">
+        <svg class="icon-svg" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      </div>
+      <div class="snum">&lt; 2s</div>
+      <div class="slabel">Alert response time</div>
+      <div class="strend">FAST</div>
+    </div>
+    <div class="stat">
+      <div class="sicon">
+        <svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </div>
+      <div class="snum">365d</div>
+      <div class="slabel">Data retention</div>
+      <div class="strend warn">ARCHIVE</div>
+    </div>
+  </section>
+
+  <div class="sec-head">
+    <h2>
+      <svg class="icon-svg" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      Quick Access
+    </h2>
+    <span class="hint">Press <b>Ctrl + K</b> for full search</span>
+  </div>
+
+  <section class="bento">
+
+    <a class="bento-item lg" href="<%=request.getContextPath()%>/jsp/CombinedServiceWise&HundreadPerFailure.jsp" target="_blank" rel="noopener noreferrer">
+      <div class="bhead">
+        <div class="bicon">
+          <svg class="icon-svg" viewBox="0 0 24 24"><path d="M4.93 4.93a10 10 0 0 0 0 14.14M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M8.46 8.46a5 5 0 0 0 0 7.07M15.54 8.46a5 5 0 0 1 0 7.07"/><circle cx="12" cy="12" r="1.5"/></svg>
+        </div>
+        <span class="bgo">
+          <svg class="icon-svg" viewBox="0 0 24 24"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+        </span>
+      </div>
+      <div>
+        <div class="btitle">EIS Command Center</div>
+        <div class="bsub">Combined service-wise &amp; 100% failure monitoring</div>
+        <div class="btags">
+          <span class="btag">Featured</span>
+          <span class="btag">Real-time</span>
+        </div>
+      </div>
+    </a>
+
+    <a class="bento-item alert" href="<%=request.getContextPath()%>/ErrorDashboard" target="_blank" rel="noopener noreferrer">
+      <div class="bhead">
+        <div class="bicon">
+          <svg class="icon-svg" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </div>
+        <span class="bgo">
+          <svg class="icon-svg" viewBox="0 0 24 24"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+        </span>
+      </div>
+      <div>
+        <div class="btitle">Error Dashboard</div>
+        <div class="bsub">Live error tracking</div>
+        <div class="btags"><span class="btag">Critical</span></div>
+      </div>
+    </a>
+
+    <a class="bento-item md" href="<%=request.getContextPath()%>/jsp/AutoRefreshExpSysServiceWise.jsp" target="_blank" rel="noopener noreferrer">
+      <div class="bhead">
+        <div class="bicon">
+          <svg class="icon-svg" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+        <span class="bgo">
+          <svg class="icon-svg" viewBox="0 0 24 24"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+        </span>
+      </div>
+      <div>
+        <div class="btitle">EXP SYS Service Wise Failure</div>
+        <div class="bsub">Auto-refresh live view of EXP &amp; SYS services failing</div>
+        <div class="btags">
+          <span class="btag">Live</span>
+          <span class="btag gray">Auto Refresh</span>
+        </div>
+      </div>
+    </a>
+
+    <a class="bento-item" href="<%=request.getContextPath()%>/AtmCardServlet" target="_blank" rel="noopener noreferrer">
+      <div class="bhead">
+        <div class="bicon">
+          <svg class="icon-svg" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+        </div>
+        <span class="bgo">
+          <svg class="icon-svg" viewBox="0 0 24 24"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+        </span>
+      </div>
+      <div>
+        <div class="btitle">ATM IP Port Portal</div>
+        <div class="bsub">Live ATM services</div>
+      </div>
+    </a>
+
+    <a class="bento-item" href="<%=request.getContextPath()%>/jsp/TransactionEndPointBank.jsp" target="_blank" rel="noopener noreferrer">
+      <div class="bhead">
+        <div class="bicon">
+          <svg class="icon-svg" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        </div>
+        <span class="bgo">
+          <svg class="icon-svg" viewBox="0 0 24 24"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+        </span>
+      </div>
+      <div>
+        <div class="btitle">Transaction End Point</div>
+        <div class="bsub">Txn endpoint chart</div>
+      </div>
+    </a>
+
+    <a class="bento-item" href="<%=request.getContextPath()%>/jsp/PortStatus.jsp" target="_blank" rel="noopener noreferrer">
+      <div class="bhead">
+        <div class="bicon">
+          <svg class="icon-svg" viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+        </div>
+        <span class="bgo">
+          <svg class="icon-svg" viewBox="0 0 24 24"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+        </span>
+      </div>
+      <div>
+        <div class="btitle">Service Status</div>
+        <div class="bsub">Port monitoring</div>
+      </div>
+    </a>
+
+    <a class="bento-item" href="<%=request.getContextPath()%>/jsp/DRChecklistHomePage.jsp" target="_blank" rel="noopener noreferrer">
+      <div class="bhead">
+        <div class="bicon">
+          <svg class="icon-svg" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        </div>
+        <span class="bgo">
+          <svg class="icon-svg" viewBox="0 0 24 24"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+        </span>
+      </div>
+      <div>
+        <div class="btitle">DR Checklist</div>
+        <div class="bsub">Module checklist</div>
+      </div>
+    </a>
+
+    <a class="bento-item" href="<%=request.getContextPath()%>/jsp/TicketHome.jsp?&role=<%=roleForDisplay%>" target="_blank" rel="noopener noreferrer">
+      <div class="bhead">
+        <div class="bicon">
+          <svg class="icon-svg" viewBox="0 0 24 24"><path d="M2 9a3 3 0 0 1 3-3h14a3 3 0 0 1 3 3v.5a2.5 2.5 0 0 0 0 5V15a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3v-.5a2.5 2.5 0 0 0 0-5z"/></svg>
+        </div>
+        <span class="bgo">
+          <svg class="icon-svg" viewBox="0 0 24 24"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+        </span>
+      </div>
+      <div>
+        <div class="btitle">Ticketing Portal</div>
+        <div class="bsub">Raise / track tickets</div>
+      </div>
+    </a>
+
+    <a class="bento-item" href="<%=request.getContextPath()%>/DeploymentSheetServlet" target="_blank" rel="noopener noreferrer">
+      <div class="bhead">
+        <div class="bicon">
+          <svg class="icon-svg" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </div>
+        <span class="bgo">
+          <svg class="icon-svg" viewBox="0 0 24 24"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+        </span>
+      </div>
+      <div>
+        <div class="btitle">Add Deployment</div>
+        <div class="bsub">Log new deployment</div>
+      </div>
+    </a>
+
+    <a class="bento-item" href="<%=request.getContextPath()%>/jsp/DailyStatisticsReport.jsp" target="_blank" rel="noopener noreferrer">
+      <div class="bhead">
+        <div class="bicon">
+          <svg class="icon-svg" viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+        </div>
+        <span class="bgo">
+          <svg class="icon-svg" viewBox="0 0 24 24"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+        </span>
+      </div>
+      <div>
+        <div class="btitle">Daily Statistics</div>
+        <div class="bsub">Night shift report</div>
+      </div>
+    </a>
+
+  </section>
+
+  <footer class="foot">
+    <div class="brandline"><b>EIS Portal</b> · Internal use only</div>
+    <div>Designed &amp; Developed by EIS Automation Team</div>
+  </footer>
+
+</div>
+</div>
+
+</body>
+</html>
+
+
+------------------------------------------------------------------------------------------
+
+<%--
+  EIS Portal — Shared Header Fragment
+  ✅ All fonts BOLD (700+)
+  ✅ Local fonts only (no CDN)
+  ✅ Inline SVG icons
+  ✅ Default DARK theme
+--%>
+<%
+ // ✅ Cache headers — browser back fix
+ response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0, private");
+ response.setHeader("Pragma", "no-cache");
+ response.setHeader("Expires", "0");
+%>
+
+<script src="<%=request.getContextPath()%>/js/jquery.min.js"></script>
+
+<style>
+... baaki pura same rakhna jo maine pichle message me diya
+
+
+-----------------------------------------------
+
+@Override
+public String execute() throws Exception {
+    System.out.println(">>> LoginAction.execute() called");
+
+    HttpServletRequest request = ServletActionContext.getRequest();
+    HttpSession session = request.getSession();
+
+    // ✅ Populate roles
+    this.getEISRole(loginForm);
+    List<String> roles = loginForm.getRolelist();
+
+    // ✅ Request + session dono me set karo
+    request.setAttribute("rolelist", roles);
+    session.setAttribute("rolelist", roles);
+
+    return "success";
 }
