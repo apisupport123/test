@@ -1,4 +1,4 @@
-<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<!DOCTYPE html>
 <%-- <%@page import="org.apache.poi.util.SystemOutLogger"%> --%>
 <%@page import="org.json.JSONObject"%>
 <%@page import="org.json.JSONArray"%>
@@ -18,38 +18,23 @@
 <%@ page import="java.util.*,java.util.stream.Collectors,java.time.LocalDate, java.time.format.DateTimeFormatter"%>
 <%@ page import="java.text.*"%>
 <%@page import="com.jdbc.DBUtilityAuto"%>
+<html lang="en">
+<head>
 <%
-    // ✅ Session check
-    if(session == null || session.getAttribute("role") == null) {
-        response.sendRedirect(request.getContextPath() + "/login.action");
-        return;
-    }
-
-    // ✅ Cache headers
-    response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0, private");
+    response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate, private");
     response.setHeader("Pragma", "no-cache");
     response.setDateHeader("Expires", 0);
     response.setHeader("Surrogate-Control", "no-store");
+    response.setHeader("Cache-Control", "max-age=0, no-cache, no-store, must-revalidate");
     response.addHeader("Cache-Control", "post-check=0, pre-check=0");
     request.setAttribute("pageLoadTime", System.currentTimeMillis());
 
     Timestamp startTs = null;
     Timestamp endTs = null;
-    Timestamp snappedStartTs = null;
-    Timestamp snappedEndTs = null;
     String runTimeDisplay = "No data";
     String fromDateTime = "";
     String toDateTime = "";
     String flagStatus = "DR";
-    boolean fallbackApplied = false;
-    boolean freshLoad = false;
-    String requestedWindowDisplay = "";
-    int slotsIncluded = 0;
-    int totalHitsAllBrokers = 0;
-    int totalCriticalServers = 0;
-    int totalWarningServers = 0;
-    int totalHealthyServers = 0;
-    int totalIsolatedServersAgg = 0;
 
     Map<String, String> brokerMapping = new HashMap<>();
     Map<String, String> portMapping = new HashMap<>();
@@ -76,9 +61,8 @@
         String fromParam = request.getParameter("fromDateTime");
         String toParam = request.getParameter("toDateTime");
 
-        if (fromParam == null || toParam == null || fromParam.trim().isEmpty() || toParam.trim().isEmpty()) {
-            freshLoad = true;
-            String latestSql = "SELECT MAX(RUN_START) AS MAX_START FROM EXP_BROKER_HOURLY_STATS";
+        if (fromParam == null || toParam == null || fromParam.isEmpty() || toParam.isEmpty()) {
+            String latestSql = "SELECT MAX(RUN_START) AS MAX_START FROM SYS_BROKER_HOURLY_STATS";
             try (Statement stmt = reportConn.createStatement();
                  ResultSet rs = stmt.executeQuery(latestSql)) {
                 if (rs.next()) {
@@ -87,8 +71,9 @@
                         Calendar cal = Calendar.getInstance();
                         cal.setTime(maxStart);
                         cal.add(Calendar.HOUR_OF_DAY, 1);
+                        Timestamp maxEnd = new Timestamp(cal.getTimeInMillis());
                         startTs = maxStart;
-                        endTs = new Timestamp(cal.getTimeInMillis());
+                        endTs = maxEnd;
                     }
                 }
             }
@@ -102,82 +87,37 @@
                 startTs = new Timestamp(cal.getTimeInMillis());
             }
         } else {
-            try {
-                SimpleDateFormat isoFmt = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm");
-                isoFmt.setLenient(false);
-                java.util.Date startDate = isoFmt.parse(fromParam.trim());
-                Calendar calStart = Calendar.getInstance();
-                calStart.setTime(startDate);
-                calStart.set(Calendar.SECOND, 0);
-                calStart.set(Calendar.MILLISECOND, 0);
-                startTs = new Timestamp(calStart.getTimeInMillis());
-
-                java.util.Date endDate = isoFmt.parse(toParam.trim());
-                Calendar calEnd = Calendar.getInstance();
-                calEnd.setTime(endDate);
-                calEnd.set(Calendar.SECOND, 0);
-                calEnd.set(Calendar.MILLISECOND, 0);
-                endTs = new Timestamp(calEnd.getTimeInMillis());
-
-                if (endTs.before(startTs) || endTs.equals(startTs)) {
-                    Calendar calFix = Calendar.getInstance();
-                    calFix.setTime(endTs);
-                    calFix.add(Calendar.HOUR_OF_DAY, 1);
-                    endTs = new Timestamp(calFix.getTimeInMillis());
-                }
-            } catch (ParseException pe) {
-                Calendar cal = Calendar.getInstance();
-                cal.set(Calendar.MINUTE, 0);
-                cal.set(Calendar.SECOND, 0);
-                cal.set(Calendar.MILLISECOND, 0);
-                endTs = new Timestamp(cal.getTimeInMillis());
-                cal.add(Calendar.HOUR_OF_DAY, -1);
-                startTs = new Timestamp(cal.getTimeInMillis());
-            }
-        }
-
-        Calendar snapStart = Calendar.getInstance();
-        snapStart.setTime(startTs);
-        int minS = snapStart.get(Calendar.MINUTE);
-        snapStart.set(Calendar.MINUTE, (minS / 10) * 10);
-        snapStart.set(Calendar.SECOND, 0);
-        snapStart.set(Calendar.MILLISECOND, 0);
-        snappedStartTs = new Timestamp(snapStart.getTimeInMillis());
-
-        Calendar snapEnd = Calendar.getInstance();
-        snapEnd.setTime(endTs);
-        int minE = snapEnd.get(Calendar.MINUTE);
-        snapEnd.set(Calendar.MINUTE, (minE / 10) * 10);
-        snapEnd.set(Calendar.SECOND, 0);
-        snapEnd.set(Calendar.MILLISECOND, 0);
-        snappedEndTs = new Timestamp(snapEnd.getTimeInMillis());
-
-        if (!snappedEndTs.after(snappedStartTs)) {
-            Calendar c = Calendar.getInstance();
-            c.setTime(snappedEndTs);
-            c.add(Calendar.MINUTE, 10);
-            snappedEndTs = new Timestamp(c.getTimeInMillis());
+            SimpleDateFormat isoFmt = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm");
+            java.util.Date startDate = isoFmt.parse(fromParam);
+            java.util.Date endDate = isoFmt.parse(toParam);
+            startTs = new Timestamp(startDate.getTime());
+            endTs = new Timestamp(endDate.getTime());
         }
 
         SimpleDateFormat displayFmt = new SimpleDateFormat("dd-MM-yyyy HH:mm");
-        requestedWindowDisplay = displayFmt.format(new Date(startTs.getTime())) + " to " + displayFmt.format(new Date(endTs.getTime()));
-        runTimeDisplay = displayFmt.format(new Date(snappedStartTs.getTime())) + " to " + displayFmt.format(new Date(snappedEndTs.getTime()));
+        runTimeDisplay = displayFmt.format(new Date(startTs.getTime())) + " to " + displayFmt.format(new Date(endTs.getTime()));
+        SimpleDateFormat inputFmt = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm");
+        fromDateTime = inputFmt.format(new Date(startTs.getTime()));
+        toDateTime = inputFmt.format(new Date(endTs.getTime()));
 
+        // SYS mapping
+        String mappingQuery = "SELECT BROKER_NAME, SYS_PORT, MAPPED_PORT FROM SYS_BROKER_PORT_MAPPING";
         try (Statement stmt = reportConn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT BROKER_NAME, EXP_PORT, MAPPED_PORT FROM EXP_BROKER_PORT_MAPPING")) {
+             ResultSet rs = stmt.executeQuery(mappingQuery)) {
             while (rs.next()) {
                 String broker = rs.getString("BROKER_NAME");
-                String expPort = rs.getString("EXP_PORT");
+                String sysPort = rs.getString("SYS_PORT");
                 String mappedPort = rs.getString("MAPPED_PORT");
-                if (broker != null && expPort != null && mappedPort != null) {
-                    brokerMapping.put(broker.trim(), expPort.trim());
+                if (broker != null && sysPort != null && mappedPort != null) {
+                    brokerMapping.put(broker.trim(), sysPort.trim());
                     portMapping.put(broker.trim(), mappedPort.trim());
                 }
             }
         }
 
+        String orderQuery = "SELECT BROKER_NAME, ORDER_NUMBER FROM SYS_BROKER_PORT_MAPPING";
         try (Statement stmt = reportConn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT BROKER_NAME, ORDER_NUMBER FROM EXP_BROKER_PORT_MAPPING")) {
+             ResultSet rs = stmt.executeQuery(orderQuery)) {
             while (rs.next()) {
                 String broker = rs.getString("BROKER_NAME");
                 int order = rs.getInt("ORDER_NUMBER");
@@ -193,11 +133,12 @@
             }
         }
 
+        String ipQuery = "SELECT DISTINCT a.SYS_IP, a.SYS_BROKER_NAME FROM SYS_IP_BROKER_DETAILS a ORDER BY a.SYS_BROKER_NAME, a.SYS_IP";
         try (Statement stmt = reportConn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT DISTINCT a.EXP_IP, a.BROKER_NAME FROM EXP_IP_BROKER_DETAILS a ORDER BY a.BROKER_NAME, a.EXP_IP")) {
+             ResultSet rs = stmt.executeQuery(ipQuery)) {
             while (rs.next()) {
-                String broker = rs.getString("BROKER_NAME");
-                String ip = rs.getString("EXP_IP");
+                String broker = rs.getString("SYS_BROKER_NAME");
+                String ip = rs.getString("SYS_IP");
                 if (broker == null || ip == null) continue;
                 broker = broker.trim(); ip = ip.trim();
                 boolean include = false;
@@ -218,22 +159,12 @@
         }
 
         brokerDataList.clear();
-        String brokerStatsSQL =
-            "SELECT BROKER, PORT, " +
-            "       SUM(TOTAL_HITS) AS TOTAL_HITS, " +
-            "       SUM(HEALTHY_SERVERS) AS HEALTHY_SERVERS, " +
-            "       SUM(WARNING_SERVERS) AS WARNING_SERVERS, " +
-            "       SUM(CRITICAL_SERVERS) AS CRITICAL_SERVERS, " +
-            "       SUM(ISOLATED_SERVERS) AS ISOLATED_SERVERS, " +
-            "       MAX(TOTAL_SERVERS) AS TOTAL_SERVERS, " +
-            "       COUNT(*) AS SLOT_COUNT " +
-            "FROM EXP_BROKER_HOURLY_STATS " +
-            "WHERE RUN_START >= ? AND RUN_START <= ? " +
-            "GROUP BY BROKER, PORT ORDER BY BROKER";
-
+        String brokerStatsSQL = "SELECT BROKER, PORT, TOTAL_HITS, HEALTHY_SERVERS, WARNING_SERVERS, " +
+                "CRITICAL_SERVERS, ISOLATED_SERVERS, TOTAL_SERVERS, STATUS " +
+                "FROM SYS_BROKER_HOURLY_STATS WHERE RUN_START = ? AND RUN_END = ?";
         try (PreparedStatement ps = reportConn.prepareStatement(brokerStatsSQL)) {
-            ps.setTimestamp(1, snappedStartTs);
-            ps.setTimestamp(2, snappedEndTs);
+            ps.setTimestamp(1, startTs);
+            ps.setTimestamp(2, endTs);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Map<String, Object> brokerData = new HashMap<>();
@@ -245,13 +176,7 @@
                     int critical = rs.getInt("CRITICAL_SERVERS");
                     int isolated = rs.getInt("ISOLATED_SERVERS");
                     int totalServersRow = rs.getInt("TOTAL_SERVERS");
-                    int slotCount = rs.getInt("SLOT_COUNT");
-
-                    String status;
-                    if (critical > 0) status = "critical";
-                    else if (warning > 0) status = "warning";
-                    else if (isolated > 0) status = "isolated";
-                    else status = "healthy";
+                    String status = rs.getString("STATUS");
 
                     List<String> ipList = brokerIPMapping.getOrDefault(broker, new ArrayList<>());
                     brokerData.put("broker", broker);
@@ -264,101 +189,21 @@
                     brokerData.put("isolatedCount", isolated);
                     brokerData.put("serverCount", totalServersRow);
                     brokerData.put("ipList", ipList);
-                    brokerData.put("slotCount", slotCount);
                     brokerDataList.add(brokerData);
-
-                    totalHitsAllBrokers += totalHits;
-                    totalCriticalServers += critical;
-                    totalWarningServers += warning;
-                    totalHealthyServers += healthy;
-                    totalIsolatedServersAgg += isolated;
                 }
             }
         }
-
-        if (brokerDataList.isEmpty()) {
-            String fallbackSql = "SELECT MAX(RUN_START) AS LATEST_START FROM EXP_BROKER_HOURLY_STATS WHERE RUN_START <= ?";
-            Timestamp latestStart = null;
-            try (PreparedStatement psFb = reportConn.prepareStatement(fallbackSql)) {
-                psFb.setTimestamp(1, snappedEndTs);
-                try (ResultSet rsFb = psFb.executeQuery()) {
-                    if (rsFb.next()) latestStart = rsFb.getTimestamp("LATEST_START");
-                }
-            }
-            if (latestStart != null) {
-                Calendar calFb = Calendar.getInstance();
-                calFb.setTime(latestStart);
-                calFb.add(Calendar.MINUTE, 10);
-                snappedStartTs = latestStart;
-                snappedEndTs = new Timestamp(calFb.getTimeInMillis());
-                fallbackApplied = true;
-
-                try (PreparedStatement ps = reportConn.prepareStatement(brokerStatsSQL)) {
-                    ps.setTimestamp(1, snappedStartTs);
-                    ps.setTimestamp(2, snappedEndTs);
-                    try (ResultSet rs = ps.executeQuery()) {
-                        while (rs.next()) {
-                            Map<String, Object> brokerData = new HashMap<>();
-                            String broker = rs.getString("BROKER");
-                            String port = rs.getString("PORT");
-                            int totalHits = rs.getInt("TOTAL_HITS");
-                            int healthy = rs.getInt("HEALTHY_SERVERS");
-                            int warning = rs.getInt("WARNING_SERVERS");
-                            int critical = rs.getInt("CRITICAL_SERVERS");
-                            int isolated = rs.getInt("ISOLATED_SERVERS");
-                            int totalServersRow = rs.getInt("TOTAL_SERVERS");
-                            int slotCount = rs.getInt("SLOT_COUNT");
-
-                            String status;
-                            if (critical > 0) status = "critical";
-                            else if (warning > 0) status = "warning";
-                            else if (isolated > 0) status = "isolated";
-                            else status = "healthy";
-
-                            List<String> ipList = brokerIPMapping.getOrDefault(broker, new ArrayList<>());
-                            brokerData.put("broker", broker);
-                            brokerData.put("port", port);
-                            brokerData.put("totalHits", totalHits);
-                            brokerData.put("brokerStatus", status);
-                            brokerData.put("healthyCount", healthy);
-                            brokerData.put("warningCount", warning);
-                            brokerData.put("criticalCount", critical);
-                            brokerData.put("isolatedCount", isolated);
-                            brokerData.put("serverCount", totalServersRow);
-                            brokerData.put("ipList", ipList);
-                            brokerData.put("slotCount", slotCount);
-                            brokerDataList.add(brokerData);
-
-                            totalHitsAllBrokers += totalHits;
-                            totalCriticalServers += critical;
-                            totalWarningServers += warning;
-                            totalHealthyServers += healthy;
-                            totalIsolatedServersAgg += isolated;
-                        }
-                    }
-                }
-                runTimeDisplay = displayFmt.format(new Date(snappedStartTs.getTime())) + " to " + displayFmt.format(new Date(snappedEndTs.getTime()));
-            }
-        }
-
-        SimpleDateFormat inputFmt = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm");
-        fromDateTime = inputFmt.format(new Date(snappedStartTs.getTime()));
-        toDateTime = inputFmt.format(new Date(snappedEndTs.getTime()));
 
         impactedServersList.clear();
         isolatedServersList.clear();
         criticalServersByBroker.clear();
         Map<String, Map<String, String>> allServerStats = new HashMap<>();
 
-        String impactedSQL =
-            "SELECT BROKER, IP, SUM(HITS) AS HITS, MAX(STATUS) AS STATUS " +
-            "FROM EXP_IMPACTED_SERVERS_HOURLY " +
-            "WHERE RUN_START >= ? AND RUN_START <= ? " +
-            "GROUP BY BROKER, IP ORDER BY BROKER, IP";
-
+        String impactedSQL = "SELECT BROKER, IP, HITS, STATUS FROM SYS_IMPACTED_SERVERS_HOURLY " +
+                "WHERE RUN_START = ? AND RUN_END = ? ORDER BY STATUS, BROKER";
         try (PreparedStatement ps = reportConn.prepareStatement(impactedSQL)) {
-            ps.setTimestamp(1, snappedStartTs);
-            ps.setTimestamp(2, snappedEndTs);
+            ps.setTimestamp(1, startTs);
+            ps.setTimestamp(2, endTs);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     String broker = rs.getString("BROKER");
@@ -442,45 +287,39 @@
             else if ("healthy".equals(status)) healthyBrokers++;
         }
 
-        if (!brokerDataList.isEmpty()) slotsIncluded = (Integer) brokerDataList.get(0).get("slotCount");
-
     } catch (Exception e) {
         e.printStackTrace();
     } finally {
         if (reportConn != null) try { reportConn.close(); } catch (SQLException e) {}
     }
 %>
-<!DOCTYPE html>
-<html lang="en">
-<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>EXP Server Broker Monitoring</title>
+    <title>SYS Server Broker Monitoring</title>
     <meta http-equiv="refresh" content="600">
-    <link rel='stylesheet' href='<%=request.getContextPath()%>/css/bootstrap-expsys.css'>
-    <link rel='stylesheet' href='<%=request.getContextPath()%>/css/dataTables.bootstrap4.min-expsys.css'>
-    <link rel='stylesheet' href='<%=request.getContextPath()%>/css/buttons.bootstrap4.min-expsys.css'>
-    <link rel="stylesheet" href="<%=request.getContextPath()%>/css/expsys-css2.css">
-    <link rel="stylesheet" href="<%=request.getContextPath()%>/css/expsys-all.min.css">
-    <script src="<%=request.getContextPath()%>/js/LdapAuth.js"></script>
+    <link rel='stylesheet' href='../css/font-awesome-sysexp.css'>
+    <link rel='stylesheet' href='../css/bootstrap-expsys.css'>
+    <link rel='stylesheet' href='../css/dataTables.bootstrap4.min-expsys.css'>
+    <link rel='stylesheet' href='../css/buttons.bootstrap4.min-expsys.css'>
+    <link rel="stylesheet" href="../css/expsys-css2.css">
+    <link rel="stylesheet" href="../css/expsys-all.min.css">
+    <script src="../js/LdapAuth.js"></script>
     <style>
-        /* ============================================================
-           THEME VARIABLES — aligned with userheader
-           ============================================================ */
+        /* THEME VARIABLES */
         :root, [data-theme="light"] {
-            --primary: #F86F03;
-            --primary-dark: #E85D00;
-            --primary-light: #FFA41B;
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --primary-light: #818cf8;
             --success: #10b981;
             --warning: #f59e0b;
             --danger: #ef4444;
             --isolated: #8b5cf6;
             --info: #0ea5e9;
 
-            --bg-body: transparent;
+            --bg-body: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
             --bg-card: #ffffff;
             --bg-elevated: #f8fafc;
             --bg-hover: #f1f5f9;
@@ -504,16 +343,16 @@
         }
 
         [data-theme="dark"] {
-            --primary: #FF9A3D;
-            --primary-dark: #F86F03;
-            --primary-light: #FFA41B;
+            --primary: #818cf8;
+            --primary-dark: #6366f1;
+            --primary-light: #a5b4fc;
             --success: #34d399;
             --warning: #fbbf24;
             --danger: #f87171;
             --isolated: #a78bfa;
             --info: #38bdf8;
 
-            --bg-body: transparent;
+            --bg-body: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
             --bg-card: #1e293b;
             --bg-elevated: #293548;
             --bg-hover: #334155;
@@ -537,35 +376,23 @@
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
-
         html, body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: var(--bg);
+            background: var(--bg-body);
+            background-attachment: fixed;
             color: var(--text-primary);
             line-height: 1.4;
+            min-height: 100vh;
             font-size: 17px;
             overflow-x: hidden;
             width: 100%;
             transition: background 0.3s ease, color 0.3s ease;
         }
 
-        /* ============================================================
-           CONTENT WRAPPER — sits inside new-wrapper (from userheader)
-           ============================================================ */
-        .exp-content {
-            padding: 20px 24px 40px;
-            max-width: 100%;
-            width: 100%;
-            /* userheader's new-wrapper already handles margin-left + padding-top */
-        }
-
-        /* ============================================================
-           TOPBAR (page-level)
-           ============================================================ */
+        /* TOPBAR */
         .topbar {
             background: var(--bg-header);
-            border: 1px solid var(--border);
-            border-radius: 14px;
+            border-bottom: 1px solid var(--border);
             padding: 0.7rem 1.25rem;
             display: flex;
             align-items: center;
@@ -573,58 +400,36 @@
             gap: 1rem;
             flex-wrap: wrap;
             box-shadow: var(--shadow-sm);
-            margin-bottom: 16px;
+            position: relative;
+            transition: background 0.3s ease, border-color 0.3s ease;
         }
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 0.7rem;
-            flex-shrink: 0;
+        .topbar::after {
+            content: '';
+            position: absolute;
+            bottom: -1px; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--isolated) 0%, var(--primary) 50%, var(--info) 100%);
+            opacity: 0.6;
         }
+        .brand { display: flex; align-items: center; gap: 0.7rem; flex-shrink: 0; }
         .brand-logo {
-            width: 38px;
-            height: 38px;
-            border-radius: 10px;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            width: 38px; height: 38px; border-radius: 10px;
+            background: linear-gradient(135deg, var(--isolated) 0%, var(--primary-dark) 100%);
             color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            display: flex; align-items: center; justify-content: center;
             font-size: 1rem;
-            box-shadow: 0 4px 12px rgba(248, 111, 3, 0.35);
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.35);
         }
-        .brand-title {
-            font-size: 1.15rem;
-            font-weight: 800;
-            color: var(--text-primary);
-            letter-spacing: -0.02em;
-            line-height: 1.1;
-        }
-        .brand-sub {
-            font-size: 0.78rem;
-            color: var(--text-muted);
-            font-weight: 500;
-            margin-top: 2px;
-        }
+        .brand-title { font-size: 1.15rem; font-weight: 800; color: var(--text-primary); letter-spacing: -0.02em; line-height: 1.1; }
+        .brand-sub { font-size: 0.78rem; color: var(--text-muted); font-weight: 500; margin-top: 2px; }
 
-        .topbar-center {
-            display: flex;
-            align-items: center;
-            gap: 0.55rem;
-            flex: 1;
-            justify-content: center;
-            min-width: 0;
-            flex-wrap: wrap;
-        }
+        .topbar-center { display: flex; align-items: center; gap: 0.55rem; flex: 1; justify-content: center; min-width: 0; flex-wrap: wrap; }
 
         .pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.45rem;
+            display: inline-flex; align-items: center; gap: 0.45rem;
             padding: 0.45rem 0.9rem;
             border-radius: 999px;
-            font-size: 0.85rem;
-            font-weight: 700;
+            font-size: 0.85rem; font-weight: 700;
             background: var(--bg-elevated);
             border: 1px solid var(--border);
             color: var(--text-secondary);
@@ -632,59 +437,40 @@
             transition: all 0.2s ease;
         }
         .pill i { font-size: 0.82rem; }
-        .pill.timer { background: rgba(248, 111, 3, 0.12); color: var(--primary); border-color: rgba(248, 111, 3, 0.35); }
+        .pill.timer { background: rgba(99, 102, 241, 0.12); color: var(--primary); border-color: rgba(99, 102, 241, 0.35); }
         .pill.timer.warning-state { background: rgba(245, 158, 11, 0.15); color: var(--warning); border-color: rgba(245, 158, 11, 0.5); animation: pulseWarn 1s ease-in-out infinite; }
         @keyframes pulseWarn { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); } }
         .pill.window { background: var(--bg-elevated); color: var(--text-primary); }
         .pill.pr { background: rgba(16, 185, 129, 0.14); color: var(--success); border-color: rgba(16, 185, 129, 0.4); }
         .pill.dr { background: rgba(139, 92, 246, 0.14); color: var(--isolated); border-color: rgba(139, 92, 246, 0.4); }
 
-        .topbar-actions {
-            display: flex;
-            align-items: center;
-            gap: 0.45rem;
-            flex-shrink: 0;
-        }
+        .topbar-actions { display: flex; align-items: center; gap: 0.45rem; flex-shrink: 0; }
         .icon-btn {
-            width: 38px;
-            height: 38px;
-            border-radius: 10px;
+            width: 38px; height: 38px; border-radius: 10px;
             background: var(--bg-elevated);
             border: 1px solid var(--border);
             color: var(--text-secondary);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            font-size: 0.9rem;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: all 0.2s ease; font-size: 0.9rem;
         }
         .icon-btn:hover {
-            background: var(--primary);
-            color: white;
+            background: var(--primary); color: white;
             border-color: var(--primary);
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(248, 111, 3, 0.35);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
         }
 
-        /* ============================================================
-           STATS BAR
-           ============================================================ */
+        /* STATS BAR */
         .stats-bar {
             background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 0.7rem 1rem;
+            border-bottom: 1px solid var(--border);
+            padding: 0.7rem 1.25rem;
             display: grid;
             grid-template-columns: repeat(6, minmax(0, 1fr));
             gap: 0.6rem;
-            margin-bottom: 16px;
-            box-shadow: var(--shadow-sm);
         }
         .stat-mini {
-            display: flex;
-            align-items: center;
-            gap: 0.7rem;
+            display: flex; align-items: center; gap: 0.7rem;
             padding: 0.55rem 0.8rem;
             border-radius: 0.7rem;
             background: var(--bg-elevated);
@@ -700,15 +486,9 @@
         .stat-mini.isolated { border-left-color: var(--isolated); }
         .stat-mini.info { border-left-color: var(--info); }
         .stat-mini-icon {
-            width: 36px;
-            height: 36px;
-            border-radius: 9px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.9rem;
-            color: white;
-            flex-shrink: 0;
+            width: 36px; height: 36px; border-radius: 9px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.9rem; color: white; flex-shrink: 0;
             background: var(--primary);
             box-shadow: 0 2px 8px rgba(0,0,0,0.15);
         }
@@ -718,66 +498,35 @@
         .stat-mini.healthy .stat-mini-icon { background: var(--success); }
         .stat-mini.isolated .stat-mini-icon { background: var(--isolated); }
         .stat-mini-text { display: flex; flex-direction: column; min-width: 0; }
-        .stat-mini-value {
-            font-size: 1.3rem;
-            font-weight: 800;
-            color: var(--text-primary);
-            line-height: 1;
-        }
-        .stat-mini-label {
-            font-size: 0.72rem;
-            color: var(--text-muted);
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            margin-top: 2px;
-        }
+        .stat-mini-value { font-size: 1.3rem; font-weight: 800; color: var(--text-primary); line-height: 1; }
+        .stat-mini-label { font-size: 0.72rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
 
-        /* ============================================================
-           BANNERS
-           ============================================================ */
-        .banner {
-            padding: 0.6rem 1.25rem;
-            text-align: center;
-            font-weight: 700;
-            font-size: 0.9rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.55rem;
-            flex-wrap: wrap;
-            border-radius: 12px;
-            margin-bottom: 16px;
-        }
-        .fallback-banner { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; }
-        .slot-info-banner { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; }
-
-        /* ============================================================
-           MAIN LAYOUT
-           ============================================================ */
+        /* MAIN LAYOUT — full height */
         .main-content {
             display: grid;
-            grid-template-columns: 380px minmax(0, 1fr);
-            gap: 16px;
-            align-items: start;
+            grid-template-columns: 400px minmax(0, 1fr);
+            gap: 1rem;
+            padding: 1rem 1.25rem;
+            align-items: stretch;
             width: 100%;
+            min-height: calc(100vh - 128px);
         }
         .left-panel {
             display: flex;
             flex-direction: column;
             gap: 0.85rem;
             min-width: 0;
+            height: 100%;
+            max-height: calc(100vh - 145px);
         }
         .right-panel {
             min-width: 0;
+            height: 100%;
+            max-height: calc(100vh - 145px);
+            overflow-y: auto;
+            padding-right: 0.25rem;
         }
 
-        /* ============================================================
-           CARD
-           ============================================================ */
         .card {
             background: var(--bg-card);
             border: 1px solid var(--border);
@@ -787,27 +536,16 @@
             transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
         }
 
-        /* ============================================================
-           TIME FILTER
-           ============================================================ */
+        /* TIME FILTER */
         .time-filter-header {
             padding: 0.8rem 1rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            display: flex; justify-content: space-between; align-items: center;
             cursor: pointer;
             background: var(--bg-elevated);
             transition: background 0.2s ease;
         }
         .time-filter-header:hover { background: var(--bg-hover); }
-        .time-filter-title {
-            font-size: 0.95rem;
-            font-weight: 800;
-            color: var(--text-primary);
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
+        .time-filter-title { font-size: 0.95rem; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem; }
         .time-filter-title i { color: var(--primary); }
         .time-filter-toggle { color: var(--text-muted); transition: transform 0.3s ease; font-size: 0.85rem; }
         .time-filter-toggle.expanded { transform: rotate(180deg); }
@@ -825,13 +563,8 @@
             color: var(--text-primary);
             font-family: inherit;
             width: 100%;
-            transition: border-color 0.2s, box-shadow 0.2s;
         }
-        .time-filter-input:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(248, 111, 3, 0.15);
-        }
+        .time-filter-input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15); }
         .time-filter-actions { display: flex; gap: 0.45rem; }
         .time-filter-actions .btn { flex: 1; justify-content: center; }
         .quick-filter-buttons { display: flex; gap: 0.35rem; margin-top: 0.7rem; flex-wrap: wrap; }
@@ -852,9 +585,7 @@
         .quick-filter-btn:hover { background: var(--bg-hover); border-color: var(--primary); color: var(--primary); }
         .quick-filter-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
 
-        /* ============================================================
-           BUTTONS
-           ============================================================ */
+        /* BUTTONS */
         .btn {
             background: var(--bg-elevated);
             color: var(--text-secondary);
@@ -879,53 +610,43 @@
         .btn.success { background: var(--success); color: white; border-color: var(--success); }
         .btn.success:hover { color: white; opacity: 0.9; }
 
-        .controls-row {
-            display: flex;
-            gap: 0.45rem;
-            flex-wrap: wrap;
-            padding: 0.7rem;
-        }
+        .controls-row { display: flex; gap: 0.45rem; flex-wrap: wrap; padding: 0.7rem; }
         .controls-row .btn { flex: 1; justify-content: center; }
 
-        /* ============================================================
-           IMPACTED / ISOLATED
-           ============================================================ */
-        .impacted-section {
-            border-left: 5px solid var(--danger);
+        /* IMPACTED / ISOLATED — FLEX-FIT */
+        .left-panel > .card { flex-shrink: 0; }
+        .left-panel > .impacted-section {
+            flex: 1 1 0;
+            min-height: 140px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
         }
+        .impacted-section { border-left: 5px solid var(--danger); }
         .impacted-section.isolated { border-left-color: var(--isolated); }
         .impacted-header {
             padding: 0.7rem 1rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            display: flex; justify-content: space-between; align-items: center;
             gap: 0.5rem;
             border-bottom: 1px solid var(--border);
             background: var(--bg-elevated);
+            flex-shrink: 0;
         }
-        .impacted-title {
-            font-size: 0.95rem;
-            font-weight: 800;
-            color: var(--danger);
-            display: flex;
-            align-items: center;
-            gap: 0.45rem;
-        }
+        .impacted-title { font-size: 0.95rem; font-weight: 800; color: var(--danger); display: flex; align-items: center; gap: 0.45rem; }
         .impacted-title.isolated { color: var(--isolated); }
         .impacted-count {
-            background: var(--danger);
-            color: white;
+            background: var(--danger); color: white;
             padding: 0.15rem 0.7rem;
             border-radius: 999px;
-            font-size: 0.78rem;
-            font-weight: 800;
+            font-size: 0.78rem; font-weight: 800;
             box-shadow: 0 2px 6px rgba(239, 68, 68, 0.3);
         }
         .impacted-count.isolated { background: var(--isolated); box-shadow: 0 2px 6px rgba(139, 92, 246, 0.3); }
         .impacted-content {
             padding: 0.65rem 0.85rem 0.85rem;
-            max-height: 280px;
+            flex: 1;
             overflow-y: auto;
+            min-height: 0;
         }
         .impacted-list { display: flex; flex-direction: column; gap: 0.45rem; }
         .impacted-server-item {
@@ -933,9 +654,7 @@
             border: 1px solid var(--border);
             border-radius: 0.55rem;
             padding: 0.6rem 0.85rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+            display: flex; align-items: center; justify-content: space-between;
             gap: 0.55rem;
             font-size: 0.88rem;
             position: relative;
@@ -961,9 +680,7 @@
         .impacted-hits.warning { background: var(--warning); }
         .impacted-hits.isolated { background: var(--isolated); }
 
-        /* ============================================================
-           BROKER CARDS
-           ============================================================ */
+        /* BROKER CARDS */
         .broker-cards-container {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
@@ -992,20 +709,14 @@
         .broker-header {
             padding: 0.9rem 1.1rem;
             border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
+            display: flex; justify-content: space-between; align-items: flex-start;
             gap: 0.7rem;
         }
         .broker-info { flex: 1; min-width: 0; }
         .broker-name {
-            font-size: 1.15rem;
-            font-weight: 800;
-            color: var(--text-primary);
+            font-size: 1.15rem; font-weight: 800; color: var(--text-primary);
             margin-bottom: 0.25rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
+            display: flex; align-items: center; gap: 0.5rem;
             word-break: break-word;
             line-height: 1.2;
         }
@@ -1015,8 +726,7 @@
         .status-badge {
             padding: 0.3rem 0.75rem;
             border-radius: 999px;
-            font-size: 0.72rem;
-            font-weight: 800;
+            font-size: 0.72rem; font-weight: 800;
             text-transform: uppercase;
             letter-spacing: 0.04em;
             white-space: nowrap;
@@ -1056,9 +766,7 @@
             gap: 0.45rem;
         }
         .server-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            display: flex; justify-content: space-between; align-items: center;
             padding: 0.55rem 0.7rem;
             background: var(--bg-elevated);
             border-radius: 0.5rem;
@@ -1073,9 +781,7 @@
             font-weight: 800;
             color: var(--text-secondary);
             font-family: 'Courier New', monospace;
-            display: flex;
-            align-items: center;
-            gap: 0.45rem;
+            display: flex; align-items: center; gap: 0.45rem;
             font-size: 0.85rem;
             min-width: 0;
             overflow: hidden;
@@ -1103,32 +809,22 @@
             padding: 0.55rem 1.1rem;
             background: var(--bg-footer);
             border-top: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            display: flex; justify-content: space-between; align-items: center;
             font-size: 0.78rem;
             color: var(--text-muted);
             font-weight: 600;
         }
 
-        /* ============================================================
-           STATUS INDICATORS
-           ============================================================ */
         .status-indicator { display: inline-block; width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 0 3px rgba(0,0,0,0.05); }
         .status-indicator.healthy { background: var(--success); box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2); }
         .status-indicator.warning { background: var(--warning); box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2); }
         .status-indicator.critical { background: var(--danger); box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2); }
         .status-indicator.isolated { background: var(--isolated); box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2); }
 
-        /* ============================================================
-           TOOLTIP
-           ============================================================ */
         [data-full-ip] { position: relative; cursor: help; }
         [data-full-ip]:hover::after {
             content: attr(data-full-ip);
-            position: absolute;
-            bottom: 100%;
-            left: 50%;
+            position: absolute; bottom: 100%; left: 50%;
             transform: translateX(-50%);
             padding: 0.4rem 0.8rem;
             background: var(--text-primary);
@@ -1143,17 +839,13 @@
             font-weight: 700;
         }
 
-        /* ============================================================
-           NO DATA STATES
-           ============================================================ */
         .no-impacted {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
             text-align: center;
             color: var(--text-muted);
-            padding: 1.5rem 1rem;
+            padding: 1rem;
+            height: 100%;
             min-height: 120px;
             font-size: 0.9rem;
         }
@@ -1161,9 +853,6 @@
         .no-impacted p { margin-bottom: 0.2rem; font-weight: 700; color: var(--text-secondary); font-size: 0.95rem; }
         .no-impacted small { color: var(--text-faint); font-size: 0.78rem; font-weight: 500; }
 
-        /* ============================================================
-           ANIMATIONS
-           ============================================================ */
         @keyframes softBlinkCritical { 0%, 90% { opacity: 1; } 92% { opacity: 0.85; } 94% { opacity: 1; } 96% { opacity: 0.85; } 98% { opacity: 1; } }
         @keyframes softBlinkWarning { 0%, 92% { opacity: 1; } 94% { opacity: 0.9; } 96% { opacity: 1; } 98% { opacity: 0.9; } }
         @keyframes softBlinkIsolated { 0%, 88% { opacity: 1; } 91% { opacity: 0.8; } 94% { opacity: 1; } 97% { opacity: 0.8; } }
@@ -1185,39 +874,68 @@
         .no-blink .impacted-count, .no-blink .impacted-count.isolated,
         .no-blink .status-indicator.critical, .no-blink .status-indicator.warning, .no-blink .status-indicator.isolated { animation: none !important; opacity: 1 !important; }
 
-        /* ============================================================
-           SCROLLBAR
-           ============================================================ */
-        .impacted-content::-webkit-scrollbar { width: 8px; }
-        .impacted-content::-webkit-scrollbar-track { background: var(--scrollbar-track); border-radius: 4px; }
-        .impacted-content::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 4px; }
-        .impacted-content::-webkit-scrollbar-thumb:hover { background: var(--text-faint); }
+        .impacted-content::-webkit-scrollbar,
+        .right-panel::-webkit-scrollbar { width: 8px; }
+        .impacted-content::-webkit-scrollbar-track,
+        .right-panel::-webkit-scrollbar-track { background: var(--scrollbar-track); border-radius: 4px; }
+        .impacted-content::-webkit-scrollbar-thumb,
+        .right-panel::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 4px; }
+        .impacted-content::-webkit-scrollbar-thumb:hover,
+        .right-panel::-webkit-scrollbar-thumb:hover { background: var(--text-faint); }
 
-        /* ============================================================
-           RESPONSIVE
-           ============================================================ */
+        #chromeVoiceOverlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.95);
+            z-index: 10000;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+        }
+        .overlay-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 2rem;
+            border-radius: 1rem;
+            text-align: center;
+            max-width: 420px;
+            margin: 1rem;
+            color: white;
+        }
+        .overlay-box i { font-size: 3rem; margin-bottom: 0.75rem; }
+        .overlay-box h3 { margin-bottom: 0.5rem; font-size: 1.25rem; }
+        .overlay-box p { margin-bottom: 1rem; line-height: 1.4; font-size: 0.9rem; opacity: 0.95; }
+        .overlay-box button {
+            background: white; color: #667eea;
+            border: none;
+            padding: 0.65rem 1.5rem;
+            border-radius: 0.6rem;
+            font-size: 0.9rem; font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* RESPONSIVE */
         @media (max-width: 1200px) {
             .stats-bar { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-            .main-content { grid-template-columns: 340px minmax(0, 1fr); }
+            .main-content { grid-template-columns: 360px minmax(0, 1fr); }
             .broker-cards-container { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
         }
-
         @media (max-width: 1024px) {
-            .main-content { grid-template-columns: 1fr; }
+            html, body { overflow-x: hidden; overflow-y: auto; }
+            .main-content { grid-template-columns: 1fr; padding: 0.85rem; min-height: auto; align-items: stretch; }
+            .left-panel, .right-panel { width: 100%; height: auto; max-height: none; overflow-y: visible; }
+            .left-panel > .impacted-section { flex: 0 0 auto; min-height: 220px; max-height: 320px; }
+            .impacted-content { max-height: 220px; }
             .broker-cards-container { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
+            .topbar { padding: 0.6rem 1rem; }
+            .topbar-center { justify-content: flex-start; }
         }
-
         @media (max-width: 768px) {
             body { font-size: 16px; }
-            .exp-content { padding: 16px 14px 32px; }
-            .stats-bar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .stats-bar { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 0.6rem 0.85rem; }
             .stat-mini-value { font-size: 1.15rem; }
             .broker-cards-container { grid-template-columns: 1fr; gap: 0.8rem; }
             .server-list { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
             .topbar-center { display: none; }
             .brand-sub { display: none; }
         }
-
         @media (max-width: 480px) {
             .stats-bar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
             .controls-row { flex-direction: column; }
@@ -1225,18 +943,24 @@
             .quick-filter-buttons { flex-direction: column; }
             .quick-filter-btn { width: 100%; }
         }
-
         @media print {
-            .topbar, .stats-bar, .banner, .left-panel, .icon-btn { display: none; }
+            .topbar, .stats-bar, .left-panel, .icon-btn { display: none; }
             .broker-cards-container { display: block; }
             .broker-card { page-break-inside: avoid; margin-bottom: 20px; }
         }
     </style>
-    <script type="text/javascript" src="<%=request.getContextPath()%>/js/xlsx.full.min.js"></script>
+    <script type="text/javascript" src="../js/xlsx.full.min.js"></script>
 </head>
 <body>
 
-<%@include file="../userheader.jsp"%>
+<div id="chromeVoiceOverlay" style="display: none;">
+    <div class="overlay-box">
+        <i class="fas fa-volume-up"></i>
+        <h3>Enable Voice Alerts</h3>
+        <p>Click anywhere to enable automatic voice alerts for critical server monitoring.</p>
+        <button id="enableVoiceNowBtn">Enable Voice Alerts</button>
+    </div>
+</div>
 
 <%
     StringBuilder jsBrokerMap = new StringBuilder();
@@ -1245,11 +969,7 @@
         for (Map.Entry<String, List<String>> entry : criticalServersByBroker.entrySet()) {
             if (brokerIndex > 0) jsBrokerMap.append(",");
             String broker = entry.getKey().replace("'", "\\'").replace("\"", "&quot;");
-            jsBrokerMap.append("\"").append(broker).append("\":[]");
-            brokerIndex++;
-            // Actually add IPs
-            jsBrokerMap.setLength(jsBrokerMap.length() - 2);
-            jsBrokerMap.append(":[");
+            jsBrokerMap.append("\"").append(broker).append("\":[");
             List<String> ips = entry.getValue();
             for (int i = 0; i < ips.size(); i++) {
                 if (i > 0) jsBrokerMap.append(",");
@@ -1257,19 +977,17 @@
                 jsBrokerMap.append("\"").append(ip).append("\"");
             }
             jsBrokerMap.append("]");
+            brokerIndex++;
         }
     }
 %>
 
-<div class="new-wrapper">
-<div class="exp-content">
-
-<!-- PAGE TOPBAR -->
+<!-- TOPBAR -->
 <div class="topbar">
     <div class="brand">
         <div class="brand-logo"><i class="fas fa-server"></i></div>
         <div>
-            <div class="brand-title">EXP Broker Monitor</div>
+            <div class="brand-title">SYS Broker Monitor</div>
             <div class="brand-sub">Rolling 60-min window - updated every 10 min</div>
         </div>
     </div>
@@ -1285,6 +1003,9 @@
     </div>
 
     <div class="topbar-actions">
+        <button class="icon-btn" id="themeToggle" onclick="toggleTheme()" title="Toggle theme (Ctrl+D)">
+            <i class="fas fa-moon" id="themeIcon"></i>
+        </button>
         <button class="icon-btn" onclick="toggleBlinking()" id="blinkToggleBtn" title="Toggle blinking">
             <i class="fas fa-eye" id="blinkIcon"></i>
         </button>
@@ -1343,18 +1064,6 @@
     </div>
 </div>
 
-<% if (fallbackApplied) { %>
-<div class="banner fallback-banner">
-    <i class="fas fa-info-circle"></i>
-    <span>No data for selected range — showing latest: <strong><%=runTimeDisplay%></strong></span>
-</div>
-<% } else if (slotsIncluded > 1) { %>
-<div class="banner slot-info-banner">
-    <i class="fas fa-layer-group"></i>
-    <span>Aggregated <strong><%=slotsIncluded%> slots</strong> &rarr; <strong><%=runTimeDisplay%></strong></span>
-</div>
-<% } %>
-
 <!-- MAIN CONTENT -->
 <div class="main-content">
     <div class="left-panel">
@@ -1381,7 +1090,7 @@
                 </form>
                 <div class="quick-filter-buttons">
                     <button type="button" class="quick-filter-btn" onclick="setQuickFilter(10)">10m</button>
-                    <button type="button" class="quick-filter-btn" onclick="setQuickFilter(20)">20m</button>
+                    <button type="button" class="quick-filter-btn" onclick="setQuickFilter(15)">15m</button>
                     <button type="button" class="quick-filter-btn" onclick="setQuickFilter(30)">30m</button>
                     <button type="button" class="quick-filter-btn" onclick="setQuickFilter(60)">1h</button>
                     <button type="button" class="quick-filter-btn" onclick="setQuickFilter(120)">2h</button>
@@ -1393,7 +1102,7 @@
         <!-- Controls -->
         <div class="card">
             <div class="controls-row">
-                <button class="btn primary" onclick="openNewPage()"><i class="fas fa-exchange-alt"></i> SYS</button>
+                <button class="btn primary" onclick="openNewPage()"><i class="fas fa-exchange-alt"></i> EXP</button>
                 <button class="btn isolated" onclick="showIsolatedOnly()"><i class="fas fa-shield-alt"></i> ISO Only</button>
                 <button class="btn success" onclick="showAllBrokers()" id="showAllBtn" style="display: none;"><i class="fas fa-globe"></i> All</button>
             </div>
@@ -1461,7 +1170,7 @@
                     <i class="fas fa-database" style="font-size: 3rem; color: var(--text-faint); margin-bottom: 0.9rem;"></i>
                     <h3 style="color: var(--text-secondary); margin-bottom: 0.5rem; font-size: 1.15rem;">No Brokers Found</h3>
                     <p style="color: var(--text-muted); font-size: 0.9rem;">No data available for selected range.</p>
-                    <button class="btn primary" onclick="goToCleanUrl()" style="margin-top: 1rem;"><i class="fas fa-rotate-right"></i> Load Latest</button>
+                    <button class="btn primary" onclick="location.reload(true)" style="margin-top: 1rem;"><i class="fas fa-rotate-right"></i> Refresh</button>
                 </div>
             <%
                 } else {
@@ -1528,10 +1237,29 @@
     </div>
 </div>
 
-</div>
-</div>
-
 <script>
+    // ============================================================
+    // THEME TOGGLE
+    // ============================================================
+    function applyTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        const icon = document.getElementById('themeIcon');
+        if (icon) icon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+        try { localStorage.setItem('expTheme', theme); } catch(e) {}
+    }
+    function toggleTheme() {
+        const current = document.documentElement.getAttribute('data-theme') || 'light';
+        applyTheme(current === 'dark' ? 'light' : 'dark');
+    }
+    (function() {
+        try {
+            const saved = localStorage.getItem('expTheme');
+            if (saved === 'dark' || saved === 'light') applyTheme(saved);
+            else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) applyTheme('dark');
+            else applyTheme('light');
+        } catch(e) { applyTheme('light'); }
+    })();
+
     // ============================================================
     // VOICE ALERT SYSTEM
     // ============================================================
@@ -1550,7 +1278,7 @@
 
     function cleanForPronunciation(text) {
         if (!text) return '';
-        let cleaned = text.replace(/EXP/gi, 'E X P');
+        let cleaned = text.replace(/SYS/gi, 'S Y S');
         cleaned = cleaned.replace(/NP_SPL/gi, 'N P S P L');
         cleaned = cleaned.replace(/_/g, ' ');
         cleaned = cleaned.replace(/\./g, ' dot ');
@@ -1565,7 +1293,6 @@
         for (let i = 0; i < brokerKeys.length; i++) {
             let broker = brokerKeys[i];
             let servers = criticalServersByBroker[broker];
-            if (!servers || servers.length === 0) continue;
             let cleanBroker = cleanForPronunciation(broker);
             if (servers.length === 1) messageParts.push(cleanBroker + ' server ' + cleanForPronunciation(servers[0]));
             else {
@@ -1573,17 +1300,13 @@
                 messageParts.push(cleanBroker + ' servers ' + serverList);
             }
         }
-        if (messageParts.length === 0) return '';
         if (messageParts.length === 1) return fullMessage + messageParts[0];
         return fullMessage + messageParts.join(', then ');
     }
 
     function getTotalCriticalCount() {
         let count = 0;
-        for (let broker in criticalServersByBroker) {
-            let servers = criticalServersByBroker[broker];
-            if (servers) count += servers.length;
-        }
+        for (let broker in criticalServersByBroker) count += criticalServersByBroker[broker].length;
         return count;
     }
 
@@ -1640,7 +1363,6 @@
         if (criticalCount === 0) return;
         if (!isVoiceEnabled || isMuted) return;
         const message = buildSequentialMessage();
-        if (!message) return;
         isPlaying = true;
         voicePlayCount++;
         speakMessage(message, function() { isPlaying = false; updateVoiceUI(); });
@@ -1670,13 +1392,42 @@
         } catch(e) {}
     }
     function testVoice() {
+        if (!userInteracted) { showOverlayAndInitialize(); return; }
+        if (!isVoiceEnabled) { alert('Voice system active. Click Unmute if muted.'); return; }
         if (isMuted) { alert('Please unmute first'); return; }
         speakMessage('Voice alert system is working correctly. This is a test message.', function() { alert('Voice test completed!'); });
     }
+    function showOverlayAndInitialize() { document.getElementById('chromeVoiceOverlay').style.display = 'flex'; }
+    function hideOverlayAndInitialize() {
+        document.getElementById('chromeVoiceOverlay').style.display = 'none';
+        initializeVoiceSystem();
+    }
+    function initializeVoiceSystem() {
+        if (voiceInitialized) return;
+        voiceInitialized = true;
+        userInteracted = true;
+        localStorage.setItem('voiceEnabled', 'true');
+        localStorage.setItem('chromeVoiceEnabled', 'true');
+        loadVoicePreferences();
+        updateVoiceUI();
+        try {
+            const silent = new SpeechSynthesisUtterance('');
+            silent.volume = 0;
+            speechSynthesis.speak(silent);
+        } catch(e) {}
+        setTimeout(function() {
+            if (getTotalCriticalCount() > 0 && !isMuted && voicePlayCount < MAX_VOICE_PLAYS) playVoiceAlert();
+        }, 1500);
+    }
+    function playRefreshVoiceAnnouncement() {
+        if (getTotalCriticalCount() > 0 && isVoiceEnabled && !isMuted && userInteracted && voicePlayCount < MAX_VOICE_PLAYS) {
+            setTimeout(playVoiceAlert, 1500);
+        }
+    }
 
-    function getCleanUrl() { return window.location.pathname; }
-    function goToCleanUrl() { window.location.href = getCleanUrl(); }
-
+    // ============================================================
+    // UI FUNCTIONS
+    // ============================================================
     function countdown(elementName, minutes, seconds) {
         var element, endTime, time;
         function twoDigits(n) { return (n <= 9 ? "0" + n : n); }
@@ -1685,7 +1436,7 @@
             if (msLeft < 1000) {
                 element.innerHTML = "...";
                 document.getElementById('refreshTimer').classList.add('warning-state');
-                setTimeout(goToCleanUrl, 1000);
+                setTimeout(function() { location.reload(true); }, 1000);
             } else {
                 time = new Date(msLeft);
                 var hours = time.getUTCHours();
@@ -1707,15 +1458,18 @@
         content.classList.toggle('expanded');
         toggle.classList.toggle('expanded');
     }
-    function resetTimeFilter() { goToCleanUrl(); }
-
+    function resetTimeFilter() {
+        document.getElementById('fromDateTime').value = '';
+        document.getElementById('toDateTime').value = '';
+        document.getElementById('timeFilterForm').submit();
+    }
     function setQuickFilter(minutes) {
         var now = new Date();
         var start = new Date(now.getTime() - minutes * 60000);
         document.getElementById('fromDateTime').value = formatDateForInput(start);
         document.getElementById('toDateTime').value = formatDateForInput(now);
         document.querySelectorAll('.quick-filter-btn').forEach(b => b.classList.remove('active'));
-        if (event && event.target) event.target.classList.add('active');
+        event.target.classList.add('active');
         document.getElementById('timeFilterForm').submit();
     }
     function formatDateForInput(date) {
@@ -1765,7 +1519,8 @@
         if (msg) msg.remove();
     }
     function openNewPage() {
-        window.open('<%= request.getContextPath() + "/jsp/A_SYS_SERVERWISE_COUNT_LDAP.jsp" %>', '_blank');
+        var a = '<%= request.getContextPath() + "/jsp/A_EXP_SERVERWISE_COUNT_LDAP.jsp" %>';
+        window.open(a, '_blank');
     }
 
     document.addEventListener('keydown', function(e) {
@@ -1781,9 +1536,17 @@
         if (e.ctrlKey && e.key === 'a') { e.preventDefault(); showAllBrokers(); }
         if (e.ctrlKey && e.key === 'v') { e.preventDefault(); testVoice(); }
         if (e.ctrlKey && e.key === 'm') { e.preventDefault(); toggleMute(); }
+        if (e.ctrlKey && e.key === 'd') { e.preventDefault(); toggleTheme(); }
     });
 
     document.addEventListener('DOMContentLoaded', function() {
+        var overlay = document.getElementById('chromeVoiceOverlay');
+        var enableBtn = document.getElementById('enableVoiceNowBtn');
+        if (overlay) overlay.addEventListener('click', function(e) {
+            if (e.target === overlay || e.target === enableBtn) hideOverlayAndInitialize();
+        });
+        if (enableBtn) enableBtn.addEventListener('click', hideOverlayAndInitialize);
+
         var blinkingPref = localStorage.getItem('blinkingEnabled');
         if (blinkingPref === 'false') {
             document.body.classList.add('no-blink');
@@ -1799,8 +1562,7 @@
             var diffMinutes = Math.round((new Date(toDateTime) - new Date(fromDateTime)) / (1000 * 60));
             document.querySelectorAll('.quick-filter-btn').forEach(function(btn) {
                 btn.classList.remove('active');
-                var match = btn.getAttribute('onclick')?.match(/\d+/);
-                var minutes = match ? parseInt(match[0]) : 60;
+                var minutes = parseInt(btn.getAttribute('onclick')?.match(/\d+/) || '60');
                 if (Math.abs(diffMinutes - minutes) < 5) btn.classList.add('active');
             });
         }
@@ -1810,9 +1572,9 @@
             voiceInitialized = true;
             loadVoicePreferences();
             updateVoiceUI();
-            setTimeout(function(){
-                if (getTotalCriticalCount() > 0 && !isMuted) playVoiceAlert();
-            }, 1500);
+            setTimeout(playRefreshVoiceAnnouncement, 1500);
+        } else {
+            setTimeout(function() { if (!userInteracted) showOverlayAndInitialize(); }, 500);
         }
     });
 
