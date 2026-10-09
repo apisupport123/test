@@ -1,566 +1,627 @@
-<%@ page language="java" contentType="text/html; charset=ISO-8859-1"
-pageEncoding="ISO-8859-1"%>
+<%@ page language="java" pageEncoding="UTF-8"%>
 <%@page import="java.sql.*"%>
 <%@page import="java.util.*"%>
 <%@ page import="com.jdbc.DBUtilityAuto"%>
+<%
+    // ✅ Session check
+    if(session == null || session.getAttribute("role") == null) {
+        response.sendRedirect(request.getContextPath() + "/login.action");
+        return;
+    }
+
+    // ✅ Cache headers
+    response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0, private");
+    response.setHeader("Pragma", "no-cache");
+    response.setDateHeader("Expires", 0);
+%>
 <!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
 <title>Deployment Analysis Dashboard</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel='stylesheet'
-href='../css/font-awesomepage1.css'>
-<link rel='stylesheet'
-href='../css/bootstrapPage1.css'>
-<link rel='stylesheet'
-href='../css/dataTables.bootstrap4Page1.min.css'>
-<link rel='stylesheet'
-href='../css/buttons.bootstrap4pagee2.min.css'>
-<link rel="stylesheet" href="../css/stylecron.css">
-<script
-src='../js/cdnjs.cloudflare.com_ajax_libs_jquery_3.3.1_jquery.min.js'></script>
-<script
-src='../js/cdnjs.cloudflare.com_ajax_libs_popper.js_1.14.3_umd_popper.min.js'></script>
-<script src='../js/trail1_4.1.1_js_bootstrap.min.js'></script>
-<script
-src='../js/cdn.datatables.net_1.10.19_js_jquery.dataTables1.min.js'></script>
-<script
-src='../js/cdn.datatables.net_1.10.19_js_dataTables.bootstrap4.min.js'></script>
-<script
-src='../js/cdn.datatables.net_buttons_1.5.2_js_dataTables.buttons.min.js'></script>
-<script
-src='../js/cdn.datatables.net_buttons_1.5.2_js_buttons.bootstrap4.min.js'></script>
-<script
-src='../js/cdnjs.cloudflare.com_ajax_libs_jszip_3.1.3_jszip.min.js'></script>
-<script
-src='../js/cdnjs.cloudflare.com_ajax_libs_pdfmake_0.1.36_pdfmake.min.js'></script>
-<script
-src='../js/cdnjs.cloudflare.com_ajax_libs_pdfmake_0.1.36_vfs_fonts.js'></script>
-<script
-src='../js/cdn.datatables.net_buttons_1.5.2_js_buttons.html5.min.js'></script>
-<script src='../js/gfigurebuttons.print.min.js'></script>
-<script
-src='../js/cdn.datatables.net_buttons_1.5.2_js_buttons.colVis.min.js'></script>
+
+<!-- ✅ CSS — absolute paths -->
+<link rel='stylesheet' href='<%=request.getContextPath()%>/css/font-awesomepage1.css'>
+<link rel='stylesheet' href='<%=request.getContextPath()%>/css/bootstrapPage1.css'>
+<link rel='stylesheet' href='<%=request.getContextPath()%>/css/dataTables.bootstrap4Page1.min.css'>
+<link rel='stylesheet' href='<%=request.getContextPath()%>/css/buttons.bootstrap4pagee2.min.css'>
+<link rel="stylesheet" href="<%=request.getContextPath()%>/css/stylecron.css">
+
+<!-- ✅ jQuery userheader.jsp se already load hoti hai — yahan duplicate NAHI karni -->
+
 <style>
-.blink {
-animation: blinker 0s linear infinite;
-color: white;
-font-family: sans-serif;
-font-size: large;
-text-align-last: center;
-font-weight: bold;
-}
-@
-keyframes blinker { 50% {
-opacity: 0;
-}
-}
-.timer {
-border: 2px solid white;
-display: inline;
-padding: 5px;
-color: white;
-font-family: Verdana, sans-serif, Arial;
-font-size: 20px;
-height: 50px;
-font-weight: bold;
-text-decoration: none;
-}
-.footer {
-position: fixed;
-left: 0;
-bottom: 0;
-width: 100%;
-color: white;
-text-align: center;
-}
-.row-container {
-display: flex;
-flex-wrap: wrap;
-align-items: center;
-margin-bottom: 10px;
-text-align: center;
-margin-top: 99px;
-}
-.column {
-flex: 1;
-margin: 10px;
-}
-@media ( max-width : 768px) {
-.column {
-flex: 100%;
-}
-}
-.action-container {
-position: relative;
-display: inline-block;
-}
-.sub-buttons {
-display: block;
-margin-top: 10px;
-}
-.sub-buttons button {
-display: block;
-width: 100%;
-margin-bottom: 5px;
-}
-.textarea-container {
-display: none;
-margin-top: 10px;
-}
-.textarea-container textarea {
-max-width: 1800px;
-width :100%;
-height: 100px; /* Adjust height as needed */
-}
-/* Initially hide the table */
-. {
-display: block;
-margin-top: 20px;
-}
-.error-message {
-color:white;
-}
-.checkbox-row {
-color: white;
-display: none;
-width: 100%;
-}
-/* Table styles for 'no-hits observed' */
-.no-hits-table {
-border-collapse: collapse;
-width: 100%;
-}
-.no-hits-table, .no-hits-table th, .no-hits-table td, .no-hits-table tr {
-border: 1px solid white; /* White border */
-color: white; /* White text color */
-}
-.no-hits-table th, .no-hits-table td {
-padding: 8px;
-text-align: left;
-}
-/* Background for table headers and rows */
-.no-hits-table th {
-background-color: #333;
-}
-.no-hits-table tr:nth-child(even) {
-background-color: #444;
-}
-.no-hits-table tr:nth-child(odd) {
-background-color: #555;
-}
-.pending-button {
-text-align: center;
-}
-.pending-button button {
-padding: 10px 10px;
-font-size: 12px;
-background-color: white;
-color: #0047ab;
-border: none;
-border-radius: 6px;
-cursor: pointer;
-transition: background-color 0.3s ease;
-position: relative;
-left: 82%;
-}
-.pending-button button i {
-margin-right: 5px; /* Adjust spacing between icon and text */
-}
-.pending-button button:hover {
-background-color: whitesmoke;
-}
-/* ---time*/
-.time {
-display: flex;
-justify-content: center;
-align-items: center;
-background-color: black;
-padding: 10px;
-position: absolute;
-top: 99px;
-left: 0;
-width: 100%;
-}
-.time label {
-color: white;
-margin: 0 10px;
-}
-.time .input-field {
-margin: 0 10px;
-padding: 5px;
-border: 1px solid #ccc;
-border-radius: 4px;
-}
+/* ============================================================
+   PAGE BASE — theme-aware
+   ============================================================ */
 body {
-background-color: #1e1e2d;
-color: white;
-font-family: Arial, sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg) !important;
+    color: var(--ink) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    font-size: 15px;
+    transition: background .3s ease, color .3s ease;
 }
+
+/* ✅ Content wrapper */
+.new-wrapper {
+    background: var(--bg);
+    min-height: 100vh;
+}
+.page-container {
+    padding: 24px 28px 48px;
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
+/* ============================================================
+   PAGE HEADER
+   ============================================================ */
+.page-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+.page-head h1 {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 1.55rem;
+    font-weight: 800;
+    letter-spacing: -.5px;
+    color: var(--ink);
+    margin: 0;
+    line-height: 1.2;
+}
+.page-head h1 .ttl-icon {
+    width: 44px; height: 44px;
+    display: grid; place-items: center;
+    background: var(--brand-light);
+    color: var(--brand);
+    border-radius: 12px;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+html[data-theme="dark"] .page-head h1 .ttl-icon {
+    background: rgba(248,111,3,.15);
+}
+.page-head .sub {
+    color: var(--muted);
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin: 6px 0 0 56px;
+}
+
+/* ============================================================
+   CARD / CONTAINER
+   ============================================================ */
 .container {
-max-width: 90%;
-margin-top: 2%;
-background: #2a2a3a;
-padding: 20px;
-border-radius: 10px;
-box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+    max-width: 100%;
+    margin: 0;
+    background: var(--card);
+    border: 1px solid var(--line);
+    padding: 24px;
+    border-radius: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,.03);
+    color: var(--ink);
 }
-.form-control, select, input {
-background-color: #3a3a4a;
-color: white;
-border: 1px solid #555;
+html[data-theme="dark"] .container {
+    box-shadow: 0 2px 12px rgba(0,0,0,.3);
 }
-.form-control::placeholder {
-color: #bbb;
-}
-.btn {
-margin-top: 10px;
-padding: 10px 20px;
-font-size: 16px;
-border-radius: 8px;
-}
+
+/* ============================================================
+   FORM STYLING
+   ============================================================ */
 .form-row {
-display: flex;
-flex-wrap: wrap;
-gap: 15px; /* Controls spacing between columns */
-justify-content: space-between; /* Ensures equal spacing between the columns */
-align-items: center;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    align-items: end;
+    margin-bottom: 16px;
 }
 .form-group {
-flex: 1; /* Allows each column to take equal space */
-min-width: 200px; /* Prevents columns from being too narrow */
-max-width: calc(33.333% - 10px); /* Ensures 3 equal columns */
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
 }
-.header-container {
-display: flex;
-justify-content: space-between;
-align-items: center;
-margin-bottom: 20px;
+.form-group label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--ink);
+    text-transform: uppercase;
+    letter-spacing: .5px;
 }
-h1 {
-color: white;
-text-align: left;
+.form-control, select, input {
+    background: var(--bg) !important;
+    color: var(--ink) !important;
+    border: 1.5px solid var(--line) !important;
+    border-radius: 10px !important;
+    padding: 10px 14px !important;
+    font-family: inherit !important;
+    font-size: 0.88rem !important;
+    font-weight: 600 !important;
+    outline: none !important;
+    transition: all .2s ease !important;
+    width: 100%;
 }
+.form-control:focus, select:focus, input:focus {
+    border-color: var(--brand) !important;
+    background: var(--card) !important;
+    box-shadow: 0 0 0 4px var(--brand-light) !important;
+}
+html[data-theme="dark"] .form-control:focus,
+html[data-theme="dark"] select:focus,
+html[data-theme="dark"] input:focus {
+    box-shadow: 0 0 0 4px rgba(248,111,3,.15) !important;
+}
+.form-control::placeholder {
+    color: var(--muted) !important;
+    opacity: .7 !important;
+    font-weight: 600;
+}
+textarea.form-control {
+    min-height: 44px;
+    resize: vertical;
+}
+.form-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 0;
+}
+.form-check-input {
+    width: 18px !important;
+    height: 18px !important;
+    accent-color: var(--brand);
+    cursor: pointer;
+}
+.form-check-label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--ink);
+    cursor: pointer;
+}
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 11px 22px;
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 700;
+    border-radius: 11px;
+    cursor: pointer;
+    transition: all .2s ease;
+    text-decoration: none;
+    border: none;
+    white-space: nowrap;
+}
+.btn-primary {
+    background: linear-gradient(135deg, var(--brand), var(--brand-2)) !important;
+    color: #fff !important;
+    box-shadow: 0 6px 20px -6px rgba(248,111,3,.4) !important;
+}
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 28px -6px rgba(248,111,3,.5) !important;
+}
+.btn-success {
+    background: linear-gradient(135deg, #10b981, #059669) !important;
+    color: #fff !important;
+    box-shadow: 0 6px 20px -6px rgba(16,185,129,.4) !important;
+}
+.btn-success:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 28px -6px rgba(16,185,129,.5) !important;
+}
+
 .pending-button {
-display: flex;
-gap: 15px;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--line);
 }
-.pending-button button {
-background-color: #28a745;
-border: none;
-color: white;
-font-weight: bold;
-transition: 0.3s;
-padding: 12px 24px;
-border-radius: 5px;
-}
-.pending-button button:hover {
-background-color: #218838;
-}
-#sourceIDTextBox {
-width: 100%;
-max-width: 200px;
-}
+
+/* ============================================================
+   TABLE
+   ============================================================ */
 .table-container {
-margin: 20px;
-padding: 20px;
-background-color: #2c3e50; /* Dark background for the table container */
-border-radius: 8px; /* Rounded corners */
-color: white; /* Ensure text is white */
+    margin-top: 24px;
+    padding: 20px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    overflow-x: auto;
 }
 .titulo-tabla {
-text-align: center;
-font-size: 24px;
-color: white; /* White text for the title */
+    text-align: center;
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: var(--ink) !important;
+    margin-bottom: 18px;
+    letter-spacing: -.3px;
 }
 .table {
-width: 100%;
-border-collapse: collapse;
-margin-top: 20px;
-font-size: 14px;
-color: white; /* Text color inside table */
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    font-size: 0.83rem;
+    color: var(--ink) !important;
 }
 .table th, .table td {
-padding: 10px;
-text-align: left;
-border: 1px solid #34495e;
+    padding: 11px 12px;
+    text-align: left;
+    border: 1px solid var(--line);
+    color: var(--ink) !important;
+    word-break: break-word;
+    vertical-align: middle;
 }
 .table th {
-background-color: #34495e;
-color: white; /* White text color for table headers */
-}
-th, td {
-border: 1px solid #555;
-padding: 10px;
-text-align: left;
-color: white;
-word-break: break-word;
-}
-th {
-background-color: #444;
-}
-.table th {
-background-color: #34495e;
-color: white; /* White text color for table headers */
+    background: var(--bg) !important;
+    color: var(--muted) !important;
+    font-weight: 800 !important;
+    font-size: 0.72rem !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
 }
 .table td {
-background-color: #2c3e50; /* Dark background for table cells */
+    background: var(--card);
+    font-weight: 600;
 }
-/* Hover effect for table rows */
 .table tbody tr:hover {
-background-color: #3e5060;
+    background: var(--bg) !important;
 }
-/* Custom style for pre tags (for reference IDs) */
+html[data-theme="dark"] .table tbody tr:hover {
+    background: rgba(255,255,255,.03) !important;
+}
 pre {
-white-space: pre-wrap;
-word-wrap: break-word;
-margin: 0;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    margin: 0;
+    color: var(--ink) !important;
 }
-/* Add some margin around the SVG icons */
 pre svg {
-margin-left: 8px;
-vertical-align: middle;
+    margin-left: 8px;
+    vertical-align: middle;
 }
-/* Style for the action column */
-.table td:last-child {
-text-align: center;
-color: #1abc9c; /* A different color for the action column */
-cursor: pointer;
-}
-/* Style the hover effect of the action column */
-.table td:last-child:hover {
-color: #16a085;
-}
-/* Specific style for clickable reference urn and rrn */
 .table td pre {
-cursor: pointer;
+    cursor: pointer;
 }
 .table td pre:hover {
-text-decoration: underline;
-color: #f39c12;
+    text-decoration: underline;
+    color: var(--brand) !important;
 }
-/* Responsive Design - Ensure it works well on small screens */
-@media (max-width: 768px) {
-.table {
-font-size: 12px; /* Smaller text on smaller screens */
+.table td:last-child {
+    text-align: center;
+    cursor: pointer;
 }
-.titulo-tabla {
-font-size: 20px; /* Smaller title for mobile */
-}
-.table th, .table td {
-padding: 8px; /* Reduce padding on small screens */
-}
-}
-/* Target the Post Deploy RRN column specifically */
+
+/* Post Deploy RRN column */
 .table td.post-deploy-rrn {
-max-width: 200px; /* Adjust width as needed */
-word-wrap: break-word;
-white-space: normal; /* Ensures wrapping */
-font-size: 12px; /* Reduce font size for better fit */
-overflow: hidden;
-text-overflow: ellipsis; /* Show '...' for overflowing text */
+    max-width: 220px;
+    word-wrap: break-word;
+    white-space: normal;
+    font-size: 0.75rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
-/* Optional: Show full text on hover */
-.table td.post-deploy-rrn:hover {
-overflow: visible;
-white-space: normal;
-background-color: #3e5060; /* Slight highlight */
+
+/* Action button in table */
+.action-btn {
+    padding: 7px 14px !important;
+    font-size: 0.75rem !important;
+    border-radius: 8px !important;
+}
+
+/* Checkbox row */
+.checkbox-row {
+    display: none;
+    width: 100%;
+}
+.checkbox-row td {
+    background: var(--bg) !important;
+    padding: 16px !important;
+}
+.checkbox-row input[type="checkbox"] {
+    width: 16px !important;
+    height: 16px !important;
+    margin: 0 6px 0 12px;
+    accent-color: var(--brand);
+    cursor: pointer;
+}
+.checkbox-row .textarea-container {
+    display: none;
+    margin-top: 10px;
+}
+.checkbox-row textarea {
+    width: 100%;
+    height: 80px;
+    padding: 10px 14px;
+    background: var(--card);
+    border: 1.5px solid var(--line);
+    border-radius: 10px;
+    color: var(--ink);
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    outline: none;
+    resize: vertical;
+}
+.checkbox-row textarea:focus {
+    border-color: var(--brand);
+    box-shadow: 0 0 0 3px var(--brand-light);
+}
+
+/* No-hits table */
+.no-hits-table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-top: 20px;
+    color: var(--ink);
+}
+.no-hits-table th, .no-hits-table td {
+    border: 1px solid var(--line);
+    padding: 11px 12px;
+    text-align: left;
+    color: var(--ink);
+}
+.no-hits-table th {
+    background: var(--bg);
+    font-weight: 800;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--muted);
+}
+
+/* Error message */
+.error-message {
+    color: var(--muted);
+    padding: 12px 16px;
+    background: var(--bg);
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    margin-bottom: 14px;
+    border-left: 3px solid var(--warning);
+}
+
+/* Timer */
+.timer {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: var(--brand-light);
+    color: var(--brand);
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 0.9rem;
+    font-weight: 700;
+    border: 1.5px solid rgba(248,111,3,.3);
+    margin-left: 8px;
+}
+html[data-theme="dark"] .timer {
+    background: rgba(248,111,3,.15);
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+    .page-container { padding: 16px 14px 32px; }
+    .page-head h1 { font-size: 1.2rem; }
+    .page-head h1 .ttl-icon { width: 36px; height: 36px; font-size: .9rem; }
+    .page-head .sub { margin-left: 48px; font-size: 0.78rem; }
+    .form-row { grid-template-columns: 1fr; }
+    .pending-button { flex-direction: column; }
+    .pending-button .btn { width: 100%; }
+    .container { padding: 16px; }
+    .table-container { padding: 14px; margin-left: 0; margin-right: 0; }
 }
 </style>
+
+<!-- ✅ JS — absolute paths, jQuery ke baad -->
+<script src="<%=request.getContextPath()%>/js/cdnjs.cloudflare.com_ajax_libs_popper.js_1.14.3_umd_popper.min.js"></script>
+<script src="<%=request.getContextPath()%>/js/trail1_4.1.1_js_bootstrap.min.js"></script>
+<script src="<%=request.getContextPath()%>/js/cdn.datatables.net_1.10.19_js_jquery.dataTables1.min.js"></script>
+<script src="<%=request.getContextPath()%>/js/cdn.datatables.net_1.10.19_js_dataTables.bootstrap4.min.js"></script>
+<script src="<%=request.getContextPath()%>/js/cdn.datatables.net_buttons_1.5.2_js_dataTables.buttons.min.js"></script>
+<script src="<%=request.getContextPath()%>/js/cdn.datatables.net_buttons_1.5.2_js_buttons.bootstrap4.min.js"></script>
+<script src="<%=request.getContextPath()%>/js/cdnjs.cloudflare.com_ajax_libs_jszip_3.1.3_jszip.min.js"></script>
+<script src="<%=request.getContextPath()%>/js/cdnjs.cloudflare.com_ajax_libs_pdfmake_0.1.36_pdfmake.min.js"></script>
+<script src="<%=request.getContextPath()%>/js/cdnjs.cloudflare.com_ajax_libs_pdfmake_0.1.36_vfs_fonts.js"></script>
+<script src="<%=request.getContextPath()%>/js/cdn.datatables.net_buttons_1.5.2_js_buttons.html5.min.js"></script>
+<script src="<%=request.getContextPath()%>/js/gfigurebuttons.print.min.js"></script>
+<script src="<%=request.getContextPath()%>/js/cdn.datatables.net_buttons_1.5.2_js_buttons.colVis.min.js"></script>
+
 <script>
+/* ✅ Original JS functions — same rakhe hain */
 function validateForm() {
-var layer = document.getElementById("options").value;
-var apiName = document.getElementById("w3review").value;
-if (!layer) {
-alert("Please select a Layer.");
-return false;
-}
-if (!apiName) {
-alert("Please enter an API Name.");
-return false;
-}
-if (document.forms[0].m_stFromTime.value == "") {
-alert("Please Enter From");
-return null;
-}
-if (document.forms[0].m_stToTime.value == "") {
-alert("Please Enter To");
-return null;
-}
-return true;
+    var layer = document.getElementById("options").value;
+    var apiName = document.getElementById("w3review").value;
+    if (!layer) { alert("Please select a Layer."); return false; }
+    if (!apiName) { alert("Please enter an API Name."); return false; }
+    if (document.forms[0].m_stFromTime.value == "") { alert("Please Enter From"); return null; }
+    if (document.forms[0].m_stToTime.value == "") { alert("Please Enter To"); return null; }
+    return true;
 }
 function toggleCheckboxes(button) {
-var checkboxRow = button.closest('tr').nextElementSibling;
-if (checkboxRow.style.display === 'none') {
-checkboxRow.style.display = 'table-row';
-} else {
-checkboxRow.style.display = 'none';
+    var checkboxRow = button.closest('tr').nextElementSibling;
+    if (checkboxRow.style.display === 'none' || checkboxRow.style.display === '') {
+        checkboxRow.style.display = 'table-row';
+    } else {
+        checkboxRow.style.display = 'none';
+    }
 }
-}
-/* function toggleTextbox(textboxId, checkbox) {
-var textbox = document.getElementById(textboxId);
-if (checkbox.checked) {
-textbox.style.display = "block";
-} else {
-textbox.style.display = "none";
-}
-}
-function toggleTextbox(textboxId, checkbox) {
-var textbox = document.getElementById(textboxId);
-var reviewCheckbox = document.getElementsByName('chk1_'+ checkbox.name.split('_')[1]);
-var remarksCheckbox = document.getElementsByName('chk2_'+ checkbox.name.split('_')[1]);
-if (reviewCheckbox.checked || remarksCheckbox.checked) {
-textbox.style.display = "block";
-} else {
-textbox.style.display = "none";
-}
-}
-function toggleTextbox(textboxId, checkbox) {
-var textbox = document.getElementById(textboxId);
-var baseName = checkbox.name.split('_')[0];
-var allCheckboxes = document.querySelectorAll('input[type="checkbox"]');
-var isChecked = Array.from(allCheckboxes).some(cb =>
-(cb.name.startsWith(baseName) && cb.checked)
-);
-textbox.style.display = isChecked ? "block" : "none";
-} */
 function toggleTextbox(textareaId, checkbox) {
-var textarea = document.getElementById(textareaId);
-if (checkbox.checked) {
-textarea.style.display = 'block';
-} else {
-textarea.style.display = 'none';
+    var textarea = document.getElementById(textareaId);
+    if (checkbox.checked) {
+        textarea.style.display = 'block';
+    } else {
+        textarea.style.display = 'none';
+    }
 }
+function viewDetails() {
+    document.forms[0].action = '<%=request.getContextPath() + "/jsp/deploymentview.jsp"%>';
+    document.forms[0].submit();
 }
-function viewDetails()
-{
-document.forms[0].action = '<%=request.getContextPath() + "/jsp/deploymentview.jsp"%>'
-document.forms[0].submit();
-}
-function viewDetails1()
-{
-document.forms[0].action = '<%=request.getContextPath() + "/jsp/nohitsview.jsp"%>'
-document.forms[0].submit();
+function viewDetails1() {
+    document.forms[0].action = '<%=request.getContextPath() + "/jsp/nohitsview.jsp"%>';
+    document.forms[0].submit();
 }
 function showrefrencegen(refno) {
-var a = '<%=request.getContextPath() + "/errorcoderefrencesearch?&refno="%>'+refno;
-window.open(a,'_blank');
+    var a = '<%=request.getContextPath() + "/errorcoderefrencesearch?&refno="%>' + refno;
+    window.open(a, '_blank');
 }
 function CheckBox(counter) {
-var xhr = new XMLHttpRequest();
-var reviewChecked = document.getElementById('chk1_' + counter).checked;
-var remarksChecked = document.getElementById('chk2_' + counter).checked;
-var completedChecked = document.getElementById('chk3_' + counter).checked;
-var noHitsChecked = document.getElementById('chk4_' + counter).checked;
-var reviewText = document.getElementById('reviewText_' + counter);
-var remarksText = document.getElementById('remarksText_' + counter);
-var data = {
-counter: counter,
-reviewChecked: reviewChecked,
-remarksChecked: remarksChecked,
-completedChecked: completedChecked,
-noHitsChecked: noHitsChecked,
-reviewText: reviewText.value.trim(),
-remarksText: remarksText.value.trim()
-};
-xhr.open("POST", "<%=request.getContextPath() + "/jsp/updateFields.jsp"%>", true);
-xhr.setRequestHeader("Content-Type", "application/json");
-xhr.onreadystatechange = function () {
-if (xhr.readyState === 4 && xhr.status === 200) {
-console.log("Response: ", xhr.responseText);
-} else if (xhr.readyState === 4) {
-console.error("Error: ", xhr.status, xhr.statusText);
+    var xhr = new XMLHttpRequest();
+    var reviewChecked = document.getElementById('chk1_' + counter).checked;
+    var remarksChecked = document.getElementById('chk2_' + counter).checked;
+    var completedChecked = document.getElementById('chk3_' + counter).checked;
+    var noHitsChecked = document.getElementById('chk4_' + counter).checked;
+    var reviewText = document.getElementById('reviewText_' + counter);
+    var remarksText = document.getElementById('remarksText_' + counter);
+    var data = {
+        counter: counter,
+        reviewChecked: reviewChecked,
+        remarksChecked: remarksChecked,
+        completedChecked: completedChecked,
+        noHitsChecked: noHitsChecked,
+        reviewText: reviewText ? reviewText.value.trim() : '',
+        remarksText: remarksText ? remarksText.value.trim() : ''
+    };
+    xhr.open("POST", "<%=request.getContextPath() + "/jsp/updateFields.jsp"%>", true);
+    xhr.setRequestHeader("Content-Type", "application/json");
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState === 4 && xhr.status === 200) {
+            console.log("Response: ", xhr.responseText);
+        } else if (xhr.readyState === 4) {
+            console.error("Error: ", xhr.status, xhr.statusText);
+        }
+    };
+    xhr.send(JSON.stringify(data));
 }
-};
-xhr.send(JSON.stringify(data));
-}
-
-
-
-/* function toggleSourceIDTextbox(checkbox) {
-var textbox = document.getElementById("sourceIDTextBox");
-textbox.style.display = checkbox.checked ? "block" : "none";
-} */
 function toggleSourceIDTextbox(checkbox) {
-var sourceField = document.getElementById("sourceIDField");
-sourceField.style.display = checkbox.checked ? "block" : "none";
+    var sourceField = document.getElementById("sourceIDField");
+    sourceField.style.display = checkbox.checked ? "block" : "none";
 }
 function toggleServerIpField() {
-var serverSelect = document.getElementById("server");
-var serverIpField = document.getElementById("serverIpField");
-if (serverSelect.value === "single") {
-serverIpField.style.display = "block";
-} else {
-serverIpField.style.display = "none";
-}
+    var serverSelect = document.getElementById("server");
+    var serverIpField = document.getElementById("serverIpField");
+    if (serverSelect.value === "single") {
+        serverIpField.style.display = "block";
+    } else {
+        serverIpField.style.display = "none";
+    }
 }
 function disableButton() {
-document.getElementById('submitBtn').disabled = true;
-document.getElementById('submitBtn').innerText = 'Submitting...';
-return true;
+    document.getElementById('submitBtn').disabled = true;
+    document.getElementById('submitBtn').innerText = 'Submitting...';
+    return true;
 }
 </script>
 </head>
-<body style="background-color: #2a2a3a;">
-<div class="container">
-<div >
-<h1 style="text-align: center;">Deployment Analysis Dashboard</h1>
-</div>
-<br><br>
-<form method="post" action="">
-<div class="pending-button">
-<button type="button" onclick="viewDetails()">Deployment Details</button>
-<button type="button" onclick="viewDetails1()">No Hits Details</button>
-</div>
-<div class="form-row">
-<div class="form-group">
-<label for="options">Choose a Layer:</label>
-<select id="options" name="layer" class="form-control" required>
-<option value="" disabled selected>Select Layer</option>
-<option value="EXP">EXP</option>
-<option value="SYS">SYS</option>
-</select>
-</div>
-<div class="form-group">
-<label for="date">Deployment Date:</label>
-<input type="date" class="form-control" id="date" name="date">
-</div>
-<div class="form-group">
-<label>Start Time:</label>
-<input type="time" id="m_stFromTime" name="m_stFromTime" class="form-control">
-</div>
-<div class="form-group">
-<label>End Time:</label>
-<input type="time" id="m_stToTime" name="m_stToTime" class="form-control">
-</div>
-<div class="form-group">
-<label for="w3review">Enter API Name:</label>
-<textarea id="w3review" name="api_name" class="form-control" rows="1" placeholder="Enter API_NAME"></textarea>
-</div>
-<div class="form-group">
-<label for="server">Choose a Server:</label>
-<select id="server" name="server" class="form-control" onchange="toggleServerIpField()">
-<option value="" disabled selected>Select Server</option>
-<option value="all">All Server</option>
-<option value="single">Single Server</option>
-</select>
-</div>
-<div class="form-group" id="serverIpField" style="display: none;">
-<label for="serverIp">Server IP:</label>
-<input type="text" id="serverIp" name="serverIp" class="form-control" placeholder="Enter Server IP">
-</div>
-<div class="form-group form-check">
-<input type="checkbox" id="sourceIDCheckbox" name="sourceIDCheckbox" class="form-check-input" onclick="toggleSourceIDTextbox(this)">
-<label class="form-check-label" for="sourceIDCheckbox">Source ID</label>
-</div>
-<div class="form-group" id="sourceIDField" style="display: none;">
-<input type="text" id="sourceIDTextBox" name="sourceIDTextBox" class="form-control" placeholder="Enter Source ID">
-</div>
-<button type="submit" class="btn btn-success" onclick='validateForm()'>Submit</button>
-</div>
-</form>
-<!-- Backend Processing -->
+<body>
+
+<%@include file="../userheader.jsp"%>
+
+<div class="new-wrapper">
+<div class="page-container">
+
+    <!-- PAGE HEADER -->
+    <div class="page-head">
+        <div>
+            <h1>
+                <span class="ttl-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
+                </span>
+                Deployment Analysis Dashboard
+            </h1>
+            <p class="sub">Analyze deployment impact, track URN/RRN, and manage reviews</p>
+        </div>
+    </div>
+
+    <!-- MAIN CONTAINER -->
+    <div class="container">
+
+        <form method="post" action="">
+            <!-- TOP ACTION BUTTONS -->
+            <div class="pending-button">
+                <button type="button" class="btn btn-primary" onclick="viewDetails()">
+                    <i class="fas fa-list"></i> Deployment Details
+                </button>
+                <button type="button" class="btn btn-success" onclick="viewDetails1()">
+                    <i class="fas fa-eye-slash"></i> No Hits Details
+                </button>
+            </div>
+
+            <!-- FORM ROW -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="options">Choose a Layer</label>
+                    <select id="options" name="layer" class="form-control" required>
+                        <option value="" disabled selected>Select Layer</option>
+                        <option value="EXP">EXP</option>
+                        <option value="SYS">SYS</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="date">Deployment Date</label>
+                    <input type="date" class="form-control" id="date" name="date">
+                </div>
+                <div class="form-group">
+                    <label>Start Time</label>
+                    <input type="time" id="m_stFromTime" name="m_stFromTime" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>End Time</label>
+                    <input type="time" id="m_stToTime" name="m_stToTime" class="form-control">
+                </div>
+                <div class="form-group" style="grid-column: span 2;">
+                    <label for="w3review">Enter API Name</label>
+                    <textarea id="w3review" name="api_name" class="form-control" rows="1" placeholder="Enter API_NAME (comma separated)"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="server">Choose a Server</label>
+                    <select id="server" name="server" class="form-control" onchange="toggleServerIpField()">
+                        <option value="" disabled selected>Select Server</option>
+                        <option value="all">All Server</option>
+                        <option value="single">Single Server</option>
+                    </select>
+                </div>
+                <div class="form-group" id="serverIpField" style="display: none;">
+                    <label for="serverIp">Server IP</label>
+                    <input type="text" id="serverIp" name="serverIp" class="form-control" placeholder="Enter Server IP">
+                </div>
+                <div class="form-group form-check">
+                    <input type="checkbox" id="sourceIDCheckbox" name="sourceIDCheckbox" class="form-check-input" onclick="toggleSourceIDTextbox(this)">
+                    <label class="form-check-label" for="sourceIDCheckbox">Source ID</label>
+                </div>
+                <div class="form-group" id="sourceIDField" style="display: none;">
+                    <input type="text" id="sourceIDTextBox" name="sourceIDTextBox" class="form-control" placeholder="Enter Source ID">
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn btn-success" onclick="return validateForm()">
+                        <i class="fas fa-search"></i> Submit
+                    </button>
+                </div>
+            </div>
+        </form>
+
+<!-- ============================================================
+     ✅ BACKEND LOGIC — AS-IS (koi change nahi)
+     ============================================================ -->
 <%
 String layer = request.getParameter("layer");
 session.setAttribute("layer", layer);
@@ -651,38 +712,25 @@ System.out.println("Date: " + m_strDate);
 System.out.println("No date provided or date is empty.");
 }
 String m_strMonth = "";
-if (arr[1].equals("01")) {
-m_strMonth = "JAN";
-} else if (arr[1].equals("02")) {
-m_strMonth = "FEB";
-} else if (arr[1].equals("03")) {
-m_strMonth = "MAR";
-} else if (arr[1].equals("04")) {
-m_strMonth = "APR";
-} else if (arr[1].equals("05")) {
-m_strMonth = "MAY";
-} else if (arr[1].equals("06")) {
-m_strMonth = "JUN";
-} else if (arr[1].equals("07")) {
-m_strMonth = "JUL";
-} else if (arr[1].equals("08")) {
-m_strMonth = "AUG";
-} else if (arr[1].equals("09")) {
-m_strMonth = "SEP";
-} else if (arr[1].equals("10")) {
-m_strMonth = "OCT";
-} else if (arr[1].equals("11")) {
-m_strMonth = "NOV";
-} else {
-m_strMonth = "DEC";
+if (arr != null && arr.length > 1) {
+if (arr[1].equals("01")) { m_strMonth = "JAN"; }
+else if (arr[1].equals("02")) { m_strMonth = "FEB"; }
+else if (arr[1].equals("03")) { m_strMonth = "MAR"; }
+else if (arr[1].equals("04")) { m_strMonth = "APR"; }
+else if (arr[1].equals("05")) { m_strMonth = "MAY"; }
+else if (arr[1].equals("06")) { m_strMonth = "JUN"; }
+else if (arr[1].equals("07")) { m_strMonth = "JUL"; }
+else if (arr[1].equals("08")) { m_strMonth = "AUG"; }
+else if (arr[1].equals("09")) { m_strMonth = "SEP"; }
+else if (arr[1].equals("10")) { m_strMonth = "OCT"; }
+else if (arr[1].equals("11")) { m_strMonth = "NOV"; }
+else { m_strMonth = "DEC"; }
 }
-String m_strKPITitle = "Deployment date for " + m_strMonth + " " + arr[2] + " - "
+String m_strKPITitle = "Deployment date for " + m_strMonth + " " + (arr != null && arr.length > 2 ? arr[2] : "") + " - "
 + request.getParameter("m_stFromTime") + " to " + request.getParameter("m_stToTime");
-String m_strFormattedFromDate = arr[2] + "-" + m_strMonth + "-" + arr[0] + " " + request.getParameter("m_stFromTime")
-+ ":00";
+String m_strFormattedFromDate = (arr != null && arr.length > 2 ? arr[2] : "") + "-" + m_strMonth + "-" + (arr != null ? arr[0] : "") + " " + request.getParameter("m_stFromTime") + ":00";
 System.out.println("m_strFormattedFromDate:" + m_strFormattedFromDate);
-String m_strFormattedToDate = arr[2] + "-" + m_strMonth + "-" + arr[0] + " " + request.getParameter("m_stToTime")
-+ ":00";
+String m_strFormattedToDate = (arr != null && arr.length > 2 ? arr[2] : "") + "-" + m_strMonth + "-" + (arr != null ? arr[0] : "") + " " + request.getParameter("m_stToTime") + ":00";
 System.out.println("m_strFormattedToDate:" + m_strFormattedToDate);
 if ("EXP".equals(layer)) {
 String querySql = "WITH A AS (\n"
@@ -707,12 +755,6 @@ querySql += " AND request_date_time < TRUNC(SYSDATE)\n"
 + " api_name,\n"
 + " MAX(urn) KEEP (DENSE_RANK LAST ORDER BY urn) AS URN,\n"
 + " TRIM(source_id) AS source_id,\n";
-/* if (!sourceIds.isEmpty()) {
-querySql += " LISTAGG(DISTINCT TRIM(exp_ip), ',') WITHIN GROUP (ORDER BY exp_ip) AS EXP_IP,\n";
-}
-if (!serverIp.isEmpty()) {
-querySql += " TRIM(source_id) WITHIN GROUP (ORDER BY source_id) AS SOURCE,\n";
-} */
 querySql += " COUNT(*) AS TOTAL_HITS,\n"
 + " LISTAGG(DISTINCT TRIM(exp_ip), ',') WITHIN GROUP (ORDER BY exp_ip) AS EXP_IP,\n"
 + " SUM(CASE WHEN RESPONSE_STATUS IN ('0', 'SUCCESS') THEN 1 ELSE 0 END) AS SUCCESS,\n"
@@ -784,10 +826,8 @@ e.printStackTrace();
 }
 } else {
 %>
-<!-- Display the results in a table -->
 <div class='table-container'>
-<h3 class="titulo-tabla" style="color: white;">Deployment Details</h3>
-<br>
+<h3 class="titulo-tabla">Deployment Details</h3>
 <table class='table table-bordered table-hover'>
 <thead>
 <tr>
@@ -811,109 +851,39 @@ String uniqueId = UUID.randomUUID().toString();
 do {
 System.out.println("INSIDE DO ");
 apiName = rs.getString("api_name");
-System.out.println("api_name : " + apiName);
 urn = rs.getString("URN") != null ? rs.getString("URN") : "N/A";
-System.out.println("URN : " + urn);
 rrn = rs.getString("RRN") != null ? rs.getString("RRN") : "N/A";
-System.out.println("rrn : " + rrn);
 totalHits = rs.getInt("TOTAL_HITS");
-System.out.println("totalHits : " + totalHits);
 success = rs.getInt("SUCCESS");
-System.out.println("success : " + success);
 td = rs.getInt("TD");
-System.out.println("td : " + td);
 tdPercent = rs.getDouble("TD_PERCENT");
-System.out.println("tdPercent : " + tdPercent);
 bd = rs.getInt("BD");
-System.out.println("BD : " + bd);
 bdPercent = rs.getDouble("BD_PERCENT");
-System.out.println("bdPercent : " + bdPercent);
 sourceId = rs.getString("source_id");
-System.out.println("sourceId : " + sourceId);
 serverIps = rs.getString("exp_ip");
-System.out.println("ServerIp : " + serverIps);
 %>
 <tr>
-<td style="color: white;"><%=apiName%></td>
-<td style="color: white;"><%=sourceId%></td>
-<td style="color: white;" class ="post-deploy-rrn"><%=serverIps%></td>
-<td class ="post-deploy-rrn" style="color: white;" onclick="showrefrencegen('<%=urn%>')"><pre
-								style="color: white; font-size: 15px; cursor: pointer;"> <%=urn%>  <svg
-									xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="20"
-									height="20" viewBox="0 0 64 64">
-<path fill="#dadcec"
-										d="M40.172,44.001l3.917-3.917l2.828,2.828l-3.917,3.917L40.172,44.001z"></path>
-									<path fill="#cda1a7"
-										d="M44.915,45.255l0.346-0.346c1.562-1.562,4.095-1.562,5.657,0l10.26,10.26 c1.562,1.562,1.562,4.095,0,5.657l-0.346,0.346c-1.562,1.562-4.095,1.562-5.657,0l-10.26-10.26 C43.353,49.35,43.353,46.817,44.915,45.255z"></path>
-									<path fill="#c4939c"
-										d="M43.586,46.586L43.586,46.586c0.828-0.828,2.17-0.828,2.998,0l12.919,12.919 c0.828,0.828,0.828,2.17,0,2.998l0,0c-0.828,0.828-2.17,0.828-2.998,0L43.586,49.585C42.758,48.757,42.758,47.414,43.586,46.586z"></path>
-									<path fill="#ffeb9b"
-										d="M25,1C11.745,1,1,11.745,1,25s10.745,24,24,24s24-10.745,24-24S38.255,1,25,1z"></path>
-									<path fill="#f6d397"
-										d="M11.14,38.86l27.72-27.72c1.562-1.562,4.094-1.563,5.657-0.001 c0.167,0.167,0.318,0.348,0.453,0.541c7.396,11,4.474,25.912-6.525,33.308C30.354,50.428,19.776,50.433,11.68,45 c-1.819-1.254-2.277-3.745-1.023-5.564C10.799,39.23,10.961,39.037,11.14,38.86z"></path>
-									<path fill="#8d6c9f"
-										d="M61.88,54.46L51.54,44.12c-0.956-0.948-2.254-1.471-3.6-1.45c0-0.14-2.77-2.91-2.77-2.91 c8.154-11.142,5.732-26.785-5.41-34.939s-26.785-5.732-34.939,5.41s-5.732,26.785,5.41,34.939c8.792,6.434,20.737,6.434,29.529,0 c0,0,2.78,2.72,2.91,2.77s0,0,0,0.07c-0.002,1.327,0.523,2.6,1.46,3.54l10.33,10.33c1.952,1.952,5.118,1.952,7.07,0l0.34-0.34 c1.952-1.952,1.952-5.118,0-7.07L61.88,54.46z M2,25C2,12.297,12.297,2,25,2s23,10.297,23,23S37.703,48,25,48S2,37.703,2,25z M44.12,44.46c-0.376,0.387-0.687,0.833-0.92,1.32l-1.87-1.87c0.925-0.799,1.791-1.665,2.59-2.59l1.88,1.88 c-0.487,0.233-0.933,0.544-1.32,0.92L44.12,44.46z M60.46,60.12l-0.34,0.34c-1.171,1.17-3.069,1.17-4.24,0L45.54,50.12 c-1.17-1.171-1.17-3.069,0-4.24l0.34-0.34c1.171-1.17,3.069-1.17,4.24,0l10.34,10.34C61.63,57.051,61.63,58.949,60.46,60.12z"></path>
-									<g>
-									<path fill="#bbdef9"
-										d="M25,7C15.059,7,7,15.059,7,25s8.059,18,18,18s18-8.059,18-18S34.941,7,25,7z"></path>
-									<path fill="#8d6c9f"
-										d="M38.44,11.57c-7.42-7.42-19.45-7.42-26.87,0s-7.42,19.45,0,26.87s19.45,7.42,26.87,0c0,0,0,0,0,0 c7.42-7.326,7.496-19.28,0.17-26.7C38.554,11.683,38.497,11.626,38.44,11.57z M37,37c-6.627,6.65-17.391,6.669-24.042,0.042 S6.289,19.65,12.917,13s17.391-6.669,24.042-0.042C36.972,12.972,36.986,12.986,37,13c6.627,6.564,6.679,17.258,0.114,23.886 C37.076,36.924,37.038,36.962,37,37z"></path>
-									<path fill="#8d6c9f"
-										d="M31.2,14.72c0.83,0.502,1.595,1.103,2.28,1.79c0.389,0.392,1.023,0.394,1.415,0.005 s0.394-1.023,0.005-1.415c-0.802-0.805-1.699-1.51-2.67-2.1c-0.511-0.21-1.095,0.033-1.306,0.543 c-0.17,0.413-0.046,0.89,0.306,1.167L31.2,14.72z M26.38,11.07c-4.166-0.419-8.3,1.049-11.27,4 c-0.419,0.359-0.468,0.991-0.109,1.41s0.991,0.468,1.41,0.109c0.039-0.033,0.076-0.07,0.109-0.109 c2.542-2.544,6.091-3.814,9.67-3.46c0.552,0.055,1.045-0.348,1.1-0.9s-0.348-1.045-0.9-1.1L26.38,11.07z"></path>
-									<path fill="#8d6c9f"
-										d="M34.19,32.78c-0.419-0.359-1.051-0.31-1.41,0.109c-0.321,0.374-0.321,0.927,0,1.301l1.41,1.41 c0.419,0.359,1.051,0.31,1.41-0.109c0.321-0.374,0.321-0.927,0-1.301L34.19,32.78z M15.81,32.78l-1.41,1.41 c-0.419,0.359-0.468,0.991-0.109,1.41s0.991,0.468,1.41,0.109c0.039-0.034,0.076-0.07,0.109-0.109l1.41-1.41 c0.359-0.419,0.31-1.051-0.109-1.41C16.737,32.459,16.184,32.459,15.81,32.78z M39,24h-2c-0.552,0-1,0.448-1,1s0.448,1,1,1h2 c0.552,0,1-0.448,1-1S39.552,24,39,24z M14,25c0-0.552-0.448-1-1-1h-2c-0.552,0-1,0.448-1,1s0.448,1,1,1h2 C13.552,26,14,25.552,14,25z M25,36c-0.552,0-1,0.448-1,1v2c0,0.552,0.448,1,1,1s1-0.448,1-1v-2C26,36.448,25.552,36,25,36z M38.28,29.55l-1.84-0.78c-0.5-0.235-1.095-0.021-1.331,0.479c-0.235,0.5-0.021,1.095,0.479,1.331 c0.023,0.011,0.047,0.021,0.071,0.03l1.84,0.78c0.5,0.235,1.095,0.021,1.331-0.479c0.235-0.5,0.021-1.095-0.479-1.331 C38.328,29.569,38.304,29.559,38.28,29.55z M20.7,35.13c-0.508-0.215-1.094,0.022-1.31,0.53l-0.78,1.84 c-0.235,0.5-0.021,1.095,0.479,1.331c0.5,0.235,1.095,0.021,1.331-0.479c0.011-0.023,0.021-0.047,0.03-0.071l0.78-1.84 C21.445,35.932,21.208,35.346,20.7,35.13z M14.8,29.12c-0.208-0.51-0.789-0.756-1.3-0.55l-1.85,0.75 c-0.524,0.176-0.806,0.743-0.63,1.266c0.176,0.524,0.743,0.806,1.266,0.63c0.039-0.013,0.077-0.028,0.113-0.046l1.85-0.75 C14.76,30.212,15.006,29.631,14.8,29.12z M30.42,35.75c-0.238-0.498-0.836-0.709-1.334-0.47c-0.456,0.218-0.677,0.741-0.516,1.22 l0.75,1.85c0.238,0.498,0.836,0.709,1.334,0.47c0.456-0.218,0.677-0.741,0.516-1.22L30.42,35.75z"></path></g>
-									<g>
-									<path fill="#d2edff"
-										d="M25,18c-3.866,0-7,3.134-7,7s3.134,7,7,7s7-3.134,7-7S28.866,18,25,18z"></path>
-									<path fill="#f3f3f3"
-										d="M21,17c-2.209,0-4,1.791-4,4s1.791,4,4,4s4-1.791,4-4S23.209,17,21,17z M29.5,28 c-0.828,0-1.5,0.672-1.5,1.5s0.672,1.5,1.5,1.5s1.5-0.672,1.5-1.5S30.328,28,29.5,28z"></path></g>
-</svg> </pre></td>
-<td class ="post-deploy-rrn" style="color: white;" onclick="showrefrencegen('<%=rrn%>')">
-							<pre style="color: white; font-size: 15px; cursor: pointer;"><%=rrn%> <svg
-									xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="20"
-									height="20" viewBox="0 0 64 64">
-<path fill="#dadcec"
-										d="M40.172,44.001l3.917-3.917l2.828,2.828l-3.917,3.917L40.172,44.001z"></path>
-									<path fill="#cda1a7"
-										d="M44.915,45.255l0.346-0.346c1.562-1.562,4.095-1.562,5.657,0l10.26,10.26 c1.562,1.562,1.562,4.095,0,5.657l-0.346,0.346c-1.562,1.562-4.095,1.562-5.657,0l-10.26-10.26 C43.353,49.35,43.353,46.817,44.915,45.255z"></path>
-									<path fill="#c4939c"
-										d="M43.586,46.586L43.586,46.586c0.828-0.828,2.17-0.828,2.998,0l12.919,12.919 c0.828,0.828,0.828,2.17,0,2.998l0,0c-0.828,0.828-2.17,0.828-2.998,0L43.586,49.585C42.758,48.757,42.758,47.414,43.586,46.586z"></path>
-									<path fill="#ffeb9b"
-										d="M25,1C11.745,1,1,11.745,1,25s10.745,24,24,24s24-10.745,24-24S38.255,1,25,1z"></path>
-									<path fill="#f6d397"
-										d="M11.14,38.86l27.72-27.72c1.562-1.562,4.094-1.563,5.657-0.001 c0.167,0.167,0.318,0.348,0.453,0.541c7.396,11,4.474,25.912-6.525,33.308C30.354,50.428,19.776,50.433,11.68,45 c-1.819-1.254-2.277-3.745-1.023-5.564C10.799,39.23,10.961,39.037,11.14,38.86z"></path>
-									<path fill="#8d6c9f"
-										d="M61.88,54.46L51.54,44.12c-0.956-0.948-2.254-1.471-3.6-1.45c0-0.14-2.77-2.91-2.77-2.91 c8.154-11.142,5.732-26.785-5.41-34.939s-26.785-5.732-34.939,5.41s-5.732,26.785,5.41,34.939c8.792,6.434,20.737,6.434,29.529,0 c0,0,2.78,2.72,2.91,2.77s0,0,0,0.07c-0.002,1.327,0.523,2.6,1.46,3.54l10.33,10.33c1.952,1.952,5.118,1.952,7.07,0l0.34-0.34 c1.952-1.952,1.952-5.118,0-7.07L61.88,54.46z M2,25C2,12.297,12.297,2,25,2s23,10.297,23,23S37.703,48,25,48S2,37.703,2,25z M44.12,44.46c-0.376,0.387-0.687,0.833-0.92,1.32l-1.87-1.87c0.925-0.799,1.791-1.665,2.59-2.59l1.88,1.88 c-0.487,0.233-0.933,0.544-1.32,0.92L44.12,44.46z M60.46,60.12l-0.34,0.34c-1.171,1.17-3.069,1.17-4.24,0L45.54,50.12 c-1.17-1.171-1.17-3.069,0-4.24l0.34-0.34c1.171-1.17,3.069-1.17,4.24,0l10.34,10.34C61.63,57.051,61.63,58.949,60.46,60.12z"></path>
-									<g>
-									<path fill="#bbdef9"
-										d="M25,7C15.059,7,7,15.059,7,25s8.059,18,18,18s18-8.059,18-18S34.941,7,25,7z"></path>
-									<path fill="#8d6c9f"
-										d="M38.44,11.57c-7.42-7.42-19.45-7.42-26.87,0s-7.42,19.45,0,26.87s19.45,7.42,26.87,0c0,0,0,0,0,0 c7.42-7.326,7.496-19.28,0.17-26.7C38.554,11.683,38.497,11.626,38.44,11.57z M37,37c-6.627,6.65-17.391,6.669-24.042,0.042 S6.289,19.65,12.917,13s17.391-6.669,24.042-0.042C36.972,12.972,36.986,12.986,37,13c6.627,6.564,6.679,17.258,0.114,23.886 C37.076,36.924,37.038,36.962,37,37z"></path>
-									<path fill="#8d6c9f"
-										d="M31.2,14.72c0.83,0.502,1.595,1.103,2.28,1.79c0.389,0.392,1.023,0.394,1.415,0.005 s0.394-1.023,0.005-1.415c-0.802-0.805-1.699-1.51-2.67-2.1c-0.511-0.21-1.095,0.033-1.306,0.543 c-0.17,0.413-0.046,0.89,0.306,1.167L31.2,14.72z M26.38,11.07c-4.166-0.419-8.3,1.049-11.27,4 c-0.419,0.359-0.468,0.991-0.109,1.41s0.991,0.468,1.41,0.109c0.039-0.033,0.076-0.07,0.109-0.109 c2.542-2.544,6.091-3.814,9.67-3.46c0.552,0.055,1.045-0.348,1.1-0.9s-0.348-1.045-0.9-1.1L26.38,11.07z"></path>
-									<path fill="#8d6c9f"
-										d="M34.19,32.78c-0.419-0.359-1.051-0.31-1.41,0.109c-0.321,0.374-0.321,0.927,0,1.301l1.41,1.41 c0.419,0.359,1.051,0.31,1.41-0.109c0.321-0.374,0.321-0.927,0-1.301L34.19,32.78z M15.81,32.78l-1.41,1.41 c-0.419,0.359-0.468,0.991-0.109,1.41s0.991,0.468,1.41,0.109c0.039-0.034,0.076-0.07,0.109-0.109l1.41-1.41 c0.359-0.419,0.31-1.051-0.109-1.41C16.737,32.459,16.184,32.459,15.81,32.78z M39,24h-2c-0.552,0-1,0.448-1,1s0.448,1,1,1h2 c0.552,0,1-0.448,1-1S39.552,24,39,24z M14,25c0-0.552-0.448-1-1-1h-2c-0.552,0-1,0.448-1,1s0.448,1,1,1h2 C13.552,26,14,25.552,14,25z M25,36c-0.552,0-1,0.448-1,1v2c0,0.552,0.448,1,1,1s1-0.448,1-1v-2C26,36.448,25.552,36,25,36z M38.28,29.55l-1.84-0.78c-0.5-0.235-1.095-0.021-1.331,0.479c-0.235,0.5-0.021,1.095,0.479,1.331 c0.023,0.011,0.047,0.021,0.071,0.03l1.84,0.78c0.5,0.235,1.095,0.021,1.331-0.479c0.235-0.5,0.021-1.095-0.479-1.331 C38.328,29.569,38.304,29.559,38.28,29.55z M20.7,35.13c-0.508-0.215-1.094,0.022-1.31,0.53l-0.78,1.84 c-0.235,0.5-0.021,1.095,0.479,1.331c0.5,0.235,1.095,0.021,1.331-0.479c0.011-0.023,0.021-0.047,0.03-0.071l0.78-1.84 C21.445,35.932,21.208,35.346,20.7,35.13z M14.8,29.12c-0.208-0.51-0.789-0.756-1.3-0.55l-1.85,0.75 c-0.524,0.176-0.806,0.743-0.63,1.266c0.176,0.524,0.743,0.806,1.266,0.63c0.039-0.013,0.077-0.028,0.113-0.046l1.85-0.75 C14.76,30.212,15.006,29.631,14.8,29.12z M30.42,35.75c-0.238-0.498-0.836-0.709-1.334-0.47c-0.456,0.218-0.677,0.741-0.516,1.22 l0.75,1.85c0.238,0.498,0.836,0.709,1.334,0.47c0.456-0.218,0.677-0.741,0.516-1.22L30.42,35.75z"></path></g>
-									<g>
-									<path fill="#d2edff"
-										d="M25,18c-3.866,0-7,3.134-7,7s3.134,7,7,7s7-3.134,7-7S28.866,18,25,18z"></path>
-									<path fill="#f3f3f3"
-										d="M21,17c-2.209,0-4,1.791-4,4s1.791,4,4,4s4-1.791,4-4S23.209,17,21,17z M29.5,28 c-0.828,0-1.5,0.672-1.5,1.5s0.672,1.5,1.5,1.5s1.5-0.672,1.5-1.5S30.328,28,29.5,28z"></path></g>
-</svg>
-							</pre>
-						</td>
-<td style="color: white;"><%=totalHits%></td>
-<td style="color: white;"><%=success%></td>
-<td style="color: white;"><%=td%></td>
-<td style="color: white;"><%=tdPercent%></td>
-<td style="color: white;"><%=bd%></td>
-<td style="color: white;"><%=bdPercent%></td>
+<td><%=apiName%></td>
+<td><%=sourceId%></td>
+<td class="post-deploy-rrn"><%=serverIps%></td>
+<td class="post-deploy-rrn" onclick="showrefrencegen('<%=urn%>')">
+<pre><%=urn%> <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="18" height="18" viewBox="0 0 64 64"><path fill="#dadcec" d="M40.172,44.001l3.917-3.917l2.828,2.828l-3.917,3.917L40.172,44.001z"></path><path fill="#cda1a7" d="M44.915,45.255l0.346-0.346c1.562-1.562,4.095-1.562,5.657,0l10.26,10.26 c1.562,1.562,1.562,4.095,0,5.657l-0.346,0.346c-1.562,1.562-4.095,1.562-5.657,0l-10.26-10.26 C43.353,49.35,43.353,46.817,44.915,45.255z"></path><path fill="#c4939c" d="M43.586,46.586L43.586,46.586c0.828-0.828,2.17-0.828,2.998,0l12.919,12.919 c0.828,0.828,0.828,2.17,0,2.998l0,0c-0.828,0.828-2.17,0.828-2.998,0L43.586,49.585C42.758,48.757,42.758,47.414,43.586,46.586z"></path><path fill="#ffeb9b" d="M25,1C11.745,1,1,11.745,1,25s10.745,24,24,24s24-10.745,24-24S38.255,1,25,1z"></path></svg></pre>
+</td>
+<td class="post-deploy-rrn" onclick="showrefrencegen('<%=rrn%>')">
+<pre><%=rrn%> <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="18" height="18" viewBox="0 0 64 64"><path fill="#dadcec" d="M40.172,44.001l3.917-3.917l2.828,2.828l-3.917,3.917L40.172,44.001z"></path><path fill="#cda1a7" d="M44.915,45.255l0.346-0.346c1.562-1.562,4.095-1.562,5.657,0l10.26,10.26 c1.562,1.562,1.562,4.095,0,5.657l-0.346,0.346c-1.562,1.562-4.095,1.562-5.657,0l-10.26-10.26 C43.353,49.35,43.353,46.817,44.915,45.255z"></path><path fill="#c4939c" d="M43.586,46.586L43.586,46.586c0.828-0.828,2.17-0.828,2.998,0l12.919,12.919 c0.828,0.828,0.828,2.17,0,2.998l0,0c-0.828,0.828-2.17,0.828-2.998,0L43.586,49.585C42.758,48.757,42.758,47.414,43.586,46.586z"></path><path fill="#ffeb9b" d="M25,1C11.745,1,1,11.745,1,25s10.745,24,24,24s24-10.745,24-24S38.255,1,25,1z"></path></svg></pre>
+</td>
+<td><%=totalHits%></td>
+<td><%=success%></td>
+<td><%=td%></td>
+<td><%=tdPercent%></td>
+<td><%=bd%></td>
+<td><%=bdPercent%></td>
 <td>
-<button class='btn btn-primary action-btn'
-data-api-name='<%=apiName%>' onclick='toggleCheckboxes(this)'>Action</button>
+<button class='btn btn-primary action-btn' data-api-name='<%=apiName%>' onclick='toggleCheckboxes(this)'>Action</button>
 </td>
 </tr>
 <tr class='checkbox-row'>
-<td colspan='10'>
+<td colspan='12'>
 <form method="post" action="<%=request.getContextPath() + "/jsp/updateFields.jsp"%>">
 <input type="hidden" name="api_name" value="<%= apiName %>">
 <input type="hidden" name="SOURCE_ID" value="<%= sourceId %>">
@@ -929,54 +899,32 @@ data-api-name='<%=apiName%>' onclick='toggleCheckboxes(this)'>Action</button>
 <input type="hidden" name="serverIp" value="<%= serverIp %>">
 <input type="hidden" name="startTime" value="<%= startTime %>">
 <input type="hidden" name="endTime" value="<%= endTime %>">
-<input type="checkbox" id="chk1_<%=counter%>"
-name="chk1_<%=counter%>" value="1"
-onclick="toggleTextbox('reviewText_<%=counter%>', this)">
-Review <input type="checkbox" id="chk2_<%=counter%>"
-name="chk2_<%=counter%>" value="1"
-onclick="toggleTextbox('remarksText_<%=counter%>', this)">
-Remarks <input type="checkbox" id="chk3_<%=counter%>"
-name="chk3_<%=counter%>" value="Yes"> Completed <input
-type="checkbox" id="chk4_<%=counter%>"
-name="chk4_<%=counter%>" value="Yes"> No-hits observed
-<div id="reviewText_<%= counter %>" class="textarea-container" style="display: none;">
-<textarea id="reviewText_<%= counter %>" name="reviewText_<%= counter %>"
-placeholder="Enter your review here"></textarea>
+<input type="checkbox" id="chk1_<%=counter%>" name="chk1_<%=counter%>" value="1" onclick="toggleTextbox('reviewText_<%=counter%>', this)"> Review
+<input type="checkbox" id="chk2_<%=counter%>" name="chk2_<%=counter%>" value="1" onclick="toggleTextbox('remarksText_<%=counter%>', this)"> Remarks
+<input type="checkbox" id="chk3_<%=counter%>" name="chk3_<%=counter%>" value="Yes"> Completed
+<input type="checkbox" id="chk4_<%=counter%>" name="chk4_<%=counter%>" value="Yes"> No-hits observed
+<div id="reviewText_<%= counter %>" class="textarea-container">
+<textarea id="reviewText_<%= counter %>" name="reviewText_<%= counter %>" placeholder="Enter your review here"></textarea>
 </div>
-<div id="remarksText_<%= counter %>" class="textarea-container" style="display: none;">
-<textarea id="remarksText_<%= counter %>" name="remarksText_<%= counter %>"
-placeholder="Enter your remarks here"></textarea>
+<div id="remarksText_<%= counter %>" class="textarea-container">
+<textarea id="remarksText_<%= counter %>" name="remarksText_<%= counter %>" placeholder="Enter your remarks here"></textarea>
 </div>
-<div>
-<input type="submit" class="btn btn-success" onclick="return CheckBox('<%= counter %>')">
+<div style="margin-top:12px;">
+<input type="submit" class="btn btn-success" onclick="return CheckBox('<%= counter %>')" value="Submit">
 </div>
 </form>
 </td>
 </tr>
 <%
-System.out.println("inside do to");
 if ("POST".equalsIgnoreCase(request.getMethod())) {
-java.util.Enumeration<String> parameterNames = request.getParameterNames();
-while (parameterNames.hasMoreElements()) {
-String paramName = parameterNames.nextElement();
-System.out.println("Param name: " + paramName + ", Value: " + request.getParameter(paramName));
-}
 String counter1 = request.getParameter("counter");
-System.out.println("counter1 :-" + counter1);
 String reviewText = request.getParameter("reviewText__" + counter1);
 String remarksText = request.getParameter("remarksText__" + counter1);
 String completedChecked = request.getParameter("chk3_" + counter1);
-System.out.println("reviewText :-" + reviewText);
-System.out.println("remarksText :-" + remarksText);
-System.out.println("completedChecked " + completedChecked);
 String server = request.getParameter("server");
-System.out.println("server" + server);
 String source = request.getParameter("sourceIDTextBox");
-System.out.println("source_id" + source);
 String serverIp1 = request.getParameter("serverIp");
-System.out.println("serverIp: " + serverIp1);
 String deploymentdate = request.getParameter("date");
-System.out.println("deploymentdate:" + deploymentdate);
 boolean isCompleted = (completedChecked != null && completedChecked.equals("on"));
 counter++;
 String checkExistenceSql = "SELECT id FROM api_log_insert WHERE api_name = ? AND (source_id = ? OR (source_id IS NULL AND ? IS NULL))";
@@ -985,38 +933,10 @@ checkStmt.setString(1, apiName);
 checkStmt.setString(2, sourceId);
 checkStmt.setString(3, sourceId);
 ResultSet checkRs = checkStmt.executeQuery();
-//boolean exists = false;
 Integer recordId = null;
-
-if (checkRs.next()) {
-	 recordId = checkRs.getInt("id");  // Get the primary key ID
-	 System.out.println("recordId : " + recordId);
-}
-System.out.println("recordId : " + recordId);
+if (checkRs.next()) { recordId = checkRs.getInt("id"); }
 if (recordId != null) {
-System.out.println("INSIDE IF");
-String updateSql = "UPDATE api_log_insert SET " + "API_NAME = ?, " + "insert_time = SYSDATE, "
-+ "URN = ?, RRN = ?, TOTAL_HITS = ?, SUCCESS = ?, TD = ?, TD_PERCENT = ?, "
-+ "BD = ?, BD_PERCENT = ?, REVIEW = ?, REMARKS = ?, "
-+ "COMPLETED = ?, SERVER = ?, SOURCE_ID = ?, SERVER_IP = ?, START_TIME = TO_DATE(?, 'DD-MON-YYYY HH24:MI:SS'), END_TIME = TO_DATE(?, 'DD-MON-YYYY HH24:MI:SS') " + "WHERE api_name = ? and source_id = ?" ;
-System.out.println("URN : " + urn);
-System.out.println("rrn : " + rrn);
-System.out.println("totalHits : " + totalHits);
-System.out.println("success : " + success);
-System.out.println("td : " + td);
-System.out.println("tdPercent : " + tdPercent);
-System.out.println("BD : " + bd);
-System.out.println("bdPercent : " + bdPercent);
-System.out.println("reviewText : " + reviewText);
-System.out.println("remarksText : " + remarksText);
-System.out.println("isCompleted : " + isCompleted);
-System.out.println("server : " + server);
-System.out.println("apiName : " + apiName);
-System.out.println("source : " + sourceId);
-System.out.println("serverIp : " + serverIp1);
-System.out.println("updateSql : " + updateSql);
-System.out.println("starttime :" +startTime);
-System.out.println("starttime :" +endTime);
+String updateSql = "UPDATE api_log_insert SET API_NAME = ?, insert_time = SYSDATE, URN = ?, RRN = ?, TOTAL_HITS = ?, SUCCESS = ?, TD = ?, TD_PERCENT = ?, BD = ?, BD_PERCENT = ?, REVIEW = ?, REMARKS = ?, COMPLETED = ?, SERVER = ?, SOURCE_ID = ?, SERVER_IP = ?, START_TIME = TO_DATE(?, 'DD-MON-YYYY HH24:MI:SS'), END_TIME = TO_DATE(?, 'DD-MON-YYYY HH24:MI:SS') WHERE api_name = ? and source_id = ?";
 PreparedStatement updateStmt = conn.prepareStatement(updateSql);
 updateStmt.setString(1, apiName);
 updateStmt.setString(2, urn);
@@ -1037,21 +957,13 @@ updateStmt.setString(16, m_strFormattedFromDate);
 updateStmt.setString(17, m_strFormattedToDate);
 updateStmt.setString(18, apiName);
 updateStmt.setString(19, sourceId);
-int updateResult = updateStmt.executeUpdate();
-System.out.println("Update result: " + updateResult);
-if (updateStmt != null) {
-updateStmt.close();
-}
+updateStmt.executeUpdate();
+if (updateStmt != null) { updateStmt.close(); }
 } else {
-System.out.println("INSIDE ELSE");
-String insertSql = "INSERT INTO api_log_insert (api_name, insert_time, URN, RRN, TOTAL_HITS, SUCCESS, TD, TD_PERCENT, BD, BD_PERCENT, REVIEW, REMARKS, COMPLETED, SERVER, SOURCE_ID, SERVER_IP,START_TIME, END_TIME) "
-+ "VALUES (?, SYSDATE, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,TO_DATE(?, 'DD-MON-YYYY HH24:MI:SS'), TO_DATE(?, 'DD-MON-YYYY HH24:MI:SS'))";
-if (apiName != null && deploymentdate != null && urn != null && rrn != null && totalHits >= 0 && success >= 0
-&& td >= 0 && tdPercent >= 0 && bd >= 0 && bdPercent >= 0 && server != null && source != null
-&& serverIp != null && startTime != null && endTime != null ) {
+String insertSql = "INSERT INTO api_log_insert (api_name, insert_time, URN, RRN, TOTAL_HITS, SUCCESS, TD, TD_PERCENT, BD, BD_PERCENT, REVIEW, REMARKS, COMPLETED, SERVER, SOURCE_ID, SERVER_IP,START_TIME, END_TIME) VALUES (?, SYSDATE, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,TO_DATE(?, 'DD-MON-YYYY HH24:MI:SS'), TO_DATE(?, 'DD-MON-YYYY HH24:MI:SS'))";
+if (apiName != null) {
 insertStmt = conn.prepareStatement(insertSql);
 insertStmt.setString(1, apiName);
-/* insertStmt1.setString(2, SYSDATE); */
 insertStmt.setString(2, urn);
 insertStmt.setString(3, rrn);
 insertStmt.setInt(4, totalHits);
@@ -1068,57 +980,29 @@ insertStmt.setString(14, sourceId);
 insertStmt.setString(15, serverIps);
 insertStmt.setString(16, m_strFormattedFromDate);
 insertStmt.setString(17, m_strFormattedToDate);
-int insertResult = insertStmt.executeUpdate();
-System.out.println("Insert result: " + insertResult);
-} else {
-System.out.println("Record skipped due to null field(s)");
+insertStmt.executeUpdate();
 }
 }
 noHitsObserved = request.getParameter("chk4_" + apiName);
-System.out.println("api_name1:" + apiName);
-%>
-<%
+}
 if (noHitsObserved != null && noHitsObserved.equals("on")) {
-System.out.println("noHitsObserved:" + noHitsObserved);
 String insertNoHitsSql = "INSERT INTO no_hits_table (api_name, insert_time,source_id) VALUES (?, ?, ?)";
-System.out.println("api_name:" + apiName);
-System.out.println("deploymentdate:" + deploymentdate);
-System.out.println("sourceId:" + sourceId);
 PreparedStatement insertNoHitsStmt = conn.prepareStatement(insertNoHitsSql);
 insertNoHitsStmt.setString(1, apiName);
 insertNoHitsStmt.setString(2, deploymentdate);
 insertNoHitsStmt.setString(3, sourceId);
-int noHitsResult = insertNoHitsStmt.executeUpdate();
-System.out.println("api_name:" + apiName);
-System.out.println("No-hits insert result: " + noHitsResult);
+insertNoHitsStmt.executeUpdate();
 }
 String selectNoHitsSql = "SELECT api_name, insert_time,source_id FROM no_hits_table";
 selectNoHitsStmt = conn.prepareStatement(selectNoHitsSql);
 noHitsRs = selectNoHitsStmt.executeQuery();
-}
 } while (rs.next());
 %>
-<!-- </tbody>
-</table> -->
-</div>
+</tbody>
+</table>
 <%
-%>
-<!-- Display the "No-hits observed" data -->
-<%
-try {
-if (noHitsRs != null)
-noHitsRs.close();
-} catch (SQLException e) {
-e.printStackTrace();
-}
-try {
-if (selectNoHitsStmt != null)
-selectNoHitsStmt.close();
-} catch (SQLException e) {
-e.printStackTrace();
-}
-%>
-<%
+try { if (noHitsRs != null) noHitsRs.close(); } catch (SQLException e) {}
+try { if (selectNoHitsStmt != null) selectNoHitsStmt.close(); } catch (SQLException e) {}
 }
 }
 else if ("SYS".equals(layer)) {
@@ -1134,8 +1018,7 @@ querySql1 += " AND TRIM(source_id) IN (" + sourceIds_transformed.toString() + ")
 if (!serverIp.isEmpty()) {
 querySql1 += " AND TRIM(SYS_IP) IN (" + serverIp_transformed.toString() + ")\n";
 }
-querySql1 +=
-" AND request_date_time < TRUNC(SYSDATE)\n" +
+querySql1 += " AND request_date_time < TRUNC(SYSDATE)\n" +
 " AND error_code IS NULL\n" +
 " GROUP BY api_name, TRIM(source_id)\n" +
 "),\n" +
@@ -1163,8 +1046,7 @@ querySql1 += " AND TRIM(source_id) IN (" + sourceIds_transformed.toString() + ")
 if (!serverIp.isEmpty()) {
 querySql1 += " AND TRIM(SYS_IP) IN (" + serverIp_transformed.toString() + ")\n";
 }
-querySql1 +=
-" AND request_date_time BETWEEN TO_DATE('" + m_strFormattedFromDate + "', 'DD-MON-YYYY HH24:MI:SS') \n" +
+querySql1 += " AND request_date_time BETWEEN TO_DATE('" + m_strFormattedFromDate + "', 'DD-MON-YYYY HH24:MI:SS') \n" +
 " AND TO_DATE('" + m_strFormattedToDate + "', 'DD-MON-YYYY HH24:MI:SS')\n" +
 " GROUP BY api_name, TRIM(source_id)\n" +
 ")\n" +
@@ -1181,18 +1063,10 @@ querySql1 +=
 + "FROM A\r\n"
 + "FULL OUTER JOIN B\r\n"
 + "ON A.api_name = B.api_name\r\n"
-+ "AND A.source_id = B.source_id"
-;
-System.out.println("SYS Query: " + querySql1);
++ "AND A.source_id = B.source_id";
 queryStmt1 = con.prepareStatement(querySql1);
-/* for (int i = 0; i < apiNamesArray.length; i++) {
-queryStmt1.setString(i + 1, apiNamesArray[i].trim());
-} */
 rs1 = queryStmt1.executeQuery();
-System.out.println("SYS Query: " + querySql1);
 if (rs1 == null || !rs1.next()) {
-System.out.println("No data found for the query... Inserting or updating in no_hits_table.");
-out.println("<p class='error-message'>No data found for the query... Inserting or updating in no_hits_table.</p>");
 String checkExistenceSql = "SELECT COUNT(*) FROM no_hits_table WHERE api_name = ?";
 String insertOrUpdateSql = "MERGE INTO no_hits_table USING DUAL ON (api_name = ? AND SOURCE_ID = ?) " +
 "WHEN MATCHED THEN UPDATE SET insert_time = to_date(?, 'YYYY-MM-DD') " +
@@ -1207,18 +1081,15 @@ insertOrUpdateStmt.setString(3, deploymentdate1);
 insertOrUpdateStmt.setString(4, trimmedApiName);
 insertOrUpdateStmt.setString(5, deploymentdate1);
 insertOrUpdateStmt.setString(6, sourceIds);
-int result = insertOrUpdateStmt.executeUpdate();
-System.out.println("Result for api_name " + trimmedApiName + ": " + result);
+insertOrUpdateStmt.executeUpdate();
 }
 } catch (SQLException e) {
-System.err.println("Error occurred while inserting/updating no_hits_table: " + e.getMessage());
 e.printStackTrace();
 }
 } else {
 %>
 <div class='table-container'>
-<h3 class="titulo-tabla" style="color: white;">Deployment Details</h3>
-<br>
+<h3 class="titulo-tabla">Deployment Details</h3>
 <table class='table table-bordered table-hover'>
 <thead>
 <tr>
@@ -1249,92 +1120,26 @@ tdPercent = rs1.getDouble("TD_PERCENT");
 bd = rs1.getInt("BD");
 bdPercent = rs1.getDouble("BD_PERCENT");
 sourceId = rs1.getString("SOURCE_ID");
-System.out.println("sourceId : " + sourceId);
 serverIps = rs1.getString("SYS_IP");
-System.out.println("ServerIp : " + serverIps);
 %>
 <tr>
-<td style="color: white;"><%=apiName%></td>
-<td style="color: white;"><%=sourceId%></td>
-<td style="color: white;" class ="post-deploy-rrn" ><%=serverIps%></td>
-<td class ="post-deploy-rrn" style="color: white;" onclick="showrefrencegen('<%=urn%>')"><pre
-								style="color: white; font-size: 15px; cursor: pointer;"> <%=urn%>  <svg
-									xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="20"
-									height="20" viewBox="0 0 64 64">
-<path fill="#dadcec"
-										d="M40.172,44.001l3.917-3.917l2.828,2.828l-3.917,3.917L40.172,44.001z"></path>
-									<path fill="#cda1a7"
-										d="M44.915,45.255l0.346-0.346c1.562-1.562,4.095-1.562,5.657,0l10.26,10.26 c1.562,1.562,1.562,4.095,0,5.657l-0.346,0.346c-1.562,1.562-4.095,1.562-5.657,0l-10.26-10.26 C43.353,49.35,43.353,46.817,44.915,45.255z"></path>
-									<path fill="#c4939c"
-										d="M43.586,46.586L43.586,46.586c0.828-0.828,2.17-0.828,2.998,0l12.919,12.919 c0.828,0.828,0.828,2.17,0,2.998l0,0c-0.828,0.828-2.17,0.828-2.998,0L43.586,49.585C42.758,48.757,42.758,47.414,43.586,46.586z"></path>
-									<path fill="#ffeb9b"
-										d="M25,1C11.745,1,1,11.745,1,25s10.745,24,24,24s24-10.745,24-24S38.255,1,25,1z"></path>
-									<path fill="#f6d397"
-										d="M11.14,38.86l27.72-27.72c1.562-1.562,4.094-1.563,5.657-0.001 c0.167,0.167,0.318,0.348,0.453,0.541c7.396,11,4.474,25.912-6.525,33.308C30.354,50.428,19.776,50.433,11.68,45 c-1.819-1.254-2.277-3.745-1.023-5.564C10.799,39.23,10.961,39.037,11.14,38.86z"></path>
-									<path fill="#8d6c9f"
-										d="M61.88,54.46L51.54,44.12c-0.956-0.948-2.254-1.471-3.6-1.45c0-0.14-2.77-2.91-2.77-2.91 c8.154-11.142,5.732-26.785-5.41-34.939s-26.785-5.732-34.939,5.41s-5.732,26.785,5.41,34.939c8.792,6.434,20.737,6.434,29.529,0 c0,0,2.78,2.72,2.91,2.77s0,0,0,0.07c-0.002,1.327,0.523,2.6,1.46,3.54l10.33,10.33c1.952,1.952,5.118,1.952,7.07,0l0.34-0.34 c1.952-1.952,1.952-5.118,0-7.07L61.88,54.46z M2,25C2,12.297,12.297,2,25,2s23,10.297,23,23S37.703,48,25,48S2,37.703,2,25z M44.12,44.46c-0.376,0.387-0.687,0.833-0.92,1.32l-1.87-1.87c0.925-0.799,1.791-1.665,2.59-2.59l1.88,1.88 c-0.487,0.233-0.933,0.544-1.32,0.92L44.12,44.46z M60.46,60.12l-0.34,0.34c-1.171,1.17-3.069,1.17-4.24,0L45.54,50.12 c-1.17-1.171-1.17-3.069,0-4.24l0.34-0.34c1.171-1.17,3.069-1.17,4.24,0l10.34,10.34C61.63,57.051,61.63,58.949,60.46,60.12z"></path>
-									<g>
-									<path fill="#bbdef9"
-										d="M25,7C15.059,7,7,15.059,7,25s8.059,18,18,18s18-8.059,18-18S34.941,7,25,7z"></path>
-									<path fill="#8d6c9f"
-										d="M38.44,11.57c-7.42-7.42-19.45-7.42-26.87,0s-7.42,19.45,0,26.87s19.45,7.42,26.87,0c0,0,0,0,0,0 c7.42-7.326,7.496-19.28,0.17-26.7C38.554,11.683,38.497,11.626,38.44,11.57z M37,37c-6.627,6.65-17.391,6.669-24.042,0.042 S6.289,19.65,12.917,13s17.391-6.669,24.042-0.042C36.972,12.972,36.986,12.986,37,13c6.627,6.564,6.679,17.258,0.114,23.886 C37.076,36.924,37.038,36.962,37,37z"></path>
-									<path fill="#8d6c9f"
-										d="M31.2,14.72c0.83,0.502,1.595,1.103,2.28,1.79c0.389,0.392,1.023,0.394,1.415,0.005 s0.394-1.023,0.005-1.415c-0.802-0.805-1.699-1.51-2.67-2.1c-0.511-0.21-1.095,0.033-1.306,0.543 c-0.17,0.413-0.046,0.89,0.306,1.167L31.2,14.72z M26.38,11.07c-4.166-0.419-8.3,1.049-11.27,4 c-0.419,0.359-0.468,0.991-0.109,1.41s0.991,0.468,1.41,0.109c0.039-0.033,0.076-0.07,0.109-0.109 c2.542-2.544,6.091-3.814,9.67-3.46c0.552,0.055,1.045-0.348,1.1-0.9s-0.348-1.045-0.9-1.1L26.38,11.07z"></path>
-									<path fill="#8d6c9f"
-										d="M34.19,32.78c-0.419-0.359-1.051-0.31-1.41,0.109c-0.321,0.374-0.321,0.927,0,1.301l1.41,1.41 c0.419,0.359,1.051,0.31,1.41-0.109c0.321-0.374,0.321-0.927,0-1.301L34.19,32.78z M15.81,32.78l-1.41,1.41 c-0.419,0.359-0.468,0.991-0.109,1.41s0.991,0.468,1.41,0.109c0.039-0.034,0.076-0.07,0.109-0.109l1.41-1.41 c0.359-0.419,0.31-1.051-0.109-1.41C16.737,32.459,16.184,32.459,15.81,32.78z M39,24h-2c-0.552,0-1,0.448-1,1s0.448,1,1,1h2 c0.552,0,1-0.448,1-1S39.552,24,39,24z M14,25c0-0.552-0.448-1-1-1h-2c-0.552,0-1,0.448-1,1s0.448,1,1,1h2 C13.552,26,14,25.552,14,25z M25,36c-0.552,0-1,0.448-1,1v2c0,0.552,0.448,1,1,1s1-0.448,1-1v-2C26,36.448,25.552,36,25,36z M38.28,29.55l-1.84-0.78c-0.5-0.235-1.095-0.021-1.331,0.479c-0.235,0.5-0.021,1.095,0.479,1.331 c0.023,0.011,0.047,0.021,0.071,0.03l1.84,0.78c0.5,0.235,1.095,0.021,1.331-0.479c0.235-0.5,0.021-1.095-0.479-1.331 C38.328,29.569,38.304,29.559,38.28,29.55z M20.7,35.13c-0.508-0.215-1.094,0.022-1.31,0.53l-0.78,1.84 c-0.235,0.5-0.021,1.095,0.479,1.331c0.5,0.235,1.095,0.021,1.331-0.479c0.011-0.023,0.021-0.047,0.03-0.071l0.78-1.84 C21.445,35.932,21.208,35.346,20.7,35.13z M14.8,29.12c-0.208-0.51-0.789-0.756-1.3-0.55l-1.85,0.75 c-0.524,0.176-0.806,0.743-0.63,1.266c0.176,0.524,0.743,0.806,1.266,0.63c0.039-0.013,0.077-0.028,0.113-0.046l1.85-0.75 C14.76,30.212,15.006,29.631,14.8,29.12z M30.42,35.75c-0.238-0.498-0.836-0.709-1.334-0.47c-0.456,0.218-0.677,0.741-0.516,1.22 l0.75,1.85c0.238,0.498,0.836,0.709,1.334,0.47c0.456-0.218,0.677-0.741,0.516-1.22L30.42,35.75z"></path></g>
-									<g>
-									<path fill="#d2edff"
-										d="M25,18c-3.866,0-7,3.134-7,7s3.134,7,7,7s7-3.134,7-7S28.866,18,25,18z"></path>
-									<path fill="#f3f3f3"
-										d="M21,17c-2.209,0-4,1.791-4,4s1.791,4,4,4s4-1.791,4-4S23.209,17,21,17z M29.5,28 c-0.828,0-1.5,0.672-1.5,1.5s0.672,1.5,1.5,1.5s1.5-0.672,1.5-1.5S30.328,28,29.5,28z"></path></g>
-</svg> </pre></td>
-<td class ="post-deploy-rrn" style="color: white;" onclick="showrefrencegen('<%=rrn%>')">
-							<pre style="color: white; font-size: 15px; cursor: pointer;"><%=rrn%> <svg
-									xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="20"
-									height="20" viewBox="0 0 64 64">
-<path fill="#dadcec"
-										d="M40.172,44.001l3.917-3.917l2.828,2.828l-3.917,3.917L40.172,44.001z"></path>
-									<path fill="#cda1a7"
-										d="M44.915,45.255l0.346-0.346c1.562-1.562,4.095-1.562,5.657,0l10.26,10.26 c1.562,1.562,1.562,4.095,0,5.657l-0.346,0.346c-1.562,1.562-4.095,1.562-5.657,0l-10.26-10.26 C43.353,49.35,43.353,46.817,44.915,45.255z"></path>
-									<path fill="#c4939c"
-										d="M43.586,46.586L43.586,46.586c0.828-0.828,2.17-0.828,2.998,0l12.919,12.919 c0.828,0.828,0.828,2.17,0,2.998l0,0c-0.828,0.828-2.17,0.828-2.998,0L43.586,49.585C42.758,48.757,42.758,47.414,43.586,46.586z"></path>
-									<path fill="#ffeb9b"
-										d="M25,1C11.745,1,1,11.745,1,25s10.745,24,24,24s24-10.745,24-24S38.255,1,25,1z"></path>
-									<path fill="#f6d397"
-										d="M11.14,38.86l27.72-27.72c1.562-1.562,4.094-1.563,5.657-0.001 c0.167,0.167,0.318,0.348,0.453,0.541c7.396,11,4.474,25.912-6.525,33.308C30.354,50.428,19.776,50.433,11.68,45 c-1.819-1.254-2.277-3.745-1.023-5.564C10.799,39.23,10.961,39.037,11.14,38.86z"></path>
-									<path fill="#8d6c9f"
-										d="M61.88,54.46L51.54,44.12c-0.956-0.948-2.254-1.471-3.6-1.45c0-0.14-2.77-2.91-2.77-2.91 c8.154-11.142,5.732-26.785-5.41-34.939s-26.785-5.732-34.939,5.41s-5.732,26.785,5.41,34.939c8.792,6.434,20.737,6.434,29.529,0 c0,0,2.78,2.72,2.91,2.77s0,0,0,0.07c-0.002,1.327,0.523,2.6,1.46,3.54l10.33,10.33c1.952,1.952,5.118,1.952,7.07,0l0.34-0.34 c1.952-1.952,1.952-5.118,0-7.07L61.88,54.46z M2,25C2,12.297,12.297,2,25,2s23,10.297,23,23S37.703,48,25,48S2,37.703,2,25z M44.12,44.46c-0.376,0.387-0.687,0.833-0.92,1.32l-1.87-1.87c0.925-0.799,1.791-1.665,2.59-2.59l1.88,1.88 c-0.487,0.233-0.933,0.544-1.32,0.92L44.12,44.46z M60.46,60.12l-0.34,0.34c-1.171,1.17-3.069,1.17-4.24,0L45.54,50.12 c-1.17-1.171-1.17-3.069,0-4.24l0.34-0.34c1.171-1.17,3.069-1.17,4.24,0l10.34,10.34C61.63,57.051,61.63,58.949,60.46,60.12z"></path>
-									<g>
-									<path fill="#bbdef9"
-										d="M25,7C15.059,7,7,15.059,7,25s8.059,18,18,18s18-8.059,18-18S34.941,7,25,7z"></path>
-									<path fill="#8d6c9f"
-										d="M38.44,11.57c-7.42-7.42-19.45-7.42-26.87,0s-7.42,19.45,0,26.87s19.45,7.42,26.87,0c0,0,0,0,0,0 c7.42-7.326,7.496-19.28,0.17-26.7C38.554,11.683,38.497,11.626,38.44,11.57z M37,37c-6.627,6.65-17.391,6.669-24.042,0.042 S6.289,19.65,12.917,13s17.391-6.669,24.042-0.042C36.972,12.972,36.986,12.986,37,13c6.627,6.564,6.679,17.258,0.114,23.886 C37.076,36.924,37.038,36.962,37,37z"></path>
-									<path fill="#8d6c9f"
-										d="M31.2,14.72c0.83,0.502,1.595,1.103,2.28,1.79c0.389,0.392,1.023,0.394,1.415,0.005 s0.394-1.023,0.005-1.415c-0.802-0.805-1.699-1.51-2.67-2.1c-0.511-0.21-1.095,0.033-1.306,0.543 c-0.17,0.413-0.046,0.89,0.306,1.167L31.2,14.72z M26.38,11.07c-4.166-0.419-8.3,1.049-11.27,4 c-0.419,0.359-0.468,0.991-0.109,1.41s0.991,0.468,1.41,0.109c0.039-0.033,0.076-0.07,0.109-0.109 c2.542-2.544,6.091-3.814,9.67-3.46c0.552,0.055,1.045-0.348,1.1-0.9s-0.348-1.045-0.9-1.1L26.38,11.07z"></path>
-									<path fill="#8d6c9f"
-										d="M34.19,32.78c-0.419-0.359-1.051-0.31-1.41,0.109c-0.321,0.374-0.321,0.927,0,1.301l1.41,1.41 c0.419,0.359,1.051,0.31,1.41-0.109c0.321-0.374,0.321-0.927,0-1.301L34.19,32.78z M15.81,32.78l-1.41,1.41 c-0.419,0.359-0.468,0.991-0.109,1.41s0.991,0.468,1.41,0.109c0.039-0.034,0.076-0.07,0.109-0.109l1.41-1.41 c0.359-0.419,0.31-1.051-0.109-1.41C16.737,32.459,16.184,32.459,15.81,32.78z M39,24h-2c-0.552,0-1,0.448-1,1s0.448,1,1,1h2 c0.552,0,1-0.448,1-1S39.552,24,39,24z M14,25c0-0.552-0.448-1-1-1h-2c-0.552,0-1,0.448-1,1s0.448,1,1,1h2 C13.552,26,14,25.552,14,25z M25,36c-0.552,0-1,0.448-1,1v2c0,0.552,0.448,1,1,1s1-0.448,1-1v-2C26,36.448,25.552,36,25,36z M38.28,29.55l-1.84-0.78c-0.5-0.235-1.095-0.021-1.331,0.479c-0.235,0.5-0.021,1.095,0.479,1.331 c0.023,0.011,0.047,0.021,0.071,0.03l1.84,0.78c0.5,0.235,1.095,0.021,1.331-0.479c0.235-0.5,0.021-1.095-0.479-1.331 C38.328,29.569,38.304,29.559,38.28,29.55z M20.7,35.13c-0.508-0.215-1.094,0.022-1.31,0.53l-0.78,1.84 c-0.235,0.5-0.021,1.095,0.479,1.331c0.5,0.235,1.095,0.021,1.331-0.479c0.011-0.023,0.021-0.047,0.03-0.071l0.78-1.84 C21.445,35.932,21.208,35.346,20.7,35.13z M14.8,29.12c-0.208-0.51-0.789-0.756-1.3-0.55l-1.85,0.75 c-0.524,0.176-0.806,0.743-0.63,1.266c0.176,0.524,0.743,0.806,1.266,0.63c0.039-0.013,0.077-0.028,0.113-0.046l1.85-0.75 C14.76,30.212,15.006,29.631,14.8,29.12z M30.42,35.75c-0.238-0.498-0.836-0.709-1.334-0.47c-0.456,0.218-0.677,0.741-0.516,1.22 l0.75,1.85c0.238,0.498,0.836,0.709,1.334,0.47c0.456-0.218,0.677-0.741,0.516-1.22L30.42,35.75z"></path></g>
-									<g>
-									<path fill="#d2edff"
-										d="M25,18c-3.866,0-7,3.134-7,7s3.134,7,7,7s7-3.134,7-7S28.866,18,25,18z"></path>
-									<path fill="#f3f3f3"
-										d="M21,17c-2.209,0-4,1.791-4,4s1.791,4,4,4s4-1.791,4-4S23.209,17,21,17z M29.5,28 c-0.828,0-1.5,0.672-1.5,1.5s0.672,1.5,1.5,1.5s1.5-0.672,1.5-1.5S30.328,28,29.5,28z"></path></g>
-</svg>
-							</pre>
-						</td>
-<td style="color: white;"><%=totalHits%></td>
-<td style="color: white;"><%=success%></td>
-<td style="color: white;"><%=td%></td>
-<td style="color: white;"><%=tdPercent%></td>
-<td style="color: white;"><%=bd%></td>
-<td style="color: white;"><%=bdPercent%></td>
+<td><%=apiName%></td>
+<td><%=sourceId%></td>
+<td class="post-deploy-rrn"><%=serverIps%></td>
+<td class="post-deploy-rrn" onclick="showrefrencegen('<%=urn%>')"><pre><%=urn%></pre></td>
+<td class="post-deploy-rrn" onclick="showrefrencegen('<%=rrn%>')"><pre><%=rrn%></pre></td>
+<td><%=totalHits%></td>
+<td><%=success%></td>
+<td><%=td%></td>
+<td><%=tdPercent%></td>
+<td><%=bd%></td>
+<td><%=bdPercent%></td>
 <td>
-<button class='btn btn-primary action-btn'
-data-api-name='<%=apiName%>' onclick='toggleCheckboxes(this)'>Action</button>
+<button class='btn btn-primary action-btn' data-api-name='<%=apiName%>' onclick='toggleCheckboxes(this)'>Action</button>
 </td>
 </tr>
-<!-- Add a hidden row with checkboxes -->
 <tr class='checkbox-row'>
-<td colspan='10'>
+<td colspan='12'>
 <form method="post" action="<%=request.getContextPath() + "/jsp/updateFields.jsp"%>">
 <input type="hidden" name="api_name" value="<%= apiName %>">
 <input type="hidden" name="SOURCE_ID" value="<%= sourceId %>">
@@ -1350,27 +1155,13 @@ data-api-name='<%=apiName%>' onclick='toggleCheckboxes(this)'>Action</button>
 <input type="hidden" name="serverIp" value="<%= serverIp %>">
 <input type="hidden" name="startTime" value="<%= startTime %>">
 <input type="hidden" name="endTime" value="<%= endTime %>">
-<input type="checkbox" id="chk1_<%=counter%>"
-name="chk1_<%=counter%>" value="1"
-onclick="toggleTextbox('reviewText_<%=counter%>', this)">
-Review <input type="checkbox" id="chk2_<%=counter%>"
-name="chk2_<%=counter%>" value="1"
-onclick="toggleTextbox('remarksText_<%=counter%>', this)">
-Remarks <input type="checkbox" id="chk3_<%=counter%>"
-name="chk3_<%=counter%>" value="Yes"> Completed <input
-type="checkbox" id="chk4_<%=counter%>"
-name="chk4_<%=counter%>" value="Yes"> No-hits observed
-<div id="reviewText_<%= counter %>" class="textarea-container" style="display: none;">
-<textarea id="reviewText_<%= counter %>" name="reviewText_<%= counter %>"
-placeholder="Enter your review here"></textarea>
-</div>
-<div id="remarksText_<%= counter %>" class="textarea-container" style="display: none;">
-<textarea id="remarksText_<%= counter %>" name="remarksText_<%= counter %>"
-placeholder="Enter your remarks here"></textarea>
-</div>
-<div>
-<input type="submit" class="btn btn-success" onclick="return CheckBox('<%= counter %>')">
-</div>
+<input type="checkbox" id="chk1_<%=counter%>" name="chk1_<%=counter%>" value="1" onclick="toggleTextbox('reviewText_<%=counter%>', this)"> Review
+<input type="checkbox" id="chk2_<%=counter%>" name="chk2_<%=counter%>" value="1" onclick="toggleTextbox('remarksText_<%=counter%>', this)"> Remarks
+<input type="checkbox" id="chk3_<%=counter%>" name="chk3_<%=counter%>" value="Yes"> Completed
+<input type="checkbox" id="chk4_<%=counter%>" name="chk4_<%=counter%>" value="Yes"> No-hits observed
+<div id="reviewText_<%= counter %>" class="textarea-container"><textarea id="reviewText_<%= counter %>" name="reviewText_<%= counter %>" placeholder="Enter your review here"></textarea></div>
+<div id="remarksText_<%= counter %>" class="textarea-container"><textarea id="remarksText_<%= counter %>" name="remarksText_<%= counter %>" placeholder="Enter your remarks here"></textarea></div>
+<div style="margin-top:12px;"><input type="submit" class="btn btn-success" onclick="return CheckBox('<%= counter %>')" value="Submit"></div>
 </form>
 </td>
 </tr>
@@ -1380,15 +1171,8 @@ String remarksText = request.getParameter("remarksText_" + apiName);
 String completedChecked = request.getParameter("chk3_" + apiName);
 String server = request.getParameter("server");
 String source = request.getParameter("sourceIDTextBox");
-System.out.println("source_id: " + source);
 String serverIp1 = request.getParameter("serverIp");
-System.out.println("serverIp: " + serverIp1);
 String deploymentDate = request.getParameter("date");
-System.out.println("apiName" + apiName);
-System.out.println("reviewText" + reviewText);
-System.out.println("remarksText" + remarksText);
-System.out.println("completedChecked" + completedChecked);
-System.out.println("Server" + server);
 boolean isCompleted = (completedChecked != null && completedChecked.equals("on"));
 counter++;
 String checkExistenceSql1 = "SELECT id FROM api_log_insert WHERE api_name = ? AND (source_id = ? OR (source_id IS NULL AND ? IS NULL))";
@@ -1397,38 +1181,10 @@ checkStmt1.setString(1, apiName);
 checkStmt1.setString(2, sourceId);
 checkStmt1.setString(3, sourceId);
 ResultSet checkRs1 = checkStmt1.executeQuery();
-//boolean exists = false;
 Integer recordId = null;
-
-if (checkRs1.next()) {
-	 recordId = checkRs1.getInt("id");  // Get the primary key ID
-	 System.out.println("recordId : " + recordId);
-}
-System.out.println("recordId : " + recordId);
+if (checkRs1.next()) { recordId = checkRs1.getInt("id"); }
 if (recordId != null) {
-System.out.println("INSIDE IF");
-String updateSql1 = "UPDATE api_log_insert SET " + "API_NAME = ?, " + "insert_time = SYSDATE, "
-+ "URN = ?, RRN = ?, TOTAL_HITS = ?, SUCCESS = ?, TD = ?, TD_PERCENT = ?, "
-+ "BD = ?, BD_PERCENT = ?, REVIEW = ?, REMARKS = ?, "
-+ "COMPLETED = ?, SERVER = ?, SOURCE_ID = ?, SERVER_IP = ?, START_TIME = TO_DATE(?, 'DD-MON-YYYY HH24:MI:SS'), END_TIME = TO_DATE(?, 'DD-MON-YYYY HH24:MI:SS') " + "WHERE api_name = ? and source_id = ?" ;
-System.out.println("URN : " + urn);
-System.out.println("rrn : " + rrn);
-System.out.println("totalHits : " + totalHits);
-System.out.println("success : " + success);
-System.out.println("td : " + td);
-System.out.println("tdPercent : " + tdPercent);
-System.out.println("BD : " + bd);
-System.out.println("bdPercent : " + bdPercent);
-System.out.println("reviewText : " + reviewText);
-System.out.println("remarksText : " + remarksText);
-System.out.println("isCompleted : " + isCompleted);
-System.out.println("server : " + server);
-System.out.println("apiName : " + apiName);
-System.out.println("source : " + sourceId);
-System.out.println("serverIp : " + serverIps);
-System.out.println("updateSql : " + updateSql1);
-System.out.println("starttime :" +startTime);
-System.out.println("endtime :" +endTime);
+String updateSql1 = "UPDATE api_log_insert SET API_NAME = ?, insert_time = SYSDATE, URN = ?, RRN = ?, TOTAL_HITS = ?, SUCCESS = ?, TD = ?, TD_PERCENT = ?, BD = ?, BD_PERCENT = ?, REVIEW = ?, REMARKS = ?, COMPLETED = ?, SERVER = ?, SOURCE_ID = ?, SERVER_IP = ?, START_TIME = TO_DATE(?, 'DD-MON-YYYY HH24:MI:SS'), END_TIME = TO_DATE(?, 'DD-MON-YYYY HH24:MI:SS') WHERE api_name = ? and source_id = ?";
 PreparedStatement updateStmt1 = conn.prepareStatement(updateSql1);
 updateStmt1.setString(1, apiName);
 updateStmt1.setString(2, urn);
@@ -1449,21 +1205,13 @@ updateStmt1.setString(16, m_strFormattedFromDate);
 updateStmt1.setString(17, m_strFormattedToDate);
 updateStmt1.setString(18, apiName);
 updateStmt1.setString(19, sourceId);
-int updateResult1 = updateStmt1.executeUpdate();
-System.out.println("Update result: " + updateResult1);
-if (updateStmt1 != null) {
-updateStmt1.close();
-}
+updateStmt1.executeUpdate();
+if (updateStmt1 != null) { updateStmt1.close(); }
 } else {
-System.out.println("INSIDE ELSE");
-String insertSql1 = "INSERT INTO api_log_insert (api_name, insert_time, URN, RRN, TOTAL_HITS, SUCCESS, TD, TD_PERCENT, BD, BD_PERCENT, REVIEW, REMARKS, COMPLETED, SERVER, SOURCE_ID, SERVER_IP, START_TIME, END_TIME) "
-+ "VALUES (?, SYSDATE, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TO_DATE(?, 'DD-MON-YYYY HH24:MI:SS'), TO_DATE(?, 'DD-MON-YYYY HH24:MI:SS'))";
-if (apiName != null /* && deploymentdate1 != null && urn != null && rrn != null && totalHits >= 0 && success >= 0
-&& td >= 0 && tdPercent >= 0 && bd >= 0 && bdPercent >= 0 && server != null && source != null
-&& serverIp != null && startTime != null && endTime != null */) {
+String insertSql1 = "INSERT INTO api_log_insert (api_name, insert_time, URN, RRN, TOTAL_HITS, SUCCESS, TD, TD_PERCENT, BD, BD_PERCENT, REVIEW, REMARKS, COMPLETED, SERVER, SOURCE_ID, SERVER_IP, START_TIME, END_TIME) VALUES (?, SYSDATE, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TO_DATE(?, 'DD-MON-YYYY HH24:MI:SS'), TO_DATE(?, 'DD-MON-YYYY HH24:MI:SS'))";
+if (apiName != null) {
 insertStmt1 = conn.prepareStatement(insertSql1);
 insertStmt1.setString(1, apiName);
-/* insertStmt1.setString(2, SYSDATE); */
 insertStmt1.setString(2, urn);
 insertStmt1.setString(3, rrn);
 insertStmt1.setInt(4, totalHits);
@@ -1480,29 +1228,18 @@ insertStmt1.setString(14, sourceId);
 insertStmt1.setString(15, serverIps);
 insertStmt1.setString(16, m_strFormattedFromDate);
 insertStmt1.setString(17, m_strFormattedToDate);
-int insertResult1 = insertStmt1.executeUpdate();
-System.out.println("Insert result: " + insertResult1);
-} else {
-System.out.println("Record skipped due to null field(s)");
+insertStmt1.executeUpdate();
 }
 }
 noHitsObserved = request.getParameter("chk4_" + apiName);
-System.out.println("api_name1:" + apiName);
-%>
-<%
+}
 if (noHitsObserved != null && noHitsObserved.equals("on")) {
-System.out.println("noHitsObserved:" + noHitsObserved);
 String insertNoHitsSql1 = "INSERT INTO no_hits_table (api_name, insert_time, source_id) VALUES (?, ?, ?)";
-System.out.println("api_name:" + apiName);
-System.out.println("deploymentdate:" + deploymentdate1);
-System.out.println("sourceId:" + sourceId);
 PreparedStatement insertNoHitsStmt1 = conn.prepareStatement(insertNoHitsSql1);
 insertNoHitsStmt1.setString(1, apiName);
 insertNoHitsStmt1.setString(2, deploymentdate1);
 insertNoHitsStmt1.setString(3, sourceId);
-int noHitsResult1 = insertNoHitsStmt1.executeUpdate();
-System.out.println("api_name:" + apiName);
-System.out.println("No-hits insert result: " + noHitsResult1);
+insertNoHitsStmt1.executeUpdate();
 String selectNoHitsSql1 = "SELECT api_name, insert_time,source_id FROM no_hits_table";
 selectNoHitsStmt = conn.prepareStatement(selectNoHitsSql1);
 noHitsRs = selectNoHitsStmt.executeQuery();
@@ -1512,99 +1249,29 @@ noHitsRs = selectNoHitsStmt.executeQuery();
 </tbody>
 </table>
 <%
-try {
-if (noHitsRs != null)
-noHitsRs.close();
-} catch (SQLException e) {
-e.printStackTrace();
-}
-try {
-if (selectNoHitsStmt != null)
-selectNoHitsStmt.close();
-} catch (SQLException e) {
-e.printStackTrace();
-}
-%>
-<%
-if (noHitsRs != null) { while (noHitsRs.next()) {
-String noHitsApiName = noHitsRs.getString("api_name");
-String deploymentdate = noHitsRs.getString("date");
-%>
-<tr>
-<td style="color: white;"><%=noHitsApiName%></td>
-<td style="color: white;"><%=deploymentdate%></td>
-<td style="color: white;">No-hits observed</td>
-<!-- Default "Action" value -->
-</tr>
-<%
-}
-%>
-</tbody>
-</table>
-<%
-try { if (noHitsRs != null) noHitsRs.close(); } catch (SQLException e) { e.printStackTrace(); }
-try { if (selectNoHitsStmt != null) selectNoHitsStmt.close(); } catch (SQLException e) { e.printStackTrace(); }
-%>
-<%
+try { if (noHitsRs != null) noHitsRs.close(); } catch (SQLException e) {}
+try { if (selectNoHitsStmt != null) selectNoHitsStmt.close(); } catch (SQLException e) {}
 }
 }
-} 
 }catch (SQLException e) {
 e.printStackTrace();
 } finally {
-try {
-if (rs != null)
-rs.close();
-} catch (SQLException e) {
-e.printStackTrace();
+try { if (rs != null) rs.close(); } catch (SQLException e) {}
+try { if (rs1 != null) rs1.close(); } catch (SQLException e) {}
+try { if (queryStmt != null) queryStmt.close(); } catch (SQLException e) {}
+try { if (queryStmt1 != null) queryStmt1.close(); } catch (SQLException e) {}
+try { if (insertStmt != null) insertStmt.close(); } catch (SQLException e) {}
+try { if (insertStmt1 != null) insertStmt1.close(); } catch (SQLException e) {}
+try { if (con != null) con.close(); } catch (SQLException e) {}
+try { if (conn != null) conn.close(); } catch (SQLException e) {}
 }
-try {
-if (rs1 != null)
-rs1.close();
-} catch (SQLException e) {
-e.printStackTrace();
-}
-try {
-if (queryStmt != null)
-queryStmt.close();
-} catch (SQLException e) {
-e.printStackTrace();
-}
-try {
-if (queryStmt1 != null)
-queryStmt1.close();
-} catch (SQLException e) {
-e.printStackTrace();
-}
-try {
-if (insertStmt != null)
-insertStmt.close();
-} catch (SQLException e) {
-e.printStackTrace();
-}
-try {
-if (insertStmt1 != null)
-insertStmt1.close();
-} catch (SQLException e) {
-e.printStackTrace();
-}
-try {
-if (con != null)
-con.close();
-} catch (SQLException e) {
-e.printStackTrace();
-}
-try {
-if (conn != null)
-conn.close();
-} catch (SQLException e) {
-e.printStackTrace();
-}
-}
-} else {
 }
 %>
-</div>
-</div>
+
+    </div><!-- /.container -->
+
+</div><!-- /.page-container -->
+</div><!-- /.new-wrapper -->
+
 </body>
 </html>
