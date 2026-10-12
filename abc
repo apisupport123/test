@@ -1,6 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="https://jakarta.ee/xml/ns/jakartaee" xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/web-app_5_0.xsd" version="5.0">
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+         xmlns="https://jakarta.ee/xml/ns/jakartaee" 
+         xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/web-app_5_0.xsd" 
+         version="5.0">
+         
   <display-name>EISPortal</display-name>
+  
+  <!-- ============================================================
+       ✅ SESSION CONFIG — 12 HOURS (720 minutes)
+       User ko baar baar login nahi karna padega
+       ============================================================ -->
+  <session-config>
+    <session-timeout>720</session-timeout>
+    <cookie-config>
+      <http-only>true</http-only>
+      <secure>false</secure>
+    </cookie-config>
+    <tracking-mode>COOKIE</tracking-mode>
+  </session-config>
+  
+  <!-- ============================================================
+       STRUTS2 FILTER
+       ============================================================ -->
   <filter>
     <filter-name>struts2</filter-name>
     <filter-class>org.apache.struts2.dispatcher.filter.StrutsPrepareAndExecuteFilter</filter-class>
@@ -13,6 +34,10 @@
     <filter-name>struts2</filter-name>
     <url-pattern>*.action</url-pattern>
   </filter-mapping>
+  
+  <!-- ============================================================
+       CORS FILTER
+       ============================================================ -->
   <filter>
     <filter-name>CORSFilter</filter-name>
     <filter-class>com.action.CORSFilter</filter-class>
@@ -21,10 +46,18 @@
     <filter-name>CORSFilter</filter-name>
     <url-pattern>/*</url-pattern>
   </filter-mapping>
+  
+  <!-- ============================================================
+       LOGIN CONFIG (LDAP)
+       ============================================================ -->
   <login-config>
     <auth-method>BASIC</auth-method>
     <realm-name>LDAP Realm</realm-name>
   </login-config>
+  
+  <!-- ============================================================
+       SERVLET: TestServlet (debug.jsp)
+       ============================================================ -->
   <servlet>
     <servlet-name>TestServlet</servlet-name>
     <jsp-file>/debug.jsp</jsp-file>
@@ -33,6 +66,10 @@
     <servlet-name>TestServlet</servlet-name>
     <url-pattern>/test</url-pattern>
   </servlet-mapping>
+  
+  <!-- ============================================================
+       WELCOME FILE LIST
+       ============================================================ -->
   <welcome-file-list>
     <welcome-file>index.html</welcome-file>
     <welcome-file>index.htm</welcome-file>
@@ -41,6 +78,10 @@
     <welcome-file>default.htm</welcome-file>
     <welcome-file>default.jsp</welcome-file>
   </welcome-file-list>
+  
+  <!-- ============================================================
+       SERVLET: DocumentDownloadServlet
+       ============================================================ -->
   <servlet>
     <description></description>
     <display-name>DocumentDownloadServlet</display-name>
@@ -51,6 +92,10 @@
     <servlet-name>DocumentDownloadServlet</servlet-name>
     <url-pattern>/DocumentDownloadServlet</url-pattern>
   </servlet-mapping>
+  
+  <!-- ============================================================
+       SERVLET: ViewDeploymentSheetActionServ
+       ============================================================ -->
   <servlet>
     <description></description>
     <display-name>ViewDeploymentSheetActionServ</display-name>
@@ -61,6 +106,10 @@
     <servlet-name>ViewDeploymentSheetActionServ</servlet-name>
     <url-pattern>/ViewDeploymentSheetActionServ</url-pattern>
   </servlet-mapping>
+  
+  <!-- ============================================================
+       SERVLET: DeploymentSheetServlet
+       ============================================================ -->
   <servlet>
     <description></description>
     <display-name>DeploymentSheetServlet</display-name>
@@ -71,6 +120,10 @@
     <servlet-name>DeploymentSheetServlet</servlet-name>
     <url-pattern>/DeploymentSheetServlet</url-pattern>
   </servlet-mapping>
+  
+  <!-- ============================================================
+       SERVLET: UpdateMonthlyRosterAction
+       ============================================================ -->
   <servlet>
     <description></description>
     <display-name>UpdateMonthlyRosterAction</display-name>
@@ -81,4 +134,5 @@
     <servlet-name>UpdateMonthlyRosterAction</servlet-name>
     <url-pattern>/UpdateMonthlyRosterAction</url-pattern>
   </servlet-mapping>
+
 </web-app>
