@@ -1,22 +1,37 @@
-SBI Banker EIS Bank
+<%
+ String __role = (session != null) ? (String) session.getAttribute("role") : null;
 
- Dashboard
- 
-Search services...
-Monitoring
- Transaction EndPoints  EIS EndPoint Contact Details  100% Failure Honeycomb  Error Dashboard  IBCE DR PR Statistics
-Deployments & Reports
- EIS Production Deployment Tracker  Time Difference Analysis Report  EXP & SYS URL Mapper
-Search
- Search Gen5 Reference no  Search NonGen5 Reference no
-Documentation
- SOP  SOP Management System (Maker)  SOP Management System (Checker)  Channel Journey's
-Logs
- DPG SYS LOG'S
-Account
- Logout
- 
-SBI Banker EIS Portal
-  3 
-E
-margin-top:40px; padding-top:24px; border-top:1px solid var(--line); display:flex; justify-content:space-between; align-items:center; font-size:.75rem; color:var(--muted); font-weight:600; flex-wrap:wrap; gap:12px; } .foot .brandline b{color:var(--brand)} /* ============ RESPONSIVE ============ */ @media (max-width:1200px){ .bento-main{grid-template-columns:repeat(4,1fr)} .bcard.feat{grid-column:span 4;grid-row:span 1} .bcard.wide{grid-column:span 2} .bcard.med{grid-column:span 2} } @media (max-width:900px){ .new-wrapper{margin-left:0} .stats-row{grid-template-columns:repeat(2,1fr)} .bento-main{grid-template-columns:repeat(3,1fr)} .bcard.feat{grid-column:span 3} .bcard.wide,.bcard.med{grid-column:span 2} } @media (max-width:640px){ .dash-wrap{padding:20px 16px 40px} .stats-row{grid-template-columns:1fr} .bento-main{grid-template-columns:1fr} .bcard.feat,.bcard.wide,.bcard.med,.bcard.sm{grid-column:span 1} .welcome-bar{flex-direction:column;align-items:flex-start} .welcome-text h1{font-size:1.3rem} .recent-grid{grid-template-columns:1fr} }
+ // Agar Admin/Banker hai toh appropriate header pe bhejo
+ if ("Admin".equals(__role) || "ModuleLead".equals(__role)) {
+     response.sendRedirect(request.getContextPath() + "/jsp/header.jsp");
+     return;
+ }
+ if ("EIS Bank".equals(__role)) {
+     response.sendRedirect(request.getContextPath() + "/jsp/Bankheader.jsp");
+     return;
+ }
+%>
+
+------------------------------------------
+
+<%
+ String __role = (session != null) ? (String) session.getAttribute("role") : null;
+
+ if (!"EIS Bank".equals(__role)) {
+     response.sendRedirect(request.getContextPath() + "/login.action");
+     return;
+ }
+%>
+
+
+--------------------------------------------------------------------------
+
+
+<%
+ String __role = (session != null) ? (String) session.getAttribute("role") : null;
+
+ if (!"Admin".equals(__role) && !"ModuleLead".equals(__role)) {
+     response.sendRedirect(request.getContextPath() + "/login.action");
+     return;
+ }
+%>
