@@ -1,1039 +1,676 @@
-<%--
-  ============================================================
-  Bankheader.jsp — EIS Bank (Banker) Header Fragment
-  ============================================================
-  ✅ Role check / sendRedirect YAHAN NAHI — roleHeader.jsp me.
-  ✅ Fragment mode: _isFragment=true → sirf sidebar + topnav.
-  ✅ Standalone mode: _isFragment=false → poori banker dashboard.
-  ============================================================
---%>
+<%@page pageEncoding="UTF-8"%>
 <%
- response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0, private");
- response.setHeader("Pragma", "no-cache");
- response.setDateHeader("Expires", 0);
+ // Role check — response commit hone se PEHLE
+ String __role = (session != null) ? (String) session.getAttribute("role") : null;
 
- // Fragment mode flag — roleHeader.jsp se set hota hai
- boolean _isFragment = "true".equals(request.getAttribute("EIS_HEADER_FRAGMENT"));
+ if ("Admin".equals(__role) || "ModuleLead".equals(__role)) {
+     response.sendRedirect(request.getContextPath() + "/jsp/header.jsp");
+     return;
+ }
+ if ("EIS Bank".equals(__role)) {
+     response.sendRedirect(request.getContextPath() + "/jsp/Bankheader.jsp");
+     return;
+ }
+ // Warna user role → normal page render hoga
 %>
+<%@page import="java.sql.*"%>
+<%@page import="com.jdbc.DBUtilityAuto" %>
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service Port Status</title>
+    <script src="<%=request.getContextPath()%>/js/portStatus3.6.0jquery.min.js"></script>
+    <link rel="stylesheet" href="<%=request.getContextPath()%>/css/portStatusjquery.dataTables.min.css">
+    <link rel="stylesheet" href="<%=request.getContextPath()%>/css/portStatusbuttons.dataTables.min.css">
+    <script src="<%=request.getContextPath()%>/js/xlsxport.full.min.js"></script>
+    <script src="<%=request.getContextPath()%>/js/jspdfport.umd.min.js"></script>
+    <script src="<%=request.getContextPath()%>/js/jspdfport.plugin.autotable.min.js"></script>
 
-<script src="<%=request.getContextPath()%>/js/jquery.min.js"></script>
-
-<style>
-:root{
-  --sbi-blue:#003A70;
-  --sbi-blue-2:#005A9C;
-  --sbi-blue-3:#0072CE;
-  --sbi-gold:#F4B400;
-  --sbi-gold-2:#FFC93C;
-  --sbi-gold-light:#FFF8E1;
-
-  --brand:#F86F03;
-  --brand-light:#FFF4EC;
-
-  --ink:#0A0A0A;
-  --muted:#6B7280;
-  --line:#EAEAEA;
-  --bg:#F5F7FA;
-  --card:#FFFFFF;
-
-  --sidebar-bg:#003A70;
-  --sidebar-text:#B8D4F0;
-  --sidebar-hover:#005A9C;
-  --sidebar-active:#F4B400;
-
-  --topnav-bg:rgba(255,255,255,.95);
-  --topnav-h:64px;
-  --sidebar-w:260px;
-
-  --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-}
-html[data-theme="dark"]{
-  --ink:#F5F5F5;
-  --muted:#9CA3AF;
-  --line:#272727;
-  --bg:#0A0E14;
-  --card:#0F1419;
-  --topnav-bg:rgba(15,20,25,.95);
-  --sidebar-bg:#001F3F;
-  --sidebar-hover:#003A70;
-}
-
-*{margin:0;padding:0;box-sizing:border-box}
-html,body{height:100%}
-body{
-  font-family:var(--font-stack);
-  font-weight:700;
-  background:var(--bg);
-  color:var(--ink);
-  -webkit-font-smoothing:antialiased;
-  transition:background .3s ease,color .3s ease;
-}
-a{color:inherit;text-decoration:none}
-h1,h2,h3,h4,h5,h6,strong,b{font-weight:800;letter-spacing:-.3px}
-
-.icon-svg{
-  width:16px;height:16px;
-  display:inline-block;flex-shrink:0;
-  stroke:currentColor;fill:none;
-  stroke-width:2.2;
-  stroke-linecap:round;stroke-linejoin:round;
-}
-
-/* ============ SIDEBAR ============ */
-.sidebar{
-  position:fixed;top:0;left:0;bottom:0;
-  width:var(--sidebar-w);
-  background:linear-gradient(180deg, var(--sidebar-bg) 0%, var(--sbi-blue-2) 100%);
-  border-right:1px solid rgba(255,255,255,.05);
-  z-index:60;
-  display:flex;flex-direction:column;
-  transition:transform .3s cubic-bezier(.4,0,.2,1);
-}
-html.sb-collapsed .sidebar{transform:translateX(-100%)}
-html.sb-collapsed .topnav{left:0}
-html.sb-collapsed .new-wrapper{margin-left:0}
-
-.sb-head{
-  padding:18px 16px 18px 20px;
-  height:var(--topnav-h);
-  display:flex;align-items:center;gap:11px;
-  border-bottom:1px solid rgba(255,255,255,.08);
-  flex-shrink:0;
-}
-.sb-logo{
-  width:38px;height:38px;
-  background:linear-gradient(135deg,var(--sbi-gold),var(--sbi-gold-2));
-  border-radius:10px;
-  display:grid;place-items:center;color:var(--sbi-blue);
-  box-shadow:0 8px 20px -6px var(--sbi-gold);
-  flex-shrink:0;
-}
-.sb-logo .icon-svg{width:20px;height:20px;stroke-width:2.6}
-.sb-title{
-  font-weight:900;font-size:.95rem;
-  letter-spacing:-.3px;line-height:1.1;
-  flex:1;min-width:0;color:#fff;
-  text-transform:uppercase;
-}
-.sb-title small{
-  display:block;font-size:.65rem;font-weight:700;
-  color:var(--sbi-gold);letter-spacing:.8px;text-transform:uppercase;margin-top:2px;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-}
-.sb-collapse-btn{
-  width:28px;height:28px;
-  display:grid;place-items:center;
-  background:rgba(255,255,255,.08);
-  border:1px solid rgba(255,255,255,.1);
-  border-radius:7px;
-  color:var(--sidebar-text);
-  cursor:pointer;
-  transition:all .15s ease;
-  flex-shrink:0;
-}
-.sb-collapse-btn .icon-svg{width:14px;height:14px}
-.sb-collapse-btn:hover{
-  background:var(--sbi-gold);border-color:var(--sbi-gold);color:var(--sbi-blue);
-}
-
-.sb-home-btn{
-  display:flex;align-items:center;gap:10px;
-  margin:14px 12px 4px 12px;
-  padding:12px 14px;
-  background:linear-gradient(135deg,var(--sbi-gold),var(--sbi-gold-2));
-  color:var(--sbi-blue);
-  border-radius:10px;
-  font-weight:900;font-size:.85rem;
-  text-decoration:none;
-  transition:all .2s ease;
-  box-shadow:0 6px 20px -6px rgba(244,180,0,.5);
-  flex-shrink:0;text-transform:uppercase;letter-spacing:.5px;
-}
-.sb-home-btn:hover{transform:translateY(-1px);box-shadow:0 10px 28px -6px rgba(244,180,0,.7)}
-.sb-home-btn .icon-svg{width:16px;height:16px;stroke-width:2.6}
-
-.sb-search{padding:8px 16px 8px;flex-shrink:0}
-.sb-search-box{position:relative;display:flex;align-items:center}
-.sb-search-box .icon-svg{
-  position:absolute;left:12px;color:var(--sidebar-text);
-  width:14px;height:14px;pointer-events:none;
-}
-.sb-search-box input{
-  width:100%;padding:10px 12px 10px 36px;
-  background:rgba(0,0,0,.2);
-  border:1px solid rgba(255,255,255,.08);
-  border-radius:9px;
-  color:#fff;font-family:inherit;font-size:.82rem;font-weight:700;outline:none;
-  transition:all .2s ease;
-}
-.sb-search-box input::placeholder{color:var(--sidebar-text);opacity:.6;font-weight:600}
-.sb-search-box input:focus{
-  background:rgba(0,0,0,.3);
-  border-color:var(--sbi-gold);
-  box-shadow:0 0 0 3px rgba(244,180,0,.15);
-}
-
-.sb-body{flex:1;overflow-y:auto;padding:8px 12px 20px;}
-.sb-body::-webkit-scrollbar{width:6px}
-.sb-body::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:3px}
-
-.sb-group{
-  padding:14px 10px 6px;
-  font-size:.65rem;font-weight:800;
-  color:var(--sidebar-text);opacity:.6;
-  letter-spacing:1.2px;text-transform:uppercase;
-}
-.sb-item{
-  display:flex;align-items:center;gap:11px;
-  padding:10px 11px;border-radius:8px;
-  font-size:.82rem;font-weight:700;
-  color:var(--sidebar-text);text-decoration:none;
-  transition:all .15s ease;cursor:pointer;line-height:1.35;
-}
-.sb-item:hover{background:var(--sidebar-hover);color:#fff;}
-.sb-item .sb-icon{
-  width:26px;height:26px;
-  display:grid;place-items:center;
-  background:rgba(255,255,255,.06);
-  border-radius:7px;
-  color:var(--sidebar-text);flex-shrink:0;
-  transition:all .15s ease;
-}
-.sb-item .sb-icon .icon-svg{width:14px;height:14px;stroke-width:2.4}
-.sb-item:hover .sb-icon{background:rgba(244,180,0,.2);color:var(--sbi-gold)}
-.sb-item.sb-active{
-  background:rgba(244,180,0,.15);color:var(--sbi-gold);font-weight:800;
-}
-.sb-item.sb-active .sb-icon{background:var(--sbi-gold);color:var(--sbi-blue)}
-.sb-item.sb-logout{color:#FF8A8A;margin-top:6px;}
-.sb-item.sb-logout .sb-icon{background:rgba(229,57,53,.15);color:#FF8A8A}
-.sb-item.sb-logout:hover{background:rgba(229,57,53,.2);color:#FFB0B0}
-.sb-item.sb-logout:hover .sb-icon{background:#E53935;color:#fff}
-
-/* ============ TOPNAV ============ */
-.topnav{
-  position:fixed;top:0;left:var(--sidebar-w);right:0;
-  height:var(--topnav-h);
-  background:var(--topnav-bg);
-  backdrop-filter:blur(14px) saturate(180%);
-  -webkit-backdrop-filter:blur(14px) saturate(180%);
-  border-bottom:1px solid var(--line);
-  z-index:50;
-  display:flex;align-items:center;padding:0 24px;gap:16px;
-  transition:left .3s cubic-bezier(.4,0,.2,1);
-}
-.tn-toggle{
-  display:none;width:36px;height:36px;
-  background:transparent;border:1px solid var(--line);
-  border-radius:9px;color:var(--ink);cursor:pointer;
-  place-items:center;
-}
-.tn-toggle .icon-svg{width:16px;height:16px}
-.tn-menu-btn{
-  display:grid;place-items:center;
-  width:36px;height:36px;
-  background:var(--bg);
-  border:1px solid var(--line);
-  border-radius:9px;color:var(--ink);
-  cursor:pointer;transition:all .15s ease;
-}
-.tn-menu-btn .icon-svg{width:16px;height:16px;stroke-width:2.4}
-.tn-menu-btn:hover{background:var(--sbi-blue);border-color:var(--sbi-blue);color:#fff}
-.tn-brand{
-  display:flex;align-items:center;gap:8px;
-  font-size:.9rem;font-weight:900;
-  color:var(--sbi-blue);letter-spacing:-.3px;
-}
-html[data-theme="dark"] .tn-brand{color:#F5F5F5}
-.tn-brand .brand-badge{
-  background:linear-gradient(135deg,var(--sbi-blue),var(--sbi-blue-3));
-  color:#fff;font-size:.6rem;font-weight:800;
-  padding:3px 9px;border-radius:999px;
-  text-transform:uppercase;letter-spacing:.6px;
-}
-.tn-brand .brand-badge.gold{
-  background:linear-gradient(135deg,var(--sbi-gold),var(--sbi-gold-2));
-  color:var(--sbi-blue);
-}
-.tn-right{margin-left:auto;display:flex;align-items:center;gap:10px}
-
-.tn-bell{position:relative;}
-.tn-bell .badge-count{
-  position:absolute;top:-4px;right:-4px;
-  width:18px;height:18px;
-  background:#E53935;color:#fff;
-  font-size:.6rem;font-weight:900;
-  border-radius:50%;
-  display:grid;place-items:center;
-  border:2px solid var(--topnav-bg);
-}
-
-.tn-btn{
-  width:36px;height:36px;
-  display:grid;place-items:center;
-  background:transparent;border:1px solid var(--line);
-  border-radius:9px;color:var(--ink);
-  cursor:pointer;transition:all .15s ease;text-decoration:none;
-}
-.tn-btn .icon-svg{width:16px;height:16px}
-.tn-btn:hover{background:var(--sbi-blue);border-color:var(--sbi-blue);color:#fff}
-.tn-btn:hover .badge-count{border-color:var(--sbi-blue)}
-.tn-avatar{
-  width:38px;height:38px;border-radius:50%;
-  background:linear-gradient(135deg,var(--sbi-blue),var(--sbi-blue-3));
-  display:grid;place-items:center;color:#fff;
-  font-weight:900;font-size:.85rem;cursor:pointer;
-  border:2px solid var(--sbi-gold);
-  box-shadow:0 4px 12px rgba(0,58,112,.15);
-}
-
-.new-wrapper{
-  margin-left:var(--sidebar-w);
-  padding-top:var(--topnav-h);
-  transition:margin-left .3s cubic-bezier(.4,0,.2,1);
-  min-height:100vh;
-}
-html.sb-collapsed .new-wrapper{margin-left:0}
-
-.sb-overlay{
-  position:fixed;inset:0;
-  background:rgba(0,0,0,.4);
-  backdrop-filter:blur(2px);
-  z-index:55;opacity:0;pointer-events:none;
-  transition:opacity .25s ease;
-}
-html.sb-open .sb-overlay{opacity:1;pointer-events:auto}
-
-/* ============ BANKER DASHBOARD (standalone only) ============ */
-.banker-dash{
-  padding:28px 32px 60px;
-  max-width:1500px;
-  margin:0 auto;
-}
-
-.bank-hero{
-  background:
-    radial-gradient(circle at top right, rgba(244,180,0,.25), transparent 60%),
-    linear-gradient(135deg, var(--sbi-blue) 0%, var(--sbi-blue-2) 100%);
-  border-radius:20px;
-  padding:36px 40px;
-  color:#fff;
-  position:relative;overflow:hidden;
-  margin-bottom:24px;
-  border:1px solid rgba(244,180,0,.2);
-}
-.bank-hero::before{
-  content:"";position:absolute;top:-100px;right:-100px;
-  width:400px;height:400px;border-radius:50%;
-  background:radial-gradient(circle, rgba(244,180,0,.15) 0%, transparent 70%);
-}
-.bank-hero-inner{
-  position:relative;z-index:2;
-  display:flex;justify-content:space-between;align-items:center;
-  gap:24px;flex-wrap:wrap;
-}
-.bank-hero-text .badge-line{
-  display:inline-flex;align-items:center;gap:8px;
-  padding:6px 14px;
-  background:rgba(244,180,0,.15);
-  border:1px solid rgba(244,180,0,.4);
-  border-radius:999px;
-  font-size:.7rem;font-weight:800;
-  color:var(--sbi-gold);letter-spacing:1px;
-  text-transform:uppercase;margin-bottom:16px;
-}
-.bank-hero-text .badge-line .dot{
-  width:6px;height:6px;border-radius:50%;
-  background:var(--sbi-gold);
-  box-shadow:0 0 8px var(--sbi-gold);
-  animation:pulse 2s ease-in-out infinite;
-}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-.bank-hero-text h1{
-  font-size:2.2rem;font-weight:900;
-  letter-spacing:-1px;line-height:1.15;margin-bottom:12px;
-}
-.bank-hero-text h1 .gold{
-  background:linear-gradient(135deg,var(--sbi-gold),var(--sbi-gold-2));
-  -webkit-background-clip:text;background-clip:text;color:transparent;
-}
-.bank-hero-text p{
-  font-size:.92rem;color:rgba(255,255,255,.75);
-  font-weight:600;max-width:480px;line-height:1.6;
-}
-.bank-hero-visual{display:flex;gap:14px;flex-wrap:wrap;}
-.hero-stat{
-  background:rgba(255,255,255,.08);
-  border:1px solid rgba(255,255,255,.15);
-  border-radius:14px;
-  padding:16px 20px;min-width:120px;
-  backdrop-filter:blur(8px);
-}
-.hero-stat .hs-icon{
-  width:32px;height:32px;border-radius:9px;
-  background:rgba(244,180,0,.2);color:var(--sbi-gold);
-  display:grid;place-items:center;margin-bottom:10px;
-}
-.hero-stat .hs-icon .icon-svg{width:16px;height:16px}
-.hero-stat .hs-num{
-  font-size:1.4rem;font-weight:900;
-  color:#fff;letter-spacing:-.5px;line-height:1;
-}
-.hero-stat .hs-lbl{
-  font-size:.65rem;font-weight:700;
-  color:rgba(255,255,255,.6);
-  text-transform:uppercase;letter-spacing:.5px;
-  margin-top:4px;
-}
-
-.news-ticker{
-  background:var(--card);
-  border:1px solid var(--line);
-  border-radius:14px;
-  padding:12px 20px;
-  margin-bottom:24px;
-  display:flex;align-items:center;gap:16px;
-  overflow:hidden;position:relative;
-}
-.news-ticker .nt-label{
-  display:flex;align-items:center;gap:8px;
-  color:var(--sbi-blue);
-  font-size:.72rem;font-weight:900;
-  text-transform:uppercase;letter-spacing:1px;
-  flex-shrink:0;padding-right:16px;
-  border-right:1px solid var(--line);
-}
-html[data-theme="dark"] .news-ticker .nt-label{color:var(--sbi-gold)}
-.news-ticker .nt-label .dot{
-  width:8px;height:8px;border-radius:50%;
-  background:#E53935;
-  animation:pulse 1.5s ease-in-out infinite;
-  box-shadow:0 0 8px #E53935;
-}
-.news-ticker .nt-scroll{
-  flex:1;overflow:hidden;white-space:nowrap;
-}
-.news-ticker .nt-text{
-  display:inline-block;
-  animation:scroll 40s linear infinite;
-  font-size:.78rem;font-weight:700;
-  color:var(--ink);
-}
-.news-ticker .nt-text span{
-  margin-right:48px;
-  display:inline-flex;align-items:center;gap:8px;
-}
-.news-ticker .nt-text span::before{
-  content:"●";color:var(--sbi-gold);font-size:.6rem;
-}
-@keyframes scroll{
-  from{transform:translateX(100%);}
-  to{transform:translateX(-100%);}
-}
-
-.section-title{
-  display:flex;align-items:center;justify-content:space-between;
-  margin-bottom:16px;
-}
-.section-title h2{
-  font-size:1rem;font-weight:900;color:var(--ink);
-  text-transform:uppercase;letter-spacing:.8px;
-  display:flex;align-items:center;gap:10px;
-}
-.section-title h2 .icon-svg{color:var(--sbi-blue);width:18px;height:18px}
-html[data-theme="dark"] .section-title h2 .icon-svg{color:var(--sbi-gold)}
-
-.quick-actions{
-  display:grid;grid-template-columns:repeat(4, 1fr);
-  gap:16px;margin-bottom:28px;
-}
-.qa-card{
-  background:var(--card);
-  border:1.5px solid var(--line);
-  border-radius:16px;
-  padding:22px 20px;
-  display:flex;flex-direction:column;gap:12px;
-  transition:all .25s ease;cursor:pointer;
-  position:relative;overflow:hidden;
-}
-.qa-card:hover{
-  border-color:var(--sbi-blue);
-  transform:translateY(-4px);
-  box-shadow:0 16px 40px -12px rgba(0,58,112,.25);
-}
-.qa-card:hover .qa-icon{
-  background:var(--sbi-blue);color:#fff;transform:scale(1.08);
-}
-.qa-card:hover .qa-arrow{
-  opacity:1;transform:translateX(4px);color:var(--sbi-blue);
-}
-.qa-icon{
-  width:48px;height:48px;border-radius:14px;
-  background:var(--sbi-gold-light);color:var(--sbi-blue);
-  display:grid;place-items:center;transition:all .25s ease;
-}
-html[data-theme="dark"] .qa-icon{
-  background:rgba(244,180,0,.15);color:var(--sbi-gold);
-}
-.qa-icon .icon-svg{width:22px;height:22px;stroke-width:2.2}
-.qa-title{
-  font-size:.92rem;font-weight:800;color:var(--ink);
-  display:flex;align-items:center;gap:6px;
-}
-.qa-arrow{
-  opacity:0;transition:all .2s ease;color:var(--muted);
-}
-.qa-arrow .icon-svg{width:14px;height:14px}
-.qa-desc{
-  font-size:.72rem;color:var(--muted);font-weight:600;line-height:1.4;
-}
-
-.services-grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fill, minmax(260px, 1fr));
-  gap:14px;margin-bottom:32px;
-}
-.service-card{
-  background:var(--card);
-  border:1px solid var(--line);
-  border-radius:14px;
-  padding:16px 18px;
-  display:flex;align-items:center;gap:14px;
-  transition:all .2s ease;cursor:pointer;text-decoration:none;
-}
-.service-card:hover{
-  border-color:var(--sbi-blue);
-  background:var(--sbi-gold-light);
-  transform:translateX(4px);
-  box-shadow:0 8px 20px -8px rgba(0,58,112,.15);
-}
-html[data-theme="dark"] .service-card:hover{
-  background:rgba(244,180,0,.08);
-}
-.service-card:hover .sv-icon{
-  background:var(--sbi-blue);color:#fff;
-}
-.sv-icon{
-  width:40px;height:40px;border-radius:11px;
-  background:var(--sbi-gold-light);color:var(--sbi-blue);
-  display:grid;place-items:center;flex-shrink:0;
-  transition:all .2s ease;
-}
-html[data-theme="dark"] .sv-icon{
-  background:rgba(244,180,0,.15);color:var(--sbi-gold);
-}
-.sv-icon .icon-svg{width:18px;height:18px;stroke-width:2.2}
-.sv-text{flex:1;min-width:0;}
-.sv-name{
-  font-size:.85rem;font-weight:800;color:var(--ink);line-height:1.3;
-}
-.sv-sub{
-  font-size:.68rem;color:var(--muted);font-weight:600;
-  margin-top:3px;text-transform:uppercase;letter-spacing:.3px;
-}
-
-.foot{
-  margin-top:40px;padding-top:24px;
-  border-top:1px solid var(--line);
-  display:flex;justify-content:space-between;align-items:center;
-  font-size:.75rem;color:var(--muted);font-weight:700;
-  flex-wrap:wrap;gap:12px;
-}
-.foot b{color:var(--sbi-blue)}
-html[data-theme="dark"] .foot b{color:var(--sbi-gold)}
-
-/* ============================================================
-   ✅ FRAGMENT MODE — parent page ke .new-wrapper ko shift karo
-   ============================================================ */
-html.eis-fragment-mode .new-wrapper {
-  margin-left: var(--sidebar-w) !important;
-  padding-top: var(--topnav-h) !important;
-  padding-left: 0 !important;
-  transition: margin-left .3s cubic-bezier(.4,0,.2,1);
-  min-height: 100vh;
-}
-html.eis-fragment-mode.sb-collapsed .new-wrapper { margin-left: 0 !important; }
-html.eis-fragment-mode .topnav { left: var(--sidebar-w); }
-html.eis-fragment-mode.sb-collapsed .topnav { left: 0; }
-
-@media (max-width:1100px){
-  .quick-actions{grid-template-columns:repeat(2,1fr)}
-}
-@media (max-width:900px){
-  .sidebar{transform:translateX(-100%)}
-  html.sb-open .sidebar{transform:translateX(0)}
-  .topnav{left:0}
-  .tn-toggle{display:grid;place-items:center}
-  .tn-menu-btn{display:none}
-  .new-wrapper{margin-left:0}
-  .sb-collapse-btn{display:none}
-  .banker-dash{padding:20px 16px 40px}
-  .bank-hero{padding:28px 24px}
-  .bank-hero-text h1{font-size:1.6rem}
-  .quick-actions{grid-template-columns:1fr}
-
-  html.eis-fragment-mode .new-wrapper { margin-left: 0 !important; }
-  html.eis-fragment-mode .topnav { left: 0 !important; }
-}
-</style>
-
-<% if (_isFragment) { %>
-<script>
-  document.documentElement.classList.add('eis-fragment-mode');
-</script>
-<% } %>
-
-<script>
-(function(){
-  try{
-    var t = localStorage.getItem('eis-theme');
-    if(!t){ t = 'dark'; localStorage.setItem('eis-theme', 'dark'); }
-    document.documentElement.setAttribute('data-theme', t);
-    var sbClosed = localStorage.getItem('eis-sidebar-closed');
-    if (sbClosed === 'true') {
-      document.documentElement.classList.add('sb-collapsed');
+    <style>
+    /* ============ PAGE BASE ============ */
+    body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: var(--bg) !important;
+        color: var(--ink) !important;
+        margin: 0 !important;
+        padding: 0 !important;
     }
-  }catch(e){}
-})();
-</script>
 
-<%
-  HttpSession sess = request.getSession(false);
-  String m_strrole = (sess != null) ? (String) sess.getAttribute("role") : null;
-  String ctx = request.getContextPath();
-%>
+    .page-container {
+        padding: 28px 32px 48px;
+        max-width: 1600px;
+        margin: 0 auto;
+    }
 
-<!-- ============ SIDEBAR ============ -->
-<aside class="sidebar" id="sidebar">
-  <div class="sb-head">
-    <div class="sb-logo">
-      <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-    </div>
-    <div class="sb-title">
-      SBI Banker
-      <small><%=m_strrole != null ? m_strrole : "Banker"%></small>
-    </div>
-    <button class="sb-collapse-btn" onclick="toggleSidebar()" title="Hide sidebar">
-      <svg class="icon-svg" viewBox="0 0 24 24"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg>
-    </button>
-  </div>
+    /* ============ PAGE HEADER ============ */
+    .page-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+    }
+    .page-head .ttl {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 800;
+        font-size: 1.65rem;
+        letter-spacing: -0.6px;
+        color: var(--ink);
+        line-height: 1.2;
+        margin: 0;
+    }
+    .page-head .ttl .ttl-icon {
+        width: 44px; height: 44px;
+        display: grid; place-items: center;
+        background: var(--brand-light);
+        color: var(--brand);
+        border-radius: 12px;
+        font-size: 1.05rem;
+        flex-shrink: 0;
+    }
+    html[data-theme="dark"] .page-head .ttl .ttl-icon {
+        background: rgba(248,111,3,.15);
+    }
+    .page-head .sub {
+        color: var(--muted);
+        font-size: 0.9rem;
+        margin: 6px 0 0 56px;
+        font-weight: 500;
+    }
 
-  <a class="sb-home-btn" href="<%=ctx%>/jsp/Bankheader.jsp" title="Dashboard">
-    <svg class="icon-svg" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-    <span>Dashboard</span>
-  </a>
+    /* ============ CONTROLS ============ */
+    .controls-card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 18px 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 20px rgba(0,0,0,.03);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 14px;
+        flex-wrap: wrap;
+    }
+    html[data-theme="dark"] .controls-card {
+        box-shadow: 0 4px 20px rgba(0,0,0,.3);
+    }
 
-  <div class="sb-search">
-    <div class="sb-search-box">
-      <svg class="icon-svg" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input type="text" id="searchbar" onkeyup="search_animal()" placeholder="Search services..." autocomplete="off">
-    </div>
-  </div>
+    .search-box {
+        position: relative;
+        flex: 1;
+        min-width: 240px;
+        max-width: 420px;
+    }
+    .search-box i {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--muted);
+        font-size: 0.85rem;
+        pointer-events: none;
+    }
+    .search-box input {
+        width: 100%;
+        padding: 11px 14px 11px 40px;
+        background: var(--bg);
+        border: 1.5px solid var(--line);
+        border-radius: 11px;
+        color: var(--ink);
+        font-family: inherit;
+        font-size: 0.88rem;
+        font-weight: 500;
+        outline: none;
+        transition: all .2s ease;
+    }
+    .search-box input::placeholder {
+        color: var(--muted);
+        opacity: .7;
+    }
+    .search-box input:focus {
+        border-color: var(--brand);
+        background: var(--card);
+        box-shadow: 0 0 0 4px rgba(248,111,3,.12);
+    }
 
-  <nav class="sb-body" id="list">
+    .btn-group {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    .btn-action {
+        padding: 10px 20px;
+        border-radius: 11px;
+        font-weight: 700;
+        font-size: 0.82rem;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-family: inherit;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+    }
+    .btn-excel {
+        background: #16A34A;
+        color: #fff;
+        box-shadow: 0 4px 14px -4px #16A34A;
+    }
+    .btn-excel:hover {
+        background: #15803D;
+        transform: translateY(-1px);
+        box-shadow: 0 8px 22px -6px #16A34A;
+    }
+    .btn-pdf {
+        background: #DC2626;
+        color: #fff;
+        box-shadow: 0 4px 14px -4px #DC2626;
+    }
+    .btn-pdf:hover {
+        background: #B91C1C;
+        transform: translateY(-1px);
+        box-shadow: 0 8px 22px -6px #DC2626;
+    }
 
-    <div class="sb-group">Monitoring</div>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/TransactionEndPointBank.jsp" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
-      <span>Transaction EndPoints</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/TxnContactDetailBank" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
-      <span>EIS EndPoint Contact Details</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/100PercentFailure.jsp" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></span>
-      <span>100% Failure Honeycomb</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/ErrorDashboard" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
-      <span>Error Dashboard</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/CronController" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>
-      <span>IBCE DR PR Statistics</span>
-    </a>
+    /* ============ ENTRIES ROW ============ */
+    .entries-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 4px 12px 4px;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+    .entries-row .entries {
+        color: var(--muted);
+        font-size: 0.82rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .entries-row .entries select {
+        padding: 7px 12px;
+        background: var(--card);
+        color: var(--ink);
+        border: 1.5px solid var(--line);
+        border-radius: 9px;
+        font-family: inherit;
+        font-size: 0.82rem;
+        font-weight: 600;
+        cursor: pointer;
+        outline: none;
+    }
+    .entries-row .entries select:focus {
+        border-color: var(--brand);
+    }
 
-    <div class="sb-group">Deployments &amp; Reports</div>
-    <a class="sb-item animals" href="<%=ctx%>/viewdeploymentsheet.do" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M4.93 4.93a10 10 0 0 0 0 14.14M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M8.46 8.46a5 5 0 0 0 0 7.07M15.54 8.46a5 5 0 0 1 0 7.07"/><circle cx="12" cy="12" r="1.5"/></svg></span>
-      <span>EIS Production Deployment Tracker</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/TimeDefrenceAnalysisreportBank.jsp" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
-      <span>Time Difference Analysis Report</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/Exp_Sys_Url_Mapper.jsp" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></span>
-      <span>EXP &amp; SYS URL Mapper</span>
-    </a>
+    /* ============ TABLE CARD ============ */
+    .table-card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 4px 20px rgba(0,0,0,.03);
+    }
+    html[data-theme="dark"] .table-card {
+        box-shadow: 0 4px 20px rgba(0,0,0,.3);
+    }
 
-    <div class="sb-group">Search</div>
-    <a class="sb-item animals" href="<%=ctx%>/multiple.html" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
-      <span>Search Gen5 Reference no</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/NonGen5Multiple.html" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
-      <span>Search NonGen5 Reference no</span>
-    </a>
+    .table-container {
+        overflow-x: auto;
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+    .table-container::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+    .table-container::-webkit-scrollbar-thumb {
+        background: var(--line);
+        border-radius: 4px;
+    }
+    .table-container::-webkit-scrollbar-track {
+        background: transparent;
+    }
 
-    <div class="sb-group">Documentation</div>
-    <a class="sb-item animals" href="<%=ctx%>/eisusersop.do">
-      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>
-      <span>SOP</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/EISSOPDashboard_Bank.jsp?&role=<%=m_strrole%>" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>
-      <span>SOP Management System (Maker)</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/EISBANKSOPDashboard.jsp?&role=<%=m_strrole%>" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>
-      <span>SOP Management System (Checker)</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/ChannelJourneyBank.jsp?&role=<%=m_strrole%>" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/></svg></span>
-      <span>Channel Journey's</span>
-    </a>
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        background: var(--card);
+    }
 
-    <div class="sb-group">Logs</div>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/Dpg_Sys_Log.jsp" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>
-      <span>DPG SYS LOG'S</span>
-    </a>
+    table thead {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+    }
 
-    <div class="sb-group">Account</div>
-    <a class="sb-item sb-logout" href="<%=ctx%>/login.action" onclick="event.preventDefault(); bankLogout();">
-      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span>
-      <span>Logout</span>
-    </a>
+    table th {
+        background: var(--bg);
+        color: var(--muted);
+        font-weight: 800;
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 12px 14px;
+        text-align: left;
+        border-bottom: 1px solid var(--line);
+        white-space: nowrap;
+    }
+    html[data-theme="dark"] table th {
+        background: #1A1A1A;
+    }
 
-  </nav>
-</aside>
+    table td {
+        padding: 11px 14px;
+        text-align: left;
+        border-bottom: 1px solid var(--line);
+        color: var(--ink);
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+    table tbody tr:hover {
+        background: var(--bg);
+    }
+    html[data-theme="dark"] table tbody tr:hover {
+        background: #1A1A1A;
+    }
+    table tbody tr:last-child td {
+        border-bottom: none;
+    }
 
-<div class="sb-overlay" onclick="document.documentElement.classList.remove('sb-open')"></div>
+    /* Filter row inputs */
+    .filters td {
+        padding: 8px 10px !important;
+        background: var(--card);
+        border-bottom: 1px solid var(--line);
+    }
+    .filters input {
+        width: 100%;
+        padding: 6px 10px;
+        background: var(--bg);
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        color: var(--ink);
+        font-family: inherit;
+        font-size: 0.78rem;
+        font-weight: 500;
+        outline: none;
+        transition: all .2s ease;
+    }
+    .filters input::placeholder {
+        color: var(--muted);
+        opacity: .6;
+    }
+    .filters input:focus {
+        border-color: var(--brand);
+        box-shadow: 0 0 0 3px rgba(248,111,3,.1);
+    }
 
-<!-- ============ TOPNAV ============ -->
-<header class="topnav">
-  <button class="tn-toggle" onclick="document.documentElement.classList.toggle('sb-open')">
-    <svg class="icon-svg" viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-  </button>
+    /* ============ PAGINATION ============ */
+    .pagination-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 20px;
+        border-top: 1px solid var(--line);
+        background: var(--bg);
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    html[data-theme="dark"] .pagination-row {
+        background: #1A1A1A;
+    }
+    .pagination-info {
+        color: var(--muted);
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    .pagination-btns {
+        display: flex;
+        gap: 8px;
+    }
+    .pagination-btns button {
+        padding: 8px 18px;
+        border-radius: 9px;
+        font-weight: 700;
+        font-size: 0.8rem;
+        border: 1.5px solid var(--line);
+        background: var(--card);
+        color: var(--ink);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-family: inherit;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .pagination-btns button:hover:not(:disabled) {
+        background: var(--brand);
+        border-color: var(--brand);
+        color: #fff;
+        transform: translateY(-1px);
+    }
+    .pagination-btns button:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
 
-  <button class="tn-menu-btn" onclick="toggleSidebar()" title="Show sidebar">
-    <svg class="icon-svg" viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-  </button>
+    /* ============ EMPTY STATE ============ */
+    .empty-state {
+        padding: 60px 20px;
+        text-align: center;
+        color: var(--muted);
+    }
+    .empty-state i {
+        font-size: 2.5rem;
+        color: var(--brand);
+        opacity: .4;
+        display: block;
+        margin-bottom: 12px;
+    }
 
-  <div class="tn-brand">
-    <span class="brand-badge">SBI</span>
-    <span class="brand-badge gold">Banker</span>
-    EIS Portal
-  </div>
+    /* ============ RESPONSIVE ============ */
+    @media (max-width: 900px) {
+        .page-container { padding: 20px 16px 32px; }
+        .page-head { flex-direction: column; align-items: flex-start; }
+        .page-head .ttl { font-size: 1.3rem; }
+        .page-head .ttl .ttl-icon { width: 38px; height: 38px; font-size: .9rem; }
+        .page-head .sub { margin-left: 50px; font-size: 0.82rem; }
+        .controls-card { flex-direction: column; align-items: stretch; }
+        .search-box { max-width: 100%; }
+        .btn-group { justify-content: flex-start; }
+    }
+    </style>
+</head>
+<body>
 
-  <div class="tn-right">
-    <button class="tn-btn" onclick="toggleTheme()" title="Toggle theme">
-      <svg class="icon-svg" id="themeIconSun" viewBox="0 0 24 24" style="display:none;">
-        <circle cx="12" cy="12" r="5"/>
-        <line x1="12" y1="1" x2="12" y2="3"/>
-        <line x1="12" y1="21" x2="12" y2="23"/>
-        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
-        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-        <line x1="1" y1="12" x2="3" y2="12"/>
-        <line x1="21" y1="12" x2="23" y2="12"/>
-        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
-        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-      </svg>
-      <svg class="icon-svg" id="themeIconMoon" viewBox="0 0 24 24">
-        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-      </svg>
-    </button>
+<%@include file="./roleHeader.jsp"%>
 
-    <button class="tn-btn tn-bell" title="Notifications" onclick="alert('You have 3 new notifications');">
-      <svg class="icon-svg" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-      <span class="badge-count">3</span>
-    </button>
-
-    <a class="tn-btn" href="<%=ctx%>/login.action" title="Logout" onclick="event.preventDefault(); bankLogout();">
-      <svg class="icon-svg" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-    </a>
-
-    <div class="tn-avatar" title="<%=m_strrole%>">
-      <%= (m_strrole != null && m_strrole.length() > 0) ? m_strrole.substring(0,1).toUpperCase() : "B" %>
-    </div>
-  </div>
-</header>
-
-<%-- ✅ STANDALONE MODE only — banker dashboard --%>
-<% if (!_isFragment) { %>
 <div class="new-wrapper">
-  <div class="banker-dash">
+<div class="page-container">
 
-    <!-- HERO -->
-    <section class="bank-hero">
-      <div class="bank-hero-inner">
-        <div class="bank-hero-text">
-          <div class="badge-line">
-            <span class="dot"></span>
-            Banker Access Verified
-          </div>
-          <h1>Welcome, <span class="gold"><%= m_strrole != null ? m_strrole : "Banker" %></span></h1>
-          <p>Your dedicated SBI banking command center — monitor transactions, track failures, manage SOPs and access critical reports in real-time.</p>
+    <!-- ============ PAGE HEADER ============ -->
+    <div class="page-head">
+        <div>
+            <h1 class="ttl">
+                <span class="ttl-icon"><i class="fas fa-signal"></i></span>
+                Service Port Status
+            </h1>
+            <p class="sub">Monitor stopped &amp; running port services across brokers</p>
         </div>
-        <div class="bank-hero-visual">
-          <div class="hero-stat">
-            <div class="hs-icon">
-              <svg class="icon-svg" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    </div>
+
+    <!-- ============ CONTROLS ============ -->
+    <div class="controls-card">
+        <div class="search-box">
+            <i class="fas fa-magnifying-glass"></i>
+            <input type="text" id="globalSearch" placeholder="Global search across all columns...">
+        </div>
+        <div class="btn-group">
+            <button class="btn-action btn-excel" onclick="downloadExcel()">
+                <i class="fas fa-file-excel"></i> Excel
+            </button>
+            <button class="btn-action btn-pdf" onclick="downloadPDF()">
+                <i class="fas fa-file-pdf"></i> PDF
+            </button>
+        </div>
+    </div>
+
+    <!-- ============ ENTRIES ROW ============ -->
+    <div class="entries-row">
+        <div class="entries">
+            Show
+            <select id="entriesSelect" onchange="updateEntries()">
+                <option value="10">10</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+                <option value="all">All</option>
+            </select>
+            entries
+        </div>
+    </div>
+
+    <!-- ============ TABLE ============ -->
+    <div class="table-card">
+        <div class="table-container">
+            <table id="dataTable">
+                <thead>
+                    <tr>
+                        <th>SERVER_ID</th>
+                        <th>PORT</th>
+                        <th>BROKER</th>
+                        <th>SERVICE</th>
+                        <th>STOPPED_EG</th>
+                        <th>RUNNING_EG</th>
+                        <th>Time</th>
+                    </tr>
+                    <tr class="filters">
+                        <td><input type="text" placeholder="Search SERVER_ID" onkeyup="filterTable()"></td>
+                        <td><input type="text" placeholder="Search PORT" onkeyup="filterTable()"></td>
+                        <td><input type="text" placeholder="Search BROKER" onkeyup="filterTable()"></td>
+                        <td><input type="text" placeholder="Search SERVICE" onkeyup="filterTable()"></td>
+                        <td><input type="text" placeholder="Search STOPPED_EG" onkeyup="filterTable()"></td>
+                        <td><input type="text" placeholder="Search RUNNING_EG" onkeyup="filterTable()"></td>
+                        <td><input type="text" placeholder="Search Time" onkeyup="filterTable()"></td>
+                    </tr>
+                </thead>
+                <tbody>
+                <%
+                    Connection conn = DBUtilityAuto.getReportDBConnection();
+                    PreparedStatement smt1 = null, smt2 = null;
+                    ResultSet rs = null, rs1 = null;
+                    try {
+                        String sql = "select * from portstatus where service_status='stopped.' order by server_id";
+                        System.out.println(sql);
+                        smt1 = conn.prepareStatement(sql);
+                        rs = smt1.executeQuery();
+                        boolean hasRows = false;
+                        while(rs.next()){
+                            hasRows = true;
+                            String server = rs.getString("SERVER_ID");
+                            String port = rs.getString("PORT");
+                            String broker = rs.getString("BROKER");
+                            String eg = rs.getString("EG");
+                            String service = rs.getString("SERVICE");
+                            String Status = rs.getString("SERVICE_STATUS");
+                            String time = rs.getString("INSERT_TIME");
+                            Connection con = DBUtilityAuto.getReportDBConnection();
+                            String query = "select * from portstatus where server_id='"+server+"' and BROKER='"+broker+"' and SERVICE='"+service+"' and service_status='running.'";
+                            smt2 = con.prepareStatement(query);
+                            rs1 = smt2.executeQuery();
+                            String runningStatus = null, RunningEG = null;
+                            while(rs1.next()) {
+                                RunningEG = rs1.getString("EG");
+                                runningStatus = rs1.getString("SERVICE_STATUS");
+                            }
+                            rs1.close();
+                            smt2.close();
+                            con.close();
+                %>
+                    <tr>
+                        <td><%= server %></td>
+                        <td><%= port %></td>
+                        <td><%= broker %></td>
+                        <td><%= service %></td>
+                        <td><%= eg %></td>
+                        <td><%= RunningEG %></td>
+                        <td><%= time %></td>
+                    </tr>
+                <%
+                        }
+                        if(!hasRows) {
+                %>
+                    <tr>
+                        <td colspan="7">
+                            <div class="empty-state">
+                                <i class="fas fa-circle-check"></i>
+                                <div>All services are running — no stopped ports found.</div>
+                            </div>
+                        </td>
+                    </tr>
+                <%
+                        }
+                    } catch(Exception e) {
+                        e.printStackTrace();
+                    } finally {
+                        try {
+                            if(rs1 != null) rs1.close();
+                            if(smt2 != null) smt2.close();
+                            if(rs != null) rs.close();
+                            if(smt1 != null) smt1.close();
+                            if(conn != null) conn.close();
+                        } catch(Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                %>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ============ PAGINATION ============ -->
+        <div class="pagination-row">
+            <div class="pagination-info" id="paginationInfo">Showing 0 of 0 entries</div>
+            <div class="pagination-btns">
+                <button id="prevPage" onclick="changePage(-1)" disabled>
+                    <i class="fas fa-chevron-left"></i> Previous
+                </button>
+                <button id="nextPage" onclick="changePage(1)">
+                    Next <i class="fas fa-chevron-right"></i>
+                </button>
             </div>
-            <div class="hs-num">24×7</div>
-            <div class="hs-lbl">Live Status</div>
-          </div>
-          <div class="hero-stat">
-            <div class="hs-icon">
-              <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            </div>
-            <div class="hs-num">Secure</div>
-            <div class="hs-lbl">Encrypted</div>
-          </div>
         </div>
-      </div>
-    </section>
-
-    <!-- NEWS TICKER -->
-    <div class="news-ticker">
-      <div class="nt-label">
-        <span class="dot"></span> LIVE
-      </div>
-      <div class="nt-scroll">
-        <div class="nt-text">
-          <span>All SBI banking services operational</span>
-          <span>Transaction EndPoint monitoring active</span>
-          <span>Real-time failure tracking enabled</span>
-          <span>Flash reports updated every 5 minutes</span>
-          <span>IBCE DR PR statistics live</span>
-          <span>Deployment tracker synced</span>
-        </div>
-      </div>
     </div>
 
-    <!-- QUICK ACTIONS -->
-    <div class="section-title">
-      <h2>
-        <svg class="icon-svg" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-        Quick Banker Actions
-      </h2>
-    </div>
-
-    <section class="quick-actions">
-
-      <a class="qa-card" href="<%=ctx%>/jsp/TransactionEndPointBank.jsp" target="_blank" rel="noopener noreferrer">
-        <div class="qa-icon"><svg class="icon-svg" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
-        <div class="qa-title">Transaction EndPoints <span class="qa-arrow"><svg class="icon-svg" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span></div>
-        <div class="qa-desc">Live endpoint monitoring</div>
-      </a>
-
-      <a class="qa-card" href="<%=ctx%>/ErrorDashboard" target="_blank" rel="noopener noreferrer">
-        <div class="qa-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
-        <div class="qa-title">Error Dashboard <span class="qa-arrow"><svg class="icon-svg" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span></div>
-        <div class="qa-desc">Live error tracking</div>
-      </a>
-
-      <a class="qa-card" href="<%=ctx%>/jsp/100PercentFailure.jsp" target="_blank" rel="noopener noreferrer">
-        <div class="qa-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></div>
-        <div class="qa-title">100% Failure <span class="qa-arrow"><svg class="icon-svg" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span></div>
-        <div class="qa-desc">Failure honeycomb view</div>
-      </a>
-
-      <a class="qa-card" href="<%=ctx%>/viewdeploymentsheet.do" target="_blank" rel="noopener noreferrer">
-        <div class="qa-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M4.93 4.93a10 10 0 0 0 0 14.14M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M8.46 8.46a5 5 0 0 0 0 7.07M15.54 8.46a5 5 0 0 1 0 7.07"/><circle cx="12" cy="12" r="1.5"/></svg></div>
-        <div class="qa-title">Deployment Tracker <span class="qa-arrow"><svg class="icon-svg" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span></div>
-        <div class="qa-desc">Production deployments</div>
-      </a>
-
-    </section>
-
-    <!-- ALL SERVICES -->
-    <div class="section-title">
-      <h2>
-        <svg class="icon-svg" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-        All Services
-      </h2>
-    </div>
-
-    <section class="services-grid">
-
-      <a class="service-card" href="<%=ctx%>/TxnContactDetailBank" target="_blank" rel="noopener noreferrer">
-        <div class="sv-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
-        <div class="sv-text">
-          <div class="sv-name">EndPoint Contact Details</div>
-          <div class="sv-sub">EIS EndPoint Contacts</div>
-        </div>
-      </a>
-
-      <a class="service-card" href="<%=ctx%>/CronController" target="_blank" rel="noopener noreferrer">
-        <div class="sv-icon"><svg class="icon-svg" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
-        <div class="sv-text">
-          <div class="sv-name">IBCE DR PR Statistics</div>
-          <div class="sv-sub">DR/PR Activity</div>
-        </div>
-      </a>
-
-      <a class="service-card" href="<%=ctx%>/jsp/TimeDefrenceAnalysisreportBank.jsp" target="_blank" rel="noopener noreferrer">
-        <div class="sv-icon"><svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
-        <div class="sv-text">
-          <div class="sv-name">Time Difference Analysis</div>
-          <div class="sv-sub">Performance Report</div>
-        </div>
-      </a>
-
-      <a class="service-card" href="<%=ctx%>/jsp/Exp_Sys_Url_Mapper.jsp" target="_blank" rel="noopener noreferrer">
-        <div class="sv-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div>
-        <div class="sv-text">
-          <div class="sv-name">EXP &amp; SYS URL Mapper</div>
-          <div class="sv-sub">URL Mapping Tool</div>
-        </div>
-      </a>
-
-      <a class="service-card" href="<%=ctx%>/multiple.html" target="_blank" rel="noopener noreferrer">
-        <div class="sv-icon"><svg class="icon-svg" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
-        <div class="sv-text">
-          <div class="sv-name">Search Gen5 Reference no</div>
-          <div class="sv-sub">Reference Lookup</div>
-        </div>
-      </a>
-
-      <a class="service-card" href="<%=ctx%>/NonGen5Multiple.html" target="_blank" rel="noopener noreferrer">
-        <div class="sv-icon"><svg class="icon-svg" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
-        <div class="sv-text">
-          <div class="sv-name">Search NonGen5 Reference no</div>
-          <div class="sv-sub">Reference Lookup</div>
-        </div>
-      </a>
-
-      <a class="service-card" href="<%=ctx%>/eisusersop.do">
-        <div class="sv-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
-        <div class="sv-text">
-          <div class="sv-name">SOP</div>
-          <div class="sv-sub">Standard Operating Procedures</div>
-        </div>
-      </a>
-
-      <a class="service-card" href="<%=ctx%>/jsp/EISSOPDashboard_Bank.jsp?&role=<%=m_strrole%>" target="_blank" rel="noopener noreferrer">
-        <div class="sv-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
-        <div class="sv-text">
-          <div class="sv-name">SOP Management System (Maker)</div>
-          <div class="sv-sub">Maker Access</div>
-        </div>
-      </a>
-
-      <a class="service-card" href="<%=ctx%>/jsp/EISBANKSOPDashboard.jsp?&role=<%=m_strrole%>" target="_blank" rel="noopener noreferrer">
-        <div class="sv-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
-        <div class="sv-text">
-          <div class="sv-name">SOP Management System (Checker)</div>
-          <div class="sv-sub">Checker Access</div>
-        </div>
-      </a>
-
-      <a class="service-card" href="<%=ctx%>/jsp/ChannelJourneyBank.jsp?&role=<%=m_strrole%>" target="_blank" rel="noopener noreferrer">
-        <div class="sv-icon"><svg class="icon-svg" viewBox="0 0 24 24"><circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/></svg></div>
-        <div class="sv-text">
-          <div class="sv-name">Channel Journey's</div>
-          <div class="sv-sub">Customer Path Analysis</div>
-        </div>
-      </a>
-
-      <a class="service-card" href="<%=ctx%>/jsp/Dpg_Sys_Log.jsp" target="_blank" rel="noopener noreferrer">
-        <div class="sv-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
-        <div class="sv-text">
-          <div class="sv-name">DPG SYS LOG'S</div>
-          <div class="sv-sub">System Logs</div>
-        </div>
-      </a>
-
-    </section>
-
-    <!-- FOOTER -->
-    <footer class="foot">
-      <div>© <%= java.time.Year.now() %> <b>EIS Portal</b> · SBI Banker Portal</div>
-      <div>Secure Banking Environment · Internal Use Only</div>
-    </footer>
-
-  </div>
 </div>
-<% } %>
+</div>
 
 <script>
-function bankLogout(){
-  window.__logoutInProgress = true;
-  try{
-    sessionStorage.clear();
-    localStorage.removeItem('eis-sidebar-closed');
-  }catch(e){}
-  window.location.replace('<%=ctx%>/login.action?logout=true');
-}
+    /* ============ GLOBAL SEARCH ============ */
+    const globalSearch = document.getElementById('globalSearch');
+    globalSearch.addEventListener('input', () => {
+        const value = globalSearch.value.toLowerCase();
+        const rows = document.querySelectorAll('#dataTable tbody tr');
+        rows.forEach(row => {
+            row.style.display = row.textContent.toLowerCase().includes(value) ? '' : 'none';
+        });
+    });
 
-(function(){
-  // History loop — sirf standalone mode me. Fragment me NAHI.
-  if (document.documentElement.classList.contains('eis-fragment-mode')) return;
-  window.history.pushState({ page: 'bank-home' }, '', window.location.href);
-  window.addEventListener('popstate', function(e){
-    if(window.__logoutInProgress === true) return;
-    window.history.pushState({ page: 'bank-home' }, '', window.location.href);
-  });
-})();
+    /* ============ PAGINATION STATE ============ */
+    let currentPage = 1;
+    let rowsPerPage = 10;
 
-function toggleTheme(){
-  var cur = document.documentElement.getAttribute('data-theme') || 'dark';
-  var next = cur === 'light' ? 'dark' : 'light';
-  document.documentElement.setAttribute('data-theme', next);
-  try{ localStorage.setItem('eis-theme', next); }catch(e){}
-  updateThemeIcon();
-}
-function updateThemeIcon(){
-  var t = document.documentElement.getAttribute('data-theme') || 'dark';
-  var sun = document.getElementById('themeIconSun');
-  var moon = document.getElementById('themeIconMoon');
-  if(!sun || !moon) return;
-  if(t === 'dark'){
-    sun.style.display = 'block';
-    moon.style.display = 'none';
-  } else {
-    sun.style.display = 'none';
-    moon.style.display = 'block';
-  }
-}
-document.addEventListener('DOMContentLoaded', updateThemeIcon);
-updateThemeIcon();
+    window.onload = function () {
+        const entriesSelect = document.getElementById('entriesSelect');
+        entriesSelect.value = '10';
+        paginateTable();
+    };
 
-function toggleSidebar(){
-  var root = document.documentElement;
-  if(window.innerWidth <= 900){
-    root.classList.toggle('sb-open');
-  } else {
-    root.classList.toggle('sb-collapsed');
-    try{
-      localStorage.setItem('eis-sidebar-closed', root.classList.contains('sb-collapsed'));
-    }catch(e){}
-  }
-}
-
-function search_animal() {
-  var input = document.getElementById('searchbar').value.toLowerCase();
-  var x = document.getElementsByClassName('animals');
-  var groups = document.querySelectorAll('.sb-group');
-  for (var i = 0; i < x.length; i++) {
-    if (!x[i].innerText.toLowerCase().includes(input)) {
-      x[i].style.display = "none";
-    } else {
-      x[i].style.display = "flex";
+    function updateEntries() {
+        const select = document.getElementById('entriesSelect').value;
+        if (select === 'all') {
+            rowsPerPage = Infinity;
+        } else {
+            rowsPerPage = parseInt(select);
+        }
+        currentPage = 1;
+        paginateTable();
     }
-  }
-  groups.forEach(function(g){
-    var next = g.nextElementSibling;
-    var hasVisible = false;
-    while(next && !next.classList.contains('sb-group')){
-      if(next.classList.contains('animals') && next.style.display !== 'none'){ hasVisible = true; break; }
-      next = next.nextElementSibling;
+
+    function filterTable() {
+        const inputs = document.querySelectorAll('.filters input');
+        const rows = document.querySelectorAll('#dataTable tbody tr');
+        rows.forEach(row => {
+            let isVisible = true;
+            inputs.forEach((input, index) => {
+                const value = input.value.toLowerCase();
+                const cell = row.cells[index];
+                if (cell && !cell.textContent.toLowerCase().includes(value)) {
+                    isVisible = false;
+                }
+            });
+            row.style.display = isVisible ? '' : 'none';
+        });
     }
-    g.style.display = (hasVisible || input === '') ? 'block' : 'none';
-  });
-}
+
+    function paginateTable() {
+        const rows = document.querySelectorAll('#dataTable tbody tr');
+        const totalRows = rows.length;
+        const info = document.getElementById('paginationInfo');
+
+        if (rowsPerPage === Infinity) {
+            rows.forEach(row => { row.style.display = ''; });
+            document.getElementById('prevPage').disabled = true;
+            document.getElementById('nextPage').disabled = true;
+            info.textContent = 'Showing all ' + totalRows + ' entries';
+            return;
+        }
+
+        const start = (currentPage - 1) * rowsPerPage;
+        const end = Math.min(currentPage * rowsPerPage, totalRows);
+
+        rows.forEach((row, index) => {
+            row.style.display = (index >= start && index < end) ? '' : 'none';
+        });
+
+        document.getElementById('prevPage').disabled = currentPage === 1;
+        document.getElementById('nextPage').disabled = end >= totalRows;
+
+        const showStart = totalRows === 0 ? 0 : start + 1;
+        info.textContent = 'Showing ' + showStart + '–' + end + ' of ' + totalRows + ' entries';
+    }
+
+    function changePage(direction) {
+        currentPage += direction;
+        paginateTable();
+    }
+
+    /* ============ EXPORT EXCEL ============ */
+    function downloadExcel() {
+        let table = document.getElementById("dataTable");
+        let wb = XLSX.utils.book_new();
+        let ws = XLSX.utils.table_to_sheet(table);
+        XLSX.utils.book_append_sheet(wb, ws, "Port Status");
+        XLSX.writeFile(wb, "port_status.xlsx");
+    }
+
+    /* ============ EXPORT PDF ============ */
+    function downloadPDF() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        doc.text("Port Status Report", 10, 10);
+
+        let table = document.getElementById("dataTable");
+        let headers = [];
+        let rows = [];
+
+        table.querySelectorAll("thead tr:first-child th").forEach(th => headers.push(th.innerText));
+
+        table.querySelectorAll("tbody tr").forEach(tr => {
+            let row = [];
+            tr.querySelectorAll("td").forEach(td => row.push(td.innerText));
+            if (row.length > 1) rows.push(row);
+        });
+
+        doc.autoTable({
+            head: [headers],
+            body: rows,
+            startY: 20
+        });
+
+        doc.save("port_status.pdf");
+    }
 </script>
+
+</body>
+</html>
