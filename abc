@@ -1,672 +1,479 @@
-<%@page pageEncoding="UTF-8"%>
-<%@page import="com.jdbc.DBUtilityAuto"%>
-<%@ page import="java.sql.*"%>
-<%--
-  Admin Header — Shared Fragment
-  ✅ Inline SVG icons (no FontAwesome)
-  ✅ New dark sidebar with brand orange
-  ✅ Logout fixed (session invalidate)
-  ✅ Back-block with logout exception
---%>
-<%
- // ✅ Cache headers
- response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0, private");
- response.setHeader("Pragma", "no-cache");
- response.setHeader("Expires", "0");
-%>
-
-<style>
-:root{
-  --brand:#F86F03;
-  --brand-2:#FF9A3D;
-  --brand-light:#FFF4EC;
-  --brand-glow:rgba(248,111,3,.4);
-  --ink:#F5F5F5;
-  --muted:#9CA3AF;
-  --line:#272727;
-  --bg:#0F0F0F;
-  --card:#161616;
-  --sidebar-bg:#0B0B0B;
-  --sidebar-hover:#1A1A1A;
-  --sidebar-text:#A1A1AA;
-  --sidebar-active:#1E1408;
-  --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --topnav-h:60px;
-  --sidebar-w:60px;
-  --sidebar-w-expanded:260px;
+<html>
+  <head>
+ <style type="text/css">
+ @import url(https://maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css);
+}
+@import url(css/cssfont.css);
+.fa-2x {
+font-size: 2em;
+}
+.fa {
+position: relative;
+display: table-cell;
+width: 50px;
+height: 36px;
+text-align: center;
+vertical-align: middle;
+font-size:20px;
 }
 
-/* Reset old styles */
-.primary-nav,.hamburger,.main-menu,.menu,.overflow-container{display:none!important}
 
-*{box-sizing:border-box}
-
-/* ✅ Body — dark mode forced */
-html,body{
-  margin:0 !important;
-  padding:0 !important;
-  background:#0F0F0F !important;
-  color:#F5F5F5 !important;
-  font-family:var(--font-stack) !important;
-  font-weight:700 !important;
-  -webkit-font-smoothing:antialiased;
-  min-height:100vh;
-}
-h1,h2,h3,h4,h5,h6,strong,b{font-weight:800;letter-spacing:-.3px}
-a{color:inherit;text-decoration:none}
-
-/* SVG icon helper */
-.ah-icon{
-  width:18px;height:18px;
-  display:inline-block;flex-shrink:0;
-  stroke:currentColor;fill:none;
-  stroke-width:2;
-  stroke-linecap:round;stroke-linejoin:round;
-}
-.ah-icon-sm{width:14px;height:14px}
-
-/* ============ ADMIN SIDEBAR ============ */
-.admin-sidebar{
-  position:fixed;
-  top:0;left:0;bottom:0;
-  width:var(--sidebar-w);
-  background:var(--sidebar-bg);
-  border-right:1px solid var(--line);
-  z-index:60;
-  display:flex;
-  flex-direction:column;
-  overflow:hidden;
-  transition:width .25s cubic-bezier(.4,0,.2,1),background .3s ease;
-}
-.admin-sidebar:hover,
-.admin-sidebar.expanded{
-  width:var(--sidebar-w-expanded);
-  box-shadow:6px 0 24px rgba(0,0,0,.4);
+.main-menu:hover,nav.main-menu.expanded {
+width:223px;
+overflow:visible;
 }
 
-/* Sidebar head */
-.admin-sb-head{
-  height:var(--topnav-h);
-  display:flex;
-  align-items:center;
-  gap:12px;
-  padding:0 18px;
-  border-bottom:1px solid var(--line);
-  flex-shrink:0;
-  overflow:hidden;
-  white-space:nowrap;
-}
-.admin-sb-logo{
-  width:30px;height:30px;
-  background:linear-gradient(135deg,var(--brand),var(--brand-2));
-  display:grid;place-items:center;
-  border-radius:9px;
-  color:#fff;
-  font-size:.75rem;
-  box-shadow:0 6px 16px -6px var(--brand);
-  flex-shrink:0;
-}
-.admin-sb-logo .ah-icon{width:16px;height:16px;stroke-width:2.4}
-.admin-sb-title{
-  font-size:.85rem;
-  font-weight:900;
-  color:#fff;
-  letter-spacing:-.3px;
-  opacity:0;
-  transition:opacity .2s ease .05s;
-}
-.admin-sb-title small{
-  display:block;
-  font-size:.6rem;
-  color:var(--brand);
-  letter-spacing:1.5px;
-  font-weight:700;
-  text-transform:uppercase;
-  margin-top:2px;
-}
-.admin-sidebar:hover .admin-sb-title,
-.admin-sidebar.expanded .admin-sb-title{
-  opacity:1;
+.main-menu {
+background:#212121;
+border-right:1px solid #e5e5e5;
+position:absolute;
+top:0;
+bottom:0;
+height:100%;
+left:0;
+width:50px;
+overflow:hidden;
+-webkit-transition:width .05s linear;
+transition:width .5s linear;
+-webkit-transform:translateZ(0) scale(1,1);
+z-index:1000;
 }
 
-/* Sidebar body */
-.admin-sb-body{
-  flex:1;
-  overflow-y:auto;
-  overflow-x:hidden;
-  padding:10px 0 20px;
-}
-.admin-sb-body::-webkit-scrollbar{width:5px}
-.admin-sb-body::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px}
-
-.admin-sb-group{
-  padding:14px 22px 6px;
-  font-size:.6rem;
-  font-weight:800;
-  color:var(--muted);
-  letter-spacing:1.2px;
-  text-transform:uppercase;
-  white-space:nowrap;
-  opacity:0;
-  transition:opacity .2s ease;
-}
-.admin-sidebar:hover .admin-sb-group,
-.admin-sidebar.expanded .admin-sb-group{
-  opacity:1;
+.main-menu>ul {
+margin:7px 0;
 }
 
-.admin-sb-item{
-  display:flex;
-  align-items:center;
-  gap:14px;
-  height:44px;
-  padding:0 20px;
-  color:var(--sidebar-text);
-  font-size:.82rem;
-  font-weight:700;
-  white-space:nowrap;
-  transition:all .15s ease;
-  position:relative;
-  cursor:pointer;
-}
-.admin-sb-item:hover{
-  background:var(--sidebar-hover);
-  color:#fff;
-}
-.admin-sb-item:hover::before{
-  content:"";
-  position:absolute;
-  left:0;top:8px;bottom:8px;
-  width:3px;
-  background:var(--brand);
-  border-radius:0 3px 3px 0;
-}
-.admin-sb-icon{
-  width:22px;
-  height:22px;
-  display:grid;
-  place-items:center;
-  flex-shrink:0;
-  transition:all .2s ease;
-}
-.admin-sb-icon .ah-icon{width:18px;height:18px;stroke-width:2}
-.admin-sb-item:hover .admin-sb-icon{color:var(--brand);transform:scale(1.1)}
-.admin-sb-label{
-  opacity:0;
-  transition:opacity .15s ease .05s;
-  flex:1;
-  overflow:hidden;
-  text-overflow:ellipsis;
-}
-.admin-sidebar:hover .admin-sb-label,
-.admin-sidebar.expanded .admin-sb-label{
-  opacity:1;
+.main-menu li {
+position:relative;
+display:block;
+width:250px;
 }
 
-/* Active item */
-.admin-sb-item.active{
-  background:var(--sidebar-active);
-  color:var(--brand);
-}
-.admin-sb-item.active::before{
-  content:"";
-  position:absolute;
-  left:0;top:8px;bottom:8px;
-  width:3px;
-  background:var(--brand);
-  border-radius:0 3px 3px 0;
-}
-
-/* Logout item */
-.admin-sb-logout{
-  color:#FF6B6B !important;
-  margin-top:8px;
-  border-top:1px solid var(--line);
-  padding-top:8px;
-  height:52px;
-}
-.admin-sb-logout:hover{
-  background:rgba(229,57,53,.12) !important;
-  color:#FF6B6B !important;
-}
-.admin-sb-logout:hover::before{
-  background:#E53935 !important;
-}
-.admin-sb-logout .admin-sb-icon{color:#FF6B6B}
-
-/* Logo tooltip (collapsed) — visible only when collapsed */
-.admin-sidebar:not(:hover):not(.expanded) .admin-sb-item::after{
-  content:attr(data-tooltip);
-  position:absolute;
-  left:70px;
-  top:50%;
-  transform:translateY(-50%);
-  background:#1A1A1A;
-  color:#F5F5F5;
-  padding:6px 12px;
-  border-radius:8px;
-  font-size:.72rem;
-  font-weight:700;
-  white-space:nowrap;
-  border:1px solid var(--line);
-  box-shadow:0 4px 14px rgba(0,0,0,.3);
-  opacity:0;
-  pointer-events:none;
-  transition:opacity .15s ease;
-  z-index:100;
-}
-.admin-sidebar:not(:hover):not(.expanded) .admin-sb-item:hover::after{
-  opacity:1;
+.main-menu li>a {
+position:relative;
+display:table;
+border-collapse:collapse;
+border-spacing:0;
+color:#999;
+ font-family: arial;
+font-size: 14px;
+text-decoration:none;
+-webkit-transform:translateZ(0) scale(1,1);
+-webkit-transition:all .5s linear;
+transition:all .1s linear;
+  
 }
 
-/* ============ TOP BAR ============ */
-.admin-topbar{
-  position:fixed;
-  top:0;
-  left:var(--sidebar-w);
-  right:0;
-  height:var(--topnav-h);
-  background:rgba(15,15,15,.85);
-  backdrop-filter:blur(14px) saturate(180%);
-  -webkit-backdrop-filter:blur(14px) saturate(180%);
-  border-bottom:1px solid var(--line);
-  z-index:50;
-  display:flex;
-  align-items:center;
-  padding:0 24px;
-  gap:16px;
-  transition:left .25s cubic-bezier(.4,0,.2,1);
-}
-.admin-sidebar:hover ~ .admin-topbar,
-.admin-sidebar.expanded ~ .admin-topbar{
-  left:var(--sidebar-w-expanded);
+.main-menu .nav-icon {
+position:relative;
+display:table-cell;
+width:60px;
+height:36px;
+text-align:center;
+vertical-align:middle;
+font-size:18px;
 }
 
-.admin-tb-toggle{
-  width:34px;height:34px;
-  background:var(--sidebar-hover);
-  border:1px solid var(--line);
-  border-radius:9px;
-  color:#F5F5F5;
-  cursor:pointer;
-  display:grid;
-  place-items:center;
-  transition:all .15s ease;
-}
-.admin-tb-toggle:hover{
-  background:var(--brand);
-  border-color:var(--brand);
-  color:#fff;
-}
-.admin-tb-toggle .ah-icon{width:16px;height:16px}
-
-.admin-tb-title{
-  font-size:.85rem;
-  font-weight:800;
-  color:#F5F5F5;
-  letter-spacing:-.3px;
-  display:flex;
-  align-items:center;
-  gap:8px;
-}
-.admin-tb-title .badge-admin{
-  background:rgba(248,111,3,.15);
-  color:var(--brand);
-  font-size:.62rem;
-  font-weight:800;
-  padding:3px 9px;
-  border-radius:999px;
-  text-transform:uppercase;
-  letter-spacing:.5px;
-  border:1px solid rgba(248,111,3,.3);
+.main-menu .nav-text {
+position:relative;
+display:table-cell;
+vertical-align:middle;
+width:190px;
+  font-family: 'Titillium Web', sans-serif;
 }
 
-.admin-tb-right{
-  margin-left:auto;
-  display:flex;
-  align-items:center;
-  gap:10px;
-}
-.admin-tb-btn{
-  width:34px;height:34px;
-  background:transparent;
-  border:1px solid var(--line);
-  border-radius:9px;
-  color:#F5F5F5;
-  cursor:pointer;
-  display:grid;
-  place-items:center;
-  transition:all .15s ease;
-  text-decoration:none;
-}
-.admin-tb-btn:hover{
-  background:var(--brand);
-  border-color:var(--brand);
-  color:#fff;
-}
-.admin-tb-btn .ah-icon{width:16px;height:16px}
-
-/* ============ CONTENT WRAPPER ============ */
-.admin-content-wrap{
-  margin-left:var(--sidebar-w);
-  padding-top:var(--topnav-h);
-  transition:margin-left .25s cubic-bezier(.4,0,.2,1);
-  min-height:100vh;
-  background:#0F0F0F;
-}
-.admin-sidebar:hover ~ .admin-content-wrap,
-.admin-sidebar.expanded ~ .admin-content-wrap{
-  margin-left:var(--sidebar-w-expanded);
+.main-menu>ul.logout {
+position:absolute;
+left:0;
+bottom:0;
 }
 
-/* Overlay for mobile */
-.admin-overlay{
-  display:none;
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.5);
-  z-index:55;
-  backdrop-filter:blur(2px);
+.no-touch .scrollable.hover {
+overflow-y:hidden;
 }
 
-@media (max-width:900px){
-  .admin-sidebar{
-    width:var(--sidebar-w-expanded);
-    transform:translateX(-100%);
-    box-shadow:6px 0 24px rgba(0,0,0,.5);
-  }
-  .admin-sidebar.expanded{
-    transform:translateX(0);
-    width:var(--sidebar-w-expanded);
-  }
-  .admin-sidebar .admin-sb-title,
-  .admin-sidebar .admin-sb-label,
-  .admin-sidebar .admin-sb-group{opacity:1}
-  .admin-sidebar:hover ~ .admin-topbar,
-  .admin-sidebar.expanded ~ .admin-topbar{left:0}
-  .admin-topbar{left:0 !important}
-  .admin-content-wrap{margin-left:0 !important}
-  .admin-overlay.show{display:block}
-}
-</style>
-
-<%
-  String ctx = request.getContextPath();
-  String m_strrole = (String) session.getAttribute("role");
-%>
-
-<!-- ============ ADMIN SIDEBAR ============ -->
-<aside class="admin-sidebar" id="adminSidebar">
-  <div class="admin-sb-head">
-    <div class="admin-sb-logo">
-      <svg class="ah-icon" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-    </div>
-    <div class="admin-sb-title">
-      EIS Admin
-      <small><%= m_strrole != null ? m_strrole : "Panel" %></small>
-    </div>
-  </div>
-
-  <div class="admin-sb-body">
-
-    <!-- OVERVIEW -->
-    <div class="admin-sb-group">Overview</div>
-
-    <a class="admin-sb-item" href="<%=ctx%>/login.action" data-tooltip="Home">
-      <span class="admin-sb-icon">
-        <svg class="ah-icon" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-      </span>
-      <span class="admin-sb-label">Home</span>
-    </a>
-
-    <!-- REGISTRATION & ROLES -->
-    <div class="admin-sb-group">Users &amp; Roles</div>
-
-    <a class="admin-sb-item" href="<%=ctx%>/ViewEISRegistrationDetailsActionNew" target="_blank" rel="noopener noreferrer" data-tooltip="View Registrations">
-      <span class="admin-sb-icon">
-        <svg class="ah-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
-      </span>
-      <span class="admin-sb-label">View Employee Registration</span>
-    </a>
-
-    <a class="admin-sb-item" href="<%=ctx%>/RoleMasterActionServ" target="_blank" rel="noopener noreferrer" data-tooltip="Role Master">
-      <span class="admin-sb-icon">
-        <svg class="ah-icon" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-      </span>
-      <span class="admin-sb-label">Role Master New</span>
-    </a>
-
-    <a class="admin-sb-item" href="<%=ctx%>/RoleMasterServlet" target="_blank" rel="noopener noreferrer" data-tooltip="Rolewise Setting">
-      <span class="admin-sb-icon">
-        <svg class="ah-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-      </span>
-      <span class="admin-sb-label">Rolewise Setting New</span>
-    </a>
-
-    <a class="admin-sb-item" href="<%=ctx%>/jsp/moduleLeadAccess.jsp" target="_blank" rel="noopener noreferrer" data-tooltip="Module Lead Access">
-      <span class="admin-sb-icon">
-        <svg class="ah-icon" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-      </span>
-      <span class="admin-sb-label">Module Lead Access</span>
-    </a>
-
-    <!-- MONITORING -->
-    <div class="admin-sb-group">Monitoring</div>
-
-    <a class="admin-sb-item" href="<%=ctx%>/jsp/ErrorDashboard.jsp" target="_blank" rel="noopener noreferrer" data-tooltip="Error Dashboard">
-      <span class="admin-sb-icon">
-        <svg class="ah-icon" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-      </span>
-      <span class="admin-sb-label">Error Dashboard</span>
-    </a>
-
-    <a class="admin-sb-item" href="<%=ctx%>/autoRefreshApiwisehundreadpercfailonserver.do" target="_blank" rel="noopener noreferrer" data-tooltip="API 100% Failure">
-      <span class="admin-sb-icon">
-        <svg class="ah-icon" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-      </span>
-      <span class="admin-sb-label">API 100% Failure (AutoRefresh)</span>
-    </a>
-
-    <a class="admin-sb-item" href="<%=ctx%>/autoRefreshApiwisenohitsserver.do?sub=show" target="_blank" rel="noopener noreferrer" data-tooltip="API No Hits">
-      <span class="admin-sb-icon">
-        <svg class="ah-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
-      </span>
-      <span class="admin-sb-label">API No Hits (AutoRefresh)</span>
-    </a>
-
-    <a class="admin-sb-item" href="<%=ctx%>/jsp/Environment_Db.jsp" target="_blank" rel="noopener noreferrer" data-tooltip="Dashboard Refresh">
-      <span class="admin-sb-icon">
-        <svg class="ah-icon" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-      </span>
-      <span class="admin-sb-label">Dashboard Refresh Setting</span>
-    </a>
-
-    <a class="admin-sb-item" href="<%=ctx%>/jsp/AutoRefreshTransactionEndPoint.jsp" target="_blank" rel="noopener noreferrer" data-tooltip="Txn EndPoints">
-      <span class="admin-sb-icon">
-        <svg class="ah-icon" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-      </span>
-      <span class="admin-sb-label">Transaction EndPoints</span>
-    </a>
-
-    <a class="admin-sb-item" href="<%=ctx%>/jsp/AutoRefreshTransactionEndPointLDAP.jsp" target="_blank" rel="noopener noreferrer" data-tooltip="LDAP Txn EndPoints">
-      <span class="admin-sb-icon">
-        <svg class="ah-icon" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-      </span>
-      <span class="admin-sb-label">LDAP Transaction EndPoints</span>
-    </a>
-
-    <a class="admin-sb-item" href="<%=ctx%>/jsp/EISAPPISSUEAUTOrefresh.jsp" target="_blank" rel="noopener noreferrer" data-tooltip="EIS App Issue">
-      <span class="admin-sb-icon">
-        <svg class="ah-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-      </span>
-      <span class="admin-sb-label">EIS App Issue (AutoRefresh)</span>
-    </a>
-
-    <a class="admin-sb-item" href="<%=ctx%>/SourceWiseTdFailureAction" target="_blank" rel="noopener noreferrer" data-tooltip="Source Wise TD">
-      <span class="admin-sb-icon">
-        <svg class="ah-icon" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-      </span>
-      <span class="admin-sb-label">SourceWiseTdFailure</span>
-    </a>
-
-    <!-- CHECKLISTS -->
-    <div class="admin-sb-group">Checklists Admin</div>
-
-    <a class="admin-sb-item" href="<%=ctx%>/TaskServlet" target="_blank" rel="noopener noreferrer" data-tooltip="Adhoc Checklist">
-      <span class="admin-sb-icon">
-        <svg class="ah-icon" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-      </span>
-      <span class="admin-sb-label">Adhoc Checklist Admin</span>
-    </a>
-
-    <a class="admin-sb-item" href="<%=ctx%>/jsp/adminscorechecklist.jsp" target="_blank" rel="noopener noreferrer" data-tooltip="SCORE Checklist">
-      <span class="admin-sb-icon">
-        <svg class="ah-icon" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-      </span>
-      <span class="admin-sb-label">SCORE Checklist Admin</span>
-    </a>
-
-    <a class="admin-sb-item" href="<%=ctx%>/jsp/MonitoringChecklistAdmin.jsp" target="_blank" rel="noopener noreferrer" data-tooltip="Monitoring Checklist">
-      <span class="admin-sb-icon">
-        <svg class="ah-icon" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-      </span>
-      <span class="admin-sb-label">Monitoring Checklist Admin</span>
-    </a>
-
-    <a class="admin-sb-item" href="<%=ctx%>/jsp/IssueMgmtAdmin.jsp" target="_blank" rel="noopener noreferrer" data-tooltip="Mail's Checklist">
-      <span class="admin-sb-icon">
-        <svg class="ah-icon" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-      </span>
-      <span class="admin-sb-label">Mails Checklist Admin</span>
-    </a>
-
-    <a class="admin-sb-item" href="<%=ctx%>/jsp/problemadmin.jsp" target="_blank" rel="noopener noreferrer" data-tooltip="Problem Checklist">
-      <span class="admin-sb-icon">
-        <svg class="ah-icon" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-      </span>
-      <span class="admin-sb-label">Problem Checklist Admin</span>
-    </a>
-
-    <a class="admin-sb-item" href="<%=ctx%>/jsp/NightChecklistAdmin.jsp" target="_blank" rel="noopener noreferrer" data-tooltip="NightShift Checklist">
-      <span class="admin-sb-icon">
-        <svg class="ah-icon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-      </span>
-      <span class="admin-sb-label">NightShift Checklist Admin</span>
-    </a>
-
-    <!-- OTHERS -->
-    <div class="admin-sb-group">Others</div>
-
-    <a class="admin-sb-item" href="<%=ctx%>/eissop.do" target="_blank" rel="noopener noreferrer" data-tooltip="SOP">
-      <span class="admin-sb-icon">
-        <svg class="ah-icon" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-      </span>
-      <span class="admin-sb-label">SOP Management</span>
-    </a>
-
-    <a class="admin-sb-item" href="<%=ctx%>/jsp/RosterAdmin.jsp" target="_blank" rel="noopener noreferrer" data-tooltip="Roster Admin">
-      <span class="admin-sb-icon">
-        <svg class="ah-icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-      </span>
-      <span class="admin-sb-label">Roster Admin</span>
-    </a>
-
-    <a class="admin-sb-item" href="<%=ctx%>/jsp/AssetDetail.jsp" target="_blank" rel="noopener noreferrer" data-tooltip="Asset Detail">
-      <span class="admin-sb-icon">
-        <svg class="ah-icon" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-      </span>
-      <span class="admin-sb-label">Asset Detail</span>
-    </a>
-
-    <a class="admin-sb-item" href="<%=ctx%>/ConnectionAction" target="_blank" rel="noopener noreferrer" data-tooltip="DR/PR Switch">
-      <span class="admin-sb-icon">
-        <svg class="ah-icon" viewBox="0 0 24 24"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
-      </span>
-      <span class="admin-sb-label">DR/PR Switch</span>
-    </a>
-
-    <!-- LOGOUT -->
-    <a class="admin-sb-item admin-sb-logout" href="javascript:void(0)" onclick="adminLogout()" data-tooltip="Logout">
-      <span class="admin-sb-icon">
-        <svg class="ah-icon" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-      </span>
-      <span class="admin-sb-label">Logout</span>
-    </a>
-
-  </div>
-</aside>
-
-<!-- Overlay for mobile -->
-<div class="admin-overlay" id="adminOverlay" onclick="closeAdminSidebar()"></div>
-
-<!-- ============ TOP BAR ============ -->
-<header class="admin-topbar">
-  <button class="admin-tb-toggle" onclick="toggleAdminSidebar()" title="Toggle sidebar">
-    <svg class="ah-icon" viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-  </button>
-
-  <div class="admin-tb-title">
-    <span class="badge-admin">Admin Panel</span>
-    EIS Portal
-  </div>
-
-  <div class="admin-tb-right">
-    <a class="admin-tb-btn" href="<%=ctx%>/login.action" title="Logout" onclick="event.preventDefault(); adminLogout();">
-      <svg class="ah-icon" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-    </a>
-  </div>
-</header>
-
-<script>
-/* ============================================================
-   ✅ ADMIN LOGOUT — session invalidate + login pe redirect
-   ============================================================ */
-function adminLogout(){
-  window.__logoutInProgress = true;
-
-  try{
-    sessionStorage.clear();
-    localStorage.removeItem('eis-sidebar-closed');
-  }catch(e){}
-
-  // ✅ logout=true parameter — server side session invalidate hoga
-  window.location.replace('<%=ctx%>/login.action?logout=true');
+.no-touch .scrollable.hover:hover {
+overflow-y:auto;
+overflow:visible;
 }
 
-/* ============================================================
-   ✅ SIDEBAR TOGGLE (mobile)
-   ============================================================ */
-function toggleAdminSidebar(){
-  var sb = document.getElementById('adminSidebar');
-  var ov = document.getElementById('adminOverlay');
-  sb.classList.toggle('expanded');
-  if(ov) ov.classList.toggle('show');
-}
-function closeAdminSidebar(){
-  var sb = document.getElementById('adminSidebar');
-  var ov = document.getElementById('adminOverlay');
-  sb.classList.remove('expanded');
-  if(ov) ov.classList.remove('show');
+a:hover,a:focus {
+text-decoration:none;
 }
 
-/* ============================================================
-   ✅ BACK BUTTON BLOCK — with logout exception
-   ============================================================ */
-(function(){
-  window.history.pushState({ page: 'admin' }, '', window.location.href);
-  window.addEventListener('popstate', function(e){
-    if(window.__logoutInProgress === true) return;
-    window.history.pushState({ page: 'admin' }, '', window.location.href);
-  });
-})();
+nav {
+-webkit-user-select:none;
+-moz-user-select:none;
+-ms-user-select:none;
+-o-user-select:none;
+user-select:none;
+}
 
-/* ============================================================
-   ✅ SESSION CHECK — agar role nahi hai toh login pe bhejo
-   ============================================================ */
-(function(){
-  // Auto session check every 60s
-  setInterval(function(){
-    // Optional: /login.action se check kar sakte ho
-  }, 60000);
-})();
-</script>
+nav ul,nav li {
+outline:0;
+margin:0;
+padding:0;
+}
+.main-menu li:hover>a,nav.main-menu li.active>a,.dropdown-menu>li>a:hover,.dropdown-menu>li>a:focus,.dropdown-menu>.active>a,.dropdown-menu>.active>a:hover,.dropdown-menu>.active>a:focus,.no-touch .dashboard-page nav.dashboard-menu ul li:hover a,.dashboard-page nav.dashboard-menu ul li.active a {
+color:#fff;
+width: 88%;
+background-color:#5fa2db;
+
+}
+.area {
+padding:10px;
+float: left;
+
+width: 100%;
+height: 100%;
+}
+@font-face {
+  font-family: 'Titillium Web';
+  font-style: normal;
+  font-weight: 300;
+  src: local('Titillium WebLight'), local('TitilliumWeb-Light'), url(../fonts/anMUvcNT0H1YN4FII8wpr24bNCNEoFTpS2BTjF6FB5E.woff) format('woff');
+}
+ 
+ 
+ span{
+	margin: 0 15px;
+	line-height: .7;
+	text-shadow: 0 0 2px rgba(0, 0, 0, .45);
+	animation: span 3s ease-in infinite alternate;
+	color: white;
+}
+.main{
+	display: flex;
+	justify-content: center;
+	align-items: flex-start;
+  
+  	
+	@media(max-width: 600px){ transform: scale(.65); }
+}
+.letter{
+	display: inline-flex;
+	height: 30px;
+	width: 27px;
+	/* border: 2.5px solid #FF1EAD; */
+	border: 2.35px solid white;
+	border-radius: 14px;
+	box-shadow:
+		0 0 2px rgba(0, 0, 0, .75),
+		inset 0 0 2px rgba(0, 0, 0, .45);
+
+	animation: letter 3s ease-in-out infinite alternate;
+}
+@keyframes span {
+	0%,30%{ margin: 0 15px; }
+	70%,100%{ margin: 0 5px; }
+}
+@keyframes letter {
+	0%,30%{ width: 27px; }
+	70%,100%{ width: 30vw; }
+}
+ 
+ 
+ 
+    .footer {
+   position: relative;
+   left: 0;
+   bottom: 0;
+   width: 100%;
+   color: white;
+   text-align: center;
+}
+
+
+
+.zoom {
+
+  transition: transform 1.5s;
+ 
+}
+
+.zoom:hover {
+  -ms-transform: scale(1.1); /* IE 9 */
+  -webkit-transform: scale(1.1); /* Safari 3-8 */
+  transform: scale(1.1); 
+}
+ </style>
+  </head>
+  <body style="background-color: black">
+  
+  <nav class="main-menu">
+            <ul>
+                <li>
+                    <a href="#">
+                        <i class="fa fa-home fa-2x"></i>
+                        <span class="nav-text">
+                            Home
+                        </span>
+                    </a>
+                  
+                </li>
+               
+              
+              <br>
+                
+                
+               
+                <li>
+                    <a href="<%=request.getContextPath() + "/jsp/TransactionEndPointBank.jsp"%>" target="_blank">
+                       <i class="fa fa-info fa-2x"></i>
+                        <span class="nav-text">
+                          Transaction EndPoints
+                        </span>
+                    </a>
+                </li>
+              
+              <br>  
+                
+                <li>
+                    <a href="<%=request.getContextPath() + "/TxnContactDetailBank"%>" target="_blank">
+                       <i
+								class="fa fa-dashboard"></i>
+                        <span class="nav-text">
+                          EIS EndPoint <br> <br> Contact Details
+                        </span>
+                    </a>
+                </li>
+                
+                <br>
+                  
+                <li>
+                    <a href="<%=request.getContextPath() + "/jsp/100PercentFailure.jsp"%>" target="_blank">
+                       <i
+								class="fa fa-dashboard"></i>
+                        <span class="nav-text">
+                          100% Failure Honeycomb
+                        </span>
+                    </a>
+                </li>		
+						
+					<br>	
+						
+						    <li>
+                    <a href="<%=request.getContextPath() + "/ErrorDashboard"%>" target="_blank">
+                       <i
+								class="fa fa-dashboard"></i>
+                        <span class="nav-text">
+                         Error Dashboard
+                        </span>
+                    </a>
+                </li>	
+                
+                <br>
+                
+                		    <li>
+                    <a href="<%=request.getContextPath() + "/CronController"%>" target="_blank">
+                       <i
+								class="fa fa-dashboard"></i>
+                        <span class="nav-text">
+                     IBCE DR PR Statistics
+                        </span>
+                    </a>
+                </li>
+                
+                <br>
+                
+                		    <li>
+                    <a href="<%=request.getContextPath() + "/viewdeploymentsheet.do"%>" target="_blank">
+                       <i
+								class="fa fa-dashboard"></i>
+                        <span class="nav-text"> EIS PRODUCTION<br> <br>DEPLOYMENT TRACKER
+                        </span>
+                    </a>
+                </li>		
+								
+					<br>
+							
+				
+				 
+				
+                
+                		    <li>
+                    <a href="<%=request.getContextPath() + "/jsp/TimeDefrenceAnalysisreportBank.jsp"%>" target="_blank">
+                       <i
+								class="fa fa-dashboard"></i>
+                        <span class="nav-text"> Time Difference<br> <br>Analysis Report
+                        </span>
+                    </a>
+                </li>					
+				
+				 <br>				
+					
+                <br>
+                
+                		    <li>
+                    <a href="<%=request.getContextPath() + "/jsp/Exp_Sys_Url_Mapper.jsp"%>" target="_blank">
+                       <i
+								class="fa fa-dashboard"></i>
+                        <span class="nav-text"> EXP & SYS URL <br> <br>Mapper
+                        </span>
+                    </a>
+                </li>					
+				
+				 <br>	     
+				 
+				 
+				    <li>
+                    <a href="<%=request.getContextPath() + "/jsp/Exp_Sys_Url_Mapper.jsp"%>" target="_blank">
+                       <i
+								class="fa fa-dashboard"></i>
+                        <span class="nav-text"> EXP & SYS URL <br> <br>Mapper
+                        </span>
+                    </a>
+                </li>					
+				
+				 <br>	 
+				 
+				 
+				 	 
+				    <li>
+                    <a href="multiple.html" target="_blank">
+                       <i
+								class="fa fa-dashboard"></i>
+                        <span class="nav-text"> Search Gen5 Reference no
+                        </span>
+                    </a>
+                </li>					
+				
+				 <br>	 
+				 
+				   <li>
+                    <a href="NonGen5Multiple.html" target="_blank">
+                       <i
+								class="fa fa-dashboard"></i>
+                        <span class="nav-text"> Search NonGen5 Reference no
+                        </span>
+                    </a>
+                </li>					
+				
+				 <br>	 
+				 
+				 
+				 	   <li>
+                   <a href="<%=request.getContextPath() + "/eisusersop.do"%>">
+                       <i
+								class="fa fa-dashboard"></i>
+                        <span class="nav-text"> SOP
+                        </span>
+                    </a>
+                </li>	
+					
+					<br>
+                <%
+								session = request.getSession(false);
+								String m_strrole = (String) session.getAttribute("role");
+								System.out.println("Role: " + m_strrole);
+								%>
+                		    <li>
+                    <a href="<%=request.getContextPath() + "/jsp/EISSOPDashboard_Bank.jsp?&role="%><%=m_strrole%>" target="_blank">
+                       <i
+								class="fa fa-dashboard"></i>
+                        <span class="nav-text"> SOP Management System (Maker)
+                        </span>
+                    </a>
+                </li>					
+				
+				 <br>	  
+				 
+					<br>
+                <%
+								session = request.getSession(false);
+								m_strrole = (String) session.getAttribute("role");
+								System.out.println("Role: " + m_strrole);
+								%>
+                		    <li>
+                    <a href="<%=request.getContextPath() + "/jsp/EISBANKSOPDashboard.jsp?&role="%><%=m_strrole%>" target="_blank">
+                       <i
+								class="fa fa-dashboard"></i>
+                        <span class="nav-text"> SOP Management System (Checker)
+                        </span>
+                    </a>
+                </li>					
+				
+				 <br>	  
+				 
+				 
+				 	   <li>
+                  <a href="<%=request.getContextPath() + "/jsp/ChannelJourneyBank.jsp?&role="%><%=m_strrole%>" target="_blank">
+                       <i
+								class="fa fa-dashboard"></i>
+                        <span class="nav-text"> Channel Journey's
+                        </span>
+                    </a>
+                </li>	
+					
+					<br>
+					
+									 <br>	     
+				 
+				 
+				    <li>
+                    <a href="<%=request.getContextPath() + "/jsp/Dpg_Sys_Log.jsp"%>" target="_blank">
+                       <i
+								class="fa fa-dashboard"></i>
+                        <span class="nav-text"> DPG SYS LOG'S
+                        </span>
+                    </a>
+                </li>					
+				
+			
+                
+            </ul>
+	 <br>	
+				 <br>
+
+            <ul class="logout">
+                <li>
+                   <a href="<%=request.getContextPath() + "/login.action"%>">
+                         <i class="fa fa-power-off fa-2x"></i>
+                        <span class="nav-text">
+                            Logout
+                        </span>
+                    </a>
+                </li>  
+            </ul>
+        </nav>
+       
+  <div class="main" style="font-size: 50px; margin-top: 2%">
+	<span>W</span>
+	<span>E</span>
+	<span>L</span>
+	<span>C</span>
+	<span>O</span>
+	<span>M</span>
+	<span>E</span>
+	<span></span>
+	<span></span>
+	<div>
+	<span>T</span>
+	<span class="letter"></span>
+	<span>  </span>
+	</div>
+	
+	<div>
+	<span>E</span>
+	<span>I</span>
+	<span>S</span>
+	<span> </span>
+	<span>P</span>
+	<span>O</span>
+	<span>R</span>
+	<span>T</span>
+	<span>A</span>
+	<span>L</span>
+	</div>
+</div>
+
+<center>
+<div class="zoom" style="margin-top: 8%; width: 550px ">
+<img src="./images/Cybersecurity.png">
+ </div>
+ </center> 
+       <div class="footer">
+    <p class="font-italic text-center text-bottom" style="position:relative;  font-size: 15px; margin-top: 8%; font-weight: bolder; ">Designed and Developed by EIS SUPPORT TEAM </p>
+    </div> 
+  </body>
+    </html>
