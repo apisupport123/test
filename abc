@@ -1027,27 +1027,26 @@ org.apache.jasper.JasperException: /jsp/statMgmtDashboard.jsp (line: [18], colum
 
 
 <%--
-  EIS Portal — Shared Header Fragment
-  ✅ Sirf fragment — role check include karne wale page me hoga
-  ✅ Koi __role / sendRedirect nahi
-  ✅ Default DARK theme
-  ✅ Inline SVG icons
+  EIS Portal — Shared Header Fragment (Role-Router)
+  ✅ Admin/ModuleLead → header.jsp
+  ✅ EIS Bank         → Bankheader.jsp
+  ✅ Everyone else    → userheader.jsp (this file)
 --%>
 <%
- // Cache headers
+ // ✅ Cache headers
  response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0, private");
  response.setHeader("Pragma", "no-cache");
  response.setDateHeader("Expires", 0);
+ 
 %>
 
-<script src="<%=request.getContextPath()%>/js/jquery.min.js"></script>
 
+<%@page pageEncoding="UTF-8"%>
 <style>
 :root{
   --brand:#F86F03;
   --brand-2:#FF9A3D;
   --brand-light:#FFF4EC;
-  --brand-glow:rgba(248,111,3,.35);
 
   --ink:#0A0A0A;
   --muted:#6B7280;
@@ -1060,11 +1059,13 @@ org.apache.jasper.JasperException: /jsp/statMgmtDashboard.jsp (line: [18], colum
   --sidebar-hover:#F5F5F4;
   --sidebar-active:#FFF4EC;
   --topnav-bg:rgba(247,247,245,.85);
+  --hero-dark:#1A1A1A;
+  --hero-dark-2:#2A2A2A;
 
   --topnav-h:64px;
   --sidebar-w:260px;
 
-  --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
 }
 html[data-theme="dark"]{
   --ink:#F5F5F5;
@@ -1078,28 +1079,37 @@ html[data-theme="dark"]{
   --sidebar-hover:#1F1F1F;
   --sidebar-active:#1E1408;
   --topnav-bg:rgba(15,15,15,.85);
+  --hero-dark:#0B0B0B;
+  --hero-dark-2:#1A1A1A;
 }
 
 *{margin:0;padding:0;box-sizing:border-box}
-html,body{height:100%}
+
+html, body, button, input, select, textarea {
+  font-family: var(--font-stack);
+  font-weight: 700;
+  letter-spacing: -0.1px;
+}
 body{
-  font-family:var(--font-stack);
-  font-weight:700;
   background:var(--bg);
   color:var(--ink);
   -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
   transition:background .3s ease,color .3s ease;
 }
 .primary-nav,.hamburger,.menu,.overflow-container{display:none!important}
-h1,h2,h3,h4,h5,h6,strong,b{font-weight:800;letter-spacing:-.3px}
+
+h1, h2, h3, h4, h5, h6, strong, b {
+  font-weight: 800;
+  letter-spacing: -0.3px;
+}
 
 .icon-svg{
   width:16px;height:16px;
   display:inline-block;flex-shrink:0;
   stroke:currentColor;fill:none;
   stroke-width:2.2;
-  stroke-linecap:round;
-  stroke-linejoin:round;
+  stroke-linecap:round;stroke-linejoin:round;
 }
 
 /* ============ SIDEBAR ============ */
@@ -1127,11 +1137,11 @@ html.sb-collapsed .new-wrapper{margin-left:0}
   width:36px;height:36px;
   background:linear-gradient(135deg,var(--brand),var(--brand-2));
   border-radius:10px;
-  display:grid;place-items:center;color:#fff;font-size:.9rem;
+  display:grid;place-items:center;color:#fff;
   box-shadow:0 6px 16px -6px var(--brand);
   flex-shrink:0;
 }
-.sb-logo .icon-svg{width:18px;height:18px;stroke-width:2.6}
+.sb-logo .icon-svg{width:18px;height:18px}
 .sb-title{
   font-weight:900;font-size:.95rem;
   letter-spacing:-.3px;line-height:1.1;
@@ -1139,8 +1149,13 @@ html.sb-collapsed .new-wrapper{margin-left:0}
   text-transform:uppercase;
 }
 .sb-title small{
-  display:block;font-size:.68rem;font-weight:700;
-  color:var(--brand);letter-spacing:.6px;text-transform:uppercase;margin-top:2px;
+  display:block;
+  font-size:.68rem;
+  font-weight:700;
+  color:var(--muted);
+  letter-spacing:.6px;
+  text-transform:uppercase;
+  margin-top:2px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
 .sb-collapse-btn{
@@ -1161,7 +1176,6 @@ html.sb-collapsed .new-wrapper{margin-left:0}
   color:#fff;
 }
 
-/* HOME BUTTON */
 .sb-home-btn{
   display:flex;align-items:center;gap:10px;
   margin:12px 12px 4px 12px;
@@ -1169,7 +1183,8 @@ html.sb-collapsed .new-wrapper{margin-left:0}
   background:linear-gradient(135deg, var(--brand), var(--brand-2));
   color:#fff;
   border-radius:10px;
-  font-weight:800;font-size:.85rem;
+  font-weight:800;
+  font-size:.85rem;
   text-decoration:none;
   transition:all .2s ease;
   box-shadow:0 6px 18px -6px var(--brand);
@@ -1196,10 +1211,17 @@ html.sb-collapsed .new-wrapper{margin-left:0}
   border:1px solid transparent;
   border-radius:9px;
   color:var(--ink);
-  font-family:inherit;font-size:.82rem;font-weight:700;outline:none;
+  font-family:inherit;
+  font-size:.82rem;
+  font-weight:700;
+  outline:none;
   transition:all .2s ease;
 }
-.sb-search-box input::placeholder{color:var(--muted);opacity:.7;font-weight:600}
+.sb-search-box input::placeholder{
+  color:var(--muted);
+  opacity:.7;
+  font-weight:600;
+}
 .sb-search-box input:focus{
   background:var(--card);
   border-color:var(--brand);
@@ -1212,15 +1234,23 @@ html.sb-collapsed .new-wrapper{margin-left:0}
 
 .sb-group{
   padding:14px 10px 6px;
-  font-size:.68rem;font-weight:800;
-  color:var(--muted);letter-spacing:1px;text-transform:uppercase;
+  font-size:.68rem;
+  font-weight:800;
+  color:var(--muted);
+  letter-spacing:1px;
+  text-transform:uppercase;
 }
 .sb-item{
   display:flex;align-items:center;gap:11px;
-  padding:9px 10px;border-radius:8px;
-  font-size:.83rem;font-weight:700;
-  color:var(--sidebar-text);text-decoration:none;
-  transition:all .15s ease;cursor:pointer;line-height:1.35;
+  padding:9px 10px;
+  border-radius:8px;
+  font-size:.83rem;
+  font-weight:700;
+  color:var(--sidebar-text);
+  text-decoration:none;
+  transition:all .15s ease;
+  cursor:pointer;
+  line-height:1.35;
 }
 .sb-item:hover{
   background:var(--sidebar-hover);
@@ -1231,19 +1261,23 @@ html.sb-collapsed .new-wrapper{margin-left:0}
   display:grid;place-items:center;
   background:var(--sidebar-hover);
   border-radius:7px;
-  color:var(--sidebar-text);flex-shrink:0;
+  color:var(--sidebar-text);
+  flex-shrink:0;
   transition:all .15s ease;
 }
 .sb-item .sb-icon .icon-svg{width:14px;height:14px;stroke-width:2.4}
 .sb-item:hover .sb-icon{
-  background:var(--brand-light);color:var(--brand);
+  background:var(--brand-light);
+  color:var(--brand);
 }
 html[data-theme="dark"] .sb-item:hover .sb-icon{
-  background:rgba(248,111,3,.15);color:var(--brand);
+  background:rgba(248,111,3,.15);
+  color:var(--brand);
 }
 .sb-item.sb-active{
   background:var(--sidebar-active);
-  color:var(--brand);font-weight:800;
+  color:var(--brand);
+  font-weight:800;
 }
 .sb-item.sb-active .sb-icon{background:var(--brand);color:#fff}
 .sb-item.sb-logout{color:#E53935;margin-top:6px}
@@ -1283,7 +1317,9 @@ html[data-theme="dark"] .sb-item.sb-logout .sb-icon{background:rgba(229,57,53,.1
 }
 .tn-menu-btn .icon-svg{width:16px;height:16px;stroke-width:2.4}
 .tn-menu-btn:hover{
-  background:var(--brand);border-color:var(--brand);color:#fff;
+  background:var(--brand);
+  border-color:var(--brand);
+  color:#fff;
 }
 .tn-search{
   flex:1;max-width:520px;height:40px;
@@ -1291,8 +1327,12 @@ html[data-theme="dark"] .sb-item.sb-logout .sb-icon{background:rgba(229,57,53,.1
   border:1px solid var(--line);
   border-radius:11px;padding:0 14px;
   display:flex;align-items:center;gap:10px;
-  color:var(--muted);font-size:.83rem;cursor:pointer;
-  transition:all .2s ease;font-family:inherit;
+  color:var(--muted);
+  font-size:.83rem;
+  font-weight:700;
+  cursor:pointer;
+  transition:all .2s ease;
+  font-family:inherit;
 }
 .tn-search .icon-svg{width:14px;height:14px}
 .tn-search:hover{
@@ -1302,9 +1342,13 @@ html[data-theme="dark"] .sb-item.sb-logout .sb-icon{background:rgba(229,57,53,.1
 .tn-search .kbd{
   margin-left:auto;
   display:inline-flex;align-items:center;
-  padding:3px 7px;background:var(--sidebar-hover);
-  border:1px solid var(--line);border-radius:6px;
-  font-size:.68rem;font-weight:800;color:var(--muted);
+  padding:3px 7px;
+  background:var(--sidebar-hover);
+  border:1px solid var(--line);
+  border-radius:6px;
+  font-size:.68rem;
+  font-weight:800;
+  color:var(--muted);
 }
 .tn-right{margin-left:auto;display:flex;align-items:center;gap:10px}
 .tn-btn{
@@ -1313,7 +1357,8 @@ html[data-theme="dark"] .sb-item.sb-logout .sb-icon{background:rgba(229,57,53,.1
   background:transparent;border:1px solid var(--line);
   border-radius:9px;color:var(--ink);
   cursor:pointer;
-  transition:all .15s ease;text-decoration:none;
+  transition:all .15s ease;
+  text-decoration:none;
 }
 .tn-btn .icon-svg{width:16px;height:16px}
 .tn-btn:hover{background:var(--brand);border-color:var(--brand);color:#fff}
@@ -1321,7 +1366,9 @@ html[data-theme="dark"] .sb-item.sb-logout .sb-icon{background:rgba(229,57,53,.1
   width:36px;height:36px;border-radius:50%;
   background:linear-gradient(135deg,var(--brand),var(--brand-2));
   display:grid;place-items:center;color:#fff;
-  font-weight:900;font-size:.85rem;cursor:pointer;
+  font-weight:900;
+  font-size:.85rem;
+  cursor:pointer;
   border:2px solid var(--card);
   box-shadow:0 2px 8px rgba(0,0,0,.08);
 }
@@ -1357,7 +1404,6 @@ html.sb-open .sb-overlay{opacity:1;pointer-events:auto}
 <script>
 (function(){
   try{
-    // Default DARK theme
     var t = localStorage.getItem('eis-theme');
     if(!t){
       t = 'dark';
@@ -1365,10 +1411,22 @@ html.sb-open .sb-overlay{opacity:1;pointer-events:auto}
     }
     document.documentElement.setAttribute('data-theme', t);
 
-    // Sidebar state
-    var sbClosed = localStorage.getItem('eis-sidebar-closed');
-    if (sbClosed === 'true') {
+    var tabName = window.name || '';
+
+    if (tabName === 'eis-original-tab') {
+      // original tab — panel OPEN
+    } else if (tabName === 'eis-sub-tab') {
       document.documentElement.classList.add('sb-collapsed');
+    } else {
+      var freshLogin = sessionStorage.getItem('eis-fresh-login');
+
+      if (freshLogin === '1') {
+        sessionStorage.removeItem('eis-fresh-login');
+        window.name = 'eis-original-tab';
+      } else {
+        document.documentElement.classList.add('sb-collapsed');
+        window.name = 'eis-sub-tab';
+      }
     }
   }catch(e){}
 })();
@@ -1380,7 +1438,6 @@ html.sb-open .sb-overlay{opacity:1;pointer-events:auto}
   String ctx = request.getContextPath();
 %>
 
-<!-- ============ SIDEBAR ============ -->
 <aside class="sidebar" id="sidebar">
   <div class="sb-head">
     <div class="sb-logo">
@@ -1388,14 +1445,13 @@ html.sb-open .sb-overlay{opacity:1;pointer-events:auto}
     </div>
     <div class="sb-title">
       EIS Portal
-      <small><%=m_strrole != null ? m_strrole : "User"%></small>
+      <small><%=m_strrole != null ? m_strrole : "Guest"%></small>
     </div>
     <button class="sb-collapse-btn" onclick="toggleSidebar()" title="Hide sidebar">
       <svg class="icon-svg" viewBox="0 0 24 24"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg>
     </button>
   </div>
 
-  <!-- HOME BUTTON -->
   <a class="sb-home-btn" href="<%=ctx%>/userhomescreen.action" title="Go to Home">
     <svg class="icon-svg" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
     <span>Home</span>
@@ -1427,10 +1483,6 @@ html.sb-open .sb-overlay{opacity:1;pointer-events:auto}
       <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M4.93 4.93a10 10 0 0 0 0 14.14M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M8.46 8.46a5 5 0 0 0 0 7.07M15.54 8.46a5 5 0 0 1 0 7.07"/><circle cx="12" cy="12" r="1.5"/></svg></span>
       <span>EIS Command Center</span>
     </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/PortStatus.jsp" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg></span>
-      <span>Service Status</span>
-    </a>
     <a class="sb-item animals" href="<%=ctx%>/AtmCardServlet" target="_blank" rel="noopener noreferrer">
       <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></span>
       <span>ATM IP Port Portal</span>
@@ -1446,6 +1498,14 @@ html.sb-open .sb-overlay{opacity:1;pointer-events:auto}
     <a class="sb-item animals" href="<%=ctx%>/jsp/AutoRefreshExpSysServiceWise.jsp" target="_blank" rel="noopener noreferrer">
       <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>
       <span>EXP SYS Service Wise</span>
+    </a>
+    <a class="sb-item animals" href="<%=ctx%>/jsp/A_Exp_ServerWise_Count_Cron.jsp" target="_blank" rel="noopener noreferrer">
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>
+      <span>EXP Server Wise Count</span>
+    </a>
+    <a class="sb-item animals" href="<%=ctx%>/jsp/A_Sys_ServerWise_Count_Cron.jsp" target="_blank" rel="noopener noreferrer">
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>
+      <span>SYS Server Wise Count</span>
     </a>
 
     <div class="sb-group">Deployments</div>
@@ -1463,6 +1523,10 @@ html.sb-open .sb-overlay{opacity:1;pointer-events:auto}
     </a>
 
     <div class="sb-group">Logs &amp; Data</div>
+    <a class="sb-item animals" href="<%=ctx%>/jsp/PortStatus.jsp" target="_blank" rel="noopener noreferrer">
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg></span>
+      <span>Service Status</span>
+    </a>
     <a class="sb-item animals" href="<%=ctx%>/jsp/Dpg_Sys_Log.jsp" target="_blank" rel="noopener noreferrer">
       <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>
       <span>SYS Logs</span>
