@@ -1,27 +1,63 @@
-<%@page contentType="text/html" pageEncoding="UTF-8"%>
-<%
- // Session check
- if(session == null || session.getAttribute("role") == null) {
-     response.sendRedirect(request.getContextPath() + "/login.action");
-     return;
- }
+package com.action;
 
- // Role check — galat role ko sahi header pe bhejo
- String __role = (String) session.getAttribute("role");
- if ("EIS Bank".equals(__role)) {
-     response.sendRedirect(request.getContextPath() + "/jsp/Bankheader.jsp");
-     return;
- }
- if ("Admin".equals(__role) || "ModuleLead".equals(__role)) {
-     response.sendRedirect(request.getContextPath() + "/jsp/header.jsp");
-     return;
- }
+import org.apache.struts2.ActionSupport;
+import org.apache.struts2.ServletActionContext;
 
- // Cache headers
- response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0, private");
- response.setHeader("Pragma", "no-cache");
- response.setDateHeader("Expires", 0);
-%>
-<!doctype html>
-<html>
-...
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+
+@SuppressWarnings("serial")
+public class UserHomeScreenAction extends ActionSupport {
+
+    @Override
+    public String execute() throws Exception {
+        HttpServletRequest request = ServletActionContext.getRequest();
+        HttpServletResponse response = ServletActionContext.getResponse();
+        HttpSession session = request.getSession(false);
+
+        // ============================================================
+        // ✅ STEP 1: Session check — login nahi hai toh login page
+        // ============================================================
+        if (session == null || session.getAttribute("role") == null
+                || ((String) session.getAttribute("role")).isEmpty()) {
+            System.out.println(">>> UserHomeScreenAction: No valid session — redirecting to login");
+            response.sendRedirect(request.getContextPath() + "/login.action");
+            return null;
+        }
+
+        String role = (String) session.getAttribute("role");
+        System.out.println(">>> UserHomeScreenAction: Role = " + role);
+
+        // ============================================================
+        // ✅ STEP 2: EIS Bank → Bankheader.jsp pe redirect
+        // ============================================================
+        if ("EIS Bank".equals(role)) {
+            System.out.println(">>> UserHomeScreenAction: Banker detected — redirecting to Bankheader");
+            response.sendRedirect(request.getContextPath() + "/jsp/Bankheader.jsp");
+            return null;
+        }
+
+        // ============================================================
+        // ✅ STEP 3: Admin / ModuleLead → header.jsp pe redirect
+        // ============================================================
+        if ("Admin".equals(role) || "ModuleLead".equals(role)) {
+            System.out.println(">>> UserHomeScreenAction: Admin detected — redirecting to admin header");
+            response.sendRedirect(request.getContextPath() + "/jsp/header.jsp");
+            return null;
+        }
+
+        // ============================================================
+        // ✅ STEP 4: Strict cache headers (user ke liye)
+        // ============================================================
+        response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0, private");
+        response.setHeader("Pragma", "no-cache");
+        response.setHeader("Expires", "0");
+
+        // ============================================================
+        // ✅ STEP 5: Normal user → UserHomeScreen.jsp render hoga
+        // ============================================================
+        System.out.println(">>> UserHomeScreenAction: User role — rendering UserHomeScreen.jsp");
+        return "success";
+    }
+}
