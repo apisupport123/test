@@ -1,453 +1,709 @@
-<%@ page language="java" contentType="text/html; charset=ISO-8859-1"
-pageEncoding="ISO-8859-1"%>
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%
+ response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0, private");
+ response.setHeader("Pragma", "no-cache");
+ response.setDateHeader("Expires", 0);
+
+ // ---- AUTH GUARD ----
+ String __role = (session != null) ? (String) session.getAttribute("role") : null;
+ if (__role == null || __role.trim().isEmpty()) {
+     response.sendRedirect(request.getContextPath() + "/login.action");
+     return;
+ }
+%>
+<%@ page import="com.jdbc.DBUtilityAuto"%>
+<%@ page import="java.sql.*"%>
+
+<%
+  // ---- Session se username ----
+  String user = (session != null) ? (String) session.getAttribute("username") : null;
+  if (user == null || user.trim().isEmpty()) {
+      user = request.getParameter("m_stradminUserName");
+  }
+  if (user == null) user = "";
+
+  // ---- DB se team nikalna ----
+  String m_strrole = null;
+  Connection con = null;
+  PreparedStatement ps = null;
+  ResultSet rs = null;
+  try {
+      con = DBUtilityAuto.getReportDBConnection();
+      String query = "select TEAM from a_module_leads where lower(username)=lower(?)";
+      ps = con.prepareStatement(query);
+      ps.setString(1, user);
+      rs = ps.executeQuery();
+      if (rs.next()) {
+          m_strrole = rs.getString("TEAM");
+      }
+  } catch (Exception e) {
+      e.printStackTrace();
+  } finally {
+      if (rs != null) try { rs.close(); } catch (Exception e) {}
+      if (ps != null) try { ps.close(); } catch (Exception e) {}
+      if (con != null) try { con.close(); } catch (Exception e) {}
+  }
+
+  // Agar team nahi mili, role hi use karo
+  if (m_strrole == null || m_strrole.trim().isEmpty()) {
+      m_strrole = __role;
+  }
+
+  // ✅ Session me save karo (refresh pe mile)
+  if (m_strrole != null && !m_strrole.trim().isEmpty()) {
+      session.setAttribute("m_strrole", m_strrole);
+  }
+  if (user != null && !user.trim().isEmpty()) {
+      session.setAttribute("user", user);
+      session.setAttribute("username", user);
+  }
+
+  String ctx = request.getContextPath();
+%>
+
+
+-----------------------------------------------------------------------
+
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ page import="java.time.LocalDate" %>
 <%@ page import="java.time.format.DateTimeFormatter" %>
+<%
+    // ---- AUTH GUARD ----
+    String __role = (session != null) ? (String) session.getAttribute("role") : null;
+    if (__role == null || __role.trim().isEmpty()) {
+        response.sendRedirect(request.getContextPath() + "/login.action");
+        return;
+    }
+%>
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="ISO-8859-1">
-<title>Upload Excel Roster</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Roster Management</title>
 <script src="../js/Atmbootstrap.min.js"></script>
+
 <script type="text/javascript">
 function insertservice() {
-var month=document.getElementById('myMonth').value;
-var fileInput= document.querySelector('input[type="file"]');
-if (!month) {
-	        alert('Please select a month.');
-return; // Prevent submission if no month is selected
-	    }
-if(!fileInput.files.length){
-		 alert('Please select a file to upload.');
-return;
-	 }
-	document.forms[0].action = '<%=request.getContextPath() + "/ExcelRosterAction"%>';
-document.forms[0].submit();
-<%-- document.forms[0].action = '<%=request.getContextPath() + "/ExcelRosterAction.action"%>';
-	  document.forms[0].submit(); --%>
-	}
+    var month = document.getElementById('myMonth').value;
+    var fileInput = document.querySelector('input[type="file"]');
+    if (!month) {
+        alert('Please select a month.');
+        return;
+    }
+    if (!fileInput.files.length) {
+        alert('Please select a file to upload.');
+        return;
+    }
+    document.forms[0].action = '<%=request.getContextPath() + "/ExcelRosterAction"%>';
+    document.forms[0].submit();
+}
+
+function viewDate() {
+    var month = document.getElementById('myViewMonth').value;
+    if (!month) {
+        alert('Please select a month.');
+        return;
+    }
+    document.forms[1].action = '<%=request.getContextPath() + "/jsp/testRoster.jsp"%>';
+    document.forms[1].submit();
+}
+
+function updateRoster() {
+    var month = document.getElementById('updateViewMonth').value;
+    if (!month) {
+        alert('Please select a month.');
+        return;
+    }
+    document.forms[2].action = '<%=request.getContextPath() + "/jsp/UpdateMonthlyRoster.jsp"%>';
+    document.forms[2].submit();
+}
+
+function viewRocDate() {
+    var month = document.getElementById('myRocMonthView').value;
+    if (!month) {
+        alert('Please select a month.');
+        return;
+    }
+    document.forms[3].action = '<%=request.getContextPath() + "/jsp/ROCRosterView.jsp"%>';
+    document.forms[3].submit();
+}
+
+function openNewRocPage() {
+    window.location.href = '<%=request.getContextPath() + "/jsp/ROCRoster.jsp"%>';
+}
 </script>
+
 <style>
-@import url('../css/eisroster2.css');
-body {
-margin: 0;
-padding: 0;
-box-sizing: border-box;
-font-family: 'Montserrat', sans-serif;
-}
-.form-container {
-/* width: 100vw;
-	height: 100vh; */
-/* background-color: black; */
-/* display: flex; */
-justify-content: center;
-align-items: center;
-}
-.upload-files-container {
-background-color: #f7fff7;
-width: 420px;
-padding: 30px 60px;
-border-radius: 40px;
-display: flex;
-align-items: center;
-justify-content: center;
-flex-direction: column;
-box-shadow: rgba(0, 0, 0, 0.24) 0px 10px 20px, rgba(0, 0, 0, 0.28) 0px 6px 6px;
-}
-.drag-file-area {
-border: 2px dashed #7b2cbf;
-border-radius: 40px;
-margin: 10px 0 15px;
-padding: 30px 50px;
-width: 350px;
-text-align: center;
-}
-.drag-file-area .upload-icon {
-font-size: 50px;
-}
-.drag-file-area h3 {
-font-size: 26px;
-margin: 15px 0;
-}
-.drag-file-area label {
-font-size: 19px;
-}
-.drag-file-area label .browse-files-text {
-color: #7b2cbf;
-font-weight: bolder;
-cursor: pointer;
-}
-.browse-files span {
-position: relative;
-top: -25px;
-}
-.default-file-input {
-opacity: 0;
-}
-.cannot-upload-message {
-background-color: #ffc6c4;
-font-size: 17px;
-display: flex;
-align-items: center;
-margin: 5px 0;
-padding: 5px 10px 5px 30px;
-border-radius: 5px;
-color: #BB0000;
-display: none;
-}
-@keyframes fadeIn {
-0% {opacity: 0;}
-100% {opacity: 1;}
-}
-.cannot-upload-message span, .upload-button-icon {
-padding-right: 10px;
+:root{
+  --ml-primary:#7C3AED;
+  --ml-primary-2:#8B5CF6;
+  --ml-primary-light:#F3E8FF;
+  --ml-accent:#EC4899;
+  --ml-accent-2:#F472B6;
+  --ml-accent-light:#FCE7F3;
+
+  --ink:#0A0A0A;
+  --muted:#6B7280;
+  --line:#EAEAEA;
+  --bg:#F5F7FA;
+  --card:#FFFFFF;
+
+  --success:#16A34A;
+  --danger:#DC2626;
+  --warning:#F59E0B;
+
+  --radius:20px;
+  --radius-sm:12px;
+
+  --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
-.cannot-upload-message span, .upload-button-icon {
-padding-right: 10px;
-}
-.cannot-upload-message span:last-child {
-padding-left: 20px;
-cursor: pointer;
-}
-.file-block {
-color: #f7fff7;
-background-color: #7b2cbf;
-transition: all 1s;
-width: 390px;
-position: relative;
-display: none;
-flex-direction: row;
-justify-content: space-between;
-align-items: center;
-margin: 10px 0 15px;
-padding: 10px 20px;
-border-radius: 25px;
-cursor: pointer;
-}
-.file-info {
-display: flex;
-align-items: center;
-font-size: 15px;
-}
-.file-icon {
-margin-right: 10px;
-}
-.file-name, .file-size {
-padding: 0 3px;
-}
-.remove-file-icon {
-cursor: pointer;
-}
-.progress-bar {
-display: flex;
-position: absolute;
-bottom: 0;
-left: 4.5%;
-width: 0;
-height: 5px;
-border-radius: 25px;
-background-color: #4BB543;
-}
-.upload-button {
-font-family: 'Montserrat';
-background-color: #7b2cbf;
-color: #f7fff7;
-display: flex;
-align-items: center;
-font-size: 18px;
-border: none;
-border-radius: 20px;
-margin: 10px;
-padding: 7.5px 50px;
-cursor: pointer;
+html[data-theme="dark"]{
+  --ink:#F5F5F5;
+  --muted:#9CA3AF;
+  --line:#272727;
+  --bg:#0A0614;
+  --card:#130A24;
 }
 
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  font-family:var(--font-stack);
+  font-weight:600;
+  background:var(--bg);
+  color:var(--ink);
+  -webkit-font-smoothing:antialiased;
+  min-height:100vh;
+  transition:background .3s ease,color .3s ease;
+}
+a{color:inherit;text-decoration:none}
 
-/* Float four columns side by side */
-.column {
-float: left;
-padding: 0 30px;
+/* ============ PAGE HEADER ============ */
+.page-head{
+  background:
+    radial-gradient(circle at top right, rgba(236,72,153,.15), transparent 60%),
+    radial-gradient(circle at bottom left, rgba(124,58,237,.2), transparent 60%),
+    linear-gradient(135deg, #1A0B2E 0%, #2D1854 100%);
+  border-radius:0 0 var(--radius) var(--radius);
+  padding:40px 40px 50px;
+  margin-bottom:32px;
+  color:#fff;
+  position:relative;
+  overflow:hidden;
 }
-
-/* Remove extra left and right margins, due to padding */
-.row {
-margin: 0 -5px;
-display: flex;
-align-items: center;
-justify-content: center;
-margin-top: 10%;
-flex-wrap: wrap;  /* ADDED - allows cards to wrap on smaller screens */
+.page-head::before{
+  content:"";
+  position:absolute;top:-150px;right:-150px;
+  width:450px;height:450px;border-radius:50%;
+  background:radial-gradient(circle, rgba(124,58,237,.4) 0%, transparent 70%);
 }
-
-/* Clear floats after the columns */
-.row:after {
-content: "";
-display: table;
-clear: both;
+.page-head-inner{
+  max-width:1400px;
+  margin:0 auto;
+  position:relative;z-index:2;
 }
-
-/* Responsive columns - UPDATED for better auto-adjustment */
-@media screen and (max-width: 1200px) {
-.column {
-width: 50%;  /* 2 cards per row on medium screens */
-padding: 0 15px;
-margin-bottom: 20px;
+.page-head .badge-line{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:6px 14px;
+  background:rgba(236,72,153,.2);
+  border:1px solid rgba(236,72,153,.4);
+  border-radius:999px;
+  font-size:.7rem;font-weight:800;
+  color:var(--ml-accent-2);letter-spacing:1px;
+  text-transform:uppercase;margin-bottom:16px;
 }
+.page-head .badge-line .dot{
+  width:6px;height:6px;border-radius:50%;
+  background:var(--ml-accent-2);
+  box-shadow:0 0 8px var(--ml-accent-2);
+  animation:pulse 2s ease-in-out infinite;
 }
-
-@media screen and (max-width: 768px) {
-.column {
-width: 100%;  /* 1 card per row on mobile/tablet */
-display: block;
-margin-bottom: 20px;
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.page-head h1{
+  font-size:2.4rem;font-weight:900;
+  letter-spacing:-1px;line-height:1.15;margin-bottom:10px;
 }
-.row {
-margin-top: 5%;  /* reduced top margin on mobile */
+.page-head h1 .gradient{
+  background:linear-gradient(135deg,var(--ml-primary-2),var(--ml-accent-2));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
 }
-.upload-files-container {
-width: 100%;  /* make container fluid */
-padding: 20px 30px;
-}
-.drag-file-area {
-width: 90%;  /* make drag area fluid */
-padding: 20px 20px;
-}
-}
-
-@media screen and (max-width: 480px) {
-.upload-files-container {
-padding: 15px 20px;
-}
-.drag-file-area {
-width: 95%;
-padding: 15px 10px;
-}
-.upload-button {
-padding: 7.5px 30px;
-font-size: 14px;
-}
-}
-
-/* Style the counter cards */
-.card {
-text-align: center;
+.page-head p{
+  font-size:.95rem;color:rgba(255,255,255,.75);
+  font-weight:500;max-width:620px;line-height:1.6;
 }
 
-.button-container{
-display: flex;
-justify-content: flex-end;
-margin-right: 10px;
+/* ============ CARDS GRID ============ */
+.roster-grid{
+  max-width:1400px;
+  margin:0 auto;
+  padding:0 32px 60px;
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(340px, 1fr));
+  gap:24px;
 }
 
-.button{
-padding: 10px 20px;
-border: none;
-border-radius:5px;
-cursor: pointer;
-margin-right: 10px;
+.roster-card{
+  background:var(--card);
+  border:1.5px solid var(--line);
+  border-radius:var(--radius);
+  padding:32px 28px;
+  display:flex;flex-direction:column;gap:20px;
+  transition:all .3s cubic-bezier(.4,0,.2,1);
+  position:relative;overflow:hidden;
+  box-shadow:0 2px 12px rgba(0,0,0,.03);
+}
+.roster-card::before{
+  content:"";
+  position:absolute;top:0;left:0;right:0;height:4px;
+  background:linear-gradient(90deg,var(--ml-primary),var(--ml-accent));
+  opacity:0;transition:opacity .3s ease;
+}
+.roster-card:hover::before{opacity:1}
+.roster-card:hover{
+  transform:translateY(-6px);
+  border-color:var(--ml-primary);
+  box-shadow:0 20px 48px -16px rgba(124,58,237,.35);
+}
+
+.card-icon-wrap{
+  width:64px;height:64px;border-radius:18px;
+  background:linear-gradient(135deg,var(--ml-primary-light),var(--ml-accent-light));
+  display:grid;place-items:center;
+  color:var(--ml-primary);
+  transition:all .3s ease;
+  flex-shrink:0;
+}
+html[data-theme="dark"] .card-icon-wrap{
+  background:linear-gradient(135deg,rgba(124,58,237,.2),rgba(236,72,153,.2));
+  color:var(--ml-primary-2);
+}
+.roster-card:hover .card-icon-wrap{
+  transform:scale(1.1) rotate(-5deg);
+  background:linear-gradient(135deg,var(--ml-primary),var(--ml-accent));
+  color:#fff;
+}
+.card-icon-wrap svg{
+  width:32px;height:32px;
+  stroke:currentColor;fill:none;
+  stroke-width:2;stroke-linecap:round;stroke-linejoin:round;
+}
+
+.card-title{
+  font-size:1.25rem;font-weight:900;
+  color:var(--ink);letter-spacing:-.4px;
+  line-height:1.2;
+}
+.card-desc{
+  font-size:.85rem;color:var(--muted);
+  font-weight:500;line-height:1.5;
+  margin-top:4px;
+}
+
+.form-group{
+  display:flex;flex-direction:column;gap:8px;
+}
+.form-label{
+  font-size:.72rem;font-weight:800;
+  text-transform:uppercase;letter-spacing:.8px;
+  color:var(--muted);
+}
+.form-control{
+  width:100%;
+  padding:12px 16px;
+  background:var(--bg);
+  border:1.5px solid var(--line);
+  border-radius:var(--radius-sm);
+  color:var(--ink);
+  font-family:inherit;
+  font-size:.9rem;
+  font-weight:600;
+  outline:none;
+  transition:all .2s ease;
+}
+.form-control:focus{
+  border-color:var(--ml-primary);
+  background:var(--card);
+  box-shadow:0 0 0 4px rgba(124,58,237,.12);
+}
+
+.file-input-wrap{
+  position:relative;
+}
+.file-input-wrap input[type="file"]{
+  width:100%;
+  padding:12px 16px;
+  background:var(--bg);
+  border:2px dashed var(--line);
+  border-radius:var(--radius-sm);
+  color:var(--ink);
+  font-family:inherit;
+  font-size:.82rem;
+  font-weight:600;
+  cursor:pointer;
+  outline:none;
+  transition:all .2s ease;
+}
+.file-input-wrap input[type="file"]:hover{
+  border-color:var(--ml-primary);
+  background:var(--ml-primary-light);
+}
+html[data-theme="dark"] .file-input-wrap input[type="file"]:hover{
+  background:rgba(124,58,237,.1);
+}
+.file-input-wrap input[type="file"]::file-selector-button{
+  margin-right:14px;
+  padding:8px 18px;
+  border:none;
+  border-radius:8px;
+  background:var(--ml-primary);
+  color:#fff;
+  font-family:inherit;
+  font-weight:700;
+  font-size:.78rem;
+  cursor:pointer;
+  transition:all .2s ease;
+  text-transform:uppercase;
+  letter-spacing:.4px;
+}
+.file-input-wrap input[type="file"]::file-selector-button:hover{
+  background:var(--ml-accent);
+}
+
+.btn{
+  width:100%;
+  padding:14px 20px;
+  border:none;
+  border-radius:var(--radius-sm);
+  font-family:inherit;
+  font-size:.88rem;
+  font-weight:800;
+  letter-spacing:.4px;
+  text-transform:uppercase;
+  cursor:pointer;
+  transition:all .25s ease;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  position:relative;
+  overflow:hidden;
+}
+.btn svg{
+  width:18px;height:18px;
+  stroke:currentColor;fill:none;
+  stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;
+}
+.btn-primary{
+  background:linear-gradient(135deg,var(--ml-primary),var(--ml-accent));
+  color:#fff;
+  box-shadow:0 8px 22px -8px var(--ml-primary);
+}
+.btn-primary:hover{
+  transform:translateY(-2px);
+  box-shadow:0 14px 32px -8px var(--ml-primary);
+}
+.btn-primary:active{transform:translateY(0)}
+
+.btn-sample{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:10px 16px;
+  background:var(--ml-primary-light);
+  color:var(--ml-primary);
+  border-radius:var(--radius-sm);
+  font-size:.78rem;
+  font-weight:800;
+  text-transform:uppercase;
+  letter-spacing:.4px;
+  text-decoration:none;
+  transition:all .2s ease;
+  border:1.5px solid transparent;
+}
+html[data-theme="dark"] .btn-sample{
+  background:rgba(124,58,237,.15);
+  color:var(--ml-primary-2);
+}
+.btn-sample:hover{
+  background:var(--ml-primary);
+  color:#fff;
+  border-color:var(--ml-primary);
+}
+.btn-sample svg{
+  width:14px;height:14px;
+  stroke:currentColor;fill:none;
+  stroke-width:2.4;
+}
+
+.alert{
+  max-width:1400px;
+  margin:0 auto 24px;
+  padding:16px 22px;
+  border-radius:var(--radius-sm);
+  font-size:.88rem;
+  font-weight:600;
+  display:flex;
+  align-items:flex-start;
+  gap:12px;
+  animation:slideDown .4s ease;
+}
+@keyframes slideDown{
+  from{opacity:0;transform:translateY(-10px);}
+  to{opacity:1;transform:translateY(0);}
+}
+.alert-error{
+  background:#FEE2E2;
+  color:#991B1B;
+  border:1px solid #FCA5A5;
+}
+.alert-success{
+  background:#DCFCE7;
+  color:#166534;
+  border:1px solid #86EFAC;
+}
+.alert svg{
+  width:20px;height:20px;
+  flex-shrink:0;
+  stroke:currentColor;fill:none;
+  stroke-width:2.4;
+  margin-top:1px;
+}
+
+.footer-note{
+  max-width:1400px;
+  margin:0 auto;
+  padding:0 32px 40px;
+  text-align:center;
+  color:var(--muted);
+  font-size:.78rem;
+  font-weight:600;
+}
+
+@media (max-width:768px){
+  .page-head{padding:32px 20px 40px;border-radius:0 0 16px 16px;}
+  .page-head h1{font-size:1.6rem;}
+  .page-head p{font-size:.85rem;}
+  .roster-grid{padding:0 16px 40px;grid-template-columns:1fr;gap:16px;}
+  .roster-card{padding:24px 20px;}
+  .card-icon-wrap{width:52px;height:52px;border-radius:14px;}
+  .card-icon-wrap svg{width:26px;height:26px;}
+  .card-title{font-size:1.1rem;}
 }
 </style>
-
-<script>
-function viewDate () {
-var month=document.getElementById('myViewMonth').value;
-if (!month) {
-	        alert('Please select a month.');
-return; // Prevent submission if no month is selected
-	    }
-	  document.forms[1].action = '<%=request.getContextPath() + "/jsp/testRoster.jsp"%>';
-	  document.forms[1].submit();
-}
-
-function updateRoster () {
-var month=document.getElementById('updateViewMonth').value;
-if (!month) {
-	        alert('Please select a month.');
-return; // Prevent submission if no month is selected
-	    }
-	  document.forms[2].action = '<%=request.getContextPath() + "/jsp/UpdateMonthlyRoster.jsp"%>';
-	  document.forms[2].submit();
-}
-
-function viewRocDate () {
-var month=document.getElementById('myRocMonthView').value;
-if (!month) {
-	        alert('Please select a month.');
-return; // Prevent submission if no month is selected
-	    }
-	  document.forms[3].action = '<%=request.getContextPath() + "/jsp/ROCRosterView.jsp"%>';
-	  document.forms[3].submit();
-}
-
-window.onload= function(){
-//location.replace("/EISPortal/jsp/NightChecklistTable.jsp")
-	  	 // location.replace('<%=request.getContextPath() + "/NightShiftChecklistAction"%>');
-	window.history.replaceState({},'View NightChecklist', '<%=request.getContextPath() + "/jsp/ExcelRoster.jsp"%>');
-} ;
-
-function openNewRocPage(){
-	  window.location.href='<%=request.getContextPath() + "/jsp/ROCRoster.jsp"%>';
-	}
-</script>
 </head>
 <body>
+
 <%
-		    session = request.getSession();
-		    String m_strrole = (String)session.getAttribute("m_strrole");
-//String m_strrole = (String)request.getParameter("role");
-if(m_strrole==null){
-				m_strrole = request.getParameter("role");
-if(m_strrole != null){
-					session.setAttribute("role", m_strrole);
-				}
-			}
-/* session.setAttribute("role", request.getParameter("m_strRole"));
-			session.setAttribute("role", m_strrole); */
-			System.out.println("Role:-"+m_strrole);
-			String username=null;
-if("Manager".equals(m_strrole)){
-				username="Manager";
-			}else if("Team Lead".equals(m_strrole)){
-				username="TeamLead";
-			}else{
-			username=(String)session.getAttribute("user");
-			}
-if(username==null || username.trim().isEmpty()){
-				username = request.getParameter("user");
-if(username != null){
-					session.setAttribute("user", username);
-				}
-			}
-			System.out.println("User name: "+ username);
-			LocalDate currentDate = LocalDate.now();
-			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM");
-			String currentMonth = currentDate.format(formatter);
+    session = request.getSession();
+
+    // ============ ROLE RESOLUTION (multi-fallback) ============
+    String m_strrole = (String) session.getAttribute("m_strrole");
+    if (m_strrole == null || m_strrole.trim().isEmpty()) {
+        m_strrole = (String) session.getAttribute("role");
+    }
+    if (m_strrole == null || m_strrole.trim().isEmpty()) {
+        m_strrole = request.getParameter("role");
+    }
+    if (m_strrole == null || m_strrole.trim().isEmpty()) {
+        m_strrole = request.getParameter("m_strrole");
+    }
+    if (m_strrole == null) m_strrole = "";
+
+    session.setAttribute("m_strrole", m_strrole);
+    session.setAttribute("role", m_strrole);
+    System.out.println("Role:-" + m_strrole);
+
+    // ============ USERNAME RESOLUTION ============
+    String username = null;
+    if ("Manager".equals(m_strrole)) {
+        username = "Manager";
+    } else if ("Team Lead".equals(m_strrole)) {
+        username = "TeamLead";
+    } else {
+        username = (String) session.getAttribute("user");
+        if (username == null || username.trim().isEmpty()) {
+            username = (String) session.getAttribute("username");
+        }
+        if (username == null || username.trim().isEmpty()) {
+            username = request.getParameter("user");
+        }
+    }
+    if (username == null) username = "";
+
+    session.setAttribute("user", username);
+    session.setAttribute("username", username);
+    System.out.println("User name: " + username);
+
+    LocalDate currentDate = LocalDate.now();
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM");
+    String currentMonth = currentDate.format(formatter);
+
+    String errorMessage = (String) request.getAttribute("errorMessage");
+    String successMessage = (String) request.getAttribute("successMessage");
 %>
-<center>
-<div id="notification-container" style="position:fixed; width:100%; top: 20px; z-index: 9999;">
-<%
-String errorMessage = (String) request.getAttribute("errorMessage");
-String successMessage = (String) request.getAttribute("successMessage");
-if (errorMessage != null) {
-%>
-<div class="alert-box" style="background-color: #ffcccc; color: #cc0000; padding: 15px; border-radius: 5px; margin: 0 auto 10px auto; max-width: 500px; max-height: 150px; overflow-y: auto; box-shadow: 0 2px 5px rgba(0,0,0,0.2); text-align: left;">
-<strong style="font-size: 16px;">Upload Error:</strong><br>
-<%= errorMessage.replace("\n", "<br>") %>
+
+<!-- ============ PAGE HEADER ============ -->
+<section class="page-head">
+  <div class="page-head-inner">
+    <div class="badge-line">
+      <span class="dot"></span>
+      <%= m_strrole != null && !m_strrole.trim().isEmpty() ? m_strrole : "Roster" %> Management
+    </div>
+    <h1>Team <span class="gradient">Roster</span> Hub</h1>
+    <p>Upload, view, and manage your team's monthly roster &mdash; all in one place. Select a month and choose an action to get started.</p>
+  </div>
+</section>
+
+<!-- ============ ALERTS ============ -->
+<% if (errorMessage != null) { %>
+<div class="alert alert-error">
+  <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+  <div><strong>Upload Error:</strong> <%= errorMessage.replace("\n", "<br>") %></div>
 </div>
 <% } %>
 
 <% if (successMessage != null) { %>
-<div class="alert-box" style="background-color: #ccffcc; color: #006600; padding: 15px; border-radius: 5px; margin: 0 auto 10px auto; max-width: 400px; max-height: 150px; overflow-y: auto; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
-<strong>Success:</strong> <%= successMessage %>
+<div class="alert alert-success">
+  <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+  <div><strong>Success:</strong> <%= successMessage %></div>
 </div>
 <% } %>
 
-</div>
-</center> 	
+<!-- ============ CARDS GRID ============ -->
+<div class="roster-grid">
 
+  <!-- ============ CARD 1: UPLOAD ============ -->
+  <form action="<%=request.getContextPath()%>/ExcelRosterAction" method="post" enctype="multipart/form-data">
+    <div class="roster-card">
+      <div class="card-icon-wrap">
+        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      </div>
+      <div>
+        <div class="card-title">Upload Roster</div>
+        <div class="card-desc">Upload the monthly roster Excel file for your team.</div>
+      </div>
 
+      <div class="form-group">
+        <label class="form-label" for="myMonth">Select Month</label>
+        <input type="month" id="myMonth" name="myMonth" class="form-control" required>
+      </div>
 
-<!-- <div class="button-container">
-<input type="button" class="button" onclick="openNewRocPage();"  value="Switch To ROC Roster" style="background-color: #ebe310; color: black; position: relative; ">
-</div> -->
-<div class="row">		
-<form action="<%=request.getContextPath()%>/ExcelRosterAction" method="post" enctype="multipart/form-data">
-<div class="column ">
-<div class="card">
-<link href="../css/eisroster.css" rel="stylesheet" >
-<div class="form-container"  enctype='multipart/form-data'>
-<div class="upload-files-container">
-<div class="drag-file-area">
-<span class="material-icons-outlined upload-icon" style="height: 108px;"> file_upload </span> <br>
-<a href='<%=request.getContextPath() + "/XMLFile/Roster_Format.xlsx"%>' class="upload-button" style="width: 200px; text-decoration: none; position: relative; margin-top: -35px;">RosterSampleFormat</a> <br>
-<span style="font-weight: bold;" class="dynamic-message">Select Month</span>
-<input type="month" id="myMonth" name="myMonth" required="required" >
-<h3 class="dynamic-message"> Select Roster .XML File </h3>
-<label class="label" style="text-align: center;"> <span class="browse-files">
-<input type="file" name="file" style="font-size: large; position: relative; left: 60px;" accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"  /> </span> </label>
-</div>
-<input type="hidden" id="<%=m_strrole%>" name ="m_strroles" value ="<%=m_strrole%>">
-<input type="hidden" id="<%=username%>" name ="username" value ="<%=username%>">
-<button name="button" type="button" name="action" class="upload-button" onclick="insertservice()"> Upload </button>
-</div>
-</div>
-</div>
+      <div class="form-group">
+        <label class="form-label">Select Roster File (.xlsx)</label>
+        <div class="file-input-wrap">
+          <input type="file" name="file" accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required>
+        </div>
+      </div>
+
+      <a href="<%=request.getContextPath()%>/XMLFile/Roster_Format.xlsx" class="btn-sample">
+        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download Sample Format
+      </a>
+
+      <input type="hidden" name="m_strroles" value="<%=m_strrole%>">
+      <input type="hidden" name="username" value="<%=username%>">
+      <button type="button" class="btn btn-primary" onclick="insertservice()">
+        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Upload Roster
+      </button>
+    </div>
+  </form>
+
+  <!-- ============ CARD 2: VIEW ============ -->
+  <form>
+    <div class="roster-card">
+      <div class="card-icon-wrap">
+        <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      </div>
+      <div>
+        <div class="card-title">View Roster</div>
+        <div class="card-desc">View uploaded roster for any selected month.</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="myViewMonth">Select Month</label>
+        <input type="month" id="myViewMonth" name="myViewMonth" class="form-control" required value="<%= currentMonth %>">
+      </div>
+
+      <input type="hidden" name="m_strroles" value="<%=m_strrole%>">
+      <input type="hidden" name="username" value="<%=username%>">
+      <button type="button" class="btn btn-primary" onclick="viewDate()">
+        <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        View Uploaded Roster
+      </button>
+    </div>
+  </form>
+
+  <!-- ============ CARD 3: UPDATE ============ -->
+  <form>
+    <div class="roster-card">
+      <div class="card-icon-wrap">
+        <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      </div>
+      <div>
+        <div class="card-title">Update Roster</div>
+        <div class="card-desc">Modify or update an existing monthly roster.</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="updateViewMonth">Select Month</label>
+        <input type="month" id="updateViewMonth" name="myViewMonth" class="form-control" required value="<%= currentMonth %>">
+      </div>
+
+      <input type="hidden" name="m_strroles" value="<%=m_strrole%>">
+      <input type="hidden" name="username" value="<%=username%>">
+      <button type="button" class="btn btn-primary" onclick="updateRoster()">
+        <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Update Roster
+      </button>
+    </div>
+  </form>
+
+  <!-- ============ CARD 4: ROC (only for Event Management) ============ -->
+  <% if ("Event Management".equals(m_strrole)) { %>
+  <form>
+    <div class="roster-card">
+      <div class="card-icon-wrap">
+        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 16l2 2 4-4"/></svg>
+      </div>
+      <div>
+        <div class="card-title">View ROC Roster</div>
+        <div class="card-desc">Access the ROC roster for the selected month.</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="myRocMonthView">Select Month</label>
+        <input type="month" id="myRocMonthView" name="myRocMonthView" class="form-control" required value="<%= currentMonth %>">
+      </div>
+
+      <button type="button" class="btn btn-primary" onclick="viewRocDate()">
+        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        View ROC Roster
+      </button>
+    </div>
+  </form>
+  <% } %>
+
 </div>
 
-</form>
-<form  >
-<div class="column " >
-<div class="card">
-<div >
-<div class="upload-files-container">
-<div class="drag-file-area">
-<h3 class="dynamic-message"><img src="../images/5469.jpg" style="width: 70%; height: 60%;"></h3>
-<span style="font-weight: bold;" class="dynamic-message">Select Month</span>
-<input type="month" id="myViewMonth" name="myViewMonth" required="required" value="<%= currentMonth %>">
-</div>
-<input type="hidden" id="<%=m_strrole%>" name ="m_strroles" value ="<%=m_strrole%>">
-<input type="hidden" id="<%=username%>" name ="username" value ="<%=username%>">
-<button type="button" class="upload-button" onclick="viewDate()"> View Uploaded Roster </button>
-</div>
-</div>
-</div>
+<!-- ============ FOOTER ============ -->
+<div class="footer-note">
+  &copy; <%= java.time.Year.now() %> EIS Portal &middot; Team: <strong><%= m_strrole %></strong> &middot; User: <strong><%= username %></strong>
 </div>
 
-</form>
-
-<form  >
-<div class="column " >
-<div class="card">
-<div >
-<div class="upload-files-container">
-<div class="drag-file-area">
-<h3 class="dynamic-message"><img src="../images/5469.jpg" style="width: 70%; height: 60%;"></h3>
-<span style="font-weight: bold;" class="dynamic-message">Select Month</span>
-<input type="month" id="updateViewMonth" name="myViewMonth" required="required" value="<%= currentMonth %>">
-</div>
-<input type="hidden" id="<%=m_strrole%>" name ="m_strroles" value ="<%=m_strrole%>">
-<input type="hidden" id="<%=username%>" name ="username" value ="<%=username%>">
-<button type="button" class="upload-button" onclick="updateRoster()"> Update Roster </button>
-</div>
-</div>
-</div>
-</div>
-
-</form>
-<% if("Event Management".equals(m_strrole)){ %>
-<form  >
-<div class="column " >
-<div class="card">
-<div >
-<div class="upload-files-container">
-<div class="drag-file-area">
-<h3 class="dynamic-message"><img src="../images/5469.jpg" style="width: 70%; height: 60%;"></h3>
-<span style="font-weight: bold;" class="dynamic-message">Select Month</span>
-<input type="month" id="myRocMonthView" name="myRocMonthView" required="required" value="<%= currentMonth %>">
-</div>
-<%--  <input type="hidden" id="<%=m_strrole%>" name ="m_strroles" value ="<%=m_strrole%>"> --%>
-<button type="button" class="upload-button" onclick="viewRocDate()"> View ROC Roster </button>
-</div>
-</div>
-</div>
-</div>
-
-</form>
-<%} %>
 <script>
+// Auto-hide alerts after 30s
 setTimeout(function() {
-var container = document.getElementById('notification-container');
-if (container) {
-// Smooth fade out
-container.style.transition = "opacity 0.5s ease";
-container.style.opacity = "0";
-// Remove from DOM after fade
-setTimeout(function() {
-container.style.display = 'none';
-}, 500);
-}
-}, 30000); // 30000ms = 30 seconds
+  var alerts = document.querySelectorAll('.alert');
+  alerts.forEach(function(a) {
+    a.style.transition = 'opacity .5s ease';
+    a.style.opacity = '0';
+    setTimeout(function(){ a.style.display = 'none'; }, 500);
+  });
+}, 30000);
 </script>
-</div>
+
 </body>
 </html>
