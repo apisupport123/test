@@ -417,7 +417,7 @@ html[data-theme="dark"] .roster-grid thead th.is-weekend{background:#3A1D0A; col
 .empty p{font-size:12px;}
 
 /* ============================================================
-   CUSTOM DROPDOWN — side-anchored, below badge
+   CUSTOM DROPDOWN
    ============================================================ */
 .dropdown-menu{
   position:fixed;
@@ -478,6 +478,7 @@ html[data-theme="dark"] .roster-grid thead th.is-weekend{background:#3A1D0A; col
   max-height:340px;
   overflow-y:auto;
   padding-right:2px;
+  overscroll-behavior:contain;
 }
 .dd-grid::-webkit-scrollbar{width:5px;}
 .dd-grid::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:3px;}
@@ -990,16 +991,17 @@ var SHIFT_OPTIONS = [
   { value:'NA',            label:'NA — Not Assigned',  cls:'na',        short:'—' }
 ];
 
-var activeRow = null, activeDay = null;
+var activeRow = null, activeDay = null, activeBtnEl = null;
 
 /* ============================================================
-   OPEN DROPDOWN — side-anchored to badge
+   OPEN DROPDOWN — anchored to badge
    ============================================================ */
 function openDropdown(ev, rowIdx, dayIdx, currentCls, currentLabel) {
   ev.stopPropagation();
 
   activeRow = rowIdx;
   activeDay = dayIdx;
+  activeBtnEl = ev.currentTarget;
 
   var dd = document.getElementById('dropdownMenu');
   var grid = document.getElementById('ddGrid');
@@ -1007,7 +1009,6 @@ function openDropdown(ev, rowIdx, dayIdx, currentCls, currentLabel) {
   var sel = document.getElementById('sel_' + rowIdx + '_' + dayIdx);
   var currentValue = sel ? sel.value : 'Morning';
 
-  // Build items
   var html = '';
   for (var k = 0; k < SHIFT_OPTIONS.length; k++) {
     var o = SHIFT_OPTIONS[k];
@@ -1021,24 +1022,38 @@ function openDropdown(ev, rowIdx, dayIdx, currentCls, currentLabel) {
   }
   grid.innerHTML = html;
 
-  // Show to measure size
+  // Show to measure
   dd.classList.add('open');
 
-  // Calculate position — anchored to badge
-  var btn = ev.currentTarget;
-  var rect = btn.getBoundingClientRect();
+  // Position
+  positionDropdown();
+
+  // Scroll to selected
+  setTimeout(function(){
+    var selItem = grid.querySelector('.dd-item.selected');
+    if (selItem) selItem.scrollIntoView({ block: 'nearest', behavior: 'instant' });
+  }, 10);
+}
+
+/* ============================================================
+   POSITION DROPDOWN relative to active button
+   ============================================================ */
+function positionDropdown() {
+  if (!activeBtnEl) return;
+  var dd = document.getElementById('dropdownMenu');
+  if (!dd.classList.contains('open')) return;
+
+  var rect = activeBtnEl.getBoundingClientRect();
   var ddRect = dd.getBoundingClientRect();
 
   var top = rect.bottom + 6;
   var left = rect.left;
 
-  // If not enough space below, flip above
   if (top + ddRect.height > window.innerHeight - 10) {
     top = rect.top - ddRect.height - 6;
     if (top < 10) top = 10;
   }
 
-  // If overflow right, shift left
   if (left + ddRect.width > window.innerWidth - 10) {
     left = window.innerWidth - ddRect.width - 10;
   }
@@ -1046,18 +1061,13 @@ function openDropdown(ev, rowIdx, dayIdx, currentCls, currentLabel) {
 
   dd.style.top = top + 'px';
   dd.style.left = left + 'px';
-
-  // Scroll to selected item
-  setTimeout(function(){
-    var selItem = grid.querySelector('.dd-item.selected');
-    if (selItem) selItem.scrollIntoView({ block: 'nearest', behavior: 'instant' });
-  }, 10);
 }
 
 function closeDropdown() {
   document.getElementById('dropdownMenu').classList.remove('open');
   activeRow = null;
   activeDay = null;
+  activeBtnEl = null;
 }
 
 function selectShift(ev, rowIdx, dayIdx, value, cls, shortLabel) {
@@ -1090,11 +1100,21 @@ document.addEventListener('keydown', function(e){
   if (e.key === 'Escape') closeDropdown();
 });
 
-/* Close on scroll/resize — clean behavior */
-window.addEventListener('scroll', function(){
-  closeDropdown();
+/* ============================================================
+   ON SCROLL — do NOT close, just reposition
+   ============================================================ */
+window.addEventListener('scroll', function(e){
+  var dd = document.getElementById('dropdownMenu');
+  if (!dd.classList.contains('open')) return;
+
+  // If scroll happens inside dropdown, ignore
+  if (dd.contains(e.target)) return;
+
+  // Reposition dropdown to follow badge
+  positionDropdown();
 }, true); // capture phase to catch all scrolls
 
+/* On resize — just close */
 window.addEventListener('resize', function(){
   closeDropdown();
 });
