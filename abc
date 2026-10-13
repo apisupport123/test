@@ -6,13 +6,11 @@
 <%@ page import="com.jdbc.DBUtilityAuto"%>
 
 <%
-    // Auth guard
     String __role = (session != null) ? (String) session.getAttribute("role") : null;
     if (__role == null || __role.trim().isEmpty()) {
         response.sendRedirect(request.getContextPath() + "/login.action");
         return;
     }
-
     String m_strrole = (String) session.getAttribute("m_strrole");
     if (m_strrole == null || m_strrole.trim().isEmpty()) m_strrole = (String) session.getAttribute("role");
     if (m_strrole == null || m_strrole.trim().isEmpty()) m_strrole = request.getParameter("m_strroles");
@@ -41,7 +39,6 @@
         selectedYear = String.valueOf(currentYear);
         selectedMonth = String.format("%02d", currentMonth);
     }
-
     int year = Integer.parseInt(selectedYear);
     int month = Integer.parseInt(selectedMonth);
     int noOfDays = YearMonth.of(year, month).lengthOfMonth();
@@ -52,6 +49,8 @@
     String nameOfMonth = monthNames[month];
     String sortMonth = monthShort[month];
     String sort_MonthYear = sortMonth + "_" + year;
+
+    LocalDate today = LocalDate.now(ZoneId.of("Asia/Kolkata"));
 %>
 
 <!DOCTYPE html>
@@ -59,58 +58,65 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Roster &mdash; <%= nameOfMonth %> <%= year %></title>
+<title><%= m_strrole %> Roster &mdash; <%= nameOfMonth %> <%= year %></title>
 
 <style>
 :root{
-  --bg-0:#0D1117;
-  --bg-1:#161B22;
-  --bg-2:#1C2128;
-  --bg-3:#21262D;
-  --line:#30363D;
-  --line-2:#3D444D;
+  /* Surfaces — warm dark, not black */
+  --bg-0:#0F1419;
+  --bg-1:#1A1F2E;
+  --bg-2:#232838;
+  --bg-3:#2D3346;
+  --bg-hover:#323A50;
+  --line:#2F3648;
+  --line-2:#3D4458;
+  --line-hi:#4A5268;
 
-  --ink:#F0F6FC;
-  --ink-2:#C9D1D9;
-  --ink-3:#8B949E;
-  --ink-4:#6E7681;
+  /* Ink */
+  --ink:#F5F7FA;
+  --ink-2:#C5CBD8;
+  --ink-3:#8B92A5;
+  --ink-4:#5E6678;
 
-  /* Shift colors — bold, readable */
-  --morning:#F5C518;
-  --morning-bg:rgba(245,197,24,0.14);
-  --general:#8B949E;
-  --general-bg:rgba(139,148,158,0.12);
-  --afternoon:#F0883E;
-  --afternoon-bg:rgba(240,136,62,0.14);
-  --night:#58A6FF;
-  --night-bg:rgba(88,166,255,0.16);
+  /* Shift colors — bright BG, dark TEXT for readability */
+  --morning:#FFB800;
+  --morning-bg:#FFD966;
+  --morning-text:#5C3D00;
+  --general:#8892A6;
+  --general-bg:#B0B8C8;
+  --general-text:#1F2430;
+  --afternoon:#FF8A3D;
+  --afternoon-bg:#FFB380;
+  --afternoon-text:#5C2600;
+  --night:#4A90E2;
+  --night-bg:#8FC0F5;
+  --night-text:#00254D;
   --weekoff:#A371F7;
-  --weekoff-bg:rgba(163,113,247,0.16);
-  --leave:#F85149;
-  --leave-bg:rgba(248,81,73,0.14);
+  --weekoff-bg:#C9A8FA;
+  --weekoff-text:#2D0E5C;
+  --leave:#FF4757;
+  --leave-bg:#FF9CA5;
+  --leave-text:#5C0008;
   --flexi:#FF7B72;
-  --flexi-bg:rgba(255,123,114,0.14);
-  --holiday:#3FB950;
-  --holiday-bg:rgba(63,185,80,0.14);
-  --na:#484F58;
-  --na-bg:rgba(72,79,88,0.2);
+  --flexi-bg:#FFB0AA;
+  --flexi-text:#5C0F08;
+  --holiday:#2ECC71;
+  --holiday-bg:#8FE5AF;
+  --holiday-text:#0A4D22;
+  --na:#5E6678;
+  --na-bg:#3D4458;
+  --na-text:#8B92A5;
 
-  --accent:#58A6FF;
-  --accent-2:#1F6FEB;
-
-  --r-sm:6px;
-  --r-md:10px;
-  --r-lg:14px;
+  --accent:#4A90E2;
+  --accent-2:#3B7DD8;
+  --success:#2ECC71;
 
   --ff: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --ff-mono: 'SF Mono', 'JetBrains Mono', Consolas, monospace;
 }
 
 *{margin:0;padding:0;box-sizing:border-box}
-html,body{
-  height:100%;
-  overflow:hidden;
-}
+html,body{height:100%;overflow:hidden}
 body{
   font-family:var(--ff);
   background:var(--bg-0);
@@ -118,95 +124,81 @@ body{
   -webkit-font-smoothing:antialiased;
   font-size:14px;
   font-weight:500;
-  line-height:1.4;
+  line-height:1.5;
 }
-
 button{font-family:inherit;cursor:pointer}
 
-/* ============================================================
-   APP — FULL SCREEN SHELL
-   ============================================================ */
-.app{
-  display:flex;
-  flex-direction:column;
-  height:100vh;
-  overflow:hidden;
-}
+.app{display:flex;flex-direction:column;height:100vh;overflow:hidden}
 
 /* ============================================================
-   HEADER BAR
+   HEADER
    ============================================================ */
 .header{
-  background:linear-gradient(180deg, #1F6FEB 0%, #1A5FC7 100%);
+  background:linear-gradient(135deg, #1A1F2E 0%, #232838 100%);
   padding:16px 28px;
   display:flex;
   align-items:center;
   gap:24px;
-  border-bottom:2px solid #0D47A1;
-  box-shadow:0 4px 16px rgba(0,0,0,0.4);
+  border-bottom:1px solid var(--line-2);
+  box-shadow:0 2px 12px rgba(0,0,0,0.3);
   flex-shrink:0;
   position:relative;
   z-index:100;
 }
-.header-title{
-  display:flex;
-  align-items:center;
-  gap:14px;
-  flex-shrink:0;
-}
+.header-title{display:flex;align-items:center;gap:14px;flex-shrink:0}
 .header-logo{
-  width:48px;height:48px;
-  background:rgba(255,255,255,0.15);
-  border:2px solid rgba(255,255,255,0.3);
-  border-radius:12px;
+  width:52px;height:52px;
+  background:linear-gradient(135deg, #4A90E2, #A371F7);
+  border-radius:14px;
   display:grid;place-items:center;
   color:#fff;
+  box-shadow:0 8px 24px -6px rgba(74,144,226,0.6);
   flex-shrink:0;
 }
-.header-logo svg{width:26px;height:26px;stroke:#fff;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.header-logo svg{width:28px;height:28px;stroke:#fff;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
 .header-text h1{
-  font-size:24px;
+  font-size:22px;
   font-weight:800;
   color:#fff;
-  letter-spacing:-0.5px;
-  line-height:1.1;
+  letter-spacing:-0.4px;
+  line-height:1.15;
 }
 .header-text p{
   font-size:13px;
   font-weight:600;
-  color:rgba(255,255,255,0.8);
-  margin-top:3px;
+  color:var(--ink-3);
+  margin-top:4px;
   letter-spacing:0.2px;
 }
 .header-spacer{flex:1}
 
-.header-stats{
-  display:flex;
-  gap:10px;
-  flex-shrink:0;
-}
+.header-stats{display:flex;gap:10px;flex-shrink:0}
 .hstat{
-  padding:8px 16px;
-  background:rgba(0,0,0,0.25);
-  border:1px solid rgba(255,255,255,0.15);
-  border-radius:10px;
+  padding:10px 18px;
+  background:var(--bg-0);
+  border:1px solid var(--line-2);
+  border-radius:12px;
   text-align:center;
-  min-width:80px;
+  min-width:90px;
 }
 .hstat-val{
-  font-size:20px;
-  font-weight:800;
+  font-size:22px;
+  font-weight:900;
   color:#fff;
   line-height:1;
   font-variant-numeric:tabular-nums;
+  letter-spacing:-0.5px;
 }
+.hstat-val.cyan{color:#4A90E2}
+.hstat-val.green{color:#2ECC71}
+.hstat-val.purple{color:#A371F7}
 .hstat-lbl{
   font-size:10px;
-  font-weight:700;
-  color:rgba(255,255,255,0.7);
+  font-weight:800;
+  color:var(--ink-3);
   text-transform:uppercase;
-  letter-spacing:1px;
-  margin-top:4px;
+  letter-spacing:1.2px;
+  margin-top:5px;
 }
 
 /* ============================================================
@@ -216,7 +208,7 @@ button{font-family:inherit;cursor:pointer}
   background:var(--bg-1);
   padding:14px 28px;
   display:flex;
-  align-items:center;
+  align-items:flex-end;
   gap:16px;
   border-bottom:1px solid var(--line);
   flex-shrink:0;
@@ -224,88 +216,86 @@ button{font-family:inherit;cursor:pointer}
   position:relative;
   z-index:99;
 }
-
-.field{
-  display:flex;
-  flex-direction:column;
-  gap:4px;
-}
+.field{display:flex;flex-direction:column;gap:6px}
 .field label{
   font-size:10px;
   font-weight:800;
   color:var(--ink-3);
   text-transform:uppercase;
-  letter-spacing:1px;
+  letter-spacing:1.2px;
 }
 .field select,
 .field input{
   background:var(--bg-3);
   border:1px solid var(--line-2);
-  border-radius:var(--r-sm);
-  padding:9px 14px;
+  border-radius:8px;
+  padding:10px 14px;
   color:var(--ink);
   font-family:inherit;
   font-size:14px;
   font-weight:700;
   outline:none;
   transition:all .15s;
-  min-width:120px;
+  min-width:130px;
   cursor:pointer;
 }
 .field select:hover,
-.field input:hover{
-  border-color:var(--ink-4);
-}
+.field input:hover{border-color:var(--line-hi)}
 .field select:focus,
 .field input:focus{
   border-color:var(--accent);
-  box-shadow:0 0 0 3px rgba(88,166,255,0.15);
+  box-shadow:0 0 0 3px rgba(74,144,226,0.2);
 }
 
 .btn{
-  padding:10px 20px;
+  padding:11px 22px;
   border:none;
-  border-radius:var(--r-sm);
+  border-radius:8px;
   font-size:13px;
   font-weight:800;
-  letter-spacing:0.4px;
+  letter-spacing:0.5px;
   text-transform:uppercase;
   transition:all .15s;
   display:inline-flex;
   align-items:center;
-  gap:8px;
+  gap:9px;
+  font-family:inherit;
 }
 .btn svg{
-  width:15px;height:15px;
+  width:16px;height:16px;
   stroke:currentColor;fill:none;
   stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;
 }
 .btn-primary{
-  background:var(--accent-2);
+  background:linear-gradient(135deg, #4A90E2, #3B7DD8);
   color:#fff;
+  box-shadow:0 6px 18px -4px rgba(74,144,226,0.5);
 }
-.btn-primary:hover{background:#388BFD;transform:translateY(-1px)}
+.btn-primary:hover{
+  transform:translateY(-1px);
+  box-shadow:0 10px 26px -4px rgba(74,144,226,0.7);
+}
 .btn-success{
-  background:#238636;
+  background:linear-gradient(135deg, #2ECC71, #27AE60);
   color:#fff;
+  box-shadow:0 6px 18px -4px rgba(46,204,113,0.5);
 }
-.btn-success:hover{background:#2EA043;transform:translateY(-1px)}
+.btn-success:hover{
+  transform:translateY(-1px);
+  box-shadow:0 10px 26px -4px rgba(46,204,113,0.7);
+}
 .btn-ghost{
   background:var(--bg-3);
   border:1px solid var(--line-2);
   color:var(--ink-2);
 }
-.btn-ghost:hover{background:var(--bg-2);border-color:var(--ink-4);color:var(--ink)}
+.btn-ghost:hover{background:var(--bg-hover);border-color:var(--line-hi);color:var(--ink)}
 
 .toolbar-spacer{flex:1}
 
-.search-box{
-  position:relative;
-  flex-shrink:0;
-}
+.search-box{position:relative;flex-shrink:0}
 .search-box svg{
-  position:absolute;
-  left:12px;top:50%;
+  position:absolute;left:14px;top:50%;
   transform:translateY(-50%);
   width:16px;height:16px;
   stroke:var(--ink-3);fill:none;stroke-width:2.2;
@@ -314,21 +304,21 @@ button{font-family:inherit;cursor:pointer}
 .search-box input{
   background:var(--bg-3);
   border:1px solid var(--line-2);
-  border-radius:var(--r-sm);
-  padding:10px 14px 10px 38px;
+  border-radius:8px;
+  padding:11px 14px 11px 42px;
   color:var(--ink);
   font-family:inherit;
   font-size:13px;
   font-weight:600;
   outline:none;
-  width:280px;
+  width:300px;
   transition:all .15s;
 }
 .search-box input::placeholder{color:var(--ink-4);font-weight:500}
 .search-box input:focus{
   border-color:var(--accent);
-  box-shadow:0 0 0 3px rgba(88,166,255,0.15);
-  width:320px;
+  box-shadow:0 0 0 3px rgba(74,144,226,0.2);
+  width:340px;
 }
 
 /* ============================================================
@@ -336,10 +326,10 @@ button{font-family:inherit;cursor:pointer}
    ============================================================ */
 .legend-bar{
   background:var(--bg-2);
-  padding:10px 28px;
+  padding:12px 28px;
   display:flex;
   align-items:center;
-  gap:14px;
+  gap:10px;
   border-bottom:1px solid var(--line);
   flex-shrink:0;
   flex-wrap:wrap;
@@ -351,30 +341,45 @@ button{font-family:inherit;cursor:pointer}
   font-weight:800;
   color:var(--ink-3);
   text-transform:uppercase;
-  letter-spacing:1px;
-  margin-right:4px;
+  letter-spacing:1.5px;
+  margin-right:6px;
 }
 .legend-chip{
   display:inline-flex;
   align-items:center;
-  gap:7px;
-  padding:5px 11px;
-  background:var(--bg-3);
+  gap:9px;
+  padding:6px 14px 6px 8px;
+  background:var(--bg-1);
   border:1px solid var(--line);
   border-radius:999px;
-  font-size:12px;
+  font-size:13px;
   font-weight:700;
   color:var(--ink-2);
   white-space:nowrap;
+  transition:all .15s;
 }
+.legend-chip:hover{border-color:var(--line-hi);background:var(--bg-3)}
 .legend-chip .sw{
-  width:12px;height:12px;
-  border-radius:4px;
+  width:22px;height:22px;
+  border-radius:6px;
+  display:grid;place-items:center;
+  font-size:11px;
+  font-weight:900;
+  font-family:var(--ff-mono);
   flex-shrink:0;
+  letter-spacing:-0.3px;
 }
+.sw.morning{background:var(--morning-bg);color:var(--morning-text)}
+.sw.general{background:var(--general-bg);color:var(--general-text)}
+.sw.afternoon{background:var(--afternoon-bg);color:var(--afternoon-text)}
+.sw.night{background:var(--night-bg);color:var(--night-text)}
+.sw.weekoff{background:var(--weekoff-bg);color:var(--weekoff-text)}
+.sw.leave{background:var(--leave-bg);color:var(--leave-text)}
+.sw.holiday{background:var(--holiday-bg);color:var(--holiday-text)}
+.sw.na{background:var(--na-bg);color:var(--na-text)}
 
 /* ============================================================
-   ROSTER AREA — FULL SCREEN TABLE
+   ROSTER AREA
    ============================================================ */
 .roster-wrap{
   flex:1;
@@ -385,11 +390,11 @@ button{font-family:inherit;cursor:pointer}
 .roster-wrap::-webkit-scrollbar{width:14px;height:14px}
 .roster-wrap::-webkit-scrollbar-track{background:var(--bg-1)}
 .roster-wrap::-webkit-scrollbar-thumb{
-  background:var(--line-2);
+  background:var(--line-hi);
   border-radius:7px;
   border:3px solid var(--bg-1);
 }
-.roster-wrap::-webkit-scrollbar-thumb:hover{background:var(--ink-4)}
+.roster-wrap::-webkit-scrollbar-thumb:hover{background:var(--accent)}
 .roster-wrap::-webkit-scrollbar-corner{background:var(--bg-1)}
 
 table.roster{
@@ -406,53 +411,51 @@ table.roster thead th{
   position:sticky;
   top:0;
   z-index:50;
-  background:var(--bg-2);
-  color:var(--ink-2);
-  font-size:12px;
+  background:linear-gradient(180deg, var(--bg-2), var(--bg-1));
+  color:var(--ink);
+  font-size:13px;
   font-weight:800;
-  letter-spacing:0.8px;
+  letter-spacing:0.5px;
   text-transform:uppercase;
-  padding:10px 8px;
+  padding:12px 8px;
   text-align:center;
-  border-bottom:2px solid var(--line-2);
+  border-bottom:1px solid var(--line-2);
   border-right:1px solid var(--line);
   white-space:nowrap;
-  min-width:48px;
-  height:44px;
+  min-width:54px;
+  height:48px;
 }
 table.roster thead tr:nth-child(2) th{
-  top:44px;
-  font-size:11px;
+  top:48px;
+  font-size:12px;
   font-weight:700;
-  color:var(--ink-3);
-  background:var(--bg-1);
-  height:36px;
-  min-width:48px;
-  letter-spacing:1px;
+  color:var(--ink-2);
+  background:var(--bg-2);
+  height:38px;
+  min-width:54px;
+  letter-spacing:1.2px;
 }
 
-/* Day header with weekend tint */
 table.roster thead th.weekend{
-  background:linear-gradient(180deg, rgba(163,113,247,0.18), rgba(163,113,247,0.08));
-  color:#D2B8FF;
+  background:linear-gradient(180deg, #3A2D5C, #2E234A);
+  color:#C9A8FA;
 }
 table.roster thead tr:nth-child(2) th.weekend{
-  background:linear-gradient(180deg, rgba(163,113,247,0.14), rgba(163,113,247,0.05));
-  color:#C4A5FF;
+  background:linear-gradient(180deg, #332851, #2A2046);
+  color:#B899F5;
 }
-
-/* Today */
 table.roster thead th.today{
-  background:linear-gradient(180deg, #F0883E, #DB6D28);
+  background:linear-gradient(180deg, #FF8A3D, #E67425);
   color:#fff;
-  box-shadow:0 0 0 2px #F0883E inset;
+  box-shadow:0 0 0 2px #FF8A3D inset;
 }
 table.roster thead th.today.weekend{
   background:linear-gradient(180deg, #A371F7, #8957E5);
+  color:#fff;
 }
 
 /* ============================================================
-   STICKY COLUMNS — Employee + Role
+   STICKY COLUMNS
    ============================================================ */
 table.roster th.col-emp,
 table.roster td.col-emp{
@@ -461,49 +464,46 @@ table.roster td.col-emp{
   z-index:20;
   background:var(--bg-1);
   text-align:left;
-  padding:8px 16px;
-  border-right:1px solid var(--line);
-  min-width:220px;
-  max-width:240px;
-  box-shadow:4px 0 8px -4px rgba(0,0,0,0.5);
+  padding:10px 18px;
+  border-right:1px solid var(--line-2);
+  min-width:240px;
+  max-width:260px;
+  box-shadow:6px 0 12px -6px rgba(0,0,0,0.6);
 }
 table.roster thead th.col-emp{
   z-index:55;
-  background:var(--bg-2);
+  background:linear-gradient(180deg, var(--bg-2), var(--bg-1));
   color:var(--ink);
-  font-size:12px;
-  padding:10px 16px;
+  font-size:13px;
+  padding:12px 18px;
 }
-table.roster tbody tr:hover td.col-emp{
-  background:var(--bg-2);
-}
+table.roster tbody tr:hover td.col-emp{background:var(--bg-2)}
 
 table.roster th.col-role,
 table.roster td.col-role{
   position:sticky;
-  left:220px;
+  left:240px;
   z-index:19;
   background:var(--bg-1);
   text-align:left;
-  padding:8px 12px;
-  border-right:2px solid var(--line-2);
-  min-width:100px;
-  max-width:120px;
-  box-shadow:4px 0 8px -4px rgba(0,0,0,0.5);
+  padding:10px 14px;
+  border-right:2px solid var(--line-hi);
+  min-width:110px;
+  max-width:130px;
+  box-shadow:6px 0 12px -6px rgba(0,0,0,0.6);
   font-size:12px;
-  font-weight:700;
-  color:var(--ink-3);
+  font-weight:800;
+  color:var(--ink-2);
   text-transform:uppercase;
-  letter-spacing:0.5px;
+  letter-spacing:0.6px;
 }
 table.roster thead th.col-role{
   z-index:54;
-  background:var(--bg-2);
+  background:linear-gradient(180deg, var(--bg-2), var(--bg-1));
   color:var(--ink);
+  font-size:13px;
 }
-table.roster tbody tr:hover td.col-role{
-  background:var(--bg-2);
-}
+table.roster tbody tr:hover td.col-role{background:var(--bg-2)}
 
 /* ============================================================
    TABLE BODY
@@ -515,225 +515,197 @@ table.roster tbody td{
   padding:0;
   text-align:center;
   vertical-align:middle;
-  height:52px;
+  height:58px;
   transition:background .1s;
 }
-
-/* Zebra stripes */
 table.roster tbody tr:nth-child(even) td:not(.col-emp):not(.col-role){
-  background:#11151B;
+  background:#131820;
 }
-
-/* Hover row */
 table.roster tbody tr:hover td:not(.col-emp):not(.col-role){
-  background:#1A2028;
+  background:#1D2430;
 }
-
-/* Weekend cells */
 table.roster tbody td.weekend:not(.col-emp):not(.col-role){
-  background:rgba(163,113,247,0.06);
+  background:rgba(163,113,247,0.08);
 }
 table.roster tbody tr:nth-child(even) td.weekend:not(.col-emp):not(.col-role){
-  background:rgba(163,113,247,0.09);
+  background:rgba(163,113,247,0.12);
 }
 table.roster tbody tr:hover td.weekend:not(.col-emp):not(.col-role){
-  background:rgba(163,113,247,0.14);
+  background:rgba(163,113,247,0.18);
 }
-
-/* Today column */
 table.roster tbody td.today:not(.col-emp):not(.col-role){
-  background:rgba(240,136,62,0.10);
-  box-shadow:inset 1px 0 0 rgba(240,136,62,0.4), inset -1px 0 0 rgba(240,136,62,0.4);
+  background:rgba(255,138,61,0.12);
+  box-shadow:inset 2px 0 0 rgba(255,138,61,0.5), inset -2px 0 0 rgba(255,138,61,0.5);
 }
 table.roster tbody tr:hover td.today:not(.col-emp):not(.col-role){
-  background:rgba(240,136,62,0.18);
+  background:rgba(255,138,61,0.22);
 }
 
 /* ============================================================
    EMPLOYEE CELL
    ============================================================ */
-.emp{
-  display:flex;
-  align-items:center;
-  gap:11px;
-}
+.emp{display:flex;align-items:center;gap:12px}
 .emp-av{
-  width:34px;height:34px;
-  border-radius:8px;
-  background:linear-gradient(135deg, #1F6FEB, #A371F7);
+  width:38px;height:38px;
+  border-radius:10px;
+  background:linear-gradient(135deg, #4A90E2, #A371F7);
   color:#fff;
-  font-weight:800;
-  font-size:12px;
+  font-weight:900;
+  font-size:14px;
   display:grid;place-items:center;
   flex-shrink:0;
   letter-spacing:0.3px;
-  border:1px solid rgba(255,255,255,0.1);
+  box-shadow:0 4px 12px -2px rgba(74,144,226,0.5);
+  border:1px solid rgba(255,255,255,0.15);
 }
 .emp-name{
   font-size:14px;
-  font-weight:700;
+  font-weight:800;
   color:var(--ink);
   line-height:1.2;
   overflow:hidden;
   text-overflow:ellipsis;
   white-space:nowrap;
-  max-width:150px;
+  max-width:160px;
+  letter-spacing:-0.2px;
 }
 .emp-id{
   font-size:11px;
-  font-weight:600;
+  font-weight:700;
   color:var(--ink-4);
-  margin-top:2px;
+  margin-top:3px;
   font-family:var(--ff-mono);
-  letter-spacing:0.3px;
+  letter-spacing:0.5px;
 }
 
 /* ============================================================
-   DAY CELL — BADGE + HIDDEN SELECT
+   DAY CELL — BIG BOLD BADGE
    ============================================================ */
 td.day{
   position:relative;
   cursor:pointer;
   padding:0 !important;
-  width:48px;
-  min-width:48px;
-  height:52px;
+  width:56px;
+  min-width:56px;
+  height:58px;
 }
 td.day .badge{
   position:absolute;
-  inset:7px;
+  inset:8px;
   display:grid;
   place-items:center;
-  border-radius:8px;
-  font-size:13px;
-  font-weight:800;
-  letter-spacing:0.2px;
-  transition:all .12s ease;
+  border-radius:10px;
+  font-size:15px;
+  font-weight:900;
+  letter-spacing:-0.3px;
+  transition:all .15s cubic-bezier(.4,0,.2,1);
   border:1.5px solid transparent;
   font-family:var(--ff-mono);
+  text-shadow:0 1px 0 rgba(255,255,255,0.3);
 }
 td.day:hover .badge{
-  transform:scale(1.08);
+  transform:scale(1.12);
   z-index:5;
-  box-shadow:0 6px 16px rgba(0,0,0,0.5);
+  box-shadow:0 8px 20px rgba(0,0,0,0.5);
+  border-color:rgba(255,255,255,0.3);
 }
 
 td.day .select-native{
   position:absolute;
   inset:0;
-  width:100%;
-  height:100%;
+  width:100%;height:100%;
   opacity:0;
   cursor:pointer;
-  appearance:none;
-  -webkit-appearance:none;
-  border:none;
-  background:transparent;
+  appearance:none;-webkit-appearance:none;
+  border:none;background:transparent;
   color:transparent;
   font-family:inherit;
   z-index:3;
 }
-td.day.picking{
-  z-index:30;
-}
-td.day.picking .badge{
-  opacity:0;
-}
+td.day.picking{z-index:30}
+td.day.picking .badge{opacity:0}
 td.day.picking .select-native{
   opacity:1;
   color:var(--ink);
   background:var(--bg-3);
   border:2px solid var(--accent);
-  border-radius:8px;
+  border-radius:10px;
   inset:4px;
   width:calc(100% - 8px);
   height:calc(100% - 8px);
-  padding:0 6px;
-  font-size:12px;
+  padding:0 8px;
+  font-size:13px;
   font-weight:700;
-  box-shadow:0 0 0 4px rgba(88,166,255,0.2), 0 8px 24px rgba(0,0,0,0.6);
+  box-shadow:0 0 0 5px rgba(74,144,226,0.25), 0 12px 32px rgba(0,0,0,0.7);
 }
 
 /* ============================================================
-   BADGE COLORS — BOLD & CLEAR
+   BADGE COLORS — BRIGHT BG + DARK TEXT (readable!)
    ============================================================ */
 .badge.Morning, .badge.WFHM, .badge.CCM{
   background:var(--morning-bg);
-  color:var(--morning);
-  border-color:rgba(245,197,24,0.5);
+  color:var(--morning-text);
 }
 .badge.General, .badge.Genral, .badge.WFHG, .badge.CCG{
   background:var(--general-bg);
-  color:var(--general);
-  border-color:rgba(139,148,158,0.4);
+  color:var(--general-text);
 }
 .badge.Afternoon, .badge.WFHA, .badge.CCA{
   background:var(--afternoon-bg);
-  color:var(--afternoon);
-  border-color:rgba(240,136,62,0.5);
+  color:var(--afternoon-text);
 }
 .badge.Night, .badge.WFHN, .badge.CCN{
   background:var(--night-bg);
-  color:var(--night);
-  border-color:rgba(88,166,255,0.5);
+  color:var(--night-text);
 }
 .badge.Weekoff{
   background:var(--weekoff-bg);
-  color:var(--weekoff);
-  border-color:rgba(163,113,247,0.5);
+  color:var(--weekoff-text);
 }
 .badge.SL, .badge.CL, .badge.EL, .badge.Leave{
   background:var(--leave-bg);
-  color:var(--leave);
-  border-color:rgba(248,81,73,0.5);
+  color:var(--leave-text);
 }
 .badge.FlexiLeave{
   background:var(--flexi-bg);
-  color:var(--flexi);
-  border-color:rgba(255,123,114,0.5);
+  color:var(--flexi-text);
 }
 .badge.HolidayLeave{
   background:var(--holiday-bg);
-  color:var(--holiday);
-  border-color:rgba(63,185,80,0.5);
+  color:var(--holiday-text);
 }
 .badge.NA, .badge.empty{
   background:var(--na-bg);
-  color:var(--na);
-  border-color:transparent;
+  color:var(--na-text);
 }
 
 /* ============================================================
-   SUMMARY COLUMNS (WO / Lv)
+   SUMMARY COLUMNS
    ============================================================ */
 table.roster th.col-sum,
 table.roster td.col-sum{
-  min-width:64px;
+  min-width:72px;
   font-family:var(--ff-mono);
-  font-size:14px;
-  font-weight:800;
+  font-size:16px;
+  font-weight:900;
 }
 table.roster th.col-sum{
   font-family:var(--ff);
-  font-size:11px;
+  font-size:12px;
   font-weight:800;
-  letter-spacing:1px;
+  letter-spacing:1.2px;
 }
-td.col-sum.wo{color:var(--weekoff)}
-td.col-sum.lv{color:var(--leave)}
+td.col-sum.wo{color:#C9A8FA;background:rgba(163,113,247,0.08)}
+td.col-sum.lv{color:#FF9CA5;background:rgba(255,71,87,0.08)}
 
 /* ============================================================
    AGGREGATE ROWS
    ============================================================ */
 tr.agg td{
   background:var(--bg-2) !important;
-  border-top:2px solid var(--line-2);
+  border-top:2px solid var(--line-hi);
   border-bottom:1px solid var(--line);
-  padding:10px 6px;
-  font-family:var(--ff-mono);
-  font-size:13px;
-  font-weight:800;
-  color:var(--ink-2);
+  padding:12px 8px;
   text-align:center;
   height:auto;
 }
@@ -741,109 +713,115 @@ tr.agg td.col-emp,
 tr.agg td.col-role{
   background:var(--bg-3) !important;
   font-family:var(--ff);
-  font-size:11px;
-  font-weight:800;
+  font-size:12px;
+  font-weight:900;
   color:var(--ink);
   text-transform:uppercase;
-  letter-spacing:1px;
+  letter-spacing:1.2px;
   text-align:left;
-  padding:10px 16px;
+  padding:12px 18px;
 }
 tr.agg td .agg-pill{
   display:inline-block;
-  padding:3px 10px;
-  border-radius:6px;
-  min-width:30px;
-  font-weight:800;
+  padding:5px 12px;
+  border-radius:8px;
+  min-width:34px;
+  font-weight:900;
+  font-family:var(--ff-mono);
+  font-size:14px;
+  border:1px solid transparent;
 }
-.agg-pill.morning{background:var(--morning-bg);color:var(--morning)}
-.agg-pill.general{background:var(--general-bg);color:var(--general)}
-.agg-pill.afternoon{background:var(--afternoon-bg);color:var(--afternoon)}
-.agg-pill.night{background:var(--night-bg);color:var(--night)}
-.agg-pill.total{background:var(--accent-2);color:#fff;font-weight:900}
+.agg-pill.morning{background:var(--morning-bg);color:var(--morning-text);border-color:rgba(92,61,0,0.2)}
+.agg-pill.general{background:var(--general-bg);color:var(--general-text);border-color:rgba(31,36,48,0.2)}
+.agg-pill.afternoon{background:var(--afternoon-bg);color:var(--afternoon-text);border-color:rgba(92,38,0,0.2)}
+.agg-pill.night{background:var(--night-bg);color:var(--night-text);border-color:rgba(0,37,77,0.2)}
+.agg-pill.total{
+  background:linear-gradient(135deg, #4A90E2, #3B7DD8);
+  color:#fff;
+  box-shadow:0 4px 12px -2px rgba(74,144,226,0.5);
+}
 
 /* ============================================================
-   FOOTER BAR — sticky bottom
+   FOOTER
    ============================================================ */
 .footer{
   background:var(--bg-1);
-  border-top:1px solid var(--line);
-  padding:12px 28px;
+  border-top:1px solid var(--line-2);
+  padding:14px 28px;
   display:flex;
   align-items:center;
   gap:16px;
   flex-shrink:0;
-  box-shadow:0 -4px 16px rgba(0,0,0,0.3);
+  box-shadow:0 -4px 16px rgba(0,0,0,0.4);
   position:relative;
   z-index:100;
 }
 .footer-info{
-  font-size:13px;
+  font-size:14px;
   font-weight:600;
-  color:var(--ink-3);
+  color:var(--ink-2);
   display:flex;
   align-items:center;
-  gap:8px;
+  gap:10px;
 }
-.footer-info svg{width:15px;height:15px;stroke:var(--accent);fill:none;stroke-width:2.4;flex-shrink:0}
+.footer-info svg{
+  width:16px;height:16px;
+  stroke:var(--accent);fill:none;stroke-width:2.4;flex-shrink:0;
+}
 .footer-spacer{flex:1}
 
 /* ============================================================
-   EMPTY STATE
+   EMPTY
    ============================================================ */
 .empty{
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  padding:80px 24px;
-  text-align:center;
-  color:var(--ink-3);
-  height:100%;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:80px 24px;text-align:center;color:var(--ink-3);height:100%;
 }
 .empty-icon{
-  width:96px;height:96px;
-  border-radius:24px;
-  background:var(--bg-2);
-  border:2px solid var(--line);
-  display:grid;place-items:center;
-  margin-bottom:24px;
+  width:120px;height:120px;border-radius:28px;
+  background:linear-gradient(135deg, var(--bg-2), var(--bg-1));
+  border:2px solid var(--line-2);
+  display:grid;place-items:center;margin-bottom:28px;
 }
-.empty-icon svg{width:44px;height:44px;stroke:var(--ink-4);fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
-.empty h3{font-size:22px;font-weight:800;color:var(--ink);margin-bottom:8px}
-.empty p{font-size:14px;font-weight:500;color:var(--ink-3);line-height:1.6}
+.empty-icon svg{width:56px;height:56px;stroke:var(--ink-4);fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.empty h3{font-size:24px;font-weight:800;color:var(--ink);margin-bottom:10px}
+.empty p{font-size:15px;font-weight:500;color:var(--ink-3);line-height:1.7}
 
 /* ============================================================
    RESPONSIVE
    ============================================================ */
 @media (max-width:900px){
-  .header{padding:12px 16px;flex-wrap:wrap}
-  .header-text h1{font-size:18px}
-  .header-stats{width:100%;justify-content:flex-start;overflow-x:auto}
-  .hstat{min-width:70px;padding:6px 12px}
-  .hstat-val{font-size:16px}
-  .toolbar{padding:10px 16px;gap:10px}
-  .field select, .field input{min-width:100px;padding:8px 12px;font-size:13px}
+  .header{padding:14px 16px;flex-wrap:wrap;gap:14px}
+  .header-logo{width:44px;height:44px}
+  .header-logo svg{width:24px;height:24px}
+  .header-text h1{font-size:17px}
+  .header-text p{font-size:11px}
+  .header-stats{width:100%;overflow-x:auto;padding-bottom:4px}
+  .hstat{min-width:78px;padding:8px 12px}
+  .hstat-val{font-size:18px}
+  .hstat-lbl{font-size:9px}
+  .toolbar{padding:12px 16px;gap:10px}
+  .field select, .field input{min-width:110px;padding:9px 12px;font-size:13px}
   .search-box input{width:100%}
   .search-box input:focus{width:100%}
   .toolbar-spacer{display:none}
-  .legend-bar{padding:8px 16px;gap:8px;overflow-x:auto;flex-wrap:nowrap}
+  .legend-bar{padding:10px 16px;gap:8px;overflow-x:auto;flex-wrap:nowrap}
   .legend-lbl{display:none}
-  .footer{padding:10px 16px;flex-direction:column;align-items:stretch;gap:10px}
+  .footer{padding:12px 16px;flex-direction:column;align-items:stretch;gap:10px}
   .btn{width:100%;justify-content:center}
   table.roster th.col-emp, table.roster td.col-emp{
-    min-width:160px;max-width:160px;padding:6px 10px;
+    min-width:180px;max-width:180px;padding:8px 12px;
   }
   table.roster th.col-role, table.roster td.col-role{
-    left:160px;min-width:70px;max-width:70px;padding:6px 8px;font-size:10px;
+    left:180px;min-width:80px;max-width:80px;padding:8px 10px;font-size:11px;
   }
-  .emp-av{width:28px;height:28px;font-size:10px;border-radius:6px}
-  .emp-name{font-size:12px;max-width:100px}
-  .emp-id{font-size:9px}
-  td.day{width:38px;min-width:38px;height:46px}
-  td.day .badge{inset:5px;font-size:11px;border-radius:6px}
-  table.roster thead th{min-width:38px;padding:8px 4px;font-size:11px}
-  table.roster thead tr:nth-child(2) th{min-width:38px;font-size:9px}
+  .emp-av{width:32px;height:32px;font-size:12px;border-radius:8px}
+  .emp-name{font-size:13px;max-width:120px}
+  .emp-id{font-size:10px}
+  td.day{width:44px;min-width:44px;height:52px}
+  td.day .badge{inset:6px;font-size:13px;border-radius:8px}
+  table.roster thead th{min-width:44px;padding:10px 4px;font-size:12px}
+  table.roster thead tr:nth-child(2) th{min-width:44px;font-size:10px}
 }
 </style>
 </head>
@@ -851,17 +829,15 @@ tr.agg td .agg-pill{
 
 <div class="app">
 
-  <!-- ============================================================
-       HEADER
-       ============================================================ -->
+  <!-- HEADER -->
   <header class="header">
     <div class="header-title">
       <div class="header-logo">
         <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
       </div>
       <div class="header-text">
-        <h1><%= m_strrole %> Roster &mdash; <%= nameOfMonth %> <%= year %></h1>
-        <p>Team shift schedule &middot; Managed by <%= username %></p>
+        <h1><%= m_strrole %> Roster</h1>
+        <p><%= nameOfMonth %> <%= year %> &middot; <%= username %></p>
       </div>
     </div>
 
@@ -869,23 +845,21 @@ tr.agg td .agg-pill{
 
     <div class="header-stats">
       <div class="hstat">
-        <div class="hstat-val"><%= noOfDays %></div>
+        <div class="hstat-val cyan"><%= noOfDays %></div>
         <div class="hstat-lbl">Days</div>
       </div>
       <div class="hstat">
-        <div class="hstat-val" id="statEmp">0</div>
+        <div class="hstat-val purple" id="statEmp">0</div>
         <div class="hstat-lbl">Team</div>
       </div>
       <div class="hstat">
-        <div class="hstat-val" id="statAssigned">0</div>
+        <div class="hstat-val green" id="statAssigned">0</div>
         <div class="hstat-lbl">Assigned</div>
       </div>
     </div>
   </header>
 
-  <!-- ============================================================
-       TOOLBAR
-       ============================================================ -->
+  <!-- TOOLBAR -->
   <div class="toolbar">
     <form method="get" action="" style="display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;">
       <div class="field">
@@ -898,13 +872,13 @@ tr.agg td .agg-pill{
       </div>
       <div class="field">
         <label>Year</label>
-        <input type="number" name="year" min="2024" max="2100" value="<%=year%>" required style="min-width:100px;">
+        <input type="number" name="year" min="2024" max="2100" value="<%=year%>" required style="min-width:110px;">
       </div>
       <input type="hidden" name="m_strroles" value="<%=m_strrole%>">
       <input type="hidden" name="username" value="<%=username%>">
       <button type="submit" class="btn btn-primary">
         <svg viewBox="0 0 24 24"><path d="M5 12h14"/><polyline points="12 5 19 12 12 19"/></svg>
-        Load Roster
+        Load
       </button>
     </form>
 
@@ -912,28 +886,24 @@ tr.agg td .agg-pill{
 
     <div class="search-box">
       <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input type="text" id="searchEmp" placeholder="Search employee&hellip;" autocomplete="off">
+      <input type="text" id="searchEmp" placeholder="Search employee name&hellip;" autocomplete="off">
     </div>
   </div>
 
-  <!-- ============================================================
-       LEGEND
-       ============================================================ -->
+  <!-- LEGEND -->
   <div class="legend-bar">
-    <span class="legend-lbl">Shifts:</span>
-    <span class="legend-chip"><span class="sw" style="background:var(--morning)"></span>Morning</span>
-    <span class="legend-chip"><span class="sw" style="background:var(--general)"></span>General</span>
-    <span class="legend-chip"><span class="sw" style="background:var(--afternoon)"></span>Afternoon</span>
-    <span class="legend-chip"><span class="sw" style="background:var(--night)"></span>Night</span>
-    <span class="legend-chip"><span class="sw" style="background:var(--weekoff)"></span>Weekoff</span>
-    <span class="legend-chip"><span class="sw" style="background:var(--leave)"></span>Leave</span>
-    <span class="legend-chip"><span class="sw" style="background:var(--holiday)"></span>Holiday</span>
+    <span class="legend-lbl">Legend</span>
+    <span class="legend-chip"><span class="sw morning">M</span>Morning</span>
+    <span class="legend-chip"><span class="sw general">D</span>General</span>
+    <span class="legend-chip"><span class="sw afternoon">A</span>Afternoon</span>
+    <span class="legend-chip"><span class="sw night">N</span>Night</span>
+    <span class="legend-chip"><span class="sw weekoff">W</span>Weekoff</span>
+    <span class="legend-chip"><span class="sw leave">SL</span>Leave</span>
+    <span class="legend-chip"><span class="sw holiday">HL</span>Holiday</span>
   </div>
 
-  <!-- ============================================================
-       ROSTER TABLE
-       ============================================================ -->
-  <div class="roster-wrap" id="rosterWrap">
+  <!-- ROSTER -->
+  <div class="roster-wrap">
 
 <%
     List<Map<String,Object>> employees = new ArrayList<>();
@@ -985,20 +955,18 @@ tr.agg td .agg-pill{
           <% for (int d=1; d<=noOfDays; d++) {
                LocalDate dt = LocalDate.of(year, month, d);
                boolean wk = (dt.getDayOfWeek()==DayOfWeek.SATURDAY || dt.getDayOfWeek()==DayOfWeek.SUNDAY);
-               LocalDate today = LocalDate.now(ZoneId.of("Asia/Kolkata"));
                boolean isToday = dt.equals(today);
           %>
             <th class="<%= wk?"weekend":"" %> <%= isToday?"today":"" %>"><%= d %></th>
           <% } %>
           <th class="col-sum" rowspan="2">WO</th>
-          <th class="col-sum" rowspan="2">Lv</th>
+          <th class="col-sum" rowspan="2">LV</th>
         </tr>
         <tr>
           <% for (int d=1; d<=noOfDays; d++) {
                LocalDate dt = LocalDate.of(year, month, d);
                String ds = dt.getDayOfWeek().getDisplayName(TextStyle.SHORT, Locale.ENGLISH).substring(0,2);
                boolean wk = (dt.getDayOfWeek()==DayOfWeek.SATURDAY || dt.getDayOfWeek()==DayOfWeek.SUNDAY);
-               LocalDate today = LocalDate.now(ZoneId.of("Asia/Kolkata"));
                boolean isToday = dt.equals(today);
           %>
             <th class="<%= wk?"weekend":"" %> <%= isToday?"today":"" %>"><%= ds %></th>
@@ -1008,7 +976,6 @@ tr.agg td .agg-pill{
       <tbody>
       <%
          int empIdx = 0;
-         int totalAssigned = 0;
          for (Map<String,Object> emp : employees) {
              String nm = emp.get("NAME") != null ? emp.get("NAME").toString() : "";
              String id = emp.get("AD_ID") != null ? emp.get("AD_ID").toString() : "";
@@ -1044,11 +1011,9 @@ tr.agg td .agg-pill{
                  String sl = shift.toLowerCase();
                  if (sl.contains("weekoff")) wo++;
                  if (sl.contains("leave")) lv++;
-                 if (!sl.equals("na")) totalAssigned++;
 
                  LocalDate dt = LocalDate.of(year, month, d);
                  boolean wk = (dt.getDayOfWeek()==DayOfWeek.SATURDAY || dt.getDayOfWeek()==DayOfWeek.SUNDAY);
-                 LocalDate today = LocalDate.now(ZoneId.of("Asia/Kolkata"));
                  boolean isToday = dt.equals(today);
 
                  String label = "·", bcls = "empty";
@@ -1096,7 +1061,6 @@ tr.agg td .agg-pill{
         </tr>
       <% empIdx++; } %>
 
-      <!-- Aggregate rows -->
       <tr class="agg">
         <td class="col-emp" colspan="2">Morning Count</td>
         <% for (int d=1; d<=noOfDays; d++) {
@@ -1169,14 +1133,12 @@ tr.agg td .agg-pill{
 
   </div>
 
-  <!-- ============================================================
-       FOOTER
-       ============================================================ -->
+  <!-- FOOTER -->
   <% if (!employees.isEmpty()) { %>
   <div class="footer">
     <div class="footer-info">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-      Click any cell to change shift &middot; Save when done
+      Click any cell &rarr; pick a shift &rarr; click <strong>Save Roster</strong>
     </div>
     <div class="footer-spacer"></div>
     <button type="button" class="btn btn-ghost" onclick="location.reload()">
@@ -1193,7 +1155,6 @@ tr.agg td .agg-pill{
 </div>
 
 <script>
-// Update stats
 (function(){
   var empCount = document.querySelectorAll('tr.emp-row').length;
   document.getElementById('statEmp').textContent = empCount;
@@ -1204,7 +1165,6 @@ tr.agg td .agg-pill{
   document.getElementById('statAssigned').textContent = assigned;
 })();
 
-// Search
 document.getElementById('searchEmp').addEventListener('input', function(e){
   var q = e.target.value.toLowerCase().trim();
   document.querySelectorAll('tr.emp-row').forEach(function(r){
@@ -1213,7 +1173,6 @@ document.getElementById('searchEmp').addEventListener('input', function(e){
   });
 });
 
-// Pick logic
 function markPick(sel){
   var td = sel.closest('td.day');
   if (td) td.classList.add('picking');
@@ -1245,7 +1204,6 @@ function onPick(sel){
   setTimeout(function(){ td.classList.remove('picking'); }, 200);
 }
 
-// Submit — same format
 function submitRoster(){
   var data = [];
   var rows = document.querySelectorAll('#rosterTable tbody tr.emp-row');
