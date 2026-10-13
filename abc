@@ -1,1525 +1,655 @@
 <!DOCTYPE html>
-<%@page import="org.apache.poi.util.*"%>
 <html lang="en">
-<%@ page import="java.sql.*"%>
-<%@ page import="javax.sql.*"%>
-<%@ page import="javax.naming.*"%>
-<%@ page import="java.util.*"%>
-<%@ page import="java.util.Locale"%>
-<%@ page import="java.time.DayOfWeek" %>
-<%@ page import="java.time.LocalDate" %>
-<%@ page import="java.time.Month" %>
-<%@ page import="java.time.format.TextStyle" %>
-<%@page import="com.jdbc.DBUtilityAuto"%>
-<%@page import="com.jdbc.DBUtility"%>
-<%@page import="java.time.YearMonth, java.time.ZoneId" %>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>EIS Team Roster</title>
-<!-- <meta http-equiv="refresh" content="600"> -->
-<meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel='stylesheet' href='../css/font-awesome-sysexp.css'>
-    <link rel='stylesheet' href='../css/bootstrap-expsys.css'>
-    <link rel='stylesheet' href='../css/dataTables.bootstrap4.min.css'>
-    <link rel='stylesheet' href='../css/buttons.bootstrap4.min-expsys.css'>
-</head>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-.N_BROKERNAME_TD {
-	background: linear-gradient(to bottom right, #000000 40%, red 50%, #000000 60%);
-	background-size: 200% 200%;
-	background-repeat: no-repeat;
-	animation: placeholderShimmer 5s infinite linear;
-}
+  :root {
+    --bg-0: #0a0e1a;
+    --bg-1: #111827;
+    --bg-2: #1a2234;
+    --bg-3: #232d42;
+    --border: #2a3548;
+    --text-0: #f1f5f9;
+    --text-1: #cbd5e1;
+    --text-2: #94a3b8;
+    --accent: #6366f1;
+    --accent-hover: #818cf8;
 
-@
-keyframes placeholderShimmer { 0% {
-	background-position: 100% 100%; /*OR bottom right*/
-}
-
-100
-
-
-%
-{
-background-position
-
-
-:
-
-
-0
-
-
-0
-; /*OR top left*/
-
-
-}
-}
-#pin_div {
-	display: flex;
-	background-color: #ffffff2b;
-	width: 100%;
-	/* height: 800px; */
-	justify-content: space-around;
-	flex-wrap: wrap;
-	align-content: center;
-	margin: 5px;
-	/* flex-direction: row;  */
-}
-
-BROKERNAME_TD {
-	font-weight: bold;
-	color: ivory;
-	font-family: serif;
-
-}
-
-.BK_PORTno_TD {
-	font-weight: bold;
-	color: ivory;
-	font-family: serif;
-}
-
-.ip_update_div {
-	font-size: 16px;
-	display: none;
-	position: absolute;
-	background: #ffff00;
-	color: black;
-	padding: 5px;
-	text-align: center;
-	font-family: cursive;
-	width: max-content;
-}
-
-td:hover .ip_update_div {
-	display: block;
-}
-
-.tool_tip_div {
-	font-size: 16px;
-	display: none;
-	position: absolute;
-	background: #ffff00;
-	color: black;
-	padding: 5px;
-	text-align: center;
-	font-family: cursive;
-	width: max-content;
-	border-radius: 5px;
-}
-
-td:hover .tool_tip_div {
-	display: block;
-}
-
-title_div
-
-
-.blink {
-	font-size: 20px;
-	font-weight: bold;
-	font-family: sans-serif;
-}
-
-.Td_for_ipadd {
-	background-color: aqua;
-	color: black;
-}
-
-/* tr {
-            /* border: 5px solid red; */
-/* border: 1px solid rgb(0, 255, 13); */
-
-/* width: 100%; */
-/* background-color: rgb(110, 98, 99); */
-
-/* } */
-.TH_IP_ALL {
-	background-color: rgb(96, 194, 255) !important;
-}
-
-body {
-	background-color: black;
-}
-
-.table_title_div {
-	color: white;
-	height: 25px;
-	display: flex;
-	width: 100%;
-	text-align: center !important;
-	align-content: center;
-	justify-content: center;
-	padding-top: 15px;
-	font-size: x-large;
-}
-
-.tablecontainer {
-	display: flex;
-	background-color: rgb(0, 0, 0);
-	width: 100%;
-	/* height: 800px; */
-	justify-content: space-around;
-	flex-wrap: wrap;
-	align-content: center;
-	margin: 5px;
-	/* flex-direction: row;  */
-}
-
-.onetable_div {
-	display: flex;
-	flex-direction: column;
-	background-color: black;
-	height: fit-content;
-	
-	border-radius: 16px;
-	
-	margin-top: 1%;
-}
-
-td {
-	transition: 0.25s;
-
-	/* min-width: 30px; */
-}
-
-td:hover {
-	transform: scale(0.9)
-}
-
-.demonclass {
-	border-radius: 10px;
-	overflow: visible;
-}
-
-.onetable_div:hover {
-	
-}
-
-.title_div {
-	background-color: black;
-	width: 100%;
-	text-align: center;
-	justify-content: center;
-	font-weight: bolder;
-	font-size: xx-large;
-	color: white;
-}
-
-td, th, table {
-	border: 6.5px solid black;
-	border-collapse: collapse;
-	/* width: 20rem; */
-	text-align: center;
-	margin: 10px;
-	padding: 0.2%;
-	background-color: #000000;
-	color: white;
-	border-radius: 0px;
-}
-
-tr {
-	border: 1px;
-	border-style: solid;
-	border-color: #96D4D4;
-
-	/*  min-width: 80px; */
-}
-
-.HN_title {
-	font-weight: bold;
-	font-size: 20px;
-	background-color: rgb(132, 136, 132);
-	color: whitesmoke;
-}
-
-table {
-	border: 1px;
-	border-radius: 5px !important;
-	border-style: solid;
-	border-color: #96D4D4;
-}
-
-td {
-	border: 1px;
-	height: 30px;
-	width: 1rem !important;
-	font-size: 15px;
-	border-style: solid;
-	border-color: #96D4D4;
-}
-
-.isolator_row {
-	color: black;
-}
-
-/* //////////////////////for all the heads  */
-.BROKER_title {
-	font-weight: bold;
-	padding: 6px;
-	background-color: rgb(167, 199, 231);
-	color: Black;
-}
-
-/*.BROKER_title,
-.PORT_title {
-    background-color: rgb(211 209 228 / 61%);
-    color: aqua;
-    font-weight: bold;
-    padding: 6px;
-
-}*/
-.isoltator_title, .iso_port {
-	font-weight: bold;
-	color: aqua;
-}
-
-.TH_IP_ALL, .Td_for_ipadd {
-	color: black;
-	font-weight: bold;
-	font-size: 1rem;
-}
-
-.blinkbroker {
-	animation: mymove 1s infinite;
-	animation-timing-function: ease-in;
-}
-
-@
-keyframes mymove {from { color:rgb(243, 2, 2);
-	
-}
-
-to {
-	color: rgb(125, 151, 251);
-}
-
-}
-.timer {
-	/* text-align: center; */
-	border: 5px solid white;
-	display: inline;
-	padding: 5px;
-	color: white;
-	font-family: Verdana, sans-serif, Arial;
-	font-size: 40px;
-	height: 50px;
-	font-weight: bold;
-	text-decoration: none;
-}
-
-.blink {
-	animation: blinker 0s linear infinite;
-	color: white;
-	font-family: sans-serif;
-	font-size: larger;
-	text-align-last: center;
-	font-weight: 900;
-}
-
-.popup {
-	display: none;
-	position: fixed;
-	top: 50%;
-	left: 50%;
-	transform: translate(-50%, -50%);
-	background-color: #f9f9f9;
-	padding: 50px;
-	border: 2px solid #ccc;
-	z-index: 9999;
-}
-
-.button-container{
-        display: flex;
-        justify-content: flex-end;
-        margin-right: 10px; 
-}
-
-.button{
-  padding: 10px 20px;
-  border: none;
-  border-radius:5px;
-  cursor: pointer;
-  margin-right: 10px; 
-}
-
-$gray-100: #f7fafc;
-$gray-200: #edf2f7;
-$gray-300: #e2e8f0;
-$gray-400: #cbd5e0;
-$gray-500: #a0aec0;
-$gray-600: #718096;
-$gray-700: #4a5568;
-$gray-800: #2d3748;
-$gray-900: #1a202c;
-
-$white: #ffffff;
-
-.container {
-  max-width: 500px;
-  margin: auto;
-  margin-top: 3rem;
-  overflow-x: auto;
-}
-
-table {
-    position: relative;
-    width: 100%;
-    white-space: nowrap;
-    thead tr {
-      
-        text-align: left;
-
-        th {
-           
-          vertical-align: middle;
-        }
-    }
-
-    tbody {
-        tr:nth-child(odd) td {
-         
-        }
-
-    
-  tr>th:first-child,tr>td:first-child {
-    /* position: sticky; */
-    left: 0;
+    /* Shift colors */
+    --morning: #f97316;
+    --morning-bg: rgba(249, 115, 22, 0.15);
+    --general: #64748b;
+    --general-bg: rgba(100, 116, 139, 0.15);
+    --afternoon: #eab308;
+    --afternoon-bg: rgba(234, 179, 8, 0.15);
+    --night: #3b82f6;
+    --night-bg: rgba(59, 130, 246, 0.15);
+    --weekoff: #8b5cf6;
+    --weekoff-bg: rgba(139, 92, 246, 0.15);
+    --leave: #ef4444;
+    --leave-bg: rgba(239, 68, 68, 0.15);
+    --flexi: #ec4899;
+    --flexi-bg: rgba(236, 72, 153, 0.15);
+    --holiday: #10b981;
+    --holiday-bg: rgba(16, 185, 129, 0.15);
   }
-  
-}
 
-.MorningText{ background-color:#FF8C00; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
 
-.GenralText{ background-color:#696969; }
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg-0);
+    color: var(--text-0);
+    min-height: 100vh;
+    padding: 20px;
+    background-image:
+      radial-gradient(circle at 20% 0%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
+      radial-gradient(circle at 80% 100%, rgba(59, 130, 246, 0.06) 0%, transparent 50%);
+  }
 
-.AfternoonText{ background-color:#FFD700; }
+  /* ============ HEADER ============ */
+  .app-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    background: linear-gradient(135deg, var(--bg-1), var(--bg-2));
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    margin-bottom: 20px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  }
 
-.NightText{ background-color:#1E90FF; }
+  .header-left h1 {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, #fff, #94a3b8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
 
-.WeekoffText{ background-color:#0000CD; color: white; }
-.WeekoffAdjustText{ background-color:#800080; color: white; }
+  .header-left p {
+    font-size: 13px;
+    color: var(--text-2);
+    margin-top: 4px;
+  }
 
-.LeaveText{ background-color: #FF0000 }
-.FlexiText{ background-color: #FF3333}
-.HolidayText{ background-color: #90EE90 }
-.SeprationText{ background-color: #000000 }
+  .header-right {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
 
-.hidden{
-   display:none;
-}
+  /* ============ CONTROLS ============ */
+  .control-bar {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 16px 20px;
+    background: var(--bg-1);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    margin-bottom: 20px;
+    align-items: center;
+  }
 
-.visible{
-display: block;
-}
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
 
-select:disabled {
-  
-  cursor: not-allowed;
-}
+  .field label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-2);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .field select,
+  .field input {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    color: var(--text-0);
+    padding: 9px 12px;
+    border-radius: 9px;
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    transition: all 0.2s;
+    min-width: 130px;
+  }
+
+  .field select:focus,
+  .field input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+  }
+
+  .btn {
+    padding: 10px 20px;
+    border-radius: 9px;
+    border: none;
+    font-family: inherit;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), #4f46e5);
+    color: white;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.45);
+  }
+
+  .btn-success {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  }
+
+  .btn-success:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.45);
+  }
+
+  /* ============ LEGEND ============ */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 12px 16px;
+    background: var(--bg-1);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 20px;
+  }
+
+  .legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border-radius: 7px;
+    font-size: 12px;
+    font-weight: 600;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+  }
+
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+
+  /* ============ TABLE WRAPPER ============ */
+  .table-wrapper {
+    background: var(--bg-1);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+
+  .table-scroll {
+    overflow-x: auto;
+    overflow-y: auto;
+    max-height: 70vh;
+  }
+
+  table {
+    border-collapse: separate;
+    border-spacing: 0;
+    width: 100%;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  thead th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--bg-3);
+    color: var(--text-1);
+    font-weight: 700;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 12px 10px;
+    border-bottom: 2px solid var(--border);
+    text-align: center;
+  }
+
+  thead th:first-child,
+  thead th:nth-child(2) {
+    position: sticky;
+    left: 0;
+    z-index: 11;
+    text-align: left;
+  }
+
+  thead th:nth-child(2) {
+    left: 200px;
+  }
+
+  tbody td {
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--border);
+    text-align: center;
+    color: var(--text-1);
+    background: var(--bg-1);
+  }
+
+  tbody td:first-child,
+  tbody td:nth-child(2) {
+    position: sticky;
+    background: var(--bg-2);
+    z-index: 5;
+  }
+
+  tbody td:first-child {
+    left: 0;
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-0);
+    min-width: 200px;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  tbody td:nth-child(2) {
+    left: 200px;
+    min-width: 130px;
+  }
+
+  tbody tr:hover td {
+    background: var(--bg-2);
+  }
+
+  tbody tr:hover td:first-child,
+  tbody tr:hover td:nth-child(2) {
+    background: var(--bg-3);
+  }
+
+  /* ============ SHIFT CELLS ============ */
+  .shift-select {
+    width: 100%;
+    border: none;
+    background: transparent;
+    color: inherit;
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 13px;
+    text-align: center;
+    cursor: pointer;
+    padding: 6px 4px;
+    border-radius: 6px;
+    outline: none;
+    transition: all 0.15s;
+    appearance: none;
+    -webkit-appearance: none;
+    text-align: center;
+    text-align-last: center;
+  }
+
+  .shift-select:hover {
+    background: rgba(255,255,255,0.05);
+  }
+
+  .shift-select:focus {
+    box-shadow: 0 0 0 2px var(--accent);
+  }
+
+  .shift-Morning   { color: var(--morning);   background: var(--morning-bg);   }
+  .shift-General   { color: var(--general);   background: var(--general-bg);   }
+  .shift-Afternoon { color: var(--afternoon); background: var(--afternoon-bg); }
+  .shift-Night     { color: var(--night);     background: var(--night-bg);     }
+  .shift-Weekoff   { color: var(--weekoff);   background: var(--weekoff-bg);   }
+  .shift-Leave     { color: var(--leave);     background: var(--leave-bg);     }
+  .shift-Flexi     { color: var(--flexi);     background: var(--flexi-bg);     }
+  .shift-Holiday   { color: var(--holiday);   background: var(--holiday-bg);   }
+
+  /* ============ SUMMARY ROWS ============ */
+  .summary-row td {
+    font-weight: 700;
+    font-size: 12px;
+    background: var(--bg-3) !important;
+    color: var(--text-0);
+    border-top: 2px solid var(--border);
+  }
+
+  .summary-row td:first-child {
+    background: var(--bg-3) !important;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-size: 11px;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    min-width: 24px;
+  }
+
+  .badge-morning   { background: var(--morning-bg);   color: var(--morning);   }
+  .badge-general   { background: var(--general-bg);   color: var(--general);   }
+  .badge-afternoon { background: var(--afternoon-bg); color: var(--afternoon); }
+  .badge-night     { background: var(--night-bg);     color: var(--night);     }
+
+  /* ============ SCROLLBAR ============ */
+  .table-scroll::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  .table-scroll::-webkit-scrollbar-track {
+    background: var(--bg-0);
+  }
+  .table-scroll::-webkit-scrollbar-thumb {
+    background: var(--bg-3);
+    border-radius: 5px;
+  }
+  .table-scroll::-webkit-scrollbar-thumb:hover {
+    background: var(--accent);
+  }
+
+  /* ============ FOOTER ACTIONS ============ */
+  .footer-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 16px 20px;
+    background: var(--bg-2);
+    border-top: 1px solid var(--border);
+  }
+
+  /* ============ EMPTY STATE ============ */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-2);
+  }
+  .empty-state h3 {
+    font-size: 18px;
+    margin-bottom: 8px;
+    color: var(--text-1);
+  }
+
+  @media (max-width: 768px) {
+    body { padding: 10px; }
+    .app-header { flex-direction: column; gap: 12px; align-items: flex-start; }
+    .control-bar { flex-direction: column; align-items: stretch; }
+    .field select, .field input { width: 100%; }
+  }
 </style>
-<script>
- function submitForm(){
-	 
-	document.getElementById("monthYearForm").submit();
- }
- 
- 
- 
- 
- function prepareData(){
-	
-	 var flag = 'Y';
-	 
-	/*  if (flag == 'Y') {
-		 alert("Roster Cant Be Update or Submit Please contact Admin")
-		 }
-	 else { */
-	 
-	 document.forms["rosterForm"].action = '<%=request.getContextPath() + "/RosterServlet"%>';
-	document.forms["rosterForm"].submit();
-	
-	 /* } */
- }
- 
- window.onload= function(){
-	  //location.replace("/EISPortal/jsp/NightChecklistTable.jsp")
-	  	 // location.replace('<%=request.getContextPath() + "/NightShiftChecklistAction"%>');
-	window.history.replaceState({},'View NightChecklist', '<%=request.getContextPath() + "/jsp/testRoster.jsp"%>');
-	  
-} ; 
-   </script>
-<body >
- 		<%-- <% 
- 		    session = request.getSession();
- 		    String m_strrole = (String)session.getAttribute("role");
-			//String m_strrole = (String)request.getParameter("role");
-			if(m_strrole==null){
-				m_strrole = request.getParameter("role");
-				if(m_strrole != null){
-					session.setAttribute("role", m_strrole);
-				}
-			}
-			/* session.setAttribute("role", request.getParameter("m_strRole"));
-			session.setAttribute("role", m_strrole); */
-			System.out.println("Role:-"+m_strrole);  %>
-	<div class="onetable_div" id="aceprsys09_tablediv" style="order: -3;">
-		 <form id="monthYearForm" method="get" style="color: white; position: relative; top: 60px;">
-    <label for="month" >Month:</label>
-    <select name="month" id="month">
-    <option value=" "> </option>
-    <option value="1">Jan</option>
-    <option value="2">Feb</option>
-    <option value="3">Mar</option>
-    <option value="4">Apr</option>
-    <option value="5">May</option>
-    <option value="6">Jun</option>
-    <option value="7">Jul</option>
-    <option value="8">Aug</option>
-    <option value="9">Sep</option>
-    <option value="10">Oct</option>
-    <option value="11">Nov</option>
-    <option value="12">Dec</option>
-    </select>
-    
-    <label for="year">Year:</label>
-    <input type="number" id="year" name="year" min="2024" max="2100" value="2024" required>
-    <input type="hidden" id="<%=m_strrole%>" name ="m_strrole" value="<%=m_strrole%>">
-    
-<!--     <button name="button" class="button" id="submitButton" type="button" onclick="submitForm();" style="width: 80px; height: 40px;">Submit</button> -->
-    <input type="button"  name="button" class="button" id="submitButton"  onclick="submitForm();" value="Select Month" style="zoom: 80%; font-weight: bolder; background-color: green; color: white; ">
-   
-   <!-- <button type="submit"> Generate Calender</button> --> 
-    </form>
-    </div> --%>
-   <!-- <form id="dayFilterForm">
-  <label for="rosterDate">Select Date:</label>
-  <input type="date" id="rosterDate" name="rosterDate" />
-  <button type="button" onclick="filterByDay()">Filter</button>
-   </form> -->
-    <div>
-    <form id="rosterForm" action="RosterServlet" method="post">
+</head>
+<body>
+
+  <!-- ============ HEADER ============ -->
+  <div class="app-header">
+    <div class="header-left">
+      <h1>EIS Team Roster</h1>
+      <p id="subtitle">Select month and year to view roster</p>
+    </div>
+    <div class="header-right">
+      <button class="btn btn-success" onclick="prepareData()">💾 Submit Roster</button>
+    </div>
+  </div>
+
+  <!-- ============ CONTROLS ============ -->
+  <form id="monthYearForm" method="get" class="control-bar">
+    <div class="field">
+      <label for="month">Month</label>
+      <select name="month" id="month">
+        <option value="1">January</option>
+        <option value="2">February</option>
+        <option value="3">March</option>
+        <option value="4">April</option>
+        <option value="5">May</option>
+        <option value="6">June</option>
+        <option value="7">July</option>
+        <option value="8">August</option>
+        <option value="9">September</option>
+        <option value="10">October</option>
+        <option value="11">November</option>
+        <option value="12">December</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="year">Year</label>
+      <input type="number" id="year" name="year" min="2024" max="2100" value="2025" required>
+    </div>
+    <div class="field" style="align-self: flex-end;">
+      <button type="button" class="btn btn-primary" onclick="submitForm()">📅 Load Roster</button>
+    </div>
+  </form>
+
+  <!-- ============ LEGEND ============ -->
+  <div class="legend">
+    <span class="legend-item"><span class="legend-dot" style="background:var(--morning)"></span>Morning</span>
+    <span class="legend-item"><span class="legend-dot" style="background:var(--general)"></span>General</span>
+    <span class="legend-item"><span class="legend-dot" style="background:var(--afternoon)"></span>Afternoon</span>
+    <span class="legend-item"><span class="legend-dot" style="background:var(--night)"></span>Night</span>
+    <span class="legend-item"><span class="legend-dot" style="background:var(--weekoff)"></span>Weekoff</span>
+    <span class="legend-item"><span class="legend-dot" style="background:var(--leave)"></span>Leave</span>
+    <span class="legend-item"><span class="legend-dot" style="background:var(--flexi)"></span>Flexi</span>
+    <span class="legend-item"><span class="legend-dot" style="background:var(--holiday)"></span>Holiday</span>
+  </div>
+
+  <!-- ============ ROSTER FORM + TABLE ============ -->
+  <form id="rosterForm" action="RosterServlet" method="post">
     <input type="hidden" id="tableData" name="tableData">
-    
-    
-    <%
-    YearMonth currentYearMonth = YearMonth.now(ZoneId.of("Asia/Kolkata"));
- // Get the year as an integer
-    int yearValue = currentYearMonth.getYear();
-    // Get the month as an integer (1-12)
-    int monthValue = currentYearMonth.getMonthValue();
-    
-    String monthYr=request.getParameter("myViewMonth");
-	 System.out.println(monthYr);
-	 String[] s= monthYr.split("-");
-   String selectedYear= s[0];
-   String selectedMonth= s[1];
-   String m_strroles= request.getParameter("m_strroles");
-   String username= request.getParameter("username");
-    if(selectedMonth != null && selectedYear != null){
-    int year= Integer.parseInt(selectedYear);
-    int month=Integer.parseInt(selectedMonth);
-    System.out.println("Year :-"+year);
-    int noOfDays=0;
-    if(selectedMonth.equalsIgnoreCase("01") || selectedMonth.equalsIgnoreCase("03") || selectedMonth.equalsIgnoreCase("05") || selectedMonth.equalsIgnoreCase("07") || selectedMonth.equalsIgnoreCase("08") || selectedMonth.equalsIgnoreCase("10") || selectedMonth.equalsIgnoreCase("12")) {
-    	  noOfDays=31;	
-    	} else if(selectedMonth.equalsIgnoreCase("04") || selectedMonth.equalsIgnoreCase("06") || selectedMonth.equalsIgnoreCase("09") || selectedMonth.equalsIgnoreCase("11")) {
-    		noOfDays=30;
-    	} else if(selectedMonth.equalsIgnoreCase("02")) {
-    		if((year % 400 == 0) || (year % 100 != 0) && (year % 4 == 0)) {
-    			noOfDays=29;
-    		}else {
-    			noOfDays=28;
-    		}
-    	}
-    System.out.println("No Of Days :-"+noOfDays);
-    
-    boolean showTable= (selectedMonth != null && selectedYear != null);
-    %>
-		<div class="table_title_div">
-		<% String nameOfMonth= null;
-		String sortMonth=null;
-		if(selectedMonth.equalsIgnoreCase("01")) {
-			nameOfMonth= "January";
-			sortMonth= "Jan";
-		} else if(selectedMonth.equalsIgnoreCase("02")){
-			nameOfMonth= "February";
-			sortMonth= "Feb";
-		} else if(selectedMonth.equalsIgnoreCase("03")){
-			nameOfMonth= "March";
-			sortMonth= "Mar";
-		} else if(selectedMonth.equalsIgnoreCase("04")){
-			nameOfMonth= "April";
-			sortMonth= "Apr";
-		} else if(selectedMonth.equalsIgnoreCase("05")){
-			nameOfMonth= "May";
-			sortMonth= "May";
-		} else if(selectedMonth.equalsIgnoreCase("06")){
-			nameOfMonth= "June";
-			sortMonth= "Jun";
-		} else if(selectedMonth.equalsIgnoreCase("07")){
-			nameOfMonth= "July";
-			sortMonth= "Jul";
-		} else if(selectedMonth.equalsIgnoreCase("08")){
-			nameOfMonth= "August";
-			sortMonth= "Aug";
-		} else if(selectedMonth.equalsIgnoreCase("09")){
-			nameOfMonth= "September";
-			sortMonth= "Sep";
-		} else if(selectedMonth.equalsIgnoreCase("10")){
-			nameOfMonth= "October";
-			sortMonth= "Oct";
-		} else if(selectedMonth.equalsIgnoreCase("11")){
-			nameOfMonth= "November";
-			sortMonth= "Nov";
-		} else if(selectedMonth.equalsIgnoreCase("12")){
-			nameOfMonth= "December";
-			sortMonth= "Dec";
-		}
-		
-		 String m_strmthyr=nameOfMonth+"_"+selectedYear;
-		 String sort_MonthYear= sortMonth+"_"+selectedYear;
-		%>
-			<h2><%= m_strroles %>  Roster for <%=nameOfMonth %>  <%= selectedYear %></h2>
-		
-		</div>
-		
-		<br>
-		<br>
-		<table class="demonclass table table-border" id="aceprsys09_tb"
-<%
-Statement l_bjst = null;
-ResultSet l_bjres = null;
-Connection con = null;
-String l_strQuery = null;
-con = DBUtilityAuto.getReportDBConnection();
 
-l_strQuery = "select distinct(Team) as team from eisupport_employee_master";
-l_bjst = con.createStatement();
-l_bjres = l_bjst.executeQuery(l_strQuery);
-%>
-			style="border: 1px solid white; zoom: 80%; overflow-x: auto;">
+    <div class="table-wrapper">
+      <div class="table-scroll">
+        <table id="rosterTable">
+          <thead>
+            <!-- =============================================
+                 YAHAN APNA JSP HEADER CODE PLUG KAR
+                 Example:
+                 <tr>
+                   <th>Employee Name</th>
+                   <th>Position</th>
+                   <% for(int i=1; i<=noOfDays; i++) { %>
+                     <th><%=i%></th>
+                   <% } %>
+                   <th>Weekoffs</th>
+                   <th>Leaves</th>
+                 </tr>
+                 ============================================= -->
+            <tr>
+              <th>Employee Name</th>
+              <th>Position</th>
+              <!-- JSP: day columns yahan aayenge -->
+              <th>1</th><th>2</th><th>3</th><th>4</th><th>5</th>
+              <th>Weekoffs</th>
+              <th>Leaves</th>
+            </tr>
+          </thead>
+          <tbody id="rosterBody">
+            <!-- =============================================
+                 YAHAN APNA JSP ROW CODE PLUG KAR
+                 Har employee ke liye ek <tr> generate kar.
 
-			<tr id="aceprsys09IP_th"> <td class="HN_title" colspan="2"><%=m_strroles%>
+                 Example JSP row:
+                 <tr>
+                   <td><%=rs2.getString("NAME")%></td>
+                   <td>
+                     <select name="position_<%=i%>" class="shift-select">
+                       <option>Senior</option>
+                       <option>Junior</option>
+                     </select>
+                   </td>
+                   <% for(int day=1; day<=noOfDays; day++) { %>
+                     <td>
+                       <select name="mnt_<%=i%>_<%=day%>"
+                               class="shift-select shift-Morning"
+                               onchange="updateShiftColor(this)">
+                         <option value="Morning">M(o)</option>
+                         <option value="General">D(o)</option>
+                         <option value="Afternoon">A(o)</option>
+                         <option value="Night">N(o)</option>
+                         <option value="Weekoff">W</option>
+                         <option value="SickLeave">SL</option>
+                         <option value="CasualLeave">CL</option>
+                         <option value="EarnedLeave">EL</option>
+                         <option value="FlexiLeave">FL</option>
+                         <option value="HolidayLeave">HL</option>
+                       </select>
+                     </td>
+                   <% } %>
+                   <td><%=weekOff%></td>
+                   <td><%=leave%></td>
+                 </tr>
+                 ============================================= -->
 
-				<%-- <select name="userModule" id="userModule" style="border: none" class="HN_title">
-					<option vaule="" selected >All Module</option>
-					<%
-					while (l_bjres.next()) {
+            <!-- DEMO ROWS (JSP plug karne ke baad hata dena) -->
+            <tr>
+              <td>Rahul Sharma</td>
+              <td>
+                <select class="shift-select" style="background:var(--bg-2);">
+                  <option>Senior</option>
+                  <option>Junior</option>
+                </select>
+              </td>
+              <td><select class="shift-select shift-Morning" onchange="updateShiftColor(this)"><option>M(o)</option><option>D(o)</option><option>A(o)</option><option>N(o)</option><option>W</option></select></td>
+              <td><select class="shift-select shift-General" onchange="updateShiftColor(this)"><option>M(o)</option><option selected>D(o)</option><option>A(o)</option><option>N(o)</option><option>W</option></select></td>
+              <td><select class="shift-select shift-Night" onchange="updateShiftColor(this)"><option>M(o)</option><option>D(o)</option><option>A(o)</option><option selected>N(o)</option><option>W</option></select></td>
+              <td><select class="shift-select shift-Weekoff" onchange="updateShiftColor(this)"><option>M(o)</option><option>D(o)</option><option>A(o)</option><option>N(o)</option><option selected>W</option></select></td>
+              <td><select class="shift-select shift-Afternoon" onchange="updateShiftColor(this)"><option>M(o)</option><option>D(o)</option><option>A(o)</option><option selected>A(o)</option><option>W</option></select></td>
+              <td>2</td>
+              <td>0</td>
+            </tr>
+            <tr>
+              <td>Priya Verma</td>
+              <td>
+                <select class="shift-select" style="background:var(--bg-2);">
+                  <option>Senior</option>
+                  <option>Junior</option>
+                </select>
+              </td>
+              <td><select class="shift-select shift-Leave" onchange="updateShiftColor(this)"><option>M(o)</option><option>D(o)</option><option>A(o)</option><option>N(o)</option><option>W</option><option selected>L</option></select></td>
+              <td><select class="shift-select shift-Morning" onchange="updateShiftColor(this)"><option>M(o)</option><option>D(o)</option><option>A(o)</option><option>N(o)</option><option>W</option></select></td>
+              <td><select class="shift-select shift-General" onchange="updateShiftColor(this)"><option>M(o)</option><option>D(o)</option><option>A(o)</option><option>N(o)</option><option>W</option></select></td>
+              <td><select class="shift-select shift-Night" onchange="updateShiftColor(this)"><option>M(o)</option><option>D(o)</option><option>A(o)</option><option>N(o)</option><option>W</option></select></td>
+              <td><select class="shift-select shift-Holiday" onchange="updateShiftColor(this)"><option>M(o)</option><option>D(o)</option><option>A(o)</option><option>N(o)</option><option>W</option><option selected>HL</option></select></td>
+              <td>1</td>
+              <td>1</td>
+            </tr>
+          </tbody>
 
-						String team = l_bjres.getString("team");
-					%>
-					<option value="<%=team%>"><%=team%></option>
-					<%
-					}
-					%>
-				</select> --%>
+          <!-- ============ SUMMARY ROWS ============ -->
+          <tfoot id="summaryFoot">
+            <tr class="summary-row">
+              <td colspan="2">No. of Emp in Morning</td>
+              <td><span class="badge badge-morning">1</span></td>
+              <td><span class="badge badge-morning">0</span></td>
+              <td><span class="badge badge-morning">0</span></td>
+              <td><span class="badge badge-morning">0</span></td>
+              <td><span class="badge badge-morning">0</span></td>
+              <td></td><td></td>
+            </tr>
+            <tr class="summary-row">
+              <td colspan="2">No. of Emp in General</td>
+              <td><span class="badge badge-general">0</span></td>
+              <td><span class="badge badge-general">1</span></td>
+              <td><span class="badge badge-general">1</span></td>
+              <td><span class="badge badge-general">0</span></td>
+              <td><span class="badge badge-general">0</span></td>
+              <td></td><td></td>
+            </tr>
+            <tr class="summary-row">
+              <td colspan="2">No. of Emp in Afternoon</td>
+              <td><span class="badge badge-afternoon">0</span></td>
+              <td><span class="badge badge-afternoon">0</span></td>
+              <td><span class="badge badge-afternoon">0</span></td>
+              <td><span class="badge badge-afternoon">0</span></td>
+              <td><span class="badge badge-afternoon">1</span></td>
+              <td></td><td></td>
+            </tr>
+            <tr class="summary-row">
+              <td colspan="2">No. of Emp in Night</td>
+              <td><span class="badge badge-night">0</span></td>
+              <td><span class="badge badge-night">0</span></td>
+              <td><span class="badge badge-night">1</span></td>
+              <td><span class="badge badge-night">0</span></td>
+              <td><span class="badge badge-night">0</span></td>
+              <td></td><td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
 
-				<%
-				for (int i = 1; i <= noOfDays; i++) {
-				%>
-				<td class="Td_for_ipadd" id="logprsys39_IP_td"
-					style="background: aqua;"><%= i %></td>
-				<%} %>
-                <td class="Td_for_ipadd" id="logprsys39_IP_td"
-					style="background: aqua;">Weekoffs</td>
-				<td class="Td_for_ipadd" id="logprsys39_IP_td"
-					style="background: aqua;">Leaves</td>
+      <!-- ============ FOOTER ACTIONS ============ -->
+      <div class="footer-actions">
+        <input type="hidden" name="selectedMonth" value="">
+        <input type="hidden" name="selectedYear" value="">
+        <input type="hidden" name="m_strroles" value="">
+        <button type="button" class="btn btn-success" onclick="prepareData()">✓ Submit Roster</button>
+      </div>
+    </div>
+  </form>
 
-			</tr>
+<script>
+  // ============ SHIFT COLOR UPDATER ============
+  // Jab bhi select change ho, uska color class update karo
+  function updateShiftColor(selectEl) {
+    const val = selectEl.value.toLowerCase();
+    const all = ['shift-Morning','shift-General','shift-Afternoon','shift-Night',
+                 'shift-Weekoff','shift-Leave','shift-Flexi','shift-Holiday'];
+    selectEl.classList.remove(...all);
 
+    let cls = 'shift-General';
+    if (val.includes('morning')) cls = 'shift-Morning';
+    else if (val.includes('general') || val.includes('genral')) cls = 'shift-General';
+    else if (val.includes('afternoon')) cls = 'shift-Afternoon';
+    else if (val.includes('night')) cls = 'shift-Night';
+    else if (val.includes('weekoff')) cls = 'shift-Weekoff';
+    else if (val.includes('sick') || val.includes('casual') ||
+             val.includes('earned') || val === 'leave') cls = 'shift-Leave';
+    else if (val.includes('flexi')) cls = 'shift-Flexi';
+    else if (val.includes('holiday')) cls = 'shift-Holiday';
 
-			<tr id="aceprsys09_th">
-				<td class="BROKER_title">Employee Name</td>
-				<td class="BROKER_title">Tasks</td>
-				<% for(int day=1; day<=noOfDays; day++) {
-				LocalDate currentDate= LocalDate.of(year, month, day);
-				DayOfWeek dayOfWeek= currentDate.getDayOfWeek();
-				String dayOfWeekShort= dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.ENGLISH);
-				%>
-				<td class=""><%=dayOfWeekShort %></td>
-				<%}%>
-				<td class=""> </td>
-				<td class=""> </td>
-			</tr>
+    selectEl.classList.add(cls);
+  }
 
-			<% 
-			
-			if(showTable){
-	String getDataQuery="select * from rostertable where UPPER(TEAM) = UPPER('"+ m_strroles + "') and UPPER(MONTHYEAR)=UPPER('"+ sort_MonthYear +"') order by id" ;	
-	System.out.println(getDataQuery);
-	 Connection conn=DBUtilityAuto.getReportDBConnection();
-	 PreparedStatement pstmt=null,pstmt1=null;
-	 ResultSet rs1=null,rs2=null;
-	 Statement stmt=null;
-	 ResultSet rs= null;
-	 boolean exists=false;
-	try{
-		pstmt=conn.prepareStatement(getDataQuery);
-		rs1=pstmt.executeQuery();
-		exists=rs1.next();
-	}catch(Exception z){
-		z.printStackTrace();
-	}
-	if(exists){
-		int i=0;
-		String getDataQuery1="select * from rostertable where UPPER(TEAM)= UPPER('"+ m_strroles + "') and UPPER(MONTHYEAR)=UPPER('"+ sort_MonthYear +"') order by id" ;
-		pstmt1=conn.prepareStatement(getDataQuery1);
-		rs2=pstmt.executeQuery();
-		while(rs2.next())	{%>
-			<tr id='block'>
-			
-			<td class="BROKERNAME_TD"
-				style="background-color: rgb(147, 197, 114); color: black; font-weight: bolder;"
-				id='employeeName'><%= rs2.getString("NAME")%><input type="hidden"
-				name="employeeName" value="<%=rs2.getString("NAME") %>">
-				<input type="hidden"
-				name="adId" value="<%=rs2.getString("AD_ID") %>"></td>
-<%if(rs2.getString("POSITION")!=null) { if(rs2.getString("POSITION").equalsIgnoreCase("Manager")){ %>	
-<td class="BK_PORTno_TD">		
-<select name="position_<%=i %>" id="position_<%=i %>"  style="width: 150px; font-size: 20px; margin: -20px; background-color: black; color: white; border: none;">
-<option value="Manager" selected>Manager</option>
-</select>
-</td>	
-<%} else if(rs2.getString("POSITION").equalsIgnoreCase("Team Lead")){ %>
-<td class="BK_PORTno_TD">		
-<select name="position_<%=i %>" id="position_<%=i %>"  style="width: 150px; font-size: 20px; margin: -20px; background-color: black; color: white; border: none;">
-<option value="Team Lead" selected>Team Lead</option>
-</select>
-</td>
-<%} else if(rs2.getString("POSITION").equalsIgnoreCase("Senior")){ %>
-<td class="BK_PORTno_TD">		
-<select name="position_<%=i %>" id="position_<%=i %>"  style="width: 150px; font-size: 20px; margin: -20px; background-color: black; color: white; border: none;">
-<option value="Senior" selected>Senior</option>
-<option value="Junior">Junior</option>
-</select>
-</td>
-<%} else if(rs2.getString("POSITION").equalsIgnoreCase("Junior")){ %>
-<td class="BK_PORTno_TD">		
-<select name="position_<%=i %>" id="position_<%=i %>"  style="width: 150px; font-size: 20px; margin: -20px; background-color: black; color: white; border: none;">
-<option value="Senior" >Senior</option>
-<option value="Junior" selected>Junior</option>
-</select>
-</td>
-<%}} else if(rs2.getString("POSITION")==null) {
-if(m_strroles.equals("Manager")){%>
-<td class="BK_PORTno_TD">		
-<select name="position_<%=i %>" id="position_<%=i %>"  style="width: 150px; font-size: 20px; margin: -20px; background-color: black; color: white; border: none;">
-<option  selected disabled>Select Here</option>
-    <option value="Manager">Manager</option>
-</select>
-</td>
-<%} else if(m_strroles.equals("Team Lead")){ %>
-<td class="BK_PORTno_TD">		
-<select name="position_<%=i %>" id="position_<%=i %>"  style="width: 150px; font-size: 20px; margin: -20px; background-color: black; color: white; border: none;">
-<option  selected disabled>Select Here</option>
-    <option value="Team Lead">Team Lead</option>
-</select>
-</td>
-<%} else { %>
-<td class="BK_PORTno_TD">
-<select name="position_<%=i %>" id="position_<%=i %>"  style="width: 150px; font-size: 20px; margin: -20px; background-color: black; color: white; border: none;">
-<option  selected disabled>Select Here</option>
-    <option value="Senior">Senior</option>
-    <option value="Junior">Junior</option>
-</select>
-</td>
-<%}
- }%>
-			<% 
-			
-			for(int day=1;day<=noOfDays;day++){
-			String dayColumn= "DAY_"+ Integer.toString(day);
-			
-			if(rs2.getString(dayColumn).equalsIgnoreCase("Morning")){%>
-			<td id="block_"><select name="mnt_<%=i %>_<%=day %>"
-				class="MorningText"
-				onchange="this.className=this.options[this.selectedIndex].className"
-				style="width: 160%; height: 205%; position: relative; top: -11px; left: -11px; font-weight: bold;" >
-					<option class="MorningText" value="Morning" selected>M(o)</option>
-					<option class="MorningText" value="WFH-Morning" >WFH-M(o)</option>
-					<option class="MorningText" value="CC-Morning" >CC-M(o)</option>
-					<option class="GenralText" value="General">D(o)</option>
-					<option class="GenralText" value="WFH-General">WFH-D(o)</option>
-					<option class="GenralText" value="CC-General">CC-D(o)</option>
-					<option class="AfternoonText" value="Afternoon">A(o)</option>
-					<option class="AfternoonText" value="WFH-Afternoon">WFH-A(o)</option>
-					<option class="AfternoonText" value="CC-Afternoon">CC-A(o)</option>
-					<option class="NightText" value="Night">N(o)</option>
-					<option class="NightText" value="WFH-Night">WFH-N(o)</option>
-					<option class="NightText" value="CC-Night">CC-N(o)</option>
-					<option class="WeekoffText" value="Weekoff">W</option>
-					<!-- <option class="WeekoffAdjustText" value="WeekoffAdjust">WA</option> -->
-					<option class="LeaveText" value="SickLeave">SL</option>
-					<option class="LeaveText" value="CasualLeave">CL</option>
-					<option class="LeaveText" value="EarnedLeave">EL</option>
-					<option class="FlexiText" value="FlexiLeave">FL</option>
-					<option class="HolidayText" value="HolidayLeave">HL</option>
-					<option class="SeprationText" value="NA"> </option>
+  // ============ FORM SUBMIT ============
+  function submitForm() {
+    document.getElementById("monthYearForm").submit();
+  }
 
-			</select></td>
-			<% }else if(rs2.getString(dayColumn).equalsIgnoreCase("WFH-Morning")){%>
-			<td id="block_"><select name="mnt_<%=i %>_<%=day %>"
-				class="MorningText"
-				onchange="this.className=this.options[this.selectedIndex].className"
-				style="width: 160%; height: 205%; position: relative; top: -11px; left: -11px; font-weight: bold;" >
-					<option class="MorningText" value="Morning" >M(o)</option>
-					<option class="MorningText" value="WFH-Morning" selected>WFH-M(o)</option>
-					<option class="MorningText" value="CC-Morning" >CC-M(o)</option>
-					<option class="GenralText" value="General">D(o)</option>
-					<option class="GenralText" value="WFH-General">WFH-D(o)</option>
-					<option class="GenralText" value="CC-General">CC-D(o)</option>
-					<option class="AfternoonText" value="Afternoon">A(o)</option>
-					<option class="AfternoonText" value="WFH-Afternoon">WFH-A(o)</option>
-					<option class="AfternoonText" value="CC-Afternoon">CC-A(o)</option>
-					<option class="NightText" value="Night">N(o)</option>
-					<option class="NightText" value="WFH-Night">WFH-N(o)</option>
-					<option class="NightText" value="CC-Night">CC-N(o)</option>
-					<option class="WeekoffText" value="Weekoff">W</option>
-					<!-- <option class="WeekoffText" value="WeekoffAdjust">WA</option> -->
-					<option class="LeaveText" value="SickLeave">SL</option>
-					<option class="LeaveText" value="CasualLeave">CL</option>
-					<option class="LeaveText" value="EarnedLeave">EL</option>
-					<option class="FlexiText" value="FlexiLeave">FL</option>
-					<option class="HolidayText" value="HolidayLeave">HL</option>
-					<option class="SeprationText" value="NA"> </option>
+  // ============ ROSTER SUBMIT ============
+  function prepareData() {
+    // Yahan tu apna tableData serialize kar sakta hai agar chahiye
+    document.forms["rosterForm"].action =
+      '<%=request.getContextPath() + "/RosterServlet"%>';
+    document.forms["rosterForm"].submit();
+  }
 
-			</select></td>
-			<% }else if(rs2.getString(dayColumn).equalsIgnoreCase("CC-Morning")){%>
-			<td id="block_"><select name="mnt_<%=i %>_<%=day %>"
-				class="MorningText"
-				onchange="this.className=this.options[this.selectedIndex].className"
-				style="width: 160%; height: 205%; position: relative; top: -11px; left: -11px; font-weight: bold;" >
-					<option class="MorningText" value="Morning" >M(o)</option>
-					<option class="MorningText" value="WFH-Morning" >WFH-M(o)</option>
-					<option class="MorningText" value="CC-Morning" selected>CC-M(o)</option>
-					<option class="GenralText" value="General">D(o)</option>
-					<option class="GenralText" value="WFH-General">WFH-D(o)</option>
-					<option class="GenralText" value="CC-General">CC-D(o)</option>
-					<option class="AfternoonText" value="Afternoon">A(o)</option>
-					<option class="AfternoonText" value="WFH-Afternoon">WFH-A(o)</option>
-					<option class="AfternoonText" value="CC-Afternoon">CC-A(o)</option>
-					<option class="NightText" value="Night">N(o)</option>
-					<option class="NightText" value="WFH-Night">WFH-N(o)</option>
-					<option class="NightText" value="CC-Night">CC-N(o)</option>
-					<option class="WeekoffText" value="Weekoff">W</option>
-					<!-- <option class="WeekoffText" value="WeekoffAdjust">WA</option> -->
-					<option class="LeaveText" value="SickLeave">SL</option>
-					<option class="LeaveText" value="CasualLeave">CL</option>
-					<option class="LeaveText" value="EarnedLeave">EL</option>
-					<option class="FlexiText" value="FlexiLeave">FL</option>
-					<option class="HolidayText" value="HolidayLeave">HL</option>
-					<option class="SeprationText" value="NA"> </option>
-
-			</select></td>
-			<%} else if(rs2.getString(dayColumn).equalsIgnoreCase("Genral") || rs2.getString(dayColumn).equalsIgnoreCase("General") ){%>
-			<td id="block_"><select name="mnt_<%=i %>_<%=day %>"
-				class="GenralText"
-				onchange="this.className=this.options[this.selectedIndex].className"
-				style="width: 160%; height: 205%; position: relative; top: -11px; left: -11px; font-weight: bold;" >
-					<option class="MorningText" value="Morning">M(o)</option>
-					<option class="MorningText" value="WFH-Morning" >WFH-M(o)</option>
-					<option class="MorningText" value="CC-Morning" >CC-M(o)</option>
-					<option class="GenralText" value="General" selected>D(o)</option>
-					<option class="GenralText" value="WFH-General">WFH-D(o)</option>
-					<option class="GenralText" value="CC-General">CC-D(o)</option>
-					<option class="AfternoonText" value="Afternoon">A(o)</option>
-					<option class="AfternoonText" value="WFH-Afternoon">WFH-A(o)</option>
-					<option class="AfternoonText" value="CC-Afternoon">CC-A(o)</option>
-					<option class="NightText" value="Night">N(o)</option>
-					<option class="NightText" value="WFH-Night">WFH-N(o)</option>
-					<option class="NightText" value="CC-Night">CC-N(o)</option>
-					<option class="WeekoffText" value="Weekoff">W</option>
-					<!-- <option class="WeekoffAdjustText" value="WeekoffAdjust">WA</option> -->
-					<option class="LeaveText" value="SickLeave">SL</option>
-					<option class="LeaveText" value="CasualLeave">CL</option>
-					<option class="LeaveText" value="EarnedLeave">EL</option>
-					<option class="FlexiText" value="FlexiLeave">FL</option>
-					<option class="HolidayText" value="HolidayLeave">HL</option>
-					<option class="SeprationText" value="NA"> </option>
-
-			</select></td>
-			<%} else if(rs2.getString(dayColumn).equalsIgnoreCase("WFH-Genral") || rs2.getString(dayColumn).equalsIgnoreCase("WFH-General") ){%>
-			<td id="block_"><select name="mnt_<%=i %>_<%=day %>"
-				class="GenralText"
-				onchange="this.className=this.options[this.selectedIndex].className"
-				style="width: 160%; height: 205%; position: relative; top: -11px; left: -11px; font-weight: bold;" >
-					<option class="MorningText" value="Morning">M(o)</option>
-					<option class="MorningText" value="WFH-Morning" >WFH-M(o)</option>
-					<option class="MorningText" value="CC-Morning" >CC-M(o)</option>
-					<option class="GenralText" value="General" >D(o)</option>
-					<option class="GenralText" value="WFH-General" selected>WFH-D(o)</option>
-					<option class="GenralText" value="CC-General">CC-D(o)</option>
-					<option class="AfternoonText" value="Afternoon">A(o)</option>
-					<option class="AfternoonText" value="WFH-Afternoon">WFH-A(o)</option>
-					<option class="AfternoonText" value="CC-Afternoon">CC-A(o)</option>
-					<option class="NightText" value="Night">N(o)</option>
-					<option class="NightText" value="WFH-Night">WFH-N(o)</option>
-					<option class="NightText" value="CC-Night">CC-N(o)</option>
-					<option class="WeekoffText" value="Weekoff">W</option>
-					<!-- <option class="WeekoffAdjustText" value="WeekoffAdjust">WA</option> -->
-					<option class="LeaveText" value="SickLeave">SL</option>
-					<option class="LeaveText" value="CasualLeave">CL</option>
-					<option class="LeaveText" value="EarnedLeave">EL</option>
-					<option class="FlexiText" value="FlexiLeave">FL</option>
-					<option class="HolidayText" value="HolidayLeave">HL</option>
-					<option class="SeprationText" value="NA"> </option>
-
-			</select></td>
-			<%} else if(rs2.getString(dayColumn).equalsIgnoreCase("CC-General") ){%>
-			<td id="block_"><select name="mnt_<%=i %>_<%=day %>"
-				class="GenralText"
-				onchange="this.className=this.options[this.selectedIndex].className"
-				style="width: 160%; height: 205%; position: relative; top: -11px; left: -11px; font-weight: bold;" >
-					<option class="MorningText" value="Morning">M(o)</option>
-					<option class="MorningText" value="WFH-Morning" >WFH-M(o)</option>
-					<option class="MorningText" value="CC-Morning" >CC-M(o)</option>
-					<option class="GenralText" value="General" >D(o)</option>
-					<option class="GenralText" value="WFH-General" >WFH-D(o)</option>
-					<option class="GenralText" value="CC-General" selected>CC-D(o)</option>
-					<option class="AfternoonText" value="Afternoon">A(o)</option>
-					<option class="AfternoonText" value="WFH-Afternoon">WFH-A(o)</option>
-					<option class="AfternoonText" value="CC-Afternoon">CC-A(o)</option>
-					<option class="NightText" value="Night">N(o)</option>
-					<option class="NightText" value="WFH-Night">WFH-N(o)</option>
-					<option class="NightText" value="CC-Night">CC-N(o)</option>
-					<option class="WeekoffText" value="Weekoff">W</option>
-					<!-- <option class="WeekoffAdjustText" value="WeekoffAdjust">WA</option> -->
-					<option class="LeaveText" value="SickLeave">SL</option>
-					<option class="LeaveText" value="CasualLeave">CL</option>
-					<option class="LeaveText" value="EarnedLeave">EL</option>
-					<option class="FlexiText" value="FlexiLeave">FL</option>
-					<option class="HolidayText" value="HolidayLeave">HL</option>
-					<option class="SeprationText" value="NA"> </option>
-
-			</select></td>
-			<%} else if(rs2.getString(dayColumn).equalsIgnoreCase("Afternoon")){%>
-			<td id="block_"><select name="mnt_<%=i %>_<%=day %>"
-				class="AfternoonText"
-				onchange="this.className=this.options[this.selectedIndex].className"
-				style="width: 160%; height: 205%; position: relative; top: -11px; left: -11px; font-weight: bold;" >
-					<option class="MorningText" value="Morning">M(o)</option>
-					<option class="MorningText" value="WFH-Morning" >WFH-M(o)</option>
-					<option class="MorningText" value="CC-Morning" >CC-M(o)</option>
-					<option class="GenralText" value="General">D(o)</option>
-					<option class="GenralText" value="WFH-General">WFH-D(o)</option>
-					<option class="GenralText" value="CC-General">CC-D(o)</option>
-					<option class="AfternoonText" value="Afternoon" selected>A(o)</option>
-					<option class="AfternoonText" value="WFH-Afternoon">WFH-A(o)</option>
-					<option class="AfternoonText" value="CC-Afternoon">CC-A(o)</option>
-					<option class="NightText" value="Night">N(o)</option>
-					<option class="NightText" value="WFH-Night">WFH-N(o)</option>
-					<option class="NightText" value="CC-Night">CC-N(o)</option>
-					<option class="WeekoffText" value="Weekoff">W</option>
-					<!-- <option class="WeekoffAdjustText" value="WeekoffAdjust">WA</option> -->
-					<option class="LeaveText" value="SickLeave">SL</option>
-					<option class="LeaveText" value="CasualLeave">CL</option>
-					<option class="LeaveText" value="EarnedLeave">EL</option>
-					<option class="FlexiText" value="FlexiLeave">FL</option>
-					<option class="HolidayText" value="HolidayLeave">HL</option>
-					<option class="SeprationText" value="NA"> </option>
-
-			</select></td>
-			<%} else if(rs2.getString(dayColumn).equalsIgnoreCase("WFH-Afternoon")){%>
-			<td id="block_"><select name="mnt_<%=i %>_<%=day %>"
-				class="AfternoonText"
-				onchange="this.className=this.options[this.selectedIndex].className"
-				style="width: 160%; height: 205%; position: relative; top: -11px; left: -11px; font-weight: bold;" >
-					<option class="MorningText" value="Morning">M(o)</option>
-					<option class="MorningText" value="WFH-Morning" >WFH-M(o)</option>
-					<option class="MorningText" value="CC-Morning" >CC-M(o)</option>
-					<option class="GenralText" value="General">D(o)</option>
-					<option class="GenralText" value="WFH-General">WFH-D(o)</option>
-					<option class="GenralText" value="CC-General">CC-D(o)</option>
-					<option class="AfternoonText" value="Afternoon" >A(o)</option>
-					<option class="AfternoonText" value="WFH-Afternoon" selected>WFH-A(o)</option>
-					<option class="AfternoonText" value="CC-Afternoon">CC-A(o)</option>
-					<option class="NightText" value="Night">N(o)</option>
-					<option class="NightText" value="WFH-Night">WFH-N(o)</option>
-					<option class="NightText" value="CC-Night">CC-N(o)</option>
-					<option class="WeekoffText" value="Weekoff">W</option>
-				<!-- 	<option class="WeekoffAdjustText" value="WeekoffAdjust">WA</option> -->
-					<option class="LeaveText" value="SickLeave">SL</option>
-					<option class="LeaveText" value="CasualLeave">CL</option>
-					<option class="LeaveText" value="EarnedLeave">EL</option>
-					<option class="FlexiText" value="FlexiLeave">FL</option>
-					<option class="HolidayText" value="HolidayLeave">HL</option>
-					<option class="SeprationText" value="NA"> </option>
-
-			</select></td>
-			<%} else if(rs2.getString(dayColumn).equalsIgnoreCase("CC-Afternoon")){%>
-			<td id="block_"><select name="mnt_<%=i %>_<%=day %>"
-				class="AfternoonText"
-				onchange="this.className=this.options[this.selectedIndex].className"
-				style="width: 160%; height: 205%; position: relative; top: -11px; left: -11px; font-weight: bold;" >
-					<option class="MorningText" value="Morning">M(o)</option>
-					<option class="MorningText" value="WFH-Morning" >WFH-M(o)</option>
-					<option class="MorningText" value="CC-Morning" >CC-M(o)</option>
-					<option class="GenralText" value="General">D(o)</option>
-					<option class="GenralText" value="WFH-General">WFH-D(o)</option>
-					<option class="GenralText" value="CC-General">CC-D(o)</option>
-					<option class="AfternoonText" value="Afternoon" >A(o)</option>
-					<option class="AfternoonText" value="WFH-Afternoon" >WFH-A(o)</option>
-					<option class="AfternoonText" value="CC-Afternoon" selected>CC-A(o)</option>
-					<option class="NightText" value="Night">N(o)</option>
-					<option class="NightText" value="WFH-Night">WFH-N(o)</option>
-					<option class="NightText" value="CC-Night">CC-N(o)</option>
-					<option class="WeekoffText" value="Weekoff">W</option>
-					<!-- <option class="WeekoffAdjustText" value="WeekoffAdjust">WA</option> -->
-					<option class="LeaveText" value="SickLeave">SL</option>
-					<option class="LeaveText" value="CasualLeave">CL</option>
-					<option class="LeaveText" value="EarnedLeave">EL</option>
-					<option class="FlexiText" value="FlexiLeave">FL</option>
-					<option class="HolidayText" value="HolidayLeave">HL</option>
-					<option class="SeprationText" value="NA"> </option>
-
-			</select></td>
-			<%} else if(rs2.getString(dayColumn).equalsIgnoreCase("Night")){%>
-			<td id="block_"><select name="mnt_<%=i %>_<%=day %>"
-				class="NightText"
-				onchange="this.className=this.options[this.selectedIndex].className"
-				style="width: 160%; height: 205%; position: relative; top: -11px; left: -11px; font-weight: bold;" >
-					<option class="MorningText" value="Morning">M(o)</option>
-					<option class="MorningText" value="WFH-Morning" >WFH-M(o)</option>
-					<option class="MorningText" value="CC-Morning" >CC-M(o)</option>
-					<option class="GenralText" value="General">D(o)</option>
-					<option class="GenralText" value="WFH-General">WFH-D(o)</option>
-					<option class="GenralText" value="CC-General">CC-D(o)</option>
-					<option class="AfternoonText" value="Afternoon">A(o)</option>
-					<option class="AfternoonText" value="WFH-Afternoon">WFH-A(o)</option>
-					<option class="AfternoonText" value="CC-Afternoon">CC-A(o)</option>
-					<option class="NightText" value="Night" selected>N(o)</option>
-					<option class="NightText" value="WFH-Night">WFH-N(o)</option>
-					<option class="NightText" value="CC-Night">CC-N(o)</option>
-					<option class="WeekoffText" value="Weekoff">W</option>
-					<!-- <option class="WeekoffAdjustText" value="WeekoffAdjust">WA</option> -->
-					<option class="LeaveText" value="SickLeave">SL</option>
-					<option class="LeaveText" value="CasualLeave">CL</option>
-					<option class="LeaveText" value="EarnedLeave">EL</option>
-					<option class="FlexiText" value="FlexiLeave">FL</option>
-					<option class="HolidayText" value="HolidayLeave">HL</option>
-					<option class="SeprationText" value="NA"> </option>
-
-			</select></td>
-			<%} else if(rs2.getString(dayColumn).equalsIgnoreCase("WFH-Night")){%>
-			<td id="block_"><select name="mnt_<%=i %>_<%=day %>"
-				class="NightText"
-				onchange="this.className=this.options[this.selectedIndex].className"
-				style="width: 160%; height: 205%; position: relative; top: -11px; left: -11px; font-weight: bold;" >
-					<option class="MorningText" value="Morning">M(o)</option>
-					<option class="MorningText" value="WFH-Morning" >WFH-M(o)</option>
-					<option class="MorningText" value="CC-Morning" >CC-M(o)</option>
-					<option class="GenralText" value="General">D(o)</option>
-					<option class="GenralText" value="WFH-General">WFH-D(o)</option>
-					<option class="GenralText" value="CC-General">CC-D(o)</option>
-					<option class="AfternoonText" value="Afternoon">A(o)</option>
-					<option class="AfternoonText" value="WFH-Afternoon">WFH-A(o)</option>
-					<option class="AfternoonText" value="CC-Afternoon">CC-A(o)</option>
-					<option class="NightText" value="Night" >N(o)</option>
-					<option class="NightText" value="WFH-Night" selected>WFH-N(o)</option>
-					<option class="NightText" value="CC-Night">CC-N(o)</option>
-					<option class="WeekoffText" value="Weekoff">W</option>
-					<!-- <option class="WeekoffAdjustText" value="WeekoffAdjust">WA</option> -->
-					<option class="LeaveText" value="SickLeave">SL</option>
-					<option class="LeaveText" value="CasualLeave">CL</option>
-					<option class="LeaveText" value="EarnedLeave">EL</option>
-					<option class="FlexiText" value="FlexiLeave">FL</option>
-					<option class="HolidayText" value="HolidayLeave">HL</option>
-					<option class="SeprationText" value="NA"> </option>
-
-			</select></td>
-			<%} else if(rs2.getString(dayColumn).equalsIgnoreCase("CC-Night")){%>
-			<td id="block_"><select name="mnt_<%=i %>_<%=day %>"
-				class="NightText"
-				onchange="this.className=this.options[this.selectedIndex].className"
-				style="width: 160%; height: 205%; position: relative; top: -11px; left: -11px; font-weight: bold;" >
-					<option class="MorningText" value="Morning">M(o)</option>
-					<option class="MorningText" value="WFH-Morning" >WFH-M(o)</option>
-					<option class="MorningText" value="CC-Morning" >CC-M(o)</option>
-					<option class="GenralText" value="General">D(o)</option>
-					<option class="GenralText" value="WFH-General">WFH-D(o)</option>
-					<option class="GenralText" value="CC-General">CC-D(o)</option>
-					<option class="AfternoonText" value="Afternoon">A(o)</option>
-					<option class="AfternoonText" value="WFH-Afternoon">WFH-A(o)</option>
-					<option class="AfternoonText" value="CC-Afternoon">CC-A(o)</option>
-					<option class="NightText" value="Night" >N(o)</option>
-					<option class="NightText" value="WFH-Night" >WFH-N(o)</option>
-					<option class="NightText" value="CC-Night" selected>CC-N(o)</option>
-					<option class="WeekoffText" value="Weekoff">W</option>
-					<!-- <option class="WeekoffAdjustText" value="WeekoffAdjust">WA</option> -->
-					<option class="LeaveText" value="SickLeave">SL</option>
-					<option class="LeaveText" value="CasualLeave">CL</option>
-					<option class="LeaveText" value="EarnedLeave">EL</option>
-					<option class="FlexiText" value="FlexiLeave">FL</option>
-					<option class="HolidayText" value="HolidayLeave">HL</option>
-					<option class="SeprationText" value="NA"> </option>
-
-			</select></td>
-			<%} else if(rs2.getString(dayColumn).equalsIgnoreCase("Weekoff")){%>
-			<td id="block_"><select name="mnt_<%=i %>_<%=day %>"
-				class="WeekoffText"
-				onchange="this.className=this.options[this.selectedIndex].className"
-				style="width: 160%; height: 205%; position: relative; top: -11px; left: -11px; font-weight: bold;" >
-					<option class="MorningText" value="Morning">M(o)</option>
-					<option class="MorningText" value="WFH-Morning" >WFH-M(o)</option>
-					<option class="MorningText" value="CC-Morning" >CC-M(o)</option>
-					<option class="GenralText" value="General">D(o)</option>
-					<option class="GenralText" value="WFH-General">WFH-D(o)</option>
-					<option class="GenralText" value="CC-General">CC-D(o)</option>
-					<option class="AfternoonText" value="Afternoon">A(o)</option>
-					<option class="AfternoonText" value="WFH-Afternoon">WFH-A(o)</option>
-					<option class="AfternoonText" value="CC-Afternoon">CC-A(o)</option>
-					<option class="NightText" value="Night" >N(o)</option>
-					<option class="NightText" value="WFH-Night" >WFH-N(o)</option>
-					<option class="NightText" value="CC-Night">CC-N(o)</option>
-					<option class="WeekoffText" value="Weekoff" selected>W</option>
-					<!-- <option class="WeekoffAdjustText" value="WeekoffAdjust">WA</option> -->
-					<option class="LeaveText" value="SickLeave">SL</option>
-					<option class="LeaveText" value="CasualLeave">CL</option>
-					<option class="LeaveText" value="EarnedLeave">EL</option>
-					<option class="FlexiText" value="FlexiLeave">FL</option>
-					<option class="HolidayText" value="HolidayLeave">HL</option>
-					<option class="SeprationText" value="NA"> </option>
-
-			</select></td>
-			<%-- <%} else if(rs2.getString(dayColumn).equalsIgnoreCase("WeekoffAdjust")){%>
-			<td id="block_"><select name="mnt_<%=i %>_<%=day %>"
-				class="WeekoffText"
-				onchange="this.className=this.options[this.selectedIndex].className"
-				style="width: 160%; height: 205%; position: relative; top: -11px; left: -11px; font-weight: bold;" >
-					<option class="MorningText" value="Morning">M(o)</option>
-					<option class="MorningText" value="WFH-Morning" >WFH-M(o)</option>
-					<option class="MorningText" value="CC-Morning" >CC-M(o)</option>
-					<option class="GenralText" value="General">D(o)</option>
-					<option class="GenralText" value="WFH-General">WFH-D(o)</option>
-					<option class="GenralText" value="CC-General">CC-D(o)</option>
-					<option class="AfternoonText" value="Afternoon">A(o)</option>
-					<option class="AfternoonText" value="WFH-Afternoon">WFH-A(o)</option>
-					<option class="AfternoonText" value="CC-Afternoon">CC-A(o)</option>
-					<option class="NightText" value="Night" >N(o)</option>
-					<option class="NightText" value="WFH-Night" >WFH-N(o)</option>
-					<option class="NightText" value="CC-Night">CC-N(o)</option>
-					<option class="WeekoffText" value="Weekoff" >W</option>
-					<option class="WeekoffAdjustText" value="WeekoffAdjust" selected>WA</option>
-					<option class="LeaveText" value="SickLeave">SL</option>
-					<option class="LeaveText" value="CasualLeave">CL</option>
-					<option class="LeaveText" value="EarnedLeave">EL</option>
-					<option class="FlexiText" value="FlexiLeave">FL</option>
-					<option class="HolidayText" value="HolidayLeave">HL</option>
-					<option class="SeprationText" value="NA"> </option>
-
-			</select></td> --%>
-			<%} else if(rs2.getString(dayColumn).equalsIgnoreCase("Leave")){%>
-			<td id="block_"><select name="mnt_<%=i %>_<%=day %>"
-				class="LeaveText"
-				onchange="this.className=this.options[this.selectedIndex].className"
-				style="width: 160%; height: 205%; position: relative; top: -11px; left: -11px; font-weight: bold;" >
-					<option class="MorningText" value="Morning">M(o)</option>
-					<option class="MorningText" value="WFH-Morning" >WFH-M(o)</option>
-					<option class="MorningText" value="CC-Morning" >CC-M(o)</option>
-					<option class="GenralText" value="General">D(o)</option>
-					<option class="GenralText" value="WFH-General">WFH-D(o)</option>
-					<option class="GenralText" value="CC-General">CC-D(o)</option>
-					<option class="AfternoonText" value="Afternoon">A(o)</option>
-					<option class="AfternoonText" value="WFH-Afternoon">WFH-A(o)</option>
-					<option class="AfternoonText" value="CC-Afternoon">CC-A(o)</option>
-					<option class="NightText" value="Night" >N(o)</option>
-					<option class="NightText" value="WFH-Night" >WFH-N(o)</option>
-					<option class="NightText" value="CC-Night">CC-N(o)</option>
-					<option class="WeekoffText" value="Weekoff">W</option>
-					<!-- <option class="WeekoffAdjustText" value="WeekoffAdjust">WA</option> -->
-					<option class="LeaveText" value="Leave" selected>L</option>
-					<option class="LeaveText" value="SickLeave">SL</option>
-					<option class="LeaveText" value="CasualLeave">CL</option>
-					<option class="LeaveText" value="EarnedLeave">EL</option>
-					<option class="FlexiText" value="FlexiLeave" >FL</option>
-					<option class="HolidayText" value="HolidayLeave">HL</option>
-					<option class="SeprationText" value="NA"> </option>
-
-			</select></td>
-			
-			<%} else if(rs2.getString(dayColumn).equalsIgnoreCase("SickLeave")){%>
-			<td id="block_"><select name="mnt_<%=i %>_<%=day %>"
-				class="LeaveText"
-				onchange="this.className=this.options[this.selectedIndex].className"
-				style="width: 160%; height: 205%; position: relative; top: -11px; left: -11px; font-weight: bold;" >
-					<option class="MorningText" value="Morning">M(o)</option>
-					<option class="MorningText" value="WFH-Morning" >WFH-M(o)</option>
-					<option class="MorningText" value="CC-Morning" >CC-M(o)</option>
-					<option class="GenralText" value="General">D(o)</option>
-					<option class="GenralText" value="WFH-General">WFH-D(o)</option>
-					<option class="GenralText" value="CC-General">CC-D(o)</option>
-					<option class="AfternoonText" value="Afternoon">A(o)</option>
-					<option class="AfternoonText" value="WFH-Afternoon">WFH-A(o)</option>
-					<option class="AfternoonText" value="CC-Afternoon">CC-A(o)</option>
-					<option class="NightText" value="Night" >N(o)</option>
-					<option class="NightText" value="WFH-Night" >WFH-N(o)</option>
-					<option class="NightText" value="CC-Night">CC-N(o)</option>
-					<option class="WeekoffText" value="Weekoff" >W</option>
-					<!-- <option class="WeekoffAdjustText" value="WeekoffAdjust" >WA</option> -->
-					<option class="LeaveText" value="SickLeave" selected>SL</option>
-					<option class="LeaveText" value="CasualLeave">CL</option>
-					<option class="LeaveText" value="EarnedLeave">EL</option>
-					<option class="FlexiText" value="FlexiLeave">FL</option>
-					<option class="HolidayText" value="HolidayLeave">HL</option>
-					<option class="SeprationText" value="NA"> </option>
-
-			</select></td>
-			<%} else if(rs2.getString(dayColumn).equalsIgnoreCase("CasualLeave")){%>
-			<td id="block_"><select name="mnt_<%=i %>_<%=day %>"
-				class="LeaveText"
-				onchange="this.className=this.options[this.selectedIndex].className"
-				style="width: 160%; height: 205%; position: relative; top: -11px; left: -11px; font-weight: bold;" >
-					<option class="MorningText" value="Morning">M(o)</option>
-					<option class="MorningText" value="WFH-Morning" >WFH-M(o)</option>
-					<option class="MorningText" value="CC-Morning" >CC-M(o)</option>
-					<option class="GenralText" value="General">D(o)</option>
-					<option class="GenralText" value="WFH-General">WFH-D(o)</option>
-					<option class="GenralText" value="CC-General">CC-D(o)</option>
-					<option class="AfternoonText" value="Afternoon">A(o)</option>
-					<option class="AfternoonText" value="WFH-Afternoon">WFH-A(o)</option>
-					<option class="AfternoonText" value="CC-Afternoon">CC-A(o)</option>
-					<option class="NightText" value="Night" >N(o)</option>
-					<option class="NightText" value="WFH-Night" >WFH-N(o)</option>
-					<option class="NightText" value="CC-Night">CC-N(o)</option>
-					<option class="WeekoffText" value="Weekoff" >W</option>
-					<!-- <option class="WeekoffAdjustText" value="WeekoffAdjust" >WA</option> -->
-					<option class="LeaveText" value="SickLeave" >SL</option>
-					<option class="LeaveText" value="CasualLeave" selected>CL</option>
-					<option class="LeaveText" value="EarnedLeave">EL</option>
-					<option class="FlexiText" value="FlexiLeave">FL</option>
-					<option class="HolidayText" value="HolidayLeave">HL</option>
-					<option class="SeprationText" value="NA"> </option>
-
-			</select></td>
-			<%} else if(rs2.getString(dayColumn).equalsIgnoreCase("EarnedLeave")){%>
-			<td id="block_"><select name="mnt_<%=i %>_<%=day %>"
-				class="LeaveText"
-				onchange="this.className=this.options[this.selectedIndex].className"
-				style="width: 160%; height: 205%; position: relative; top: -11px; left: -11px; font-weight: bold;" >
-					<option class="MorningText" value="Morning">M(o)</option>
-					<option class="MorningText" value="WFH-Morning" >WFH-M(o)</option>
-					<option class="MorningText" value="CC-Morning" >CC-M(o)</option>
-					<option class="GenralText" value="General">D(o)</option>
-					<option class="GenralText" value="WFH-General">WFH-D(o)</option>
-					<option class="GenralText" value="CC-General">CC-D(o)</option>
-					<option class="AfternoonText" value="Afternoon">A(o)</option>
-					<option class="AfternoonText" value="WFH-Afternoon">WFH-A(o)</option>
-					<option class="AfternoonText" value="CC-Afternoon">CC-A(o)</option>
-					<option class="NightText" value="Night" >N(o)</option>
-					<option class="NightText" value="WFH-Night" >WFH-N(o)</option>
-					<option class="NightText" value="CC-Night">CC-N(o)</option>
-					<option class="WeekoffText" value="Weekoff" >W</option>
-					<!-- <option class="WeekoffAdjustText" value="WeekoffAdjust" >WA</option> -->
-					<option class="LeaveText" value="SickLeave" >SL</option>
-					<option class="LeaveText" value="CasualLeave" >CL</option>
-					<option class="LeaveText" value="EarnedLeave" selected>EL</option>
-					<option class="FlexiText" value="FlexiLeave">FL</option>
-					<option class="HolidayText" value="HolidayLeave">HL</option>
-					<option class="SeprationText" value="NA"> </option>
-
-			</select></td>
-			<%} else if(rs2.getString(dayColumn).equalsIgnoreCase("FlexiLeave")){%>
-			<td id="block_"><select name="mnt_<%=i %>_<%=day %>"
-				class="FlexiText"
-				onchange="this.className=this.options[this.selectedIndex].className"
-				style="width: 160%; height: 205%; position: relative; top: -11px; left: -11px; font-weight: bold;" >
-					<option class="MorningText" value="Morning">M(o)</option>
-					<option class="MorningText" value="WFH-Morning" >WFH-M(o)</option>
-					<option class="MorningText" value="CC-Morning" >CC-M(o)</option>
-					<option class="GenralText" value="General">D(o)</option>
-					<option class="GenralText" value="WFH-General">WFH-D(o)</option>
-					<option class="GenralText" value="CC-General">CC-D(o)</option>
-					<option class="AfternoonText" value="Afternoon">A(o)</option>
-					<option class="AfternoonText" value="WFH-Afternoon">WFH-A(o)</option>
-					<option class="AfternoonText" value="CC-Afternoon">CC-A(o)</option>
-					<option class="NightText" value="Night" >N(o)</option>
-					<option class="NightText" value="WFH-Night" >WFH-N(o)</option>
-					<option class="NightText" value="CC-Night">CC-N(o)</option>
-					<option class="WeekoffText" value="Weekoff">W</option>
-					<!-- <option class="WeekoffAdjustText" value="WeekoffAdjust">WA</option> -->
-					<option class="LeaveText" value="SickLeave" >SL</option>
-					<option class="LeaveText" value="CasualLeave" >CL</option>
-					<option class="LeaveText" value="EarnedLeave" >EL</option>
-					<option class="FlexiText" value="FlexiLeave" selected>FL</option>
-					<option class="HolidayText" value="HolidayLeave">HL</option>
-					<option class="SeprationText" value="NA"> </option>
-
-			</select></td>
-			<%} else if(rs2.getString(dayColumn).equalsIgnoreCase("HolidayLeave")){%>
-			<td id="block_"><select name="mnt_<%=i %>_<%=day %>"
-				class="HolidayText"
-				onchange="this.className=this.options[this.selectedIndex].className"
-				style="width: 160%; height: 205%; position: relative; top: -11px; left: -11px; font-weight: bold;" >
-					<option class="MorningText" value="Morning">M(o)</option>
-					<option class="MorningText" value="WFH-Morning" >WFH-M(o)</option>
-					<option class="MorningText" value="CC-Morning" >CC-M(o)</option>
-					<option class="GenralText" value="General">D(o)</option>
-					<option class="GenralText" value="WFH-General">WFH-D(o)</option>
-					<option class="GenralText" value="CC-General">CC-D(o)</option>
-					<option class="AfternoonText" value="Afternoon">A(o)</option>
-					<option class="AfternoonText" value="WFH-Afternoon">WFH-A(o)</option>
-					<option class="AfternoonText" value="CC-Afternoon">CC-A(o)</option>
-					<option class="NightText" value="Night" >N(o)</option>
-					<option class="NightText" value="WFH-Night" >WFH-N(o)</option>
-					<option class="NightText" value="CC-Night">CC-N(o)</option>
-					<option class="WeekoffText" value="Weekoff">W</option>
-					<!-- <option class="WeekoffAdjustText" value="WeekoffAdjust">WA</option> -->
-					<option class="LeaveText" value="SickLeave" >SL</option>
-					<option class="LeaveText" value="CasualLeave" >CL</option>
-					<option class="LeaveText" value="EarnedLeave" >EL</option>
-					<option class="FlexiText" value="FlexiLeave">FL</option>
-					<option class="HolidayText" value="HolidayLeave" selected>HL</option>
-					<option class="SeprationText" value="NA"> </option>
-
-			</select></td>
-			<%} else if(rs2.getString(dayColumn).equalsIgnoreCase("NA")){%>
-			<td id="block_"><select name="mnt_<%=i %>_<%=day %>"
-				class="SeprationText"
-				onchange="this.className=this.options[this.selectedIndex].className"
-				style="width: 160%; height: 205%; position: relative; top: -11px; left: -11px; font-weight: bold;" >
-					<option class="MorningText" value="Morning">M(o)</option>
-					<option class="MorningText" value="WFH-Morning" >WFH-M(o)</option>
-					<option class="MorningText" value="CC-Morning" >CC-M(o)</option>
-					<option class="GenralText" value="General">D(o)</option>
-					<option class="GenralText" value="WFH-General">WFH-D(o)</option>
-					<option class="GenralText" value="CC-General">CC-D(o)</option>
-					<option class="AfternoonText" value="Afternoon">A(o)</option>
-					<option class="AfternoonText" value="WFH-Afternoon">WFH-A(o)</option>
-					<option class="AfternoonText" value="CC-Afternoon">CC-A(o)</option>
-					<option class="NightText" value="Night" >N(o)</option>
-					<option class="NightText" value="WFH-Night" >WFH-N(o)</option>
-					<option class="NightText" value="CC-Night">CC-N(o)</option>
-					<option class="WeekoffText" value="Weekoff">W</option>
-					<!-- <option class="WeekoffAdjustText" value="WeekoffAdjust">WA</option> -->
-					<option class="LeaveText" value="SickLeave" >SL</option>
-					<option class="LeaveText" value="CasualLeave" >CL</option>
-					<option class="LeaveText" value="EarnedLeave" >EL</option>
-					<option class="FlexiText" value="FlexiLeave">FL</option>
-					<option class="HolidayText" value="HolidayLeave" >HL</option>
-					<option class="SeprationText" value="NA" selected> </option>
-
-			</select></td>
-		<% }}%>
-				<%
-        String name=rs2.getString("NAME");
-        String team=rs2.getString("TEAM");
-        StringBuilder tablequery= new StringBuilder("select numofWeekoffs, numofLeaves from( select ( case when LOWER(day_1) in ('weekoff','weekoffadjust') then 1 else 0 end ");
-    	for(int k=2; k<=noOfDays;k++) {
-    		tablequery.append(" + case when LOWER(day_"+k+") in ('weekoff','weekoffadjust') then 1 else 0 end");
-    	}
-    	tablequery.append(") as numofWeekoffs,");
-    	tablequery.append("(case when LOWER(day_1) in ('leave','sickleave','casualleave','earnedleave','flexileave','holidayleave') then 1 else 0 end");
-    	for(int k=2; k<=noOfDays;k++) {
-    		tablequery.append(" + case when LOWER(day_"+k+") in ('leave','sickleave','casualleave','earnedleave','flexileave','holidayleave') then 1 else 0 end");
-    	}
-    	tablequery.append(" ) as numofLeaves");
-    	tablequery.append(" from rostertable where UPPER(MONTHYEAR)=UPPER('"+sort_MonthYear+"') and UPPER(NAME)=UPPER('"+name+"') and UPPER(TEAM)=UPPER('"+team+"') )");
-        String finalQuery= tablequery.toString();
-    	//System.out.println("query:="+tablequery.toString());
-    	try{
-    		Statement smt=conn.createStatement();
-    		ResultSet rst=smt.executeQuery(finalQuery);
-    		while(rst.next()){
-    			int weekOff=rst.getInt("numofWeekoffs");
-    			int leave= rst.getInt("numofLeaves");
-    		    %>
-    			
-                        <td><%=weekOff %></td>
-				        <td><%=leave %></td>
-    		<%  }
-    	}catch(Exception e){
-    		e.printStackTrace();
-    	}	
-        %>
-	<%i++;} }else{
-   String query1="select ad_id, FIRSTNAME ||' '|| LASTNAME as Fullname from eisupport_employee_master where TEAM = '"+ m_strroles + "' and GENDER='Female' and isactive='Active'";
-   String query2="select ad_id, FIRSTNAME ||' '|| LASTNAME as Fullname from eisupport_employee_master where TEAM = '"+ m_strroles + "' and GENDER='Male' and isactive='Active'";
-   //System.out.println(query1);
-   List<String> femaleEmp= new ArrayList<String>();
-   List<String> maleEmp= new ArrayList<String>();
-   List<String> emp= new ArrayList<String>();
-   List<String> adid= new ArrayList<String>();
-   try{
-  
-    stmt=conn.createStatement();
-    rs=stmt.executeQuery(query1);
-   while(rs.next()){
-	   adid.add(rs.getString("ad_id"));
-	   femaleEmp.add(rs.getString("Fullname"));
-	   emp.add(rs.getString("Fullname"));
-   }
-   rs=stmt.executeQuery(query2);
-   while(rs.next()){
-	   adid.add(rs.getString("ad_id"));
-	   emp.add(rs.getString("Fullname"));
-   }
-   for(int i=0; i<emp.size();i++){
-	%>
-			<tr id='block'>
-				<td class="BROKERNAME_TD"
-					style="background-color: rgb(147, 197, 114); color: black; font-weight: bolder;"
-					id='employeeName'><%=emp.get(i) %><input type="hidden"
-					name="employeeName" value="<%=emp.get(i) %>">
-					<input type="hidden"
-					name="adId" value="<%=adid.get(i) %>"></td>
-		<% if(m_strroles.equals("Manager")){ %>			
-		<td class="BK_PORTno_TD">
-	<select name="position_<%=i %>" id="position_<%=i %>"  style="width: 150px; font-size: 20px; margin: -20px; background-color: black; color: white; border: none;">
-    <option value="Manager" selected>Manager</option>
-    </select>
-   </td>	<!-- <td class="BK_PORTno_TD">Module Lead</td> -->
-   <%} else if(m_strroles.equals("Team Lead")){ %>
-      <td class="BK_PORTno_TD">
-	<select name="position_<%=i %>" id="position_<%=i %>"  style="width: 150px; font-size: 20px; margin: -20px; background-color: black; color: white; border: none;">
-    <option value="Team Lead" selected>Team Lead</option>
-    </select>
-    </td>
-    <%} else{ %>
-     <td class="BK_PORTno_TD">
-	<select name="position_<%=i %>" id="position_<%=i %>"  style="width: 150px; font-size: 20px; margin: -20px; background-color: black; color: white; border: none;">
-    <option  selected disabled>Select Here</option>
-    <option value="Senior">Senior</option>
-    <option value="Junior">Junior</option>
-    </select>
-    </td>
-	<%}
-		for(int day=1;day<=noOfDays;day++){%>
-				<td id="block_"><select name="mnt_<%=i %>_<%=day %>"
-					class="MorningText"
-					onchange="this.className=this.options[this.selectedIndex].className"
-					style="width: 160%; height: 205%; position: relative; top: -11px; left: -11px; font-weight: bold;">
-						<option class="MorningText" value="Morning">M(o)</option>
-						<option class="MorningText" value="WFH-Morning" >WFH-M(o)</option>
-						<option class="MorningText" value="CC-Morning" >CC-M(o)</option>
-						<option class="GenralText" value="General">D(o)</option>
-						<option class="GenralText" value="WFH-General">WFH-D(o)</option>
-						<option class="GenralText" value="CC-General">CC-D(o)</option>
-						<option class="AfternoonText" value="Afternoon">A(o)</option>
-						<option class="AfternoonText" value="WFH-Afternoon">WFH-A(o)</option>
-						<option class="AfternoonText" value="CC-Afternoon">CC-A(o)</option>
-						<option class="NightText" value="Night" >N(o)</option>
-						<option class="NightText" value="WFH-Night" >WFH-N(o)</option>
-						<option class="NightText" value="CC-Night">CC-N(o)</option>
-						<option class="WeekoffText" value="Weekoff">W</option>
-						<!-- <option class="WeekoffAdjustText" value="WeekoffAdjust">WA</option> -->
-						<option class="LeaveText" value="SickLeave">SL</option>
-						<option class="LeaveText" value="CasualLeave">CL</option>
-						<option class="LeaveText" value="EarnedLeave">EL</option>
-						<option class="FlexiText" value="FlexiLeave">FL</option>
-						<option class="HolidayText" value="HolidayLeave">HL</option>
-						<option class="SeprationText" value="NA"> </option>
-
-				</select></td>
-				<% } %>
-				<%
-        String name=emp.get(i);
-        String team=m_strroles;
-        StringBuilder tablequery= new StringBuilder("select coalesce(sum ( case when LOWER(day_1) in ('weekoff','weekoffadjust') then 1 else 0 end ");
-    	for(int k=2; k<=noOfDays;k++) {
-    		tablequery.append(" + case when LOWER(day_"+k+") in ('weekoff','weekoffadjust') then 1 else 0 end");
-    	}
-    	tablequery.append("),0) as numofWeekoffs,");
-    	tablequery.append("coalesce(sum(case when LOWER(day_1) in ('leave','sickleave','casualleave','earnedleave','flexileave','holidayleave') then 1 else 0 end");
-    	for(int k=2; k<=noOfDays;k++) {
-    		tablequery.append(" + case when LOWER(day_"+k+") in ('leave','sickleave','casualleave','earnedleave','flexileave','holidayleave') then 1 else 0 end");
-    	}
-    	tablequery.append(" ),0) as numofLeaves");
-    	tablequery.append(" from rostertable where UPPER(MONTHYEAR)=UPPER('"+sort_MonthYear+"') and UPPER(NAME)=UPPER('"+name+"') and UPPER(TEAM)=UPPER('"+team+"') ");
-        String finalQuery= tablequery.toString();
-    	System.out.println("query:="+tablequery.toString());
-    	try{
-    		Statement smt=conn.createStatement();
-    		ResultSet rst=smt.executeQuery(finalQuery);
-    		while(rst.next()){
-    			int weekOff=rst.getInt("numofWeekoffs");
-    			int leave= rst.getInt("numofLeaves");
-    		    %>
-    			
-                        <td><%=weekOff %></td>
-				        <td><%=leave %></td>
-    		<%  }
-    	}catch(Exception e){
-    		e.printStackTrace();
-    	}	
-        %>
-			</tr>
-			<% }%>
-			
-			<%  
-	rs.close();
-   stmt.close();
-   //conn.close();
-  
-		
-		  }catch(Exception e) {
-				e.printStackTrace();
-			}	}%>
-			
-			<tr>
-    <td class="HN_title" colspan="2">No of Emp in Morning</td>
-    <%
-    for(int k=1;k<=noOfDays;k++){
-       String noQuery= "select count(1) as morningcount from rostertable where LOWER(DAY_"+k+") in('morning','wfh-morning','cc-morning') and UPPER(MONTHYEAR)=UPPER('"+sort_MonthYear+"') and UPPER(TEAM)=UPPER('"+m_strroles+"')"	;
-       Statement csmt=conn.createStatement();
-		ResultSet crst=csmt.executeQuery(noQuery);
-		while(crst.next()){%>
-			<td><%=crst.getInt("MORNINGCOUNT") %></td>
-		<% }}%>
-        </tr>
-        <tr>
-    <td class="HN_title" colspan="2">No of Emp in General</td>
-    <%
-    for(int k=1;k<=noOfDays;k++){
-       String noQuery= "select count(1) as generalcount from rostertable where LOWER(DAY_"+k+") in('genral','general','wfh-genral','wfh-general','cc-general') and UPPER(MONTHYEAR)=UPPER('"+sort_MonthYear+"') and UPPER(TEAM)=UPPER('"+m_strroles+"')"	;
-       Statement csmt=conn.createStatement();
-		ResultSet crst=csmt.executeQuery(noQuery);
-		while(crst.next()){%>
-			<td><%=crst.getInt("generalcount") %></td>
-		<% }}%>
-        </tr>
-         <tr>
-    <td class="HN_title" colspan="2">No of Emp in AfterNoon</td>
-    <%
-    for(int k=1;k<=noOfDays;k++){
-       String noQuery= "select count(1) as afternooncount from rostertable where LOWER(DAY_"+k+") in('afternoon','wfh-afternoon','cc-afternoon') and UPPER(MONTHYEAR)=UPPER('"+sort_MonthYear+"') and UPPER(TEAM)=UPPER('"+m_strroles+"')"	;
-       Statement csmt=conn.createStatement();
-		ResultSet crst=csmt.executeQuery(noQuery);
-		while(crst.next()){%>
-			<td><%=crst.getInt("afternooncount") %></td>
-		<% }}%>
-        </tr>
-         <tr>
-    <td class="HN_title" colspan="2">No of Emp in Night</td>
-    <%
-    for(int k=1;k<=noOfDays;k++){
-       String noQuery= "select count(1) as nightcount from rostertable where LOWER(DAY_"+k+") in('night','wfh-night','cc-night') and UPPER(MONTHYEAR)=UPPER('"+sort_MonthYear+"') and UPPER(TEAM)=UPPER('"+m_strroles+"')"	;
-       Statement csmt=conn.createStatement();
-		ResultSet crst=csmt.executeQuery(noQuery);
-		while(crst.next()){%>
-			<td><%=crst.getInt("nightcount") %></td>
-		<% }}%>
-        </tr>
-			 <input type="hidden" id="<%=selectedMonth%>" name ="selectedMonth" value="<%=selectedMonth%>">
-		<input type="hidden" id="<%=selectedYear%>" name ="selectedYear" value ="<%=selectedYear%>">
-		<input type="hidden" id="<%=m_strroles%>" name ="m_strroles" value ="<%=m_strroles%>">
-		<input type="hidden" id="<%=username%>" name ="username" value ="<%=username%>">
-		<% if(month>monthValue && year>= yearValue){%>
-  <p style="text-align: center;"> <input type="button" value="Submit" onclick="prepareData();"  style=" font-weight: bolder; background-color: DodgerBlue; color: white; width: 80px; height: 36px; border-radius: 5px; position: relative; align-items: center; top: 100%;  "> </p>
-  <% }}
-			
-}
-	 %>
-	 
-	  
-	 
-		</table>
-		
-			</form>
-	</div>
+  // ============ URL CLEANUP ============
+  window.addEventListener('load', function () {
+    window.history.replaceState({}, 'View Roster',
+      '<%=request.getContextPath() + "/jsp/testRoster.jsp"%>');
+  });
+</script>
 </body>
-
 </html>
