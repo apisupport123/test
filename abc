@@ -48,16 +48,16 @@
   --warning:#F79009;
   --danger:#F04438;
 
-  /* Shift colors */
-  --m-bg:#FFF6ED; --m-fg:#C4320A; --m-bd:#F9DBAF;
-  --d-bg:#F2F4F7; --d-fg:#344054; --d-bd:#D0D5DD;
-  --a-bg:#FFFAEB; --a-fg:#B54708; --a-bd:#FEDF89;
-  --n-bg:#EFF8FF; --n-fg:#175CD3; --n-bd:#B2DDFF;
-  --w-bg:#EEF4FF; --w-fg:#3538CD; --w-bd:#C7D7FE;
-  --l-bg:#FEF3F2; --l-fg:#B42318; --l-bd:#FECDCA;
-  --f-bg:#FDF2FA; --f-fg:#C11574; --f-bd:#FCCEEE;
-  --h-bg:#ECFDF3; --h-fg:#027A48; --h-bd:#A6F4C5;
-  --x-bg:#F9FAFB; --x-fg:#98A2B3; --x-bd:#EAECF0;
+  /* Shift colors (light) */
+  --m-bg:#FFE4CC; --m-fg:#8A2C00; --m-bd:#FFB380; --m-dot:#FF8C00;
+  --d-bg:#E5E8EC; --d-fg:#1F2937; --d-bd:#B8BFC9; --d-dot:#696969;
+  --a-bg:#FFF1B8; --a-fg:#7A4F00; --a-bd:#F5D45F; --a-dot:#DAA520;
+  --n-bg:#CCE4FF; --n-fg:#003D80; --n-bd:#80B8FF; --n-dot:#1E90FF;
+  --w-bg:#D6DCFF; --w-fg:#1E1E8A; --w-bd:#9BA5FF; --w-dot:#1E40AF;
+  --l-bg:#FFD6D6; --l-fg:#8A0F0F; --l-bd:#FF9E9E; --l-dot:#DC2626;
+  --f-bg:#FFD6EB; --f-fg:#8A0047; --f-bd:#FF9ECC; --f-dot:#EA580C;
+  --h-bg:#C8F0D6; --h-fg:#0F5A2D; --h-bd:#8ADCA8; --h-dot:#16A34A;
+  --x-bg:#EDEFF2; --x-fg:#667085; --x-bd:#D0D5DD; --x-dot:#98A2B3;
 
   --bg-page:var(--gray-50);
   --bg-surface:var(--gray-0);
@@ -76,7 +76,6 @@
   --shadow-sm:0 1px 3px 0 rgba(16,24,40,.10);
   --shadow-md:0 4px 8px -2px rgba(16,24,40,.10);
   --shadow-lg:0 12px 16px -4px rgba(16,24,40,.10);
-  --shadow-xl:0 20px 24px -4px rgba(16,24,40,.10);
 
   --font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
   --mono:'JetBrains Mono',ui-monospace,monospace;
@@ -101,15 +100,15 @@ html[data-theme="dark"]{
   --accent-soft:#1E1B4B;
   --accent-line:#3730A3;
 
-  --m-bg:#3A1D0A; --m-fg:#FDB022; --m-bd:#5C2C0F;
-  --d-bg:#1A1E26; --d-fg:#A6B0C2; --d-bd:#2E333C;
-  --a-bg:#3D2A05; --a-fg:#FDB022; --a-bd:#5C3F0F;
-  --n-bg:#0A2540; --n-fg:#53B1FD; --n-bd:#0F3A66;
-  --w-bg:#1E1B4B; --w-fg:#8B83FF; --w-bd:#3730A3;
-  --l-bg:#3A1211; --l-fg:#F97066; --l-bd:#5A1A18;
-  --f-bg:#3D1030; --f-fg:#F670C7; --f-bd:#5E1A4A;
-  --h-bg:#052E1F; --h-fg:#32D583; --h-bd:#0A5133;
-  --x-bg:#12161D; --x-fg:#5A6270; --x-bd:#22262F;
+  --m-bg:#3A1D0A; --m-fg:#FDB022; --m-bd:#5C2C0F; --m-dot:#FB923C;
+  --d-bg:#1A1E26; --d-fg:#A6B0C2; --d-bd:#2E333C; --d-dot:#9CA3AF;
+  --a-bg:#3D2A05; --a-fg:#FDB022; --a-bd:#5C3F0F; --a-dot:#FBBF24;
+  --n-bg:#0A2540; --n-fg:#53B1FD; --n-bd:#0F3A66; --n-dot:#60A5FA;
+  --w-bg:#1E1B4B; --w-fg:#8B83FF; --w-bd:#3730A3; --w-dot:#818CF8;
+  --l-bg:#3A1211; --l-fg:#F97066; --l-bd:#5A1A18; --l-dot:#F87171;
+  --f-bg:#3D1030; --f-fg:#F670C7; --f-bd:#5E1A4A; --f-dot:#FB923C;
+  --h-bg:#052E1F; --h-fg:#32D583; --h-bd:#0A5133; --h-dot:#4ADE80;
+  --x-bg:#12161D; --x-fg:#5A6270; --x-bd:#22262F; --x-dot:#374151;
 
   --bg-page:var(--gray-50);
   --bg-surface:var(--gray-25);
@@ -124,7 +123,6 @@ html[data-theme="dark"]{
   --shadow-sm:0 1px 3px 0 rgba(0,0,0,.5);
   --shadow-md:0 4px 8px -2px rgba(0,0,0,.4);
   --shadow-lg:0 12px 16px -4px rgba(0,0,0,.5);
-  --shadow-xl:0 20px 24px -4px rgba(0,0,0,.6);
 }
 
 *{margin:0;padding:0;box-sizing:border-box}
@@ -144,7 +142,7 @@ a{color:inherit;text-decoration:none}
 button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit;}
 
 /* ============================================================
-   APP BAR — compact
+   APP BAR
    ============================================================ */
 .appbar{
   position:sticky; top:0; z-index:100;
@@ -172,9 +170,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
   color:var(--text-secondary);
   transition:all .15s ease;
 }
-.icon-btn:hover{
-  background:var(--bg-subtle); color:var(--text-primary);
-}
+.icon-btn:hover{background:var(--bg-subtle); color:var(--text-primary);}
 .icon-btn svg{
   width:17px;height:17px;
   stroke:currentColor;fill:none;
@@ -204,7 +200,7 @@ html[data-theme="dark"] .icon-btn .icon-moon{display:block;}
 .user-chip .name{font-size:12px;font-weight:600;}
 
 /* ============================================================
-   CONTEXT ROW — single compact line
+   CONTEXT ROW
    ============================================================ */
 .context-row{
   background:var(--bg-surface);
@@ -217,15 +213,10 @@ html[data-theme="dark"] .icon-btn .icon-moon{display:block;}
   flex-wrap:wrap;
 }
 .context-left{
-  display:flex;
-  align-items:baseline;
-  gap:16px;
-  flex-wrap:wrap;
+  display:flex; align-items:baseline; gap:16px; flex-wrap:wrap;
 }
 .context-title{
-  font-size:17px;
-  font-weight:700;
-  letter-spacing:-.3px;
+  font-size:17px; font-weight:700; letter-spacing:-.3px;
   color:var(--text-primary);
 }
 .context-title .accent{color:var(--accent);}
@@ -237,14 +228,8 @@ html[data-theme="dark"] .icon-btn .icon-moon{display:block;}
 .context-meta .sep{
   width:3px;height:3px;border-radius:50%;background:var(--gray-300);
 }
+.context-right{display:flex; align-items:center; gap:8px;}
 
-.context-right{
-  display:flex;
-  align-items:center;
-  gap:8px;
-}
-
-/* Compact inputs */
 .c-input{
   font-family:var(--font);
   font-size:13px;
@@ -282,11 +267,11 @@ html[data-theme="dark"] .icon-btn .icon-moon{display:block;}
 .btn-primary:hover{background:var(--accent-hover);}
 
 /* ============================================================
-   TOOLBAR — single line, compact
+   TOOLBAR — search + legend HORIZONTAL
    ============================================================ */
 .toolbar{
   background:var(--bg-page);
-  padding:12px 20px;
+  padding:12px 20px 10px;
   display:flex;
   justify-content:space-between;
   align-items:center;
@@ -325,9 +310,6 @@ html[data-theme="dark"] .icon-btn .icon-moon{display:block;}
   box-shadow:0 0 0 3px var(--accent-soft);
 }
 
-.toolbar-right{
-  display:flex; align-items:center; gap:8px;
-}
 .stat-inline{
   display:inline-flex; align-items:center; gap:6px;
   padding:5px 10px;
@@ -336,95 +318,81 @@ html[data-theme="dark"] .icon-btn .icon-moon{display:block;}
   border-radius:var(--radius-md);
   font-size:12px; font-weight:500;
   color:var(--text-secondary);
+  height:34px;
 }
 .stat-inline b{color:var(--text-primary); font-weight:700; font-variant-numeric:tabular-nums;}
 
-/* Legend trigger button */
-.legend-trigger{
-  display:inline-flex; align-items:center; gap:6px;
-  padding:5px 12px;
+/* ============================================================
+   LEGEND BAR — HORIZONTAL, ALWAYS VISIBLE
+   ============================================================ */
+.legend-bar{
   background:var(--bg-surface);
-  border:1px solid var(--border-strong);
-  border-radius:var(--radius-md);
-  font-size:12px; font-weight:600;
-  color:var(--text-secondary);
-  cursor:pointer;
-  transition:all .15s ease;
-  height:34px;
+  border-bottom:1px solid var(--border);
+  padding:10px 20px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  overflow-x:auto;
+  overflow-y:hidden;
+  scrollbar-width:thin;
 }
-.legend-trigger:hover{
-  border-color:var(--accent);
-  color:var(--accent);
-  background:var(--accent-soft);
-}
-.legend-trigger svg{
-  width:14px;height:14px;
-  stroke:currentColor;fill:none;stroke-width:2;
-  stroke-linecap:round;stroke-linejoin:round;
-}
+.legend-bar::-webkit-scrollbar{height:4px;}
+.legend-bar::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:2px;}
 
-/* Legend Popover */
-.legend-pop{
-  position:absolute;
-  top:calc(100% + 8px);
-  right:0;
-  z-index:200;
-  background:var(--bg-surface);
-  border:1px solid var(--border);
-  border-radius:var(--radius-lg);
-  box-shadow:var(--shadow-xl);
-  padding:14px;
-  width:340px;
-  display:none;
-}
-.legend-pop.open{display:block; animation:pop .15s ease;}
-@keyframes pop{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:translateY(0);}}
-
-.legend-pop h4{
-  font-size:11px; font-weight:700;
-  text-transform:uppercase; letter-spacing:.5px;
+.legend-label{
+  flex-shrink:0;
+  font-size:10px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.6px;
   color:var(--text-tertiary);
-  margin-bottom:10px;
+  padding-right:8px;
+  border-right:1px solid var(--border);
+  margin-right:4px;
+  white-space:nowrap;
 }
-.legend-grid{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:6px;
-}
-.legend-item{
-  display:flex; align-items:center; gap:8px;
-  padding:6px 8px;
-  border-radius:var(--radius-sm);
-  font-size:12px;
-  font-weight:500;
-  color:var(--text-secondary);
-  transition:background .1s ease;
-}
-.legend-item:hover{background:var(--bg-subtle);}
-.legend-swatch{
+
+.legend-chip{
+  flex-shrink:0;
   display:inline-flex;
-  align-items:center; justify-content:center;
-  width:26px; height:22px;
-  border-radius:4px;
-  font-size:10px; font-weight:800;
+  align-items:center;
+  gap:6px;
+  padding:5px 10px;
+  border-radius:6px;
+  font-size:11px;
+  font-weight:700;
   border:1px solid;
+  white-space:nowrap;
+  transition:all .12s ease;
+  cursor:default;
+  font-variant-numeric:tabular-nums;
+}
+.legend-chip:hover{
+  transform:translateY(-1px);
+  box-shadow:var(--shadow-sm);
+}
+.legend-chip .swatch{
+  width:8px;
+  height:8px;
+  border-radius:2px;
   flex-shrink:0;
 }
-.legend-swatch.morning{background:var(--m-bg);color:var(--m-fg);border-color:var(--m-bd);}
-.legend-swatch.general{background:var(--d-bg);color:var(--d-fg);border-color:var(--d-bd);}
-.legend-swatch.afternoon{background:var(--a-bg);color:var(--a-fg);border-color:var(--a-bd);}
-.legend-swatch.night{background:var(--n-bg);color:var(--n-fg);border-color:var(--n-bd);}
-.legend-swatch.weekoff{background:var(--w-bg);color:var(--w-fg);border-color:var(--w-bd);}
-.legend-swatch.leave{background:var(--l-bg);color:var(--l-fg);border-color:var(--l-bd);}
-.legend-swatch.flexi{background:var(--f-bg);color:var(--f-fg);border-color:var(--f-bd);}
-.legend-swatch.holiday{background:var(--h-bg);color:var(--h-fg);border-color:var(--h-bd);}
-.legend-swatch.na{background:var(--x-bg);color:var(--x-fg);border-color:var(--x-bd);}
+
+.legend-chip.morning  {background:var(--m-bg);color:var(--m-fg);border-color:var(--m-bd);}
+.legend-chip.general  {background:var(--d-bg);color:var(--d-fg);border-color:var(--d-bd);}
+.legend-chip.afternoon{background:var(--a-bg);color:var(--a-fg);border-color:var(--a-bd);}
+.legend-chip.night    {background:var(--n-bg);color:var(--n-fg);border-color:var(--n-bd);}
+.legend-chip.weekoff  {background:var(--w-bg);color:var(--w-fg);border-color:var(--w-bd);}
+.legend-chip.leave    {background:var(--l-bg);color:var(--l-fg);border-color:var(--l-bd);}
+.legend-chip.flexi    {background:var(--f-bg);color:var(--f-fg);border-color:var(--f-bd);}
+.legend-chip.holiday  {background:var(--h-bg);color:var(--h-fg);border-color:var(--h-bd);}
+.legend-chip.na       {background:var(--x-bg);color:var(--x-fg);border-color:var(--x-bd);}
 
 /* ============================================================
    ROSTER GRID
    ============================================================ */
 .grid-wrap{
-  padding:0 20px 90px;
+  padding:16px 20px 90px;
   overflow-x:auto;
 }
 .roster-grid{
@@ -527,7 +495,7 @@ html[data-theme="dark"] .roster-grid thead th.is-weekend{
 .roster-grid tbody tr:hover td.col-pos{background:var(--bg-subtle);}
 
 /* ============================================================
-   SHIFT CELL — tight, badge + hidden native select
+   SHIFT CELL
    ============================================================ */
 .shift-cell{
   position:relative;
@@ -535,18 +503,21 @@ html[data-theme="dark"] .roster-grid thead th.is-weekend{
 }
 .shift-badge{
   display:flex; align-items:center; justify-content:center;
-  width:100%; height:28px;
+  width:100%; height:30px;
   border-radius:5px;
-  font-size:10px; font-weight:700;
+  font-size:10px; font-weight:800;
   letter-spacing:.2px;
-  border:1px solid;
+  border:1.5px solid;
   font-variant-numeric:tabular-nums;
   transition:all .12s ease;
   pointer-events:none;
+  box-shadow:inset 0 -1px 0 rgba(0,0,0,.05);
 }
 .shift-cell:hover .shift-badge{
   box-shadow:var(--shadow-sm);
 }
+
+/* Badge colors */
 .shift-badge.morning  {background:var(--m-bg);color:var(--m-fg);border-color:var(--m-bd);}
 .shift-badge.general  {background:var(--d-bg);color:var(--d-fg);border-color:var(--d-bd);}
 .shift-badge.afternoon{background:var(--a-bg);color:var(--a-fg);border-color:var(--a-bd);}
@@ -557,11 +528,12 @@ html[data-theme="dark"] .roster-grid thead th.is-weekend{
 .shift-badge.holiday  {background:var(--h-bg);color:var(--h-fg);border-color:var(--h-bd);}
 .shift-badge.na       {background:var(--x-bg);color:var(--x-fg);border-color:var(--x-bd);}
 
+/* Native select — invisible, sits on top of badge */
 .shift-cell select.shift-native{
   position:absolute;
   inset:3px;
   width:calc(100% - 6px);
-  height:28px;
+  height:30px;
   opacity:0;
   cursor:pointer;
   font-family:var(--font);
@@ -569,11 +541,27 @@ html[data-theme="dark"] .roster-grid thead th.is-weekend{
   border-radius:5px;
   border:1px solid var(--border-strong);
 }
+
+/* Dropdown open state — show it colored */
 .shift-cell select.shift-native:focus{
   opacity:1;
   box-shadow:var(--shadow-md);
   outline:2px solid var(--accent);
   outline-offset:-1px;
+  /* Color the collapsed select value */
+  background:var(--bg-surface);
+  color:var(--text-primary);
+  font-weight:700;
+}
+
+/* Colored options in dropdown list */
+.shift-native option{
+  font-weight:700;
+  padding:6px 10px;
+  font-family:var(--font);
+  font-size:12px;
+  background:#FFFFFF;
+  color:#111827;
 }
 
 /* ============================================================
@@ -652,7 +640,8 @@ html[data-theme="dark"] .roster-grid thead th.is-weekend{
   .context-title{font-size:15px;}
   .toolbar{padding:10px 14px;}
   .search-input{width:100%; max-width:100%;}
-  .grid-wrap{padding:0 14px 90px;}
+  .legend-bar{padding:8px 14px;}
+  .grid-wrap{padding:12px 14px 90px;}
   .action-bar{padding:10px 14px;}
   .roster-grid thead th.col-emp{min-width:150px;padding-left:12px;}
   .roster-grid thead th.col-pos{left:150px;min-width:80px;}
@@ -814,39 +803,39 @@ html[data-theme="dark"] .roster-grid thead th.is-weekend{
     </div>
     <span class="stat-inline" id="searchInfo">Showing <b><%= totalEmp %></b> of <%= totalEmp %></span>
   </div>
+</section>
 
-  <div class="toolbar-right" style="position:relative;">
-    <button type="button" class="legend-trigger" onclick="toggleLegend(event)">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-      Legend
-    </button>
-    <div class="legend-pop" id="legendPop">
-      <h4>Shift Codes</h4>
-      <div class="legend-grid">
-        <div class="legend-item"><span class="legend-swatch morning">M</span> Morning</div>
-        <div class="legend-item"><span class="legend-swatch morning">WFH-M</span> WFH Morning</div>
-        <div class="legend-item"><span class="legend-swatch morning">CC-M</span> CC Morning</div>
-        <div class="legend-item"><span class="legend-swatch general">D</span> General</div>
-        <div class="legend-item"><span class="legend-swatch general">WFH-D</span> WFH General</div>
-        <div class="legend-item"><span class="legend-swatch general">CC-D</span> CC General</div>
-        <div class="legend-item"><span class="legend-swatch afternoon">A</span> Afternoon</div>
-        <div class="legend-item"><span class="legend-swatch afternoon">WFH-A</span> WFH Afternoon</div>
-        <div class="legend-item"><span class="legend-swatch afternoon">CC-A</span> CC Afternoon</div>
-        <div class="legend-item"><span class="legend-swatch night">N</span> Night</div>
-        <div class="legend-item"><span class="legend-swatch night">WFH-N</span> WFH Night</div>
-        <div class="legend-item"><span class="legend-swatch night">CC-N</span> CC Night</div>
-        <div class="legend-item"><span class="legend-swatch weekoff">W</span> Weekoff</div>
-        <div class="legend-item"><span class="legend-swatch weekoff">WA</span> Weekoff Adjust</div>
-        <div class="legend-item"><span class="legend-swatch leave">L</span> Leave</div>
-        <div class="legend-item"><span class="legend-swatch leave">SL</span> Sick Leave</div>
-        <div class="legend-item"><span class="legend-swatch leave">CL</span> Casual Leave</div>
-        <div class="legend-item"><span class="legend-swatch leave">EL</span> Earned Leave</div>
-        <div class="legend-item"><span class="legend-swatch flexi">FL</span> Flexi Leave</div>
-        <div class="legend-item"><span class="legend-swatch holiday">HL</span> Holiday</div>
-        <div class="legend-item"><span class="legend-swatch na">—</span> Not Assigned</div>
-      </div>
-    </div>
-  </div>
+<!-- ============ LEGEND BAR — HORIZONTAL, ALWAYS VISIBLE ============ -->
+<section class="legend-bar">
+  <span class="legend-label">Legend</span>
+
+  <span class="legend-chip morning"><span class="swatch" style="background:var(--m-dot);"></span>M &middot; Morning</span>
+  <span class="legend-chip morning"><span class="swatch" style="background:var(--m-dot);"></span>WFH-M</span>
+  <span class="legend-chip morning"><span class="swatch" style="background:var(--m-dot);"></span>CC-M</span>
+
+  <span class="legend-chip general"><span class="swatch" style="background:var(--d-dot);"></span>D &middot; General</span>
+  <span class="legend-chip general"><span class="swatch" style="background:var(--d-dot);"></span>WFH-D</span>
+  <span class="legend-chip general"><span class="swatch" style="background:var(--d-dot);"></span>CC-D</span>
+
+  <span class="legend-chip afternoon"><span class="swatch" style="background:var(--a-dot);"></span>A &middot; Afternoon</span>
+  <span class="legend-chip afternoon"><span class="swatch" style="background:var(--a-dot);"></span>WFH-A</span>
+  <span class="legend-chip afternoon"><span class="swatch" style="background:var(--a-dot);"></span>CC-A</span>
+
+  <span class="legend-chip night"><span class="swatch" style="background:var(--n-dot);"></span>N &middot; Night</span>
+  <span class="legend-chip night"><span class="swatch" style="background:var(--n-dot);"></span>WFH-N</span>
+  <span class="legend-chip night"><span class="swatch" style="background:var(--n-dot);"></span>CC-N</span>
+
+  <span class="legend-chip weekoff"><span class="swatch" style="background:var(--w-dot);"></span>W &middot; Weekoff</span>
+  <span class="legend-chip weekoff"><span class="swatch" style="background:var(--w-dot);"></span>WA</span>
+
+  <span class="legend-chip leave"><span class="swatch" style="background:var(--l-dot);"></span>L &middot; Leave</span>
+  <span class="legend-chip leave"><span class="swatch" style="background:var(--l-dot);"></span>SL</span>
+  <span class="legend-chip leave"><span class="swatch" style="background:var(--l-dot);"></span>CL</span>
+  <span class="legend-chip leave"><span class="swatch" style="background:var(--l-dot);"></span>EL</span>
+
+  <span class="legend-chip flexi"><span class="swatch" style="background:var(--f-dot);"></span>FL</span>
+  <span class="legend-chip holiday"><span class="swatch" style="background:var(--h-dot);"></span>HL</span>
+  <span class="legend-chip na"><span class="swatch" style="background:var(--x-dot);"></span>NA</span>
 </section>
 
 <!-- ============ ROSTER GRID ============ -->
@@ -941,27 +930,27 @@ html[data-theme="dark"] .roster-grid thead th.is-weekend{
       <td class="shift-cell">
         <span class="shift-badge <%= cls %>"><%= label %></span>
         <select name="mnt_<%= i %>_<%= d %>" class="shift-native" onchange="onShiftChange(this)">
-          <option value="Morning"       <%= lc.equals("morning")?"selected":"" %>>M — Morning</option>
-          <option value="WFH-Morning"   <%= lc.equals("wfh-morning")?"selected":"" %>>WFH-M</option>
-          <option value="CC-Morning"    <%= lc.equals("cc-morning")?"selected":"" %>>CC-M</option>
-          <option value="General"       <%= (lc.equals("general")||lc.equals("genral"))?"selected":"" %>>D — General</option>
-          <option value="WFH-General"   <%= (lc.equals("wfh-general")||lc.equals("wfh-genral"))?"selected":"" %>>WFH-D</option>
-          <option value="CC-General"    <%= lc.equals("cc-general")?"selected":"" %>>CC-D</option>
-          <option value="Afternoon"     <%= lc.equals("afternoon")?"selected":"" %>>A — Afternoon</option>
-          <option value="WFH-Afternoon" <%= lc.equals("wfh-afternoon")?"selected":"" %>>WFH-A</option>
-          <option value="CC-Afternoon"  <%= lc.equals("cc-afternoon")?"selected":"" %>>CC-A</option>
-          <option value="Night"         <%= lc.equals("night")?"selected":"" %>>N — Night</option>
-          <option value="WFH-Night"     <%= lc.equals("wfh-night")?"selected":"" %>>WFH-N</option>
-          <option value="CC-Night"      <%= lc.equals("cc-night")?"selected":"" %>>CC-N</option>
-          <option value="Weekoff"       <%= lc.equals("weekoff")?"selected":"" %>>W — Weekoff</option>
-          <option value="WeekoffAdjust" <%= lc.equals("weekoffadjust")?"selected":"" %>>WA — Weekoff Adjust</option>
-          <option value="Leave"         <%= lc.equals("leave")?"selected":"" %>>L — Leave</option>
-          <option value="SickLeave"     <%= lc.equals("sickleave")?"selected":"" %>>SL — Sick Leave</option>
-          <option value="CasualLeave"   <%= lc.equals("casualleave")?"selected":"" %>>CL — Casual Leave</option>
-          <option value="EarnedLeave"   <%= lc.equals("earnedleave")?"selected":"" %>>EL — Earned Leave</option>
-          <option value="FlexiLeave"    <%= lc.equals("flexileave")?"selected":"" %>>FL — Flexi Leave</option>
-          <option value="HolidayLeave"  <%= lc.equals("holidayleave")?"selected":"" %>>HL — Holiday</option>
-          <option value="NA"            <%= lc.equals("na")?"selected":"" %>>— Not Assigned</option>
+          <option value="Morning"       data-cls="morning"   <%= lc.equals("morning")?"selected":"" %>>&#9679; M — Morning</option>
+          <option value="WFH-Morning"   data-cls="morning"   <%= lc.equals("wfh-morning")?"selected":"" %>>&#9679; WFH-M</option>
+          <option value="CC-Morning"    data-cls="morning"   <%= lc.equals("cc-morning")?"selected":"" %>>&#9679; CC-M</option>
+          <option value="General"       data-cls="general"   <%= (lc.equals("general")||lc.equals("genral"))?"selected":"" %>>&#9679; D — General</option>
+          <option value="WFH-General"   data-cls="general"   <%= (lc.equals("wfh-general")||lc.equals("wfh-genral"))?"selected":"" %>>&#9679; WFH-D</option>
+          <option value="CC-General"    data-cls="general"   <%= lc.equals("cc-general")?"selected":"" %>>&#9679; CC-D</option>
+          <option value="Afternoon"     data-cls="afternoon" <%= lc.equals("afternoon")?"selected":"" %>>&#9679; A — Afternoon</option>
+          <option value="WFH-Afternoon" data-cls="afternoon" <%= lc.equals("wfh-afternoon")?"selected":"" %>>&#9679; WFH-A</option>
+          <option value="CC-Afternoon"  data-cls="afternoon" <%= lc.equals("cc-afternoon")?"selected":"" %>>&#9679; CC-A</option>
+          <option value="Night"         data-cls="night"     <%= lc.equals("night")?"selected":"" %>>&#9679; N — Night</option>
+          <option value="WFH-Night"     data-cls="night"     <%= lc.equals("wfh-night")?"selected":"" %>>&#9679; WFH-N</option>
+          <option value="CC-Night"      data-cls="night"     <%= lc.equals("cc-night")?"selected":"" %>>&#9679; CC-N</option>
+          <option value="Weekoff"       data-cls="weekoff"   <%= lc.equals("weekoff")?"selected":"" %>>&#9679; W — Weekoff</option>
+          <option value="WeekoffAdjust" data-cls="weekoff"   <%= lc.equals("weekoffadjust")?"selected":"" %>>&#9679; WA — Weekoff Adjust</option>
+          <option value="Leave"         data-cls="leave"     <%= lc.equals("leave")?"selected":"" %>>&#9679; L — Leave</option>
+          <option value="SickLeave"     data-cls="leave"     <%= lc.equals("sickleave")?"selected":"" %>>&#9679; SL — Sick Leave</option>
+          <option value="CasualLeave"   data-cls="leave"     <%= lc.equals("casualleave")?"selected":"" %>>&#9679; CL — Casual Leave</option>
+          <option value="EarnedLeave"   data-cls="leave"     <%= lc.equals("earnedleave")?"selected":"" %>>&#9679; EL — Earned Leave</option>
+          <option value="FlexiLeave"    data-cls="flexi"     <%= lc.equals("flexileave")?"selected":"" %>>&#9679; FL — Flexi Leave</option>
+          <option value="HolidayLeave"  data-cls="holiday"   <%= lc.equals("holidayleave")?"selected":"" %>>&#9679; HL — Holiday</option>
+          <option value="NA"            data-cls="na"        <%= lc.equals("na")?"selected":"" %>>&#9679; NA</option>
         </select>
       </td>
       <% } %>
@@ -970,7 +959,6 @@ html[data-theme="dark"] .roster-grid thead th.is-weekend{
     </tr>
     <% } %>
 
-    <!-- Summary rows -->
     <tr class="summary-row">
       <td class="col-emp">Morning</td>
       <td class="col-pos"></td>
@@ -1066,19 +1054,6 @@ function filterEmployees() {
   });
   document.getElementById('searchInfo').innerHTML = 'Showing <b>' + vis + '</b> of ' + rows.length;
 }
-
-/* ============ LEGEND POPOVER ============ */
-function toggleLegend(ev) {
-  ev.stopPropagation();
-  var pop = document.getElementById('legendPop');
-  pop.classList.toggle('open');
-}
-document.addEventListener('click', function(e){
-  var pop = document.getElementById('legendPop');
-  if (pop && !pop.contains(e.target) && !e.target.closest('.legend-trigger')) {
-    pop.classList.remove('open');
-  }
-});
 
 /* ============ SHIFT CHANGE ============ */
 function onShiftChange(sel) {
