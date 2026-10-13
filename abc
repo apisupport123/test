@@ -3,8 +3,8 @@
   moduleHeader.jsp - Universal Role-Based Header
   ============================================================
   Auth: sirf login check (koi role restriction NAHI)
-  Sidebar: role ke hisaab se dynamic render
-  UI: Modern purple theme (consistent with other headers)
+  Display: m_strrole (DB team) - e.g. Process Improvement
+  Role checks: __role (session) - e.g. ModuleLead
   ============================================================
 --%>
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
@@ -32,7 +32,7 @@
   }
   if (user == null) user = "";
 
-  // ---- DB se team nikalna (agar module lead table me hai) ----
+  // ---- DB se team nikalna ----
   String m_strrole = null;
   Connection con = null;
   PreparedStatement ps = null;
@@ -362,7 +362,7 @@ html.sb-collapsed .new-wrapper{margin-left:0}
 }
 html.sb-open .sb-overlay{opacity:1;pointer-events:auto}
 
-/* ============ MODULE LEAD DASHBOARD CONTENT ============ */
+/* ============ DASHBOARD CONTENT ============ */
 .ml-dash{
   padding:28px 32px 60px;
   max-width:1500px;
@@ -553,7 +553,7 @@ html[data-theme="dark"] .foot b{color:var(--ml-primary-2)}
     </div>
     <div class="sb-title">
       EIS Portal
-      <small><%= __role != null ? __role : "User" %></small>
+      <small><%= m_strrole != null && !m_strrole.trim().isEmpty() ? m_strrole : "User" %></small>
     </div>
     <button class="sb-collapse-btn" onclick="toggleSidebar()" title="Hide sidebar">
       <svg class="icon-svg" viewBox="0 0 24 24"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg>
@@ -571,7 +571,7 @@ html[data-theme="dark"] .foot b{color:var(--ml-primary-2)}
     </div>
     <div class="sb-user-info">
       <div class="sb-user-name"><%= user != null && !user.isEmpty() ? user : "User" %></div>
-      <div class="sb-user-role"><%= __role != null ? __role : "User" %></div>
+      <div class="sb-user-role"><%= m_strrole != null && !m_strrole.trim().isEmpty() ? m_strrole : "User" %></div>
     </div>
   </div>
 
@@ -584,7 +584,7 @@ html[data-theme="dark"] .foot b{color:var(--ml-primary-2)}
 
   <nav class="sb-body" id="list">
 
-    <%-- ==================== COMMON SECTION: Dashboards ==================== --%>
+    <%-- ==================== COMMON: Dashboards ==================== --%>
     <div class="sb-group">Dashboards</div>
     <a class="sb-item animals" href="<%=ctx%>/ErrorDashboard" target="_blank" rel="noopener noreferrer">
       <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
@@ -616,44 +616,44 @@ html[data-theme="dark"] .foot b{color:var(--ml-primary-2)}
       <span>Roster</span>
     </a>
     <% } %>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/TicketHome.jsp?&role=<%=__role%>" target="_blank" rel="noopener noreferrer">
+    <a class="sb-item animals" href="<%=ctx%>/jsp/TicketHome.jsp?&role=<%=m_strrole%>" target="_blank" rel="noopener noreferrer">
       <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M2 9a3 3 0 0 1 3-3h14a3 3 0 0 1 3 3v.5a2.5 2.5 0 0 0 0 5V15a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3v-.5a2.5 2.5 0 0 0 0-5z"/></svg></span>
       <span>Ticketing Portal</span>
     </a>
 
-    <%-- ==================== ROLE-SPECIFIC: Checklists ==================== --%>
+    <%-- ==================== Checklists - Role-based ==================== --%>
     <div class="sb-group">Checklists</div>
     <a class="sb-item animals" href="<%=ctx%>/jsp/DRChecklistHomePage.jsp" target="_blank" rel="noopener noreferrer">
       <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
       <span>Module DR Checklist</span>
     </a>
 
-    <% if ("Service Reporting Management".equals(__role)) { %>
+    <% if ("Service Reporting Management".equals(m_strrole)) { %>
     <a class="sb-item animals" href="<%=ctx%>/ServletConn" target="_blank" rel="noopener noreferrer">
       <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
       <span>Adhoc Checklist</span>
     </a>
-    <% } else if ("Service Desk".equals(__role)) { %>
+    <% } else if ("Service Desk".equals(m_strrole)) { %>
     <a class="sb-item animals" href="<%=ctx%>/jsp/userscorechecklist.jsp" target="_blank" rel="noopener noreferrer">
       <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
       <span>SCORE Checklist</span>
     </a>
-    <% } else if ("Event Management".equals(__role)) { %>
+    <% } else if ("Event Management".equals(m_strrole)) { %>
     <a class="sb-item animals" href="<%=ctx%>/jsp/MonitoringChecklistUser.jsp" target="_blank" rel="noopener noreferrer">
       <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
       <span>Monitoring Checklist</span>
     </a>
-    <% } else if ("Incident Management".equals(__role)) { %>
+    <% } else if ("Incident Management".equals(m_strrole)) { %>
     <a class="sb-item animals" href="<%=ctx%>/jsp/IssueMgmtEmployeemain.jsp" target="_blank" rel="noopener noreferrer">
       <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
       <span>Mail's Checklist</span>
     </a>
-    <% } else if ("Problem Management".equals(__role)) { %>
+    <% } else if ("Problem Management".equals(m_strrole)) { %>
     <a class="sb-item animals" href="<%=ctx%>/jsp/Problemuserchecklist.jsp" target="_blank" rel="noopener noreferrer">
       <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
       <span>Problem Mgmt Checklist</span>
     </a>
-    <% } else if ("Process Improvement".equals(__role)) { %>
+    <% } else if ("Process Improvement".equals(m_strrole)) { %>
     <a class="sb-item animals" href="<%=ctx%>/jsp/ProcessChecklist.jsp" target="_blank" rel="noopener noreferrer">
       <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
       <span>Process Checklist</span>
@@ -689,7 +689,7 @@ html[data-theme="dark"] .foot b{color:var(--ml-primary-2)}
 
   <div class="tn-brand">
     <span class="brand-badge">EIS</span>
-    <%= __role != null ? __role : "Portal" %>
+    <%= m_strrole != null && !m_strrole.trim().isEmpty() ? m_strrole : "Portal" %>
   </div>
 
   <div class="tn-right">
@@ -730,7 +730,7 @@ html[data-theme="dark"] .foot b{color:var(--ml-primary-2)}
         <div class="ml-hero-text">
           <div class="badge-line">
             <span class="dot"></span>
-            <%= __role != null ? __role : "User" %> Access
+            <%= m_strrole != null && !m_strrole.trim().isEmpty() ? m_strrole : "User" %> Access
           </div>
           <h1>Welcome, <span class="gradient"><%= user != null && !user.isEmpty() ? user : "User" %></span></h1>
           <p>Your personalized portal - access dashboards, checklists, and team tools based on your assigned role.</p>
@@ -747,7 +747,7 @@ html[data-theme="dark"] .foot b{color:var(--ml-primary-2)}
             <div class="hs-icon">
               <svg class="icon-svg" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
             </div>
-            <div class="hs-num"><%= __role != null && __role.length() > 8 ? __role.substring(0,8) + "..." : (__role != null ? __role : "User") %></div>
+            <div class="hs-num"><%= m_strrole != null && m_strrole.length() > 8 ? m_strrole.substring(0,8) + "..." : (m_strrole != null ? m_strrole : "User") %></div>
             <div class="hs-lbl">Role</div>
           </div>
         </div>
@@ -788,7 +788,7 @@ html[data-theme="dark"] .foot b{color:var(--ml-primary-2)}
         <div class="qa-desc">View team roster</div>
       </a>
 
-      <a class="qa-card" href="<%=ctx%>/jsp/TicketHome.jsp?&role=<%=__role%>" target="_blank" rel="noopener noreferrer">
+      <a class="qa-card" href="<%=ctx%>/jsp/TicketHome.jsp?&role=<%=m_strrole%>" target="_blank" rel="noopener noreferrer">
         <div class="qa-icon">
           <svg class="icon-svg" viewBox="0 0 24 24"><path d="M2 9a3 3 0 0 1 3-3h14a3 3 0 0 1 3 3v.5a2.5 2.5 0 0 0 0 5V15a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3v-.5a2.5 2.5 0 0 0 0-5z"/></svg>
         </div>
@@ -800,7 +800,7 @@ html[data-theme="dark"] .foot b{color:var(--ml-primary-2)}
 
     <!-- FOOTER -->
     <footer class="foot">
-      <div>&copy; <%= java.time.Year.now() %> <b>EIS Portal</b> &middot; <%= __role != null ? __role : "User" %> Portal</div>
+      <div>&copy; <%= java.time.Year.now() %> <b>EIS Portal</b> &middot; <%= m_strrole != null && !m_strrole.trim().isEmpty() ? m_strrole : "User" %> Portal</div>
       <div>User: <b><%= user != null && !user.isEmpty() ? user : "Unknown" %></b></div>
     </footer>
 
@@ -874,268 +874,3 @@ function search_animal() {
   });
 }
 </script>
-
-
-
------------------------------------------------------------------------------------------
-
-package com.action;
-
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.apache.struts2.ServletActionContext;
-import com.opensymphony.xwork2.ActionSupport;
-import com.opensymphony.xwork2.ModelDriven;
-
-import com.actionform.LoginForm;
-import com.jdbc.DBUtilityAuto;
-import com.jdbc.TrippleDes;
-
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
-
-@SuppressWarnings("serial")
-public class LoginAction extends ActionSupport implements ModelDriven<LoginForm> {
-
-    private LoginForm loginForm = new LoginForm();
-
-    // JSON response ke liye
-    private Map<String, Object> jsonData = new HashMap<>();
-
-    @Override
-    public LoginForm getModel() {
-        return loginForm;
-    }
-
-    public List<String> getRolelist() {
-        return loginForm.getRolelist();
-    }
-
-    public Map<String, Object> getJsonData() {
-        return jsonData;
-    }
-
-    // ==================== DEFAULT: LOAD LOGIN PAGE ====================
-    @Override
-    public String execute() throws Exception {
-        System.out.println(">>> LoginAction.execute() called");
-
-        HttpServletRequest request = ServletActionContext.getRequest();
-        HttpSession session = request.getSession(false);
-
-        // Logout handling - agar logout=true parameter hai toh session invalidate karo
-        String logout = request.getParameter("logout");
-        if ("true".equals(logout)) {
-            System.out.println(">>> Logout requested - invalidating session");
-            if (session != null) {
-                try { session.invalidate(); } catch (Exception e) {}
-            }
-            // Fresh session create karo new rolelist ke liye
-            session = request.getSession(true);
-        }
-
-        // Populate roles
-        this.getEISRole(loginForm);
-        List<String> roles = loginForm.getRolelist();
-        System.out.println("Roles Loaded : " + roles);
-
-        // Request attribute me set karo (JSP me use hoga)
-        request.setAttribute("rolelist", roles);
-
-        // Session me bhi set karo (fallback ke liye)
-        if (session != null) {
-            session.setAttribute("rolelist", roles);
-        }
-
-        return "success";
-    }
-
-    // ==================== USER LOGIN (AJAX JSON) ====================
-    public String usersign() throws Exception {
-        System.out.println(">>> usersign() called");
-        HttpServletRequest request = ServletActionContext.getRequest();
-
-        String username = request.getParameter("m_strUserName");
-        String password = request.getParameter("m_struserPassword");
-        String role     = request.getParameter("m_strRole");
-
-        if (username == null || username.trim().isEmpty()
-                || password == null || password.trim().isEmpty()
-                || role == null || role.trim().isEmpty()) {
-            jsonData.put("status", "error");
-            jsonData.put("message", "Please fill all fields");
-            return "jsonerror";
-        }
-
-        boolean hasRole = this.checkRole(loginForm, request);
-
-        if (hasRole) {
-            HttpSession session = request.getSession();
-            session.setAttribute("role", role);
-            session.setAttribute("username", username);
-            session.setAttribute("fullname", username);
-
-            System.out.println(">>> User login success: " + username + " role: " + role);
-
-            jsonData.put("status", "success");
-
-            // ---- ROLE-BASED REDIRECT ----
-            if ("EIS Bank".equals(role)) {
-                jsonData.put("redirectUrl",
-                    request.getContextPath() + "/jsp/Bankheader.jsp");
-            } else if ("Admin".equals(role) || "ModuleLead".equals(role)) {
-                jsonData.put("redirectUrl",
-                    request.getContextPath() + "/jsp/header.jsp");
-            } else {
-                // Baaki sab roles moduleHeader.jsp pe jayenge
-                jsonData.put("redirectUrl",
-                    request.getContextPath() + "/jsp/moduleHeader.jsp");
-            }
-            return "jsonsuccess";
-        } else {
-            jsonData.put("status", "error");
-            jsonData.put("message", "Invalid username, password or role");
-            return "jsonerror";
-        }
-    }
-
-    // ==================== ADMIN LOGIN (AJAX JSON) ====================
-    public String adminsign() throws Exception {
-        System.out.println(">>> adminsign() called");
-        HttpServletRequest request = ServletActionContext.getRequest();
-
-        String adminUser = request.getParameter("m_stradminUserName");
-        String adminPass = request.getParameter("m_stradminPassword");
-
-        if (adminUser == null || adminUser.trim().isEmpty()
-                || adminPass == null || adminPass.trim().isEmpty()) {
-            jsonData.put("status", "error");
-            jsonData.put("message", "Please fill all fields");
-            return "jsonerror";
-        }
-
-        // ---------- Hardcoded Admin ----------
-        if ("Admin".equalsIgnoreCase(adminUser) && "admin".equals(adminPass)) {
-            HttpSession session = request.getSession();
-            session.setAttribute("role", "Admin");
-            session.setAttribute("username", adminUser);
-            session.setAttribute("fullname", adminUser);
-
-            System.out.println(">>> Admin login success: " + adminUser);
-
-            jsonData.put("status", "success");
-            jsonData.put("redirectUrl",
-                request.getContextPath() + "/jsp/header.jsp");
-            return "jsonsuccess";
-        }
-
-        // ---------- Module Lead check ----------
-        Connection con = null;
-        PreparedStatement ps = null;
-        ResultSet rs = null;
-        String password = null;
-        try {
-            con = DBUtilityAuto.getReportDBConnection();
-            String query = "SELECT passwords FROM a_module_leads WHERE LOWER(username) = LOWER(?)";
-            ps = con.prepareStatement(query);
-            ps.setString(1, adminUser);
-            rs = ps.executeQuery();
-            if (rs.next()) password = rs.getString("passwords");
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            if (rs != null) try { rs.close(); } catch (Exception ignored) {}
-            if (ps != null) try { ps.close(); } catch (Exception ignored) {}
-            if (con != null) try { con.close(); } catch (Exception ignored) {}
-        }
-
-        if (password != null && password.equals(adminPass)) {
-            HttpSession session = request.getSession();
-            session.setAttribute("role", "ModuleLead");
-            session.setAttribute("username", adminUser);
-            session.setAttribute("fullname", adminUser);
-
-            System.out.println(">>> ModuleLead login success: " + adminUser);
-
-            jsonData.put("status", "success");
-            jsonData.put("redirectUrl",
-                request.getContextPath() + "/jsp/moduleHeader.jsp");
-            return "jsonsuccess";
-        }
-
-        // ---------- Fail ----------
-        jsonData.put("status", "error");
-        jsonData.put("message", "Invalid admin credentials");
-        return "jsonerror";
-    }
-
-    // For REST plugin
-    public String index() throws Exception {
-        return execute();
-    }
-
-    // ==================== HELPERS ====================
-    private boolean checkRole(LoginForm loginForm, HttpServletRequest request) throws SQLException {
-        Connection con = null;
-        PreparedStatement ps = null;
-        ResultSet rs = null;
-        try {
-            TrippleDes td = new TrippleDes();
-            int count = 0;
-
-            String user = request.getParameter("m_strUserName");
-            String pass = td.encrypt(request.getParameter("m_struserPassword").trim());
-            String role = request.getParameter("m_strRole");
-
-            String query = "SELECT COUNT(1) FROM rolemst "
-                    + "WHERE username LIKE ? "
-                    + "AND password = ? "
-                    + "AND rolename = ?";
-
-            con = DBUtilityAuto.getReportDBConnection();
-            ps = con.prepareStatement(query);
-            ps.setString(1, "%" + user + "%");
-            ps.setString(2, pass);
-            ps.setString(3, role);
-            rs = ps.executeQuery();
-            if (rs.next()) count = rs.getInt(1);
-            return count > 0;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        } finally {
-            if (rs != null) try { rs.close(); } catch (Exception ignored) {}
-            if (ps != null) try { ps.close(); } catch (Exception ignored) {}
-            if (con != null) try { con.close(); } catch (Exception ignored) {}
-        }
-    }
-
-    private void getEISRole(LoginForm loginForm) throws SQLException {
-        Connection con = null;
-        Statement stmt = null;
-        ResultSet rs = null;
-        try {
-            ArrayList<String> list = new ArrayList<>();
-            con = DBUtilityAuto.getReportDBConnection();
-            stmt = con.createStatement();
-            rs = stmt.executeQuery("SELECT rolename FROM rolemst");
-            while (rs.next()) list.add(rs.getString("rolename"));
-            loginForm.setRolelist(list);
-            System.out.println("Roles loaded: " + list);
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            if (rs != null) try { rs.close(); } catch (Exception ignored) {}
-            if (stmt != null) try { stmt.close(); } catch (Exception ignored) {}
-            if (con != null) try { con.close(); } catch (Exception ignored) {}
-        }
-    }
-}
