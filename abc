@@ -51,6 +51,30 @@
     String sort_MonthYear = sortMonth + "_" + year;
 
     LocalDate today = LocalDate.now(ZoneId.of("Asia/Kolkata"));
+
+    List<Map<String,Object>> employees = new ArrayList<>();
+    Connection conn = null;
+    PreparedStatement ps = null;
+    ResultSet rsData = null;
+    try {
+        conn = DBUtilityAuto.getReportDBConnection();
+        String q = "select * from rostertable where UPPER(TEAM) = UPPER(?) and UPPER(MONTHYEAR) = UPPER(?) order by id";
+        ps = conn.prepareStatement(q);
+        ps.setString(1, m_strrole);
+        ps.setString(2, sort_MonthYear);
+        rsData = ps.executeQuery();
+        ResultSetMetaData md = rsData.getMetaData();
+        int cc = md.getColumnCount();
+        while (rsData.next()) {
+            Map<String,Object> row = new HashMap<>();
+            for (int i=1; i<=cc; i++) row.put(md.getColumnName(i).toUpperCase(), rsData.getObject(i));
+            employees.add(row);
+        }
+    } catch (Exception e) { e.printStackTrace(); }
+    finally {
+        if (rsData != null) try { rsData.close(); } catch (Exception e) {}
+        if (ps != null) try { ps.close(); } catch (Exception e) {}
+    }
 %>
 
 <!DOCTYPE html>
@@ -62,54 +86,63 @@
 
 <style>
 :root{
-  /* Surfaces — warm dark, not black */
-  --bg-0:#0F1419;
-  --bg-1:#1A1F2E;
-  --bg-2:#232838;
-  --bg-3:#2D3346;
-  --bg-hover:#323A50;
-  --line:#2F3648;
-  --line-2:#3D4458;
-  --line-hi:#4A5268;
+  /* Base — deep black with subtle blue undertone */
+  --bg-0:#000000;
+  --bg-1:#0A0A0F;
+  --bg-2:#14141C;
+  --bg-3:#1C1C28;
+  --bg-4:#262634;
 
-  /* Ink */
+  /* Neon palette */
+  --neon-cyan:#00E5FF;
+  --neon-cyan-2:#00B8D4;
+  --neon-purple:#A371F7;
+  --neon-purple-2:#8B5CF6;
+  --neon-pink:#FF2D9B;
+  --neon-green:#00FF88;
+
+  /* Text */
   --ink:#F5F7FA;
   --ink-2:#C5CBD8;
-  --ink-3:#8B92A5;
+  --ink-3:#8892A6;
   --ink-4:#5E6678;
 
-  /* Shift colors — bright BG, dark TEXT for readability */
-  --morning:#FFB800;
-  --morning-bg:#FFD966;
-  --morning-text:#5C3D00;
-  --general:#8892A6;
-  --general-bg:#B0B8C8;
-  --general-text:#1F2430;
-  --afternoon:#FF8A3D;
-  --afternoon-bg:#FFB380;
-  --afternoon-text:#5C2600;
-  --night:#4A90E2;
-  --night-bg:#8FC0F5;
-  --night-text:#00254D;
-  --weekoff:#A371F7;
-  --weekoff-bg:#C9A8FA;
-  --weekoff-text:#2D0E5C;
-  --leave:#FF4757;
-  --leave-bg:#FF9CA5;
-  --leave-text:#5C0008;
-  --flexi:#FF7B72;
-  --flexi-bg:#FFB0AA;
-  --flexi-text:#5C0F08;
-  --holiday:#2ECC71;
-  --holiday-bg:#8FE5AF;
-  --holiday-text:#0A4D22;
-  --na:#5E6678;
-  --na-bg:#3D4458;
-  --na-text:#8B92A5;
+  /* Shift colors — 3D + neon */
+  --morning-1:#FFB800;
+  --morning-2:#FF9500;
+  --morning-glow:rgba(255,184,0,0.5);
 
-  --accent:#4A90E2;
-  --accent-2:#3B7DD8;
-  --success:#2ECC71;
+  --general-1:#8B95A8;
+  --general-2:#6B7588;
+  --general-glow:rgba(139,149,168,0.4);
+
+  --afternoon-1:#FF8A3D;
+  --afternoon-2:#FF6B1A;
+  --afternoon-glow:rgba(255,138,61,0.5);
+
+  --night-1:#4A90E2;
+  --night-2:#2D6FD1;
+  --night-glow:rgba(74,144,226,0.5);
+
+  --weekoff-1:#A371F7;
+  --weekoff-2:#8B5CF6;
+  --weekoff-glow:rgba(163,113,247,0.5);
+
+  --leave-1:#FF4757;
+  --leave-2:#E63946;
+  --leave-glow:rgba(255,71,87,0.5);
+
+  --flexi-1:#FF7B72;
+  --flexi-2:#FF5252;
+  --flexi-glow:rgba(255,123,114,0.5);
+
+  --holiday-1:#2ECC71;
+  --holiday-2:#27AE60;
+  --holiday-glow:rgba(46,204,113,0.5);
+
+  --na-1:#3D4458;
+  --na-2:#2D3342;
+  --na-glow:rgba(61,68,88,0.3);
 
   --ff: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --ff-mono: 'SF Mono', 'JetBrains Mono', Consolas, monospace;
@@ -120,6 +153,9 @@ html,body{height:100%;overflow:hidden}
 body{
   font-family:var(--ff);
   background:var(--bg-0);
+  background-image:
+    radial-gradient(circle at 0% 0%, rgba(0,229,255,0.06), transparent 40%),
+    radial-gradient(circle at 100% 100%, rgba(163,113,247,0.06), transparent 40%);
   color:var(--ink);
   -webkit-font-smoothing:antialiased;
   font-size:14px;
@@ -131,74 +167,116 @@ button{font-family:inherit;cursor:pointer}
 .app{display:flex;flex-direction:column;height:100vh;overflow:hidden}
 
 /* ============================================================
-   HEADER
+   HEADER — 3D with neon glow
    ============================================================ */
 .header{
-  background:linear-gradient(135deg, #1A1F2E 0%, #232838 100%);
+  background:linear-gradient(135deg, #0F0F18 0%, #1A1A28 100%);
   padding:16px 28px;
   display:flex;
   align-items:center;
   gap:24px;
-  border-bottom:1px solid var(--line-2);
-  box-shadow:0 2px 12px rgba(0,0,0,0.3);
+  border-bottom:1px solid rgba(0,229,255,0.2);
+  box-shadow:
+    0 0 40px rgba(0,229,255,0.08),
+    inset 0 1px 0 rgba(255,255,255,0.05),
+    0 4px 20px rgba(0,0,0,0.6);
   flex-shrink:0;
   position:relative;
   z-index:100;
 }
-.header-title{display:flex;align-items:center;gap:14px;flex-shrink:0}
-.header-logo{
-  width:52px;height:52px;
-  background:linear-gradient(135deg, #4A90E2, #A371F7);
-  border-radius:14px;
-  display:grid;place-items:center;
-  color:#fff;
-  box-shadow:0 8px 24px -6px rgba(74,144,226,0.6);
-  flex-shrink:0;
+.header::after{
+  content:"";
+  position:absolute;
+  left:0;right:0;bottom:0;
+  height:1px;
+  background:linear-gradient(90deg, transparent, var(--neon-cyan), var(--neon-purple), transparent);
+  opacity:0.6;
 }
-.header-logo svg{width:28px;height:28px;stroke:#fff;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.header-title{display:flex;align-items:center;gap:16px;flex-shrink:0}
+.header-logo{
+  width:56px;height:56px;
+  background:linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+  border-radius:16px;
+  display:grid;place-items:center;
+  color:#000;
+  box-shadow:
+    0 0 30px rgba(0,229,255,0.6),
+    0 8px 24px rgba(163,113,247,0.4),
+    inset 0 2px 0 rgba(255,255,255,0.3),
+    inset 0 -2px 8px rgba(0,0,0,0.3);
+  flex-shrink:0;
+  position:relative;
+}
+.header-logo::after{
+  content:"";
+  position:absolute;
+  inset:-3px;
+  border-radius:19px;
+  background:linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+  filter:blur(12px);
+  opacity:0.5;
+  z-index:-1;
+}
+.header-logo svg{width:30px;height:30px;stroke:#000;fill:none;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.3))}
 .header-text h1{
   font-size:22px;
-  font-weight:800;
+  font-weight:900;
   color:#fff;
   letter-spacing:-0.4px;
   line-height:1.15;
+  text-shadow:0 0 20px rgba(0,229,255,0.5), 0 2px 4px rgba(0,0,0,0.8);
 }
 .header-text p{
   font-size:13px;
   font-weight:600;
-  color:var(--ink-3);
-  margin-top:4px;
-  letter-spacing:0.2px;
+  color:var(--neon-cyan);
+  margin-top:5px;
+  letter-spacing:0.4px;
+  text-shadow:0 0 10px rgba(0,229,255,0.4);
 }
 .header-spacer{flex:1}
 
-.header-stats{display:flex;gap:10px;flex-shrink:0}
+.header-stats{display:flex;gap:12px;flex-shrink:0}
 .hstat{
-  padding:10px 18px;
-  background:var(--bg-0);
-  border:1px solid var(--line-2);
-  border-radius:12px;
+  padding:12px 20px;
+  background:linear-gradient(145deg, var(--bg-2), var(--bg-1));
+  border:1px solid rgba(0,229,255,0.15);
+  border-radius:14px;
   text-align:center;
-  min-width:90px;
+  min-width:100px;
+  box-shadow:
+    0 0 20px rgba(0,229,255,0.05),
+    inset 0 1px 0 rgba(255,255,255,0.05),
+    0 4px 12px rgba(0,0,0,0.4);
+  transition:all .25s;
+}
+.hstat:hover{
+  border-color:rgba(0,229,255,0.4);
+  box-shadow:
+    0 0 30px rgba(0,229,255,0.15),
+    inset 0 1px 0 rgba(255,255,255,0.08),
+    0 6px 16px rgba(0,0,0,0.5);
+  transform:translateY(-2px);
 }
 .hstat-val{
-  font-size:22px;
+  font-size:24px;
   font-weight:900;
   color:#fff;
   line-height:1;
   font-variant-numeric:tabular-nums;
   letter-spacing:-0.5px;
+  text-shadow:0 0 16px currentColor;
 }
-.hstat-val.cyan{color:#4A90E2}
-.hstat-val.green{color:#2ECC71}
-.hstat-val.purple{color:#A371F7}
+.hstat-val.cyan{color:var(--neon-cyan)}
+.hstat-val.purple{color:var(--neon-purple)}
+.hstat-val.green{color:var(--neon-green)}
 .hstat-lbl{
   font-size:10px;
   font-weight:800;
   color:var(--ink-3);
   text-transform:uppercase;
-  letter-spacing:1.2px;
-  margin-top:5px;
+  letter-spacing:1.5px;
+  margin-top:6px;
 }
 
 /* ============================================================
@@ -210,11 +288,12 @@ button{font-family:inherit;cursor:pointer}
   display:flex;
   align-items:flex-end;
   gap:16px;
-  border-bottom:1px solid var(--line);
+  border-bottom:1px solid rgba(0,229,255,0.1);
   flex-shrink:0;
   flex-wrap:wrap;
   position:relative;
   z-index:99;
+  box-shadow:inset 0 -1px 0 rgba(0,0,0,0.4), 0 2px 12px rgba(0,0,0,0.3);
 }
 .field{display:flex;flex-direction:column;gap:6px}
 .field label{
@@ -222,44 +301,55 @@ button{font-family:inherit;cursor:pointer}
   font-weight:800;
   color:var(--ink-3);
   text-transform:uppercase;
-  letter-spacing:1.2px;
+  letter-spacing:1.3px;
 }
 .field select,
 .field input{
-  background:var(--bg-3);
-  border:1px solid var(--line-2);
-  border-radius:8px;
-  padding:10px 14px;
+  background:linear-gradient(145deg, var(--bg-3), var(--bg-2));
+  border:1px solid rgba(0,229,255,0.15);
+  border-radius:10px;
+  padding:11px 16px;
   color:var(--ink);
   font-family:inherit;
   font-size:14px;
   font-weight:700;
   outline:none;
-  transition:all .15s;
-  min-width:130px;
+  transition:all .2s;
+  min-width:140px;
   cursor:pointer;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.05),
+    inset 0 -2px 6px rgba(0,0,0,0.3),
+    0 2px 6px rgba(0,0,0,0.3);
 }
 .field select:hover,
-.field input:hover{border-color:var(--line-hi)}
+.field input:hover{
+  border-color:rgba(0,229,255,0.4);
+}
 .field select:focus,
 .field input:focus{
-  border-color:var(--accent);
-  box-shadow:0 0 0 3px rgba(74,144,226,0.2);
+  border-color:var(--neon-cyan);
+  box-shadow:
+    0 0 0 3px rgba(0,229,255,0.15),
+    0 0 20px rgba(0,229,255,0.3),
+    inset 0 1px 0 rgba(255,255,255,0.08);
 }
 
 .btn{
-  padding:11px 22px;
+  padding:12px 24px;
   border:none;
-  border-radius:8px;
+  border-radius:10px;
   font-size:13px;
   font-weight:800;
-  letter-spacing:0.5px;
+  letter-spacing:0.6px;
   text-transform:uppercase;
-  transition:all .15s;
+  transition:all .25s cubic-bezier(.4,0,.2,1);
   display:inline-flex;
   align-items:center;
   gap:9px;
   font-family:inherit;
+  position:relative;
+  cursor:pointer;
 }
 .btn svg{
   width:16px;height:16px;
@@ -267,57 +357,97 @@ button{font-family:inherit;cursor:pointer}
   stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;
 }
 .btn-primary{
-  background:linear-gradient(135deg, #4A90E2, #3B7DD8);
-  color:#fff;
-  box-shadow:0 6px 18px -4px rgba(74,144,226,0.5);
+  background:linear-gradient(145deg, #00E5FF, #00B8D4);
+  color:#000;
+  box-shadow:
+    0 0 24px rgba(0,229,255,0.5),
+    0 6px 16px rgba(0,229,255,0.3),
+    inset 0 2px 0 rgba(255,255,255,0.4),
+    inset 0 -3px 8px rgba(0,0,0,0.2);
 }
 .btn-primary:hover{
-  transform:translateY(-1px);
-  box-shadow:0 10px 26px -4px rgba(74,144,226,0.7);
+  transform:translateY(-2px);
+  box-shadow:
+    0 0 40px rgba(0,229,255,0.7),
+    0 10px 24px rgba(0,229,255,0.4),
+    inset 0 2px 0 rgba(255,255,255,0.5),
+    inset 0 -3px 8px rgba(0,0,0,0.2);
+}
+.btn-primary:active{
+  transform:translateY(0);
+  box-shadow:
+    0 0 16px rgba(0,229,255,0.4),
+    inset 0 2px 6px rgba(0,0,0,0.4);
 }
 .btn-success{
-  background:linear-gradient(135deg, #2ECC71, #27AE60);
+  background:linear-gradient(145deg, #2ECC71, #27AE60);
   color:#fff;
-  box-shadow:0 6px 18px -4px rgba(46,204,113,0.5);
+  box-shadow:
+    0 0 24px rgba(46,204,113,0.5),
+    0 6px 16px rgba(46,204,113,0.3),
+    inset 0 2px 0 rgba(255,255,255,0.3),
+    inset 0 -3px 8px rgba(0,0,0,0.2);
 }
 .btn-success:hover{
-  transform:translateY(-1px);
-  box-shadow:0 10px 26px -4px rgba(46,204,113,0.7);
+  transform:translateY(-2px);
+  box-shadow:
+    0 0 40px rgba(46,204,113,0.7),
+    0 10px 24px rgba(46,204,113,0.4),
+    inset 0 2px 0 rgba(255,255,255,0.4),
+    inset 0 -3px 8px rgba(0,0,0,0.2);
 }
 .btn-ghost{
-  background:var(--bg-3);
-  border:1px solid var(--line-2);
+  background:linear-gradient(145deg, var(--bg-3), var(--bg-2));
+  border:1px solid rgba(255,255,255,0.08);
   color:var(--ink-2);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.05),
+    0 4px 12px rgba(0,0,0,0.4);
 }
-.btn-ghost:hover{background:var(--bg-hover);border-color:var(--line-hi);color:var(--ink)}
+.btn-ghost:hover{
+  border-color:rgba(0,229,255,0.3);
+  color:var(--neon-cyan);
+  box-shadow:
+    0 0 20px rgba(0,229,255,0.2),
+    inset 0 1px 0 rgba(255,255,255,0.08),
+    0 6px 16px rgba(0,0,0,0.5);
+  transform:translateY(-2px);
+}
 
 .toolbar-spacer{flex:1}
 
 .search-box{position:relative;flex-shrink:0}
 .search-box svg{
-  position:absolute;left:14px;top:50%;
+  position:absolute;left:16px;top:50%;
   transform:translateY(-50%);
   width:16px;height:16px;
-  stroke:var(--ink-3);fill:none;stroke-width:2.2;
+  stroke:var(--neon-cyan);fill:none;stroke-width:2.4;
   pointer-events:none;
+  filter:drop-shadow(0 0 6px rgba(0,229,255,0.5));
 }
 .search-box input{
-  background:var(--bg-3);
-  border:1px solid var(--line-2);
-  border-radius:8px;
-  padding:11px 14px 11px 42px;
+  background:linear-gradient(145deg, var(--bg-3), var(--bg-2));
+  border:1px solid rgba(0,229,255,0.15);
+  border-radius:10px;
+  padding:12px 16px 12px 46px;
   color:var(--ink);
   font-family:inherit;
   font-size:13px;
   font-weight:600;
   outline:none;
   width:300px;
-  transition:all .15s;
+  transition:all .25s;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.05),
+    inset 0 -2px 6px rgba(0,0,0,0.3);
 }
 .search-box input::placeholder{color:var(--ink-4);font-weight:500}
 .search-box input:focus{
-  border-color:var(--accent);
-  box-shadow:0 0 0 3px rgba(74,144,226,0.2);
+  border-color:var(--neon-cyan);
+  box-shadow:
+    0 0 0 3px rgba(0,229,255,0.15),
+    0 0 24px rgba(0,229,255,0.35),
+    inset 0 1px 0 rgba(255,255,255,0.08);
   width:340px;
 }
 
@@ -330,11 +460,12 @@ button{font-family:inherit;cursor:pointer}
   display:flex;
   align-items:center;
   gap:10px;
-  border-bottom:1px solid var(--line);
+  border-bottom:1px solid rgba(0,229,255,0.08);
   flex-shrink:0;
   flex-wrap:wrap;
   position:relative;
   z-index:98;
+  box-shadow:inset 0 -1px 0 rgba(0,0,0,0.4);
 }
 .legend-lbl{
   font-size:11px;
@@ -348,35 +479,41 @@ button{font-family:inherit;cursor:pointer}
   display:inline-flex;
   align-items:center;
   gap:9px;
-  padding:6px 14px 6px 8px;
-  background:var(--bg-1);
-  border:1px solid var(--line);
+  padding:7px 15px 7px 9px;
+  background:linear-gradient(145deg, var(--bg-1), var(--bg-0));
+  border:1px solid rgba(255,255,255,0.06);
   border-radius:999px;
   font-size:13px;
   font-weight:700;
   color:var(--ink-2);
   white-space:nowrap;
-  transition:all .15s;
+  transition:all .2s;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.04), 0 2px 6px rgba(0,0,0,0.3);
 }
-.legend-chip:hover{border-color:var(--line-hi);background:var(--bg-3)}
+.legend-chip:hover{
+  border-color:rgba(0,229,255,0.3);
+  transform:translateY(-1px);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.06), 0 4px 12px rgba(0,229,255,0.2);
+}
 .legend-chip .sw{
-  width:22px;height:22px;
-  border-radius:6px;
+  width:24px;height:24px;
+  border-radius:7px;
   display:grid;place-items:center;
   font-size:11px;
   font-weight:900;
   font-family:var(--ff-mono);
   flex-shrink:0;
   letter-spacing:-0.3px;
+  color:#000;
+  box-shadow:inset 0 2px 0 rgba(255,255,255,0.4), inset 0 -2px 4px rgba(0,0,0,0.3);
 }
-.sw.morning{background:var(--morning-bg);color:var(--morning-text)}
-.sw.general{background:var(--general-bg);color:var(--general-text)}
-.sw.afternoon{background:var(--afternoon-bg);color:var(--afternoon-text)}
-.sw.night{background:var(--night-bg);color:var(--night-text)}
-.sw.weekoff{background:var(--weekoff-bg);color:var(--weekoff-text)}
-.sw.leave{background:var(--leave-bg);color:var(--leave-text)}
-.sw.holiday{background:var(--holiday-bg);color:var(--holiday-text)}
-.sw.na{background:var(--na-bg);color:var(--na-text)}
+.sw.morning{background:linear-gradient(145deg, var(--morning-1), var(--morning-2));box-shadow:0 0 12px var(--morning-glow), inset 0 2px 0 rgba(255,255,255,0.4), inset 0 -2px 4px rgba(0,0,0,0.3)}
+.sw.general{background:linear-gradient(145deg, var(--general-1), var(--general-2));box-shadow:0 0 12px var(--general-glow), inset 0 2px 0 rgba(255,255,255,0.4), inset 0 -2px 4px rgba(0,0,0,0.3)}
+.sw.afternoon{background:linear-gradient(145deg, var(--afternoon-1), var(--afternoon-2));box-shadow:0 0 12px var(--afternoon-glow), inset 0 2px 0 rgba(255,255,255,0.4), inset 0 -2px 4px rgba(0,0,0,0.3)}
+.sw.night{background:linear-gradient(145deg, var(--night-1), var(--night-2));color:#fff;box-shadow:0 0 12px var(--night-glow), inset 0 2px 0 rgba(255,255,255,0.3), inset 0 -2px 4px rgba(0,0,0,0.3)}
+.sw.weekoff{background:linear-gradient(145deg, var(--weekoff-1), var(--weekoff-2));color:#fff;box-shadow:0 0 12px var(--weekoff-glow), inset 0 2px 0 rgba(255,255,255,0.3), inset 0 -2px 4px rgba(0,0,0,0.3)}
+.sw.leave{background:linear-gradient(145deg, var(--leave-1), var(--leave-2));color:#fff;box-shadow:0 0 12px var(--leave-glow), inset 0 2px 0 rgba(255,255,255,0.3), inset 0 -2px 4px rgba(0,0,0,0.3)}
+.sw.holiday{background:linear-gradient(145deg, var(--holiday-1), var(--holiday-2));color:#fff;box-shadow:0 0 12px var(--holiday-glow), inset 0 2px 0 rgba(255,255,255,0.3), inset 0 -2px 4px rgba(0,0,0,0.3)}
 
 /* ============================================================
    ROSTER AREA
@@ -390,11 +527,15 @@ button{font-family:inherit;cursor:pointer}
 .roster-wrap::-webkit-scrollbar{width:14px;height:14px}
 .roster-wrap::-webkit-scrollbar-track{background:var(--bg-1)}
 .roster-wrap::-webkit-scrollbar-thumb{
-  background:var(--line-hi);
+  background:linear-gradient(180deg, var(--neon-cyan), var(--neon-purple));
   border-radius:7px;
   border:3px solid var(--bg-1);
+  box-shadow:0 0 10px rgba(0,229,255,0.5);
 }
-.roster-wrap::-webkit-scrollbar-thumb:hover{background:var(--accent)}
+.roster-wrap::-webkit-scrollbar-thumb:hover{
+  background:linear-gradient(180deg, var(--neon-cyan), var(--neon-pink));
+  box-shadow:0 0 16px rgba(0,229,255,0.8);
+}
 .roster-wrap::-webkit-scrollbar-corner{background:var(--bg-1)}
 
 table.roster{
@@ -411,272 +552,341 @@ table.roster thead th{
   position:sticky;
   top:0;
   z-index:50;
-  background:linear-gradient(180deg, var(--bg-2), var(--bg-1));
-  color:var(--ink);
+  background:linear-gradient(180deg, #1A1A28, #0F0F18);
+  color:var(--neon-cyan);
   font-size:13px;
-  font-weight:800;
-  letter-spacing:0.5px;
+  font-weight:900;
+  letter-spacing:0.8px;
   text-transform:uppercase;
   padding:12px 8px;
   text-align:center;
-  border-bottom:1px solid var(--line-2);
-  border-right:1px solid var(--line);
+  border-bottom:2px solid rgba(0,229,255,0.3);
+  border-right:1px solid rgba(0,229,255,0.08);
   white-space:nowrap;
-  min-width:54px;
-  height:48px;
+  min-width:56px;
+  height:52px;
+  text-shadow:0 0 12px rgba(0,229,255,0.5);
+  box-shadow:inset 0 -2px 8px rgba(0,229,255,0.1), 0 4px 12px rgba(0,0,0,0.5);
 }
 table.roster thead tr:nth-child(2) th{
-  top:48px;
+  top:52px;
   font-size:12px;
-  font-weight:700;
+  font-weight:800;
   color:var(--ink-2);
-  background:var(--bg-2);
-  height:38px;
-  min-width:54px;
-  letter-spacing:1.2px;
+  background:linear-gradient(180deg, #14141C, #0A0A0F);
+  height:40px;
+  min-width:56px;
+  letter-spacing:1.4px;
+  text-shadow:none;
 }
-
 table.roster thead th.weekend{
-  background:linear-gradient(180deg, #3A2D5C, #2E234A);
-  color:#C9A8FA;
+  background:linear-gradient(180deg, #2A1F4D, #1A1030);
+  color:var(--neon-purple);
+  text-shadow:0 0 12px rgba(163,113,247,0.5);
 }
 table.roster thead tr:nth-child(2) th.weekend{
-  background:linear-gradient(180deg, #332851, #2A2046);
-  color:#B899F5;
+  background:linear-gradient(180deg, #221A3D, #16102A);
+  color:#C9A8FA;
+  text-shadow:0 0 10px rgba(163,113,247,0.3);
 }
 table.roster thead th.today{
   background:linear-gradient(180deg, #FF8A3D, #E67425);
-  color:#fff;
-  box-shadow:0 0 0 2px #FF8A3D inset;
-}
-table.roster thead th.today.weekend{
-  background:linear-gradient(180deg, #A371F7, #8957E5);
-  color:#fff;
+  color:#000;
+  text-shadow:0 0 12px rgba(255,138,61,0.8);
+  box-shadow:inset 0 -2px 8px rgba(0,0,0,0.2), 0 0 24px rgba(255,138,61,0.5);
 }
 
 /* ============================================================
-   STICKY COLUMNS
+   STICKY COLUMNS — 3D effect
    ============================================================ */
 table.roster th.col-emp,
 table.roster td.col-emp{
   position:sticky;
   left:0;
   z-index:20;
-  background:var(--bg-1);
+  background:linear-gradient(145deg, var(--bg-2), var(--bg-1));
   text-align:left;
-  padding:10px 18px;
-  border-right:1px solid var(--line-2);
-  min-width:240px;
-  max-width:260px;
-  box-shadow:6px 0 12px -6px rgba(0,0,0,0.6);
+  padding:12px 20px;
+  border-right:2px solid rgba(0,229,255,0.15);
+  min-width:260px;
+  max-width:280px;
+  box-shadow:8px 0 16px -8px rgba(0,0,0,0.7), inset -2px 0 0 rgba(0,229,255,0.05);
 }
 table.roster thead th.col-emp{
   z-index:55;
-  background:linear-gradient(180deg, var(--bg-2), var(--bg-1));
-  color:var(--ink);
+  background:linear-gradient(180deg, #1A1A28, #0F0F18);
+  color:var(--neon-cyan);
   font-size:13px;
-  padding:12px 18px;
+  padding:12px 20px;
+  text-shadow:0 0 12px rgba(0,229,255,0.5);
 }
-table.roster tbody tr:hover td.col-emp{background:var(--bg-2)}
+table.roster tbody tr:hover td.col-emp{
+  background:linear-gradient(145deg, var(--bg-3), var(--bg-2));
+}
 
 table.roster th.col-role,
 table.roster td.col-role{
   position:sticky;
-  left:240px;
+  left:260px;
   z-index:19;
-  background:var(--bg-1);
+  background:linear-gradient(145deg, var(--bg-2), var(--bg-1));
   text-align:left;
-  padding:10px 14px;
-  border-right:2px solid var(--line-hi);
-  min-width:110px;
-  max-width:130px;
-  box-shadow:6px 0 12px -6px rgba(0,0,0,0.6);
+  padding:12px 16px;
+  border-right:2px solid rgba(163,113,247,0.2);
+  min-width:120px;
+  max-width:140px;
   font-size:12px;
   font-weight:800;
   color:var(--ink-2);
   text-transform:uppercase;
-  letter-spacing:0.6px;
+  letter-spacing:0.8px;
+  box-shadow:8px 0 16px -8px rgba(0,0,0,0.7), inset -2px 0 0 rgba(163,113,247,0.05);
 }
 table.roster thead th.col-role{
   z-index:54;
-  background:linear-gradient(180deg, var(--bg-2), var(--bg-1));
-  color:var(--ink);
+  background:linear-gradient(180deg, #1A1A28, #0F0F18);
+  color:var(--neon-purple);
   font-size:13px;
+  text-shadow:0 0 12px rgba(163,113,247,0.5);
 }
-table.roster tbody tr:hover td.col-role{background:var(--bg-2)}
+table.roster tbody tr:hover td.col-role{
+  background:linear-gradient(145deg, var(--bg-3), var(--bg-2));
+}
 
 /* ============================================================
    TABLE BODY
    ============================================================ */
 table.roster tbody td{
   background:var(--bg-0);
-  border-bottom:1px solid var(--line);
-  border-right:1px solid var(--line);
+  border-bottom:1px solid rgba(255,255,255,0.04);
+  border-right:1px solid rgba(255,255,255,0.03);
   padding:0;
   text-align:center;
   vertical-align:middle;
-  height:58px;
-  transition:background .1s;
+  height:64px;
+  transition:background .15s;
 }
 table.roster tbody tr:nth-child(even) td:not(.col-emp):not(.col-role){
-  background:#131820;
+  background:#050508;
 }
 table.roster tbody tr:hover td:not(.col-emp):not(.col-role){
-  background:#1D2430;
+  background:#0E0E18;
 }
 table.roster tbody td.weekend:not(.col-emp):not(.col-role){
-  background:rgba(163,113,247,0.08);
+  background:rgba(163,113,247,0.06);
 }
 table.roster tbody tr:nth-child(even) td.weekend:not(.col-emp):not(.col-role){
-  background:rgba(163,113,247,0.12);
+  background:rgba(163,113,247,0.09);
 }
 table.roster tbody tr:hover td.weekend:not(.col-emp):not(.col-role){
-  background:rgba(163,113,247,0.18);
+  background:rgba(163,113,247,0.15);
 }
 table.roster tbody td.today:not(.col-emp):not(.col-role){
   background:rgba(255,138,61,0.12);
-  box-shadow:inset 2px 0 0 rgba(255,138,61,0.5), inset -2px 0 0 rgba(255,138,61,0.5);
+  box-shadow:inset 2px 0 0 rgba(255,138,61,0.6), inset -2px 0 0 rgba(255,138,61,0.6);
 }
 table.roster tbody tr:hover td.today:not(.col-emp):not(.col-role){
   background:rgba(255,138,61,0.22);
 }
 
 /* ============================================================
-   EMPLOYEE CELL
+   EMPLOYEE CELL — 3D avatar
    ============================================================ */
-.emp{display:flex;align-items:center;gap:12px}
+.emp{display:flex;align-items:center;gap:14px}
 .emp-av{
-  width:38px;height:38px;
-  border-radius:10px;
-  background:linear-gradient(135deg, #4A90E2, #A371F7);
-  color:#fff;
+  width:42px;height:42px;
+  border-radius:12px;
+  background:linear-gradient(145deg, #00E5FF, #A371F7);
+  color:#000;
   font-weight:900;
-  font-size:14px;
+  font-size:15px;
   display:grid;place-items:center;
   flex-shrink:0;
-  letter-spacing:0.3px;
-  box-shadow:0 4px 12px -2px rgba(74,144,226,0.5);
+  letter-spacing:0.4px;
+  box-shadow:
+    0 0 24px rgba(0,229,255,0.4),
+    0 6px 14px rgba(163,113,247,0.3),
+    inset 0 2px 0 rgba(255,255,255,0.4),
+    inset 0 -3px 8px rgba(0,0,0,0.3);
   border:1px solid rgba(255,255,255,0.15);
 }
 .emp-name{
-  font-size:14px;
+  font-size:15px;
   font-weight:800;
-  color:var(--ink);
+  color:#fff;
   line-height:1.2;
   overflow:hidden;
   text-overflow:ellipsis;
   white-space:nowrap;
-  max-width:160px;
+  max-width:170px;
   letter-spacing:-0.2px;
+  text-shadow:0 0 12px rgba(0,229,255,0.2), 0 1px 2px rgba(0,0,0,0.8);
 }
 .emp-id{
   font-size:11px;
   font-weight:700;
-  color:var(--ink-4);
-  margin-top:3px;
+  color:var(--neon-cyan);
+  margin-top:4px;
   font-family:var(--ff-mono);
-  letter-spacing:0.5px;
+  letter-spacing:0.6px;
+  opacity:0.8;
 }
 
 /* ============================================================
-   DAY CELL — BIG BOLD BADGE
+   DAY CELL — 3D dropdown
    ============================================================ */
 td.day{
   position:relative;
   cursor:pointer;
   padding:0 !important;
-  width:56px;
-  min-width:56px;
-  height:58px;
+  width:60px;
+  min-width:60px;
+  height:64px;
 }
-td.day .badge{
+td.day select{
+  width:calc(100% - 12px);
+  height:calc(100% - 12px);
   position:absolute;
-  inset:8px;
-  display:grid;
-  place-items:center;
+  top:6px;left:6px;
   border-radius:10px;
   font-size:15px;
   font-weight:900;
-  letter-spacing:-0.3px;
-  transition:all .15s cubic-bezier(.4,0,.2,1);
-  border:1.5px solid transparent;
   font-family:var(--ff-mono);
-  text-shadow:0 1px 0 rgba(255,255,255,0.3);
-}
-td.day:hover .badge{
-  transform:scale(1.12);
-  z-index:5;
-  box-shadow:0 8px 20px rgba(0,0,0,0.5);
-  border-color:rgba(255,255,255,0.3);
-}
-
-td.day .select-native{
-  position:absolute;
-  inset:0;
-  width:100%;height:100%;
-  opacity:0;
   cursor:pointer;
-  appearance:none;-webkit-appearance:none;
-  border:none;background:transparent;
-  color:transparent;
-  font-family:inherit;
-  z-index:3;
+  outline:none;
+  border:1px solid rgba(255,255,255,0.15);
+  text-align:center;
+  text-align-last:center;
+  padding:0 2px;
+  transition:all .2s cubic-bezier(.4,0,.2,1);
+  appearance:none;
+  -webkit-appearance:none;
+  box-shadow:
+    inset 0 2px 0 rgba(255,255,255,0.35),
+    inset 0 -3px 6px rgba(0,0,0,0.35),
+    0 4px 10px rgba(0,0,0,0.5);
+  text-shadow:0 1px 0 rgba(255,255,255,0.3);
+  letter-spacing:-0.3px;
 }
-td.day.picking{z-index:30}
-td.day.picking .badge{opacity:0}
-td.day.picking .select-native{
-  opacity:1;
-  color:var(--ink);
-  background:var(--bg-3);
-  border:2px solid var(--accent);
-  border-radius:10px;
-  inset:4px;
-  width:calc(100% - 8px);
-  height:calc(100% - 8px);
-  padding:0 8px;
-  font-size:13px;
-  font-weight:700;
-  box-shadow:0 0 0 5px rgba(74,144,226,0.25), 0 12px 32px rgba(0,0,0,0.7);
+td.day select:hover{
+  transform:scale(1.08);
+  z-index:10;
+  box-shadow:
+    inset 0 2px 0 rgba(255,255,255,0.4),
+    inset 0 -3px 6px rgba(0,0,0,0.4),
+    0 8px 20px rgba(0,0,0,0.7),
+    0 0 20px currentColor;
+}
+td.day select:focus{
+  transform:scale(1.12);
+  z-index:20;
+  border:2px solid var(--neon-cyan);
+  box-shadow:
+    inset 0 2px 0 rgba(255,255,255,0.4),
+    0 0 0 3px rgba(0,229,255,0.3),
+    0 0 30px rgba(0,229,255,0.6),
+    0 8px 24px rgba(0,0,0,0.7);
 }
 
-/* ============================================================
-   BADGE COLORS — BRIGHT BG + DARK TEXT (readable!)
-   ============================================================ */
-.badge.Morning, .badge.WFHM, .badge.CCM{
-  background:var(--morning-bg);
-  color:var(--morning-text);
+/* Shift color classes — 3D gradients */
+td.day select.Morning,
+td.day select.WFH-Morning,
+td.day select.CC-Morning{
+  background:linear-gradient(145deg, var(--morning-1), var(--morning-2));
+  color:#3D2600;
+  box-shadow:
+    0 0 16px var(--morning-glow),
+    inset 0 2px 0 rgba(255,255,255,0.45),
+    inset 0 -3px 6px rgba(0,0,0,0.3),
+    0 4px 10px rgba(0,0,0,0.5);
 }
-.badge.General, .badge.Genral, .badge.WFHG, .badge.CCG{
-  background:var(--general-bg);
-  color:var(--general-text);
+td.day select.General,
+td.day select.Genral,
+td.day select.WFH-General,
+td.day select.CC-General{
+  background:linear-gradient(145deg, var(--general-1), var(--general-2));
+  color:#0A0D14;
+  box-shadow:
+    0 0 14px var(--general-glow),
+    inset 0 2px 0 rgba(255,255,255,0.45),
+    inset 0 -3px 6px rgba(0,0,0,0.35),
+    0 4px 10px rgba(0,0,0,0.5);
 }
-.badge.Afternoon, .badge.WFHA, .badge.CCA{
-  background:var(--afternoon-bg);
-  color:var(--afternoon-text);
+td.day select.Afternoon,
+td.day select.WFH-Afternoon,
+td.day select.CC-Afternoon{
+  background:linear-gradient(145deg, var(--afternoon-1), var(--afternoon-2));
+  color:#3D1A00;
+  box-shadow:
+    0 0 16px var(--afternoon-glow),
+    inset 0 2px 0 rgba(255,255,255,0.45),
+    inset 0 -3px 6px rgba(0,0,0,0.3),
+    0 4px 10px rgba(0,0,0,0.5);
 }
-.badge.Night, .badge.WFHN, .badge.CCN{
-  background:var(--night-bg);
-  color:var(--night-text);
+td.day select.Night,
+td.day select.WFH-Night,
+td.day select.CC-Night{
+  background:linear-gradient(145deg, var(--night-1), var(--night-2));
+  color:#fff;
+  text-shadow:0 1px 2px rgba(0,0,0,0.5);
+  box-shadow:
+    0 0 16px var(--night-glow),
+    inset 0 2px 0 rgba(255,255,255,0.25),
+    inset 0 -3px 6px rgba(0,0,0,0.4),
+    0 4px 10px rgba(0,0,0,0.5);
 }
-.badge.Weekoff{
-  background:var(--weekoff-bg);
-  color:var(--weekoff-text);
+td.day select.Weekoff,
+td.day select.WeekoffAdjust{
+  background:linear-gradient(145deg, var(--weekoff-1), var(--weekoff-2));
+  color:#fff;
+  text-shadow:0 1px 2px rgba(0,0,0,0.5);
+  box-shadow:
+    0 0 16px var(--weekoff-glow),
+    inset 0 2px 0 rgba(255,255,255,0.25),
+    inset 0 -3px 6px rgba(0,0,0,0.4),
+    0 4px 10px rgba(0,0,0,0.5);
 }
-.badge.SL, .badge.CL, .badge.EL, .badge.Leave{
-  background:var(--leave-bg);
-  color:var(--leave-text);
+td.day select.SickLeave,
+td.day select.CasualLeave,
+td.day select.EarnedLeave,
+td.day select.Leave{
+  background:linear-gradient(145deg, var(--leave-1), var(--leave-2));
+  color:#fff;
+  text-shadow:0 1px 2px rgba(0,0,0,0.5);
+  box-shadow:
+    0 0 16px var(--leave-glow),
+    inset 0 2px 0 rgba(255,255,255,0.25),
+    inset 0 -3px 6px rgba(0,0,0,0.4),
+    0 4px 10px rgba(0,0,0,0.5);
 }
-.badge.FlexiLeave{
-  background:var(--flexi-bg);
-  color:var(--flexi-text);
+td.day select.FlexiLeave{
+  background:linear-gradient(145deg, var(--flexi-1), var(--flexi-2));
+  color:#fff;
+  text-shadow:0 1px 2px rgba(0,0,0,0.5);
+  box-shadow:
+    0 0 16px var(--flexi-glow),
+    inset 0 2px 0 rgba(255,255,255,0.25),
+    inset 0 -3px 6px rgba(0,0,0,0.4),
+    0 4px 10px rgba(0,0,0,0.5);
 }
-.badge.HolidayLeave{
-  background:var(--holiday-bg);
-  color:var(--holiday-text);
+td.day select.HolidayLeave{
+  background:linear-gradient(145deg, var(--holiday-1), var(--holiday-2));
+  color:#fff;
+  text-shadow:0 1px 2px rgba(0,0,0,0.5);
+  box-shadow:
+    0 0 16px var(--holiday-glow),
+    inset 0 2px 0 rgba(255,255,255,0.25),
+    inset 0 -3px 6px rgba(0,0,0,0.4),
+    0 4px 10px rgba(0,0,0,0.5);
 }
-.badge.NA, .badge.empty{
-  background:var(--na-bg);
-  color:var(--na-text);
+td.day select.NA,
+td.day select.empty{
+  background:linear-gradient(145deg, var(--na-1), var(--na-2));
+  color:var(--ink-3);
+  box-shadow:
+    inset 0 2px 0 rgba(255,255,255,0.05),
+    inset 0 -3px 6px rgba(0,0,0,0.4),
+    0 4px 10px rgba(0,0,0,0.4);
 }
 
 /* ============================================================
@@ -684,75 +894,107 @@ td.day.picking .select-native{
    ============================================================ */
 table.roster th.col-sum,
 table.roster td.col-sum{
-  min-width:72px;
+  min-width:80px;
   font-family:var(--ff-mono);
-  font-size:16px;
+  font-size:18px;
   font-weight:900;
 }
 table.roster th.col-sum{
   font-family:var(--ff);
-  font-size:12px;
-  font-weight:800;
-  letter-spacing:1.2px;
+  font-size:13px;
+  font-weight:900;
+  letter-spacing:1.4px;
 }
-td.col-sum.wo{color:#C9A8FA;background:rgba(163,113,247,0.08)}
-td.col-sum.lv{color:#FF9CA5;background:rgba(255,71,87,0.08)}
+td.col-sum.wo{
+  color:var(--neon-purple);
+  background:rgba(163,113,247,0.08);
+  text-shadow:0 0 16px rgba(163,113,247,0.6);
+}
+td.col-sum.lv{
+  color:var(--neon-pink);
+  background:rgba(255,45,155,0.08);
+  text-shadow:0 0 16px rgba(255,45,155,0.6);
+}
 
 /* ============================================================
    AGGREGATE ROWS
    ============================================================ */
 tr.agg td{
-  background:var(--bg-2) !important;
-  border-top:2px solid var(--line-hi);
-  border-bottom:1px solid var(--line);
-  padding:12px 8px;
+  background:linear-gradient(180deg, var(--bg-2), var(--bg-1)) !important;
+  border-top:2px solid rgba(0,229,255,0.25);
+  border-bottom:1px solid rgba(255,255,255,0.05);
+  padding:14px 8px;
   text-align:center;
   height:auto;
+  box-shadow:inset 0 2px 8px rgba(0,229,255,0.05);
 }
 tr.agg td.col-emp,
 tr.agg td.col-role{
-  background:var(--bg-3) !important;
+  background:linear-gradient(180deg, var(--bg-3), var(--bg-2)) !important;
   font-family:var(--ff);
   font-size:12px;
   font-weight:900;
-  color:var(--ink);
+  color:#fff;
   text-transform:uppercase;
-  letter-spacing:1.2px;
+  letter-spacing:1.4px;
   text-align:left;
-  padding:12px 18px;
+  padding:14px 20px;
+  text-shadow:0 0 10px rgba(0,229,255,0.3);
 }
 tr.agg td .agg-pill{
   display:inline-block;
-  padding:5px 12px;
-  border-radius:8px;
-  min-width:34px;
+  padding:6px 14px;
+  border-radius:9px;
+  min-width:38px;
   font-weight:900;
   font-family:var(--ff-mono);
-  font-size:14px;
-  border:1px solid transparent;
+  font-size:15px;
+  border:1px solid rgba(255,255,255,0.15);
 }
-.agg-pill.morning{background:var(--morning-bg);color:var(--morning-text);border-color:rgba(92,61,0,0.2)}
-.agg-pill.general{background:var(--general-bg);color:var(--general-text);border-color:rgba(31,36,48,0.2)}
-.agg-pill.afternoon{background:var(--afternoon-bg);color:var(--afternoon-text);border-color:rgba(92,38,0,0.2)}
-.agg-pill.night{background:var(--night-bg);color:var(--night-text);border-color:rgba(0,37,77,0.2)}
-.agg-pill.total{
-  background:linear-gradient(135deg, #4A90E2, #3B7DD8);
+.agg-pill.morning{
+  background:linear-gradient(145deg, var(--morning-1), var(--morning-2));
+  color:#3D2600;
+  box-shadow:0 0 16px var(--morning-glow), inset 0 2px 0 rgba(255,255,255,0.4);
+}
+.agg-pill.general{
+  background:linear-gradient(145deg, var(--general-1), var(--general-2));
+  color:#0A0D14;
+  box-shadow:0 0 14px var(--general-glow), inset 0 2px 0 rgba(255,255,255,0.4);
+}
+.agg-pill.afternoon{
+  background:linear-gradient(145deg, var(--afternoon-1), var(--afternoon-2));
+  color:#3D1A00;
+  box-shadow:0 0 16px var(--afternoon-glow), inset 0 2px 0 rgba(255,255,255,0.4);
+}
+.agg-pill.night{
+  background:linear-gradient(145deg, var(--night-1), var(--night-2));
   color:#fff;
-  box-shadow:0 4px 12px -2px rgba(74,144,226,0.5);
+  box-shadow:0 0 16px var(--night-glow), inset 0 2px 0 rgba(255,255,255,0.3);
+}
+.agg-pill.total{
+  background:linear-gradient(145deg, var(--neon-cyan), var(--neon-cyan-2));
+  color:#000;
+  box-shadow:
+    0 0 24px rgba(0,229,255,0.6),
+    inset 0 2px 0 rgba(255,255,255,0.5),
+    inset 0 -3px 6px rgba(0,0,0,0.2);
+  font-size:16px;
 }
 
 /* ============================================================
    FOOTER
    ============================================================ */
 .footer{
-  background:var(--bg-1);
-  border-top:1px solid var(--line-2);
+  background:linear-gradient(180deg, var(--bg-1), var(--bg-0));
+  border-top:1px solid rgba(0,229,255,0.15);
   padding:14px 28px;
   display:flex;
   align-items:center;
   gap:16px;
   flex-shrink:0;
-  box-shadow:0 -4px 16px rgba(0,0,0,0.4);
+  box-shadow:
+    0 -4px 20px rgba(0,0,0,0.6),
+    inset 0 1px 0 rgba(0,229,255,0.08);
   position:relative;
   z-index:100;
 }
@@ -764,14 +1006,16 @@ tr.agg td .agg-pill{
   align-items:center;
   gap:10px;
 }
+.footer-info strong{color:#fff;font-weight:800;text-shadow:0 0 10px rgba(0,229,255,0.3)}
 .footer-info svg{
   width:16px;height:16px;
-  stroke:var(--accent);fill:none;stroke-width:2.4;flex-shrink:0;
+  stroke:var(--neon-cyan);fill:none;stroke-width:2.4;flex-shrink:0;
+  filter:drop-shadow(0 0 6px rgba(0,229,255,0.6));
 }
 .footer-spacer{flex:1}
 
 /* ============================================================
-   EMPTY
+   EMPTY STATE
    ============================================================ */
 .empty{
   display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -779,12 +1023,20 @@ tr.agg td .agg-pill{
 }
 .empty-icon{
   width:120px;height:120px;border-radius:28px;
-  background:linear-gradient(135deg, var(--bg-2), var(--bg-1));
-  border:2px solid var(--line-2);
+  background:linear-gradient(145deg, var(--bg-2), var(--bg-1));
+  border:2px solid rgba(0,229,255,0.2);
   display:grid;place-items:center;margin-bottom:28px;
+  box-shadow:0 0 40px rgba(0,229,255,0.15), inset 0 2px 0 rgba(255,255,255,0.05);
 }
-.empty-icon svg{width:56px;height:56px;stroke:var(--ink-4);fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
-.empty h3{font-size:24px;font-weight:800;color:var(--ink);margin-bottom:10px}
+.empty-icon svg{
+  width:56px;height:56px;
+  stroke:var(--neon-cyan);fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;
+  filter:drop-shadow(0 0 12px rgba(0,229,255,0.6));
+}
+.empty h3{
+  font-size:24px;font-weight:900;color:#fff;margin-bottom:10px;
+  text-shadow:0 0 20px rgba(0,229,255,0.4);
+}
 .empty p{font-size:15px;font-weight:500;color:var(--ink-3);line-height:1.7}
 
 /* ============================================================
@@ -792,16 +1044,16 @@ tr.agg td .agg-pill{
    ============================================================ */
 @media (max-width:900px){
   .header{padding:14px 16px;flex-wrap:wrap;gap:14px}
-  .header-logo{width:44px;height:44px}
-  .header-logo svg{width:24px;height:24px}
+  .header-logo{width:48px;height:48px}
+  .header-logo svg{width:26px;height:26px}
   .header-text h1{font-size:17px}
   .header-text p{font-size:11px}
   .header-stats{width:100%;overflow-x:auto;padding-bottom:4px}
-  .hstat{min-width:78px;padding:8px 12px}
-  .hstat-val{font-size:18px}
+  .hstat{min-width:82px;padding:10px 14px}
+  .hstat-val{font-size:20px}
   .hstat-lbl{font-size:9px}
   .toolbar{padding:12px 16px;gap:10px}
-  .field select, .field input{min-width:110px;padding:9px 12px;font-size:13px}
+  .field select, .field input{min-width:110px;padding:10px 12px;font-size:13px}
   .search-box input{width:100%}
   .search-box input:focus{width:100%}
   .toolbar-spacer{display:none}
@@ -810,18 +1062,18 @@ tr.agg td .agg-pill{
   .footer{padding:12px 16px;flex-direction:column;align-items:stretch;gap:10px}
   .btn{width:100%;justify-content:center}
   table.roster th.col-emp, table.roster td.col-emp{
-    min-width:180px;max-width:180px;padding:8px 12px;
+    min-width:180px;max-width:180px;padding:10px 12px;
   }
   table.roster th.col-role, table.roster td.col-role{
-    left:180px;min-width:80px;max-width:80px;padding:8px 10px;font-size:11px;
+    left:180px;min-width:80px;max-width:80px;padding:10px;
   }
-  .emp-av{width:32px;height:32px;font-size:12px;border-radius:8px}
+  .emp-av{width:34px;height:34px;font-size:12px;border-radius:10px}
   .emp-name{font-size:13px;max-width:120px}
   .emp-id{font-size:10px}
-  td.day{width:44px;min-width:44px;height:52px}
-  td.day .badge{inset:6px;font-size:13px;border-radius:8px}
-  table.roster thead th{min-width:44px;padding:10px 4px;font-size:12px}
-  table.roster thead tr:nth-child(2) th{min-width:44px;font-size:10px}
+  td.day{width:48px;min-width:48px;height:56px}
+  td.day select{font-size:13px;border-radius:8px}
+  table.roster thead th{min-width:48px;padding:10px 4px;font-size:11px}
+  table.roster thead tr:nth-child(2) th{min-width:48px;font-size:10px}
 }
 </style>
 </head>
@@ -904,32 +1156,6 @@ tr.agg td .agg-pill{
 
   <!-- ROSTER -->
   <div class="roster-wrap">
-
-<%
-    List<Map<String,Object>> employees = new ArrayList<>();
-    Connection conn = null;
-    PreparedStatement ps = null;
-    ResultSet rsData = null;
-    try {
-        conn = DBUtilityAuto.getReportDBConnection();
-        String q = "select * from rostertable where UPPER(TEAM) = UPPER(?) and UPPER(MONTHYEAR) = UPPER(?) order by id";
-        ps = conn.prepareStatement(q);
-        ps.setString(1, m_strrole);
-        ps.setString(2, sort_MonthYear);
-        rsData = ps.executeQuery();
-        ResultSetMetaData md = rsData.getMetaData();
-        int cc = md.getColumnCount();
-        while (rsData.next()) {
-            Map<String,Object> row = new HashMap<>();
-            for (int i=1; i<=cc; i++) row.put(md.getColumnName(i).toUpperCase(), rsData.getObject(i));
-            employees.add(row);
-        }
-    } catch (Exception e) { e.printStackTrace(); }
-    finally {
-        if (rsData != null) try { rsData.close(); } catch (Exception e) {}
-        if (ps != null) try { ps.close(); } catch (Exception e) {}
-    }
-%>
 
 <% if (employees.isEmpty()) { %>
     <div class="empty">
@@ -1016,43 +1242,46 @@ tr.agg td .agg-pill{
                  boolean wk = (dt.getDayOfWeek()==DayOfWeek.SATURDAY || dt.getDayOfWeek()==DayOfWeek.SUNDAY);
                  boolean isToday = dt.equals(today);
 
-                 String label = "·", bcls = "empty";
-                 if (sl.contains("morning")) { label = sl.contains("wfh")?"WH":(sl.contains("cc")?"CC":"M"); bcls = sl.contains("wfh")?"WFHM":(sl.contains("cc")?"CCM":"Morning"); }
-                 else if (sl.contains("general")||sl.contains("genral")) { label = sl.contains("wfh")?"WD":(sl.contains("cc")?"CD":"D"); bcls = sl.contains("wfh")?"WFHG":(sl.contains("cc")?"CCG":"General"); }
-                 else if (sl.contains("afternoon")) { label = sl.contains("wfh")?"WA":(sl.contains("cc")?"CA":"A"); bcls = sl.contains("wfh")?"WFHA":(sl.contains("cc")?"CCA":"Afternoon"); }
-                 else if (sl.contains("night")) { label = sl.contains("wfh")?"WN":(sl.contains("cc")?"CN":"N"); bcls = sl.contains("wfh")?"WFHN":(sl.contains("cc")?"CCN":"Night"); }
-                 else if (sl.contains("weekoffadjust")) { label="WA"; bcls="Weekoff"; }
-                 else if (sl.contains("weekoff")) { label="W"; bcls="Weekoff"; }
-                 else if (sl.contains("sickleave")) { label="SL"; bcls="SL"; }
-                 else if (sl.contains("casualleave")) { label="CL"; bcls="CL"; }
-                 else if (sl.contains("earnedleave")) { label="EL"; bcls="EL"; }
-                 else if (sl.contains("flexileave")) { label="FL"; bcls="FlexiLeave"; }
-                 else if (sl.contains("holidayleave")) { label="HL"; bcls="HolidayLeave"; }
-                 else if (sl.contains("leave")) { label="L"; bcls="Leave"; }
+                 String optText = "—";
+                 if (sl.contains("morning")) optText = sl.contains("wfh")?"WH":(sl.contains("cc")?"CC":"M");
+                 else if (sl.contains("general")||sl.contains("genral")) optText = sl.contains("wfh")?"WD":(sl.contains("cc")?"CD":"D");
+                 else if (sl.contains("afternoon")) optText = sl.contains("wfh")?"WA":(sl.contains("cc")?"CA":"A");
+                 else if (sl.contains("night")) optText = sl.contains("wfh")?"WN":(sl.contains("cc")?"CN":"N");
+                 else if (sl.contains("weekoffadjust")) optText = "WA";
+                 else if (sl.contains("weekoff")) optText = "W";
+                 else if (sl.contains("sickleave")) optText = "SL";
+                 else if (sl.contains("casualleave")) optText = "CL";
+                 else if (sl.contains("earnedleave")) optText = "EL";
+                 else if (sl.contains("flexileave")) optText = "FL";
+                 else if (sl.contains("holidayleave")) optText = "HL";
+                 else if (sl.contains("leave")) optText = "L";
+                 else if (sl.equals("na")) optText = "—";
+
+                 // class for select — must match the option value's class
+                 String shiftClass = shift.replaceAll("\\s+", "-");
           %>
           <td class="day <%= wk?"weekend":"" %> <%= isToday?"today":"" %>">
-            <div class="badge <%= bcls %>"><%= label %></div>
-            <select name="mnt_<%= empIdx %>_<%= d %>" class="select-native" onchange="onPick(this)" onfocus="markPick(this)" onblur="unmarkPick(this)">
-              <option value="Morning" <%= shift.equalsIgnoreCase("Morning")?"selected":"" %>>Morning</option>
-              <option value="WFH-Morning" <%= shift.equalsIgnoreCase("WFH-Morning")?"selected":"" %>>WFH-Morning</option>
-              <option value="CC-Morning" <%= shift.equalsIgnoreCase("CC-Morning")?"selected":"" %>>CC-Morning</option>
-              <option value="General" <%= (shift.equalsIgnoreCase("General")||shift.equalsIgnoreCase("Genral"))?"selected":"" %>>General</option>
-              <option value="WFH-General" <%= shift.equalsIgnoreCase("WFH-General")?"selected":"" %>>WFH-General</option>
-              <option value="CC-General" <%= shift.equalsIgnoreCase("CC-General")?"selected":"" %>>CC-General</option>
-              <option value="Afternoon" <%= shift.equalsIgnoreCase("Afternoon")?"selected":"" %>>Afternoon</option>
-              <option value="WFH-Afternoon" <%= shift.equalsIgnoreCase("WFH-Afternoon")?"selected":"" %>>WFH-Afternoon</option>
-              <option value="CC-Afternoon" <%= shift.equalsIgnoreCase("CC-Afternoon")?"selected":"" %>>CC-Afternoon</option>
-              <option value="Night" <%= shift.equalsIgnoreCase("Night")?"selected":"" %>>Night</option>
-              <option value="WFH-Night" <%= shift.equalsIgnoreCase("WFH-Night")?"selected":"" %>>WFH-Night</option>
-              <option value="CC-Night" <%= shift.equalsIgnoreCase("CC-Night")?"selected":"" %>>CC-Night</option>
-              <option value="Weekoff" <%= shift.equalsIgnoreCase("Weekoff")?"selected":"" %>>Weekoff</option>
-              <option value="WeekoffAdjust" <%= shift.equalsIgnoreCase("WeekoffAdjust")?"selected":"" %>>Weekoff Adjust</option>
-              <option value="SickLeave" <%= shift.equalsIgnoreCase("SickLeave")?"selected":"" %>>Sick Leave</option>
-              <option value="CasualLeave" <%= shift.equalsIgnoreCase("CasualLeave")?"selected":"" %>>Casual Leave</option>
-              <option value="EarnedLeave" <%= shift.equalsIgnoreCase("EarnedLeave")?"selected":"" %>>Earned Leave</option>
-              <option value="FlexiLeave" <%= shift.equalsIgnoreCase("FlexiLeave")?"selected":"" %>>Flexi Leave</option>
-              <option value="HolidayLeave" <%= shift.equalsIgnoreCase("HolidayLeave")?"selected":"" %>>Holiday</option>
-              <option value="NA" <%= shift.equalsIgnoreCase("NA")?"selected":"" %>>Not Assigned</option>
+            <select name="mnt_<%= empIdx %>_<%= d %>" class="<%= shiftClass %>" onchange="applyClass(this)">
+              <option value="Morning" class="Morning" <%= shift.equalsIgnoreCase("Morning")?"selected":"" %>>M</option>
+              <option value="WFH-Morning" class="WFH-Morning" <%= shift.equalsIgnoreCase("WFH-Morning")?"selected":"" %>>WH</option>
+              <option value="CC-Morning" class="CC-Morning" <%= shift.equalsIgnoreCase("CC-Morning")?"selected":"" %>>CC</option>
+              <option value="General" class="General" <%= (shift.equalsIgnoreCase("General")||shift.equalsIgnoreCase("Genral"))?"selected":"" %>>D</option>
+              <option value="WFH-General" class="WFH-General" <%= shift.equalsIgnoreCase("WFH-General")?"selected":"" %>>WD</option>
+              <option value="CC-General" class="CC-General" <%= shift.equalsIgnoreCase("CC-General")?"selected":"" %>>CD</option>
+              <option value="Afternoon" class="Afternoon" <%= shift.equalsIgnoreCase("Afternoon")?"selected":"" %>>A</option>
+              <option value="WFH-Afternoon" class="WFH-Afternoon" <%= shift.equalsIgnoreCase("WFH-Afternoon")?"selected":"" %>>WA</option>
+              <option value="CC-Afternoon" class="CC-Afternoon" <%= shift.equalsIgnoreCase("CC-Afternoon")?"selected":"" %>>CA</option>
+              <option value="Night" class="Night" <%= shift.equalsIgnoreCase("Night")?"selected":"" %>>N</option>
+              <option value="WFH-Night" class="WFH-Night" <%= shift.equalsIgnoreCase("WFH-Night")?"selected":"" %>>WN</option>
+              <option value="CC-Night" class="CC-Night" <%= shift.equalsIgnoreCase("CC-Night")?"selected":"" %>>CN</option>
+              <option value="Weekoff" class="Weekoff" <%= shift.equalsIgnoreCase("Weekoff")?"selected":"" %>>W</option>
+              <option value="WeekoffAdjust" class="WeekoffAdjust" <%= shift.equalsIgnoreCase("WeekoffAdjust")?"selected":"" %>>WA</option>
+              <option value="SickLeave" class="SickLeave" <%= shift.equalsIgnoreCase("SickLeave")?"selected":"" %>>SL</option>
+              <option value="CasualLeave" class="CasualLeave" <%= shift.equalsIgnoreCase("CasualLeave")?"selected":"" %>>CL</option>
+              <option value="EarnedLeave" class="EarnedLeave" <%= shift.equalsIgnoreCase("EarnedLeave")?"selected":"" %>>EL</option>
+              <option value="FlexiLeave" class="FlexiLeave" <%= shift.equalsIgnoreCase("FlexiLeave")?"selected":"" %>>FL</option>
+              <option value="HolidayLeave" class="HolidayLeave" <%= shift.equalsIgnoreCase("HolidayLeave")?"selected":"" %>>HL</option>
+              <option value="NA" class="NA" <%= shift.equalsIgnoreCase("NA")?"selected":"" %>>—</option>
             </select>
           </td>
           <% } %>
@@ -1138,7 +1367,7 @@ tr.agg td .agg-pill{
   <div class="footer">
     <div class="footer-info">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-      Click any cell &rarr; pick a shift &rarr; click <strong>Save Roster</strong>
+      Click any cell &rarr; pick shift &rarr; <strong>Save Roster</strong>
     </div>
     <div class="footer-spacer"></div>
     <button type="button" class="btn btn-ghost" onclick="location.reload()">
@@ -1155,16 +1384,19 @@ tr.agg td .agg-pill{
 </div>
 
 <script>
+// Update stats
 (function(){
   var empCount = document.querySelectorAll('tr.emp-row').length;
   document.getElementById('statEmp').textContent = empCount;
   var assigned = 0;
-  document.querySelectorAll('td.day .badge').forEach(function(b){
-    if (!b.classList.contains('empty') && !b.classList.contains('NA')) assigned++;
+  document.querySelectorAll('td.day select').forEach(function(s){
+    var v = s.value.toLowerCase();
+    if (v !== 'na' && v !== '') assigned++;
   });
   document.getElementById('statAssigned').textContent = assigned;
 })();
 
+// Search
 document.getElementById('searchEmp').addEventListener('input', function(e){
   var q = e.target.value.toLowerCase().trim();
   document.querySelectorAll('tr.emp-row').forEach(function(r){
@@ -1173,37 +1405,23 @@ document.getElementById('searchEmp').addEventListener('input', function(e){
   });
 });
 
-function markPick(sel){
-  var td = sel.closest('td.day');
-  if (td) td.classList.add('picking');
-}
-function unmarkPick(sel){
-  var td = sel.closest('td.day');
-  if (td) setTimeout(function(){ td.classList.remove('picking'); }, 150);
-}
-function onPick(sel){
-  var td = sel.closest('td.day');
-  var bd = td.querySelector('.badge');
-  var v  = sel.value;
-  var lv = v.toLowerCase();
-  var label = "·", cls = "empty";
-  if (lv.indexOf('morning')!==-1) { label = lv.indexOf('wfh')!==-1?'WH':(lv.indexOf('cc')!==-1?'CC':'M'); cls = lv.indexOf('wfh')!==-1?'WFHM':(lv.indexOf('cc')!==-1?'CCM':'Morning'); }
-  else if (lv.indexOf('general')!==-1 || lv.indexOf('genral')!==-1) { label = lv.indexOf('wfh')!==-1?'WD':(lv.indexOf('cc')!==-1?'CD':'D'); cls = lv.indexOf('wfh')!==-1?'WFHG':(lv.indexOf('cc')!==-1?'CCG':'General'); }
-  else if (lv.indexOf('afternoon')!==-1) { label = lv.indexOf('wfh')!==-1?'WA':(lv.indexOf('cc')!==-1?'CA':'A'); cls = lv.indexOf('wfh')!==-1?'WFHA':(lv.indexOf('cc')!==-1?'CCA':'Afternoon'); }
-  else if (lv.indexOf('night')!==-1) { label = lv.indexOf('wfh')!==-1?'WN':(lv.indexOf('cc')!==-1?'CN':'N'); cls = lv.indexOf('wfh')!==-1?'WFHN':(lv.indexOf('cc')!==-1?'CCN':'Night'); }
-  else if (lv.indexOf('weekoffadjust')!==-1) { label='WA'; cls='Weekoff'; }
-  else if (lv.indexOf('weekoff')!==-1) { label='W'; cls='Weekoff'; }
-  else if (lv.indexOf('sickleave')!==-1) { label='SL'; cls='SL'; }
-  else if (lv.indexOf('casualleave')!==-1) { label='CL'; cls='CL'; }
-  else if (lv.indexOf('earnedleave')!==-1) { label='EL'; cls='EL'; }
-  else if (lv.indexOf('flexileave')!==-1) { label='FL'; cls='FlexiLeave'; }
-  else if (lv.indexOf('holidayleave')!==-1) { label='HL'; cls='HolidayLeave'; }
-  else if (lv.indexOf('leave')!==-1) { label='L'; cls='Leave'; }
-  bd.textContent = label;
-  bd.className = 'badge ' + cls;
-  setTimeout(function(){ td.classList.remove('picking'); }, 200);
+// Apply class on change — change select class to match new value's color
+function applyClass(sel){
+  var val = sel.value;
+  // Remove any existing shift class
+  sel.classList.remove('Morning','WFH-Morning','CC-Morning',
+                       'General','WFH-General','CC-General','Genral',
+                       'Afternoon','WFH-Afternoon','CC-Afternoon',
+                       'Night','WFH-Night','CC-Night',
+                       'Weekoff','WeekoffAdjust',
+                       'SickLeave','CasualLeave','EarnedLeave','Leave',
+                       'FlexiLeave','HolidayLeave',
+                       'NA','empty');
+  // Add new
+  sel.classList.add(val.replace(/\s+/g, '-'));
 }
 
+// Submit — same mnt_X_Y format
 function submitRoster(){
   var data = [];
   var rows = document.querySelectorAll('#rosterTable tbody tr.emp-row');
