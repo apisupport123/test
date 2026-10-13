@@ -5,7 +5,6 @@
 <%@ page import="java.time.format.TextStyle" %>
 <%@ page import="com.jdbc.DBUtilityAuto" %>
 <%
-    // ---- AUTH GUARD ----
     String __role = (session != null) ? (String) session.getAttribute("role") : null;
     if (__role == null || __role.trim().isEmpty()) {
         response.sendRedirect(request.getContextPath() + "/login.action");
@@ -17,521 +16,884 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Team Roster - EIS Portal</title>
+<title>Team Roster &mdash; EIS Portal</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
+/* ============================================================
+   DESIGN TOKENS
+   ============================================================ */
 :root{
-  --primary:#7C3AED;
-  --primary-2:#8B5CF6;
-  --primary-light:#F3E8FF;
-  --accent:#EC4899;
-  --accent-2:#F472B6;
+  /* Neutral scale */
+  --gray-0:#FFFFFF;
+  --gray-25:#FCFCFD;
+  --gray-50:#F9FAFB;
+  --gray-100:#F2F4F7;
+  --gray-200:#EAECF0;
+  --gray-300:#D0D5DD;
+  --gray-400:#98A2B3;
+  --gray-500:#667085;
+  --gray-600:#475467;
+  --gray-700:#344054;
+  --gray-800:#1D2939;
+  --gray-900:#101828;
 
-  --ink:#0A0A0A;
-  --muted:#6B7280;
-  --line:#EAEAEA;
-  --bg:#F5F7FA;
-  --card:#FFFFFF;
-  --hover-bg:#F0F0F5;
+  /* Accent */
+  --accent:#635BFF;              /* Stripe-like indigo */
+  --accent-hover:#5249E0;
+  --accent-soft:#EEF0FF;
+  --accent-line:#C7CBFF;
 
-  --morning:#FF8C00;
-  --general:#696969;
-  --afternoon:#DAA520;
-  --night:#1E90FF;
-  --weekoff:#1E40AF;
-  --leave:#DC2626;
-  --flexi:#EA580C;
-  --holiday:#16A34A;
-  --na:#111827;
+  /* Semantic */
+  --success:#12B76A;
+  --success-soft:#ECFDF3;
+  --warning:#F79009;
+  --warning-soft:#FFFAEB;
+  --danger:#F04438;
+  --danger-soft:#FEF3F2;
+  --info:#2E90FA;
+  --info-soft:#EFF8FF;
 
-  --success:#16A34A;
-  --danger:#DC2626;
-  --warning:#F59E0B;
+  /* Shift palette — muted, professional */
+  --shift-morning-bg:#FFF6ED;   --shift-morning-fg:#C4320A;   --shift-morning-bd:#F9DBAF;
+  --shift-general-bg:#F2F4F7;   --shift-general-fg:#344054;   --shift-general-bd:#D0D5DD;
+  --shift-afternoon-bg:#FFFAEB; --shift-afternoon-fg:#B54708; --shift-afternoon-bd:#FEDF89;
+  --shift-night-bg:#EFF8FF;     --shift-night-fg:#175CD3;     --shift-night-bd:#B2DDFF;
+  --shift-weekoff-bg:#EEF4FF;   --shift-weekoff-fg:#3538CD;   --shift-weekoff-bd:#C7D7FE;
+  --shift-leave-bg:#FEF3F2;     --shift-leave-fg:#B42318;     --shift-leave-bd:#FECDCA;
+  --shift-flexi-bg:#FDF2FA;     --shift-flexi-fg:#C11574;     --shift-flexi-bd:#FCCEEE;
+  --shift-holiday-bg:#ECFDF3;   --shift-holiday-fg:#027A48;   --shift-holiday-bd:#A6F4C5;
+  --shift-na-bg:#F9FAFB;        --shift-na-fg:#98A2B3;        --shift-na-bd:#EAECF0;
+
+  --bg-page:var(--gray-50);
+  --bg-surface:var(--gray-0);
+  --bg-subtle:var(--gray-25);
+  --border:var(--gray-200);
+  --border-strong:var(--gray-300);
+  --text-primary:var(--gray-900);
+  --text-secondary:var(--gray-600);
+  --text-tertiary:var(--gray-500);
+
+  --radius-sm:6px;
+  --radius-md:8px;
+  --radius-lg:12px;
+  --radius-xl:16px;
+
+  --shadow-xs:0 1px 2px 0 rgba(16,24,40,.05);
+  --shadow-sm:0 1px 3px 0 rgba(16,24,40,.10), 0 1px 2px -1px rgba(16,24,40,.06);
+  --shadow-md:0 4px 8px -2px rgba(16,24,40,.10), 0 2px 4px -2px rgba(16,24,40,.06);
+  --shadow-lg:0 12px 16px -4px rgba(16,24,40,.08), 0 4px 6px -2px rgba(16,24,40,.03);
+  --shadow-xl:0 20px 24px -4px rgba(16,24,40,.08), 0 8px 8px -4px rgba(16,24,40,.03);
+
+  --font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
 }
 
 html[data-theme="dark"]{
-  --primary:#8B5CF6;
-  --primary-2:#A78BFA;
-  --primary-light:#2D1854;
-  --accent:#F472B6;
-  --accent-2:#F9A8D4;
+  --gray-0:#0B0E14;
+  --gray-25:#10131A;
+  --gray-50:#12161D;
+  --gray-100:#171B23;
+  --gray-200:#22262F;
+  --gray-300:#2E333C;
+  --gray-400:#5A6270;
+  --gray-500:#8A94A6;
+  --gray-600:#A6B0C2;
+  --gray-700:#C4CCDA;
+  --gray-800:#E1E6EF;
+  --gray-900:#F5F7FA;
 
-  --ink:#F5F5F5;
-  --muted:#9CA3AF;
-  --line:#2A2A35;
-  --bg:#0A0614;
-  --card:#130A24;
-  --hover-bg:#1F0E3D;
+  --accent:#8B83FF;
+  --accent-hover:#A29AFF;
+  --accent-soft:#1E1B4B;
+  --accent-line:#3730A3;
 
-  --morning:#FB923C;
-  --general:#9CA3AF;
-  --afternoon:#FBBF24;
-  --night:#60A5FA;
-  --weekoff:#60A5FA;
-  --leave:#F87171;
-  --flexi:#FB923C;
-  --holiday:#4ADE80;
-  --na:#374151;
+  --success:#32D583;
+  --success-soft:#052E1F;
+  --warning:#FDB022;
+  --warning-soft:#3D2A05;
+  --danger:#F97066;
+  --danger-soft:#3A1211;
+  --info:#53B1FD;
+  --info-soft:#0A2540;
+
+  --shift-morning-bg:#3A1D0A;   --shift-morning-fg:#FDB022;   --shift-morning-bd:#5C2C0F;
+  --shift-general-bg:#1A1E26;   --shift-general-fg:#A6B0C2;   --shift-general-bd:#2E333C;
+  --shift-afternoon-bg:#3D2A05; --shift-afternoon-fg:#FDB022; --shift-afternoon-bd:#5C3F0F;
+  --shift-night-bg:#0A2540;     --shift-night-fg:#53B1FD;     --shift-night-bd:#0F3A66;
+  --shift-weekoff-bg:#1E1B4B;   --shift-weekoff-fg:#8B83FF;   --shift-weekoff-bd:#3730A3;
+  --shift-leave-bg:#3A1211;     --shift-leave-fg:#F97066;     --shift-leave-bd:#5A1A18;
+  --shift-flexi-bg:#3D1030;     --shift-flexi-fg:#F670C7;     --shift-flexi-bd:#5E1A4A;
+  --shift-holiday-bg:#052E1F;   --shift-holiday-fg:#32D583;   --shift-holiday-bd:#0A5133;
+  --shift-na-bg:#12161D;        --shift-na-fg:#5A6270;        --shift-na-bd:#22262F;
+
+  --bg-page:var(--gray-50);
+  --bg-surface:var(--gray-25);
+  --bg-subtle:var(--gray-0);
+  --border:var(--gray-200);
+  --border-strong:var(--gray-300);
+  --text-primary:var(--gray-900);
+  --text-secondary:var(--gray-600);
+  --text-tertiary:var(--gray-500);
+
+  --shadow-xs:0 1px 2px 0 rgba(0,0,0,.4);
+  --shadow-sm:0 1px 3px 0 rgba(0,0,0,.5);
+  --shadow-md:0 4px 8px -2px rgba(0,0,0,.4);
+  --shadow-lg:0 12px 16px -4px rgba(0,0,0,.5);
+  --shadow-xl:0 20px 24px -4px rgba(0,0,0,.6);
 }
 
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{height:100%}
 body{
-  font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  font-weight:600;
-  background:var(--bg);
-  color:var(--ink);
+  font-family:var(--font);
+  font-size:14px;
+  line-height:1.5;
+  font-weight:400;
+  background:var(--bg-page);
+  color:var(--text-primary);
   -webkit-font-smoothing:antialiased;
-  transition:background .3s ease,color .3s ease;
+  -moz-osx-font-smoothing:grayscale;
+  font-feature-settings:"cv02","cv03","cv04","cv11";
+  transition:background-color .2s ease, color .2s ease;
   overflow-x:hidden;
 }
 a{color:inherit;text-decoration:none}
-button{font-family:inherit;cursor:pointer;border:none}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit;}
 
-/* ============ TOP HEADER ============ */
-.top-header{
+/* ============================================================
+   TOP NAVIGATION BAR
+   ============================================================ */
+.appbar{
   position:sticky;
   top:0;
   z-index:100;
-  background:linear-gradient(135deg, #1A0B2E 0%, #2D1854 100%);
+  background:var(--bg-surface);
+  border-bottom:1px solid var(--border);
+  height:64px;
+  display:flex;
+  align-items:center;
+  padding:0 24px;
+  gap:20px;
+  transition:background-color .2s ease, border-color .2s ease;
+}
+
+.appbar-brand{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  flex-shrink:0;
+}
+.appbar-logo{
+  width:32px;height:32px;
+  border-radius:8px;
+  background:linear-gradient(135deg,var(--accent) 0%, #7A5CFF 100%);
+  display:grid;place-items:center;
   color:#fff;
-  padding:20px 32px;
-  box-shadow:0 4px 20px rgba(0,0,0,.2);
+  box-shadow:0 1px 3px rgba(99,91,255,.3);
+}
+.appbar-logo svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.4;}
+.appbar-title{
+  font-size:15px;
+  font-weight:700;
+  letter-spacing:-.2px;
+  color:var(--text-primary);
+}
+.appbar-title .crumb{
+  color:var(--text-tertiary);
+  font-weight:500;
+  margin-left:6px;
+}
+
+.appbar-divider{
+  width:1px;
+  height:24px;
+  background:var(--border);
+  flex-shrink:0;
+}
+
+.appbar-context{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:6px 12px;
+  border-radius:var(--radius-md);
+  background:var(--bg-subtle);
+  border:1px solid var(--border);
+  flex-shrink:0;
+}
+.appbar-context .dot{
+  width:6px;height:6px;border-radius:50%;
+  background:var(--accent);
+}
+.appbar-context .label{
+  font-size:12px;
+  font-weight:600;
+  color:var(--text-secondary);
+}
+.appbar-context .value{
+  font-size:13px;
+  font-weight:700;
+  color:var(--text-primary);
+}
+
+.appbar-spacer{flex:1;}
+
+.appbar-actions{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+.icon-btn{
+  width:36px;height:36px;
+  display:grid;place-items:center;
+  border-radius:var(--radius-md);
+  border:1px solid transparent;
+  color:var(--text-secondary);
+  transition:all .15s ease;
+}
+.icon-btn:hover{
+  background:var(--bg-subtle);
+  color:var(--text-primary);
+  border-color:var(--border);
+}
+.icon-btn svg{
+  width:18px;height:18px;
+  stroke:currentColor;fill:none;
+  stroke-width:1.8;
+  stroke-linecap:round;stroke-linejoin:round;
+}
+.icon-btn .icon-sun{display:block;}
+.icon-btn .icon-moon{display:none;}
+html[data-theme="dark"] .icon-btn .icon-sun{display:none;}
+html[data-theme="dark"] .icon-btn .icon-moon{display:block;}
+
+.user-chip{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:6px 10px 6px 6px;
+  border-radius:999px;
+  border:1px solid var(--border);
+  background:var(--bg-surface);
+  transition:all .15s ease;
+}
+.user-chip:hover{
+  border-color:var(--border-strong);
+  background:var(--bg-subtle);
+}
+.user-chip .avatar{
+  width:26px;height:26px;
+  border-radius:50%;
+  background:linear-gradient(135deg,var(--accent),#7A5CFF);
+  color:#fff;
+  display:grid;place-items:center;
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.3px;
+}
+.user-chip .name{
+  font-size:13px;
+  font-weight:600;
+  color:var(--text-primary);
+}
+
+/* ============================================================
+   PAGE HEADER
+   ============================================================ */
+.page-head{
+  background:var(--bg-surface);
+  border-bottom:1px solid var(--border);
+  padding:24px 32px 20px;
+}
+.page-head-inner{
+  max-width:100%;
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:24px;
+  flex-wrap:wrap;
+}
+.page-head h1{
+  font-size:22px;
+  font-weight:700;
+  letter-spacing:-.4px;
+  color:var(--text-primary);
+  line-height:1.3;
+}
+.page-head h1 .accent{
+  color:var(--accent);
+}
+.page-head .page-desc{
+  font-size:13px;
+  color:var(--text-tertiary);
+  margin-top:4px;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  flex-wrap:wrap;
+}
+.page-head .page-desc .sep{
+  width:3px;height:3px;border-radius:50%;
+  background:var(--gray-300);
+}
+.page-head .page-desc b{color:var(--text-secondary);font-weight:600;}
+
+/* Filter group */
+.filter-group{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  flex-wrap:wrap;
+}
+.filter-label{
+  font-size:12px;
+  font-weight:600;
+  color:var(--text-secondary);
+  margin-right:4px;
+}
+
+.input-wrap{
+  position:relative;
+  display:flex;
+  align-items:center;
+}
+.input-wrap svg{
+  position:absolute;
+  left:10px;
+  width:14px;height:14px;
+  stroke:var(--text-tertiary);fill:none;
+  stroke-width:2;
+  pointer-events:none;
+}
+.input-wrap input,
+.input-wrap select{
+  font-family:var(--font);
+  font-size:13px;
+  font-weight:500;
+  color:var(--text-primary);
+  background:var(--bg-surface);
+  border:1px solid var(--border-strong);
+  border-radius:var(--radius-md);
+  padding:8px 12px 8px 32px;
+  outline:none;
+  transition:all .15s ease;
+  min-width:120px;
+}
+.input-wrap.no-icon input,
+.input-wrap.no-icon select{
+  padding-left:12px;
+}
+.input-wrap input:focus,
+.input-wrap select:focus{
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px var(--accent-soft);
+}
+
+.btn{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:8px 14px;
+  font-family:var(--font);
+  font-size:13px;
+  font-weight:600;
+  border-radius:var(--radius-md);
+  border:1px solid transparent;
+  transition:all .15s ease;
+  white-space:nowrap;
+}
+.btn svg{
+  width:14px;height:14px;
+  stroke:currentColor;fill:none;stroke-width:2;
+  stroke-linecap:round;stroke-linejoin:round;
+}
+.btn-primary{
+  background:var(--accent);
+  color:#fff;
+  box-shadow:var(--shadow-xs);
+}
+.btn-primary:hover{
+  background:var(--accent-hover);
+}
+.btn-secondary{
+  background:var(--bg-surface);
+  color:var(--text-secondary);
+  border-color:var(--border-strong);
+}
+.btn-secondary:hover{
+  background:var(--bg-subtle);
+  color:var(--text-primary);
+}
+
+/* ============================================================
+   KPI STRIP
+   ============================================================ */
+.kpi-strip{
+  background:var(--bg-surface);
+  border-bottom:1px solid var(--border);
+  padding:16px 32px;
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(180px,1fr));
+  gap:1px;
+  background-image:linear-gradient(var(--border),var(--border));
+}
+.kpi{
+  padding:8px 20px;
+  border-left:1px solid var(--border);
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+.kpi:first-child{border-left:none;padding-left:0;}
+.kpi-label{
+  font-size:11px;
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:.5px;
+  color:var(--text-tertiary);
+}
+.kpi-value{
+  font-size:22px;
+  font-weight:700;
+  letter-spacing:-.5px;
+  color:var(--text-primary);
+  font-variant-numeric:tabular-nums;
+  line-height:1.1;
+}
+.kpi-value .unit{
+  font-size:12px;
+  font-weight:500;
+  color:var(--text-tertiary);
+  margin-left:4px;
+}
+.kpi-meta{
+  font-size:11px;
+  color:var(--text-tertiary);
+  font-weight:500;
+}
+
+/* ============================================================
+   TOOLBAR
+   ============================================================ */
+.toolbar{
+  background:var(--bg-page);
+  padding:12px 32px;
   display:flex;
   justify-content:space-between;
   align-items:center;
-  gap:20px;
+  gap:12px;
   flex-wrap:wrap;
 }
-html[data-theme="dark"] .top-header{
-  background:linear-gradient(135deg, #0F0422 0%, #1A0B2E 100%);
-}
-
-.header-left{position:relative;z-index:2;}
-.header-left .badge{
-  display:inline-flex;align-items:center;gap:8px;
-  padding:5px 12px;
-  background:rgba(244,114,182,.2);
-  border:1px solid rgba(244,114,182,.4);
-  border-radius:999px;
-  font-size:.68rem;font-weight:800;
-  color:#F9A8D4;letter-spacing:1px;
-  text-transform:uppercase;margin-bottom:10px;
-}
-.header-left .badge .dot{
-  width:6px;height:6px;border-radius:50%;
-  background:#F9A8D4;
-  box-shadow:0 0 8px #F9A8D4;
-  animation:pulse 2s ease-in-out infinite;
-}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-
-.header-left h1{
-  font-size:1.8rem;font-weight:900;
-  letter-spacing:-.8px;line-height:1.15;
-}
-.header-left h1 .gradient{
-  background:linear-gradient(135deg,#A78BFA,#F9A8D4);
-  -webkit-background-clip:text;background-clip:text;color:transparent;
-}
-.header-left .meta{
-  font-size:.78rem;color:rgba(255,255,255,.7);
-  margin-top:6px;display:flex;gap:14px;flex-wrap:wrap;
-}
-.header-left .meta span{display:inline-flex;align-items:center;gap:6px;}
-
-.header-right{
-  position:relative;z-index:2;
-  display:flex;gap:10px;align-items:center;flex-wrap:wrap;
-}
-
-.month-picker{
-  display:flex;gap:6px;align-items:center;
-  background:rgba(255,255,255,.1);
-  border:1px solid rgba(255,255,255,.15);
-  border-radius:12px;padding:5px 10px;
-  backdrop-filter:blur(10px);
-}
-.month-picker select,
-.month-picker input{
-  padding:7px 10px;background:transparent;border:none;
-  color:#fff;font-weight:700;font-size:.82rem;outline:none;
-  cursor:pointer;font-family:inherit;
-}
-.month-picker select option{color:#0A0A0A;background:#fff}
-.month-picker input[type="number"]{width:64px}
-
-.btn-header{
-  padding:9px 16px;border-radius:10px;
-  font-weight:800;font-size:.75rem;
-  text-transform:uppercase;letter-spacing:.5px;
-  display:inline-flex;align-items:center;gap:8px;
-  transition:all .2s ease;cursor:pointer;
-  border:1px solid transparent;
-}
-.btn-header svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;}
-.btn-primary-header{
-  background:linear-gradient(135deg,#8B5CF6,#EC4899);
-  color:#fff;box-shadow:0 6px 18px -6px #7C3AED;
-}
-.btn-primary-header:hover{transform:translateY(-2px);box-shadow:0 10px 24px -6px #7C3AED;}
-.btn-ghost-header{
-  background:rgba(255,255,255,.1);color:#fff;
-  border-color:rgba(255,255,255,.2);
-}
-.btn-ghost-header:hover{background:rgba(255,255,255,.2);}
-
-/* Theme toggle */
-.theme-toggle{
-  width:44px;height:44px;border-radius:12px;
-  background:rgba(255,255,255,.1);
-  border:1px solid rgba(255,255,255,.2);
-  color:#fff;
-  display:grid;place-items:center;
-  cursor:pointer;transition:all .25s ease;
-  position:relative;overflow:hidden;
-}
-.theme-toggle:hover{
-  background:rgba(255,255,255,.2);
-  transform:scale(1.05);
-}
-.theme-toggle svg{
-  width:22px;height:22px;
-  stroke:currentColor;fill:none;
-  stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;
-  transition:transform .5s cubic-bezier(.4,0,.2,1);
-}
-.theme-toggle .icon-sun{display:none;}
-.theme-toggle .icon-moon{display:block;}
-html[data-theme="dark"] .theme-toggle .icon-sun{display:block;}
-html[data-theme="dark"] .theme-toggle .icon-moon{display:none;}
-
-/* ============ STATS BAR ============ */
-.stats-bar{
-  display:grid;
-  grid-template-columns:repeat(auto-fit, minmax(160px, 1fr));
+.toolbar-left{
+  display:flex;
+  align-items:center;
   gap:12px;
-  padding:16px 32px;
-  background:var(--card);
-  border-bottom:1px solid var(--line);
+  flex-wrap:wrap;
 }
-.stat-box{
-  background:var(--bg);
-  border:1px solid var(--line);
-  border-radius:12px;
-  padding:12px 16px;
-  transition:all .2s ease;
+.search-input{
+  position:relative;
+  display:flex;
+  align-items:center;
+  width:280px;
+  max-width:100%;
 }
-.stat-box:hover{
-  border-color:var(--primary);
-  transform:translateY(-2px);
-  box-shadow:0 8px 20px -8px rgba(124,58,237,.2);
-}
-.stat-box .st-lbl{
-  font-size:.65rem;text-transform:uppercase;letter-spacing:.8px;
-  color:var(--muted);font-weight:800;
-}
-.stat-box .st-val{
-  font-size:1.35rem;font-weight:900;color:var(--ink);
-  margin-top:4px;letter-spacing:-.5px;
-}
-.stat-box .st-val.primary{color:var(--primary);}
-
-/* ============ LEGEND ============ */
-.legend-bar{
-  padding:12px 32px;
-  background:var(--card);
-  border-bottom:1px solid var(--line);
-  display:flex;gap:10px;flex-wrap:wrap;align-items:center;
-  font-size:.72rem;font-weight:700;
-}
-.legend-label{
-  color:var(--muted);text-transform:uppercase;
-  letter-spacing:1px;font-size:.65rem;font-weight:800;
-  margin-right:8px;
-}
-.legend-item{
-  display:inline-flex;align-items:center;gap:6px;
-  padding:5px 12px;border-radius:999px;
-  background:var(--bg);border:1px solid var(--line);
-}
-.legend-dot{
-  width:12px;height:12px;border-radius:4px;flex-shrink:0;
-}
-.legend-dot.morning{background:var(--morning);}
-.legend-dot.general{background:var(--general);}
-.legend-dot.afternoon{background:var(--afternoon);}
-.legend-dot.night{background:var(--night);}
-.legend-dot.weekoff{background:var(--weekoff);}
-.legend-dot.leave{background:var(--leave);}
-.legend-dot.flexi{background:var(--flexi);}
-.legend-dot.holiday{background:var(--holiday);}
-.legend-dot.na{background:var(--na);}
-
-/* ============ SEARCH ============ */
-.search-bar{
-  padding:12px 32px;
-  background:var(--card);
-  border-bottom:1px solid var(--line);
-  display:flex;gap:12px;align-items:center;flex-wrap:wrap;
-}
-.search-box{
-  position:relative;flex:1;max-width:420px;
-}
-.search-box svg{
-  position:absolute;left:14px;top:50%;
-  transform:translateY(-50%);
-  width:16px;height:16px;
-  stroke:var(--muted);fill:none;stroke-width:2.4;
+.search-input svg{
+  position:absolute;
+  left:12px;
+  width:14px;height:14px;
+  stroke:var(--text-tertiary);fill:none;stroke-width:2;
   pointer-events:none;
 }
-.search-box input{
-  width:100%;padding:10px 14px 10px 42px;
-  background:var(--bg);border:1.5px solid var(--line);
-  border-radius:11px;color:var(--ink);
-  font-family:inherit;font-size:.85rem;font-weight:600;
-  outline:none;transition:all .2s ease;
+.search-input input{
+  width:100%;
+  font-family:var(--font);
+  font-size:13px;
+  font-weight:500;
+  color:var(--text-primary);
+  background:var(--bg-surface);
+  border:1px solid var(--border-strong);
+  border-radius:var(--radius-md);
+  padding:8px 12px 8px 34px;
+  outline:none;
+  transition:all .15s ease;
 }
-.search-box input:focus{
-  border-color:var(--primary);background:var(--card);
-  box-shadow:0 0 0 4px rgba(124,58,237,.1);
-}
-.search-info{
-  color:var(--muted);font-size:.78rem;font-weight:700;
+.search-input input::placeholder{color:var(--text-tertiary);}
+.search-input input:focus{
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px var(--accent-soft);
 }
 
-/* ============ ROSTER WRAP ============ */
-.roster-wrap{
-  padding:16px 32px 80px;
+.legend-inline{
+  display:flex;
+  align-items:center;
+  gap:4px;
+  flex-wrap:wrap;
+}
+.legend-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  padding:4px 9px;
+  border-radius:6px;
+  font-size:11px;
+  font-weight:600;
+  border:1px solid;
+  white-space:nowrap;
+}
+.legend-chip .swatch{
+  width:8px;height:8px;border-radius:2px;
+}
+
+/* ============================================================
+   ROSTER GRID
+   ============================================================ */
+.grid-wrap{
+  padding:0 32px 100px;
   overflow-x:auto;
 }
 
-.roster-table{
+.roster-grid{
   width:100%;
   min-width:1200px;
   border-collapse:separate;
   border-spacing:0;
-  background:var(--card);
-  border-radius:14px;
+  background:var(--bg-surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius-lg);
   overflow:hidden;
-  box-shadow:0 4px 20px rgba(0,0,0,.05);
+  font-size:13px;
 }
 
-.roster-table thead th{
-  position:sticky;top:0;
-  background:var(--card);z-index:10;
-  padding:10px 6px;
-  font-size:.7rem;font-weight:800;
-  text-transform:uppercase;letter-spacing:.5px;
-  color:var(--muted);
-  border-bottom:2px solid var(--line);
-  text-align:center;white-space:nowrap;
-}
-.roster-table thead th.emp-col{
-  position:sticky;left:0;z-index:20;
-  text-align:left;padding-left:16px;
-  min-width:180px;background:var(--card);
-  box-shadow:2px 0 8px -4px rgba(0,0,0,.1);
-}
-.roster-table thead th.pos-col{
-  position:sticky;left:180px;z-index:20;
-  text-align:left;min-width:110px;
-  background:var(--card);
-  box-shadow:2px 0 8px -4px rgba(0,0,0,.1);
-}
-.roster-table thead th.weekend-header{
-  background:#FEF3C7;color:#92400E;
-}
-html[data-theme="dark"] .roster-table thead th.weekend-header{
-  background:rgba(254,243,199,.15);color:#FCD34D;
-}
-
-.roster-table tbody tr{transition:background .15s ease;}
-.roster-table tbody tr:hover{background:var(--hover-bg);}
-.roster-table tbody td{
-  padding:6px 4px;
-  border-bottom:1px solid var(--line);
-  text-align:center;
-  font-size:.82rem;font-weight:700;
-  color:var(--ink);
-}
-.roster-table tbody td.emp-col{
-  position:sticky;left:0;z-index:5;
-  text-align:left;padding-left:16px;
-  background:var(--card);
-  box-shadow:2px 0 8px -4px rgba(0,0,0,.1);
-  font-weight:800;
-}
-.roster-table tbody tr:hover td.emp-col{
-  background:var(--hover-bg);
-}
-.roster-table tbody td.pos-col{
-  position:sticky;left:180px;z-index:5;
-  text-align:left;background:var(--card);
-  box-shadow:2px 0 8px -4px rgba(0,0,0,.1);
-}
-.roster-table tbody tr:hover td.pos-col{
-  background:var(--hover-bg);
-}
-
-.emp-cell{display:flex;align-items:center;gap:10px;}
-.emp-avatar{
-  width:32px;height:32px;border-radius:50%;
-  background:linear-gradient(135deg,var(--primary),var(--accent));
-  color:#fff;display:grid;place-items:center;
-  font-weight:900;font-size:.78rem;flex-shrink:0;
-}
-.emp-name{font-size:.82rem;color:var(--ink);line-height:1.2;}
-
-/* ============ SHIFT SELECT (BIG, FULL-CELL) ============ */
-.shift-cell{
-  padding:0 !important;
-  height:44px;
-  position:relative;
-}
-
-.shift-select{
-  width:100%;
-  height:100%;
-  min-height:44px;
-  padding:8px 4px;
-  border:none;
-  border-radius:0;
-  color:#fff;
-  font-family:inherit;
-  font-size:.78rem;
-  font-weight:900;
-  text-align:center;
-  text-align-last:center;
-  cursor:pointer;
-  outline:none;
-  transition:all .15s ease;
-  appearance:none;
-  -webkit-appearance:none;
-  -moz-appearance:none;
-  background-image:none;
-}
-.shift-select:hover{
-  filter:brightness(1.15);
-  box-shadow:inset 0 0 0 2px rgba(255,255,255,.4);
-}
-.shift-select:focus{
-  box-shadow:inset 0 0 0 3px rgba(255,255,255,.6);
-  z-index:2;
-  position:relative;
-}
-.shift-select option{
-  background:#fff;
-  color:#0A0A0A;
-  font-weight:700;
-  padding:8px;
-}
-
-/* Shift colors */
-.shift-select.morning{background:var(--morning);color:#fff;}
-.shift-select.general{background:var(--general);color:#fff;}
-.shift-select.afternoon{background:var(--afternoon);color:#1A1A1A;}
-.shift-select.night{background:var(--night);color:#fff;}
-.shift-select.weekoff{background:var(--weekoff);color:#fff;}
-.shift-select.leave{background:var(--leave);color:#fff;}
-.shift-select.flexi{background:var(--flexi);color:#fff;}
-.shift-select.holiday{background:var(--holiday);color:#1A1A1A;}
-.shift-select.na{background:var(--na);color:#fff;}
-
-/* ============ SUMMARY ROWS ============ */
-.roster-table tbody tr.summary-row{
-  background:var(--primary-light);
-  font-weight:900;
-}
-html[data-theme="dark"] .roster-table tbody tr.summary-row{
-  background:rgba(124,58,237,.1);
-}
-.roster-table tbody tr.summary-row td{
-  font-size:.8rem;
-  color:var(--primary);
-  border-bottom:1px solid var(--line);
-  height:38px;
-}
-.roster-table tbody tr.summary-row td.emp-col{
-  background:var(--primary-light);
-  font-size:.78rem;
+.roster-grid thead th{
+  position:sticky;
+  top:0;
+  z-index:10;
+  background:var(--bg-subtle);
+  padding:10px 8px;
+  font-size:11px;
+  font-weight:600;
   text-transform:uppercase;
-  letter-spacing:.5px;
+  letter-spacing:.4px;
+  color:var(--text-tertiary);
+  border-bottom:1px solid var(--border);
+  text-align:center;
+  white-space:nowrap;
 }
-html[data-theme="dark"] .roster-table tbody tr.summary-row td.emp-col{
-  background:rgba(124,58,237,.1);
+.roster-grid thead th .day-num{
+  font-size:12px;
+  font-weight:700;
+  color:var(--text-primary);
+  font-variant-numeric:tabular-nums;
+}
+.roster-grid thead th .day-name{
+  display:block;
+  font-size:9px;
+  font-weight:600;
+  color:var(--text-tertiary);
+  margin-top:1px;
+}
+.roster-grid thead th.is-weekend{
+  background:#FEF6EE;
+  color:#C4320A;
+}
+html[data-theme="dark"] .roster-grid thead th.is-weekend{
+  background:#3A1D0A;
+  color:#FDB022;
 }
 
-/* ============ FOOTER ============ */
-.footer-actions{
+.roster-grid thead th.col-emp{
+  position:sticky;
+  left:0;
+  z-index:20;
+  text-align:left;
+  padding-left:20px;
+  min-width:220px;
+  background:var(--bg-subtle);
+  box-shadow:1px 0 0 var(--border);
+}
+.roster-grid thead th.col-pos{
+  position:sticky;
+  left:220px;
+  z-index:20;
+  text-align:left;
+  min-width:120px;
+  background:var(--bg-subtle);
+  box-shadow:1px 0 0 var(--border);
+}
+.roster-grid thead th.col-sum{
+  min-width:52px;
+  font-variant-numeric:tabular-nums;
+}
+
+.roster-grid tbody td{
+  padding:0;
+  border-bottom:1px solid var(--border);
+  vertical-align:middle;
+  background:var(--bg-surface);
+}
+.roster-grid tbody tr:last-child td{border-bottom:none;}
+.roster-grid tbody tr:hover td{background:var(--bg-subtle);}
+
+.roster-grid tbody td.col-emp{
+  position:sticky;
+  left:0;
+  z-index:5;
+  padding:8px 16px 8px 20px;
+  background:var(--bg-surface);
+  box-shadow:1px 0 0 var(--border);
+}
+.roster-grid tbody tr:hover td.col-emp{background:var(--bg-subtle);}
+
+.emp-row{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.emp-avatar{
+  width:28px;height:28px;
+  border-radius:50%;
+  background:var(--gray-200);
+  color:var(--text-secondary);
+  display:grid;place-items:center;
+  font-size:11px;
+  font-weight:700;
+  flex-shrink:0;
+  border:1px solid var(--border);
+}
+html[data-theme="dark"] .emp-avatar{
+  background:var(--gray-200);
+  color:var(--text-secondary);
+}
+.emp-info{min-width:0;}
+.emp-name{
+  font-size:13px;
+  font-weight:600;
+  color:var(--text-primary);
+  line-height:1.3;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.emp-meta{
+  font-size:11px;
+  color:var(--text-tertiary);
+  font-family:var(--mono);
+  margin-top:1px;
+}
+
+.roster-grid tbody td.col-pos{
+  position:sticky;
+  left:220px;
+  z-index:5;
+  padding:8px 12px;
+  background:var(--bg-surface);
+  box-shadow:1px 0 0 var(--border);
+  font-size:12px;
+  font-weight:500;
+  color:var(--text-secondary);
+  white-space:nowrap;
+}
+.roster-grid tbody tr:hover td.col-pos{background:var(--bg-subtle);}
+
+/* ============================================================
+   SHIFT CELLS
+   ============================================================ */
+.shift-cell{
+  position:relative;
+  padding:4px !important;
+}
+.shift-btn{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:100%;
+  height:32px;
+  border-radius:6px;
+  font-family:var(--font);
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.2px;
+  border:1px solid;
+  cursor:pointer;
+  transition:all .12s ease;
+  font-variant-numeric:tabular-nums;
+}
+.shift-btn:hover{
+  transform:translateY(-1px);
+  box-shadow:var(--shadow-sm);
+}
+.shift-btn.morning  { background:var(--shift-morning-bg);   color:var(--shift-morning-fg);   border-color:var(--shift-morning-bd); }
+.shift-btn.general  { background:var(--shift-general-bg);   color:var(--shift-general-fg);   border-color:var(--shift-general-bd); }
+.shift-btn.afternoon{ background:var(--shift-afternoon-bg); color:var(--shift-afternoon-fg); border-color:var(--shift-afternoon-bd); }
+.shift-btn.night    { background:var(--shift-night-bg);     color:var(--shift-night-fg);     border-color:var(--shift-night-bd); }
+.shift-btn.weekoff  { background:var(--shift-weekoff-bg);   color:var(--shift-weekoff-fg);   border-color:var(--shift-weekoff-bd); }
+.shift-btn.leave    { background:var(--shift-leave-bg);     color:var(--shift-leave-fg);     border-color:var(--shift-leave-bd); }
+.shift-btn.flexi    { background:var(--shift-flexi-bg);     color:var(--shift-flexi-fg);     border-color:var(--shift-flexi-bd); }
+.shift-btn.holiday  { background:var(--shift-holiday-bg);   color:var(--shift-holiday-fg);   border-color:var(--shift-holiday-bd); }
+.shift-btn.na       { background:var(--shift-na-bg);        color:var(--shift-na-fg);        border-color:var(--shift-na-bd); }
+
+/* Native dropdown overlay */
+.shift-cell select.shift-native{
+  position:absolute;
+  inset:4px;
+  width:calc(100% - 8px);
+  height:32px;
+  opacity:0;
+  cursor:pointer;
+  font-family:var(--font);
+  font-size:11px;
+  font-weight:700;
+  border-radius:6px;
+  border:1px solid var(--border-strong);
+}
+.shift-cell select.shift-native:focus{
+  opacity:1;
+  box-shadow:var(--shadow-md);
+  outline:2px solid var(--accent);
+  outline-offset:-2px;
+}
+
+/* ============================================================
+   SUMMARY ROWS
+   ============================================================ */
+.summary-row td{
+  background:var(--bg-subtle) !important;
+  padding:6px 8px !important;
+  font-size:12px;
+  font-weight:700;
+  color:var(--text-primary);
+  font-variant-numeric:tabular-nums;
+  border-top:1px solid var(--border);
+}
+.summary-row td.col-emp{
+  background:var(--bg-subtle) !important;
+  font-size:11px;
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:.4px;
+  color:var(--text-tertiary);
+}
+.summary-row td.col-pos{
+  background:var(--bg-subtle) !important;
+}
+.summary-row td .badge-count{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:22px;
+  height:22px;
+  padding:0 6px;
+  background:var(--bg-surface);
+  border:1px solid var(--border);
+  border-radius:5px;
+  font-size:11px;
+  font-weight:700;
+  color:var(--text-primary);
+}
+.summary-row td .badge-count.accent{
+  background:var(--accent-soft);
+  border-color:var(--accent-line);
+  color:var(--accent);
+}
+
+/* ============================================================
+   FOOTER ACTION BAR
+   ============================================================ */
+.action-bar{
   position:fixed;
   bottom:0;left:0;right:0;
-  background:var(--card);
-  border-top:1px solid var(--line);
+  z-index:50;
+  background:var(--bg-surface);
+  border-top:1px solid var(--border);
   padding:12px 32px;
   display:flex;
   justify-content:space-between;
   align-items:center;
   gap:16px;
-  z-index:50;
-  box-shadow:0 -4px 20px rgba(0,0,0,.08);
-  flex-wrap:wrap;
+  box-shadow:0 -1px 3px rgba(16,24,40,.06);
 }
-.footer-info{
-  font-size:.78rem;color:var(--muted);font-weight:700;
+.action-bar-info{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-size:12px;
+  color:var(--text-tertiary);
 }
-.btn-primary{
-  padding:12px 28px;
-  border-radius:12px;
-  background:linear-gradient(135deg,var(--primary),var(--accent));
-  color:#fff;font-size:.82rem;font-weight:800;
-  text-transform:uppercase;letter-spacing:.5px;
-  display:inline-flex;align-items:center;gap:10px;
-  transition:all .25s ease;
-  box-shadow:0 8px 22px -8px var(--primary);
+.action-bar-info .badge{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:4px 10px;
+  background:var(--bg-subtle);
+  border:1px solid var(--border);
+  border-radius:6px;
+  font-size:11px;
+  font-weight:600;
+  color:var(--text-secondary);
 }
-.btn-primary:hover{
-  transform:translateY(-2px);
-  box-shadow:0 14px 32px -8px var(--primary);
-}
-.btn-primary svg{
-  width:18px;height:18px;
-  stroke:currentColor;fill:none;stroke-width:2.4;
-}
-
-/* ============ EMPTY STATE ============ */
-.empty-state{
-  text-align:center;padding:80px 40px;color:var(--muted);
-}
-.empty-state svg{
-  width:64px;height:64px;stroke:var(--primary);
-  fill:none;stroke-width:1.5;opacity:.4;margin-bottom:16px;
-}
-.empty-state h3{
-  font-size:1.2rem;color:var(--ink);margin-bottom:8px;
+.action-bar-info .badge .dot{
+  width:6px;height:6px;
+  border-radius:50%;
+  background:var(--success);
 }
 
-/* ============ RESPONSIVE ============ */
-@media (max-width:900px){
-  .top-header{padding:16px 16px;}
-  .header-left h1{font-size:1.3rem;}
-  .stats-bar{padding:12px 16px;grid-template-columns:repeat(2,1fr);}
-  .legend-bar{padding:10px 16px;}
-  .search-bar{padding:10px 16px;}
-  .roster-wrap{padding:12px 8px 100px;}
-  .footer-actions{padding:10px 16px;}
-  .roster-table thead th.emp-col{min-width:140px;padding-left:10px;}
-  .roster-table thead th.pos-col{left:140px;min-width:90px;}
-  .roster-table tbody td.emp-col{padding-left:10px;}
-  .roster-table tbody td.pos-col{left:140px;}
-  .shift-select{font-size:.7rem;min-height:40px;}
+/* ============================================================
+   EMPTY STATE
+   ============================================================ */
+.empty{
+  text-align:center;
+  padding:80px 40px;
+  color:var(--text-tertiary);
+}
+.empty svg{
+  width:48px;height:48px;
+  stroke:var(--text-tertiary);
+  fill:none;stroke-width:1.5;
+  margin-bottom:16px;
+  opacity:.5;
+}
+.empty h3{
+  font-size:15px;
+  font-weight:600;
+  color:var(--text-primary);
+  margin-bottom:4px;
+}
+.empty p{font-size:13px;}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width:1024px){
+  .appbar{padding:0 16px;gap:12px;}
+  .appbar-title .crumb{display:none;}
+  .page-head{padding:20px 16px 16px;}
+  .kpi-strip{padding:12px 16px;}
+  .kpi{padding:8px 14px;}
+  .toolbar{padding:12px 16px;}
+  .grid-wrap{padding:0 16px 100px;}
+  .action-bar{padding:12px 16px;}
+  .roster-grid thead th.col-emp{min-width:160px;padding-left:14px;}
+  .roster-grid thead th.col-pos{left:160px;min-width:90px;}
+  .roster-grid tbody td.col-emp{padding-left:14px;}
+  .roster-grid tbody td.col-pos{left:160px;}
+}
+@media (max-width:640px){
+  .appbar-context{display:none;}
+  .user-chip .name{display:none;}
+  .kpi-strip{grid-template-columns:repeat(2,1fr);}
+  .kpi{border-left:none;padding:8px 0;}
 }
 </style>
 </head>
 <body>
 
 <%
-    // ---- PARAMETERS ----
+    // ============ PARAMETERS ============
     String monthYr = request.getParameter("myViewMonth");
     String m_strroles = request.getParameter("m_strroles");
     String username = request.getParameter("username");
@@ -544,7 +906,7 @@ html[data-theme="dark"] .roster-table tbody tr.summary-row td.emp-col{
     if (username == null) username = "";
 
     int year = 0, month = 0, noOfDays = 0;
-    String selectedYear = null, selectedMonth = null, nameOfMonth = null, sortMonth = null;
+    String selectedYear = null, selectedMonth = null, nameOfMonth = null;
     String sort_MonthYear = null;
     boolean showTable = false;
 
@@ -557,44 +919,34 @@ html[data-theme="dark"] .roster-table tbody tr.summary-row td.emp-col{
                 year = Integer.parseInt(selectedYear);
                 month = Integer.parseInt(selectedMonth);
                 showTable = true;
-                if (month == 1 || month == 3 || month == 5 || month == 7 || month == 8 || month == 10 || month == 12) {
-                    noOfDays = 31;
-                } else if (month == 4 || month == 6 || month == 9 || month == 11) {
-                    noOfDays = 30;
-                } else if (month == 2) {
-                    noOfDays = ((year % 400 == 0) || (year % 100 != 0) && (year % 4 == 0)) ? 29 : 28;
-                }
-                String[] monthNames = {"", "January","February","March","April","May","June","July","August","September","October","November","December"};
-                String[] shortNames = {"", "Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
-                nameOfMonth = monthNames[month];
-                sortMonth = shortNames[month];
-                sort_MonthYear = sortMonth + "_" + selectedYear;
+                if (month == 1 || month == 3 || month == 5 || month == 7 || month == 8 || month == 10 || month == 12) noOfDays = 31;
+                else if (month == 4 || month == 6 || month == 9 || month == 11) noOfDays = 30;
+                else if (month == 2) noOfDays = ((year % 400 == 0) || (year % 100 != 0) && (year % 4 == 0)) ? 29 : 28;
+                String[] mn = {"","January","February","March","April","May","June","July","August","September","October","November","December"};
+                String[] sn = {"","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
+                nameOfMonth = mn[month];
+                sort_MonthYear = sn[month] + "_" + selectedYear;
             } catch (Exception e) { showTable = false; }
         }
     }
-
     if (!showTable) {
         YearMonth ym = YearMonth.now(ZoneId.of("Asia/Kolkata"));
-        year = ym.getYear();
-        month = ym.getMonthValue();
-        noOfDays = ym.lengthOfMonth();
+        year = ym.getYear(); month = ym.getMonthValue(); noOfDays = ym.lengthOfMonth();
         selectedYear = String.valueOf(year);
         selectedMonth = (month < 10 ? "0" : "") + month;
-        String[] monthNames = {"", "January","February","March","April","May","June","July","August","September","October","November","December"};
-        String[] shortNames = {"", "Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
-        nameOfMonth = monthNames[month];
-        sortMonth = shortNames[month];
-        sort_MonthYear = sortMonth + "_" + selectedYear;
+        String[] mn = {"","January","February","March","April","May","June","July","August","September","October","November","December"};
+        String[] sn = {"","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
+        nameOfMonth = mn[month];
+        sort_MonthYear = sn[month] + "_" + selectedYear;
         showTable = true;
     }
 
-    // ---- LOAD DATA ----
+    // ============ LOAD ============
     List<Map<String,Object>> employees = new ArrayList<>();
     Connection conn = null;
     try {
         conn = DBUtilityAuto.getReportDBConnection();
-        String getDataQuery = "select * from rostertable where UPPER(TEAM)=UPPER(?) and UPPER(MONTHYEAR)=UPPER(?) order by id";
-        PreparedStatement ps = conn.prepareStatement(getDataQuery);
+        PreparedStatement ps = conn.prepareStatement("select * from rostertable where UPPER(TEAM)=UPPER(?) and UPPER(MONTHYEAR)=UPPER(?) order by id");
         ps.setString(1, m_strroles);
         ps.setString(2, sort_MonthYear);
         ResultSet rs = ps.executeQuery();
@@ -603,17 +955,13 @@ html[data-theme="dark"] .roster-table tbody tr.summary-row td.emp-col{
             emp.put("name", rs.getString("NAME"));
             emp.put("adId", rs.getString("AD_ID"));
             emp.put("position", rs.getString("POSITION"));
-            for (int d = 1; d <= noOfDays; d++) {
-                emp.put("day_" + d, rs.getString("DAY_" + d));
-            }
+            for (int d = 1; d <= noOfDays; d++) emp.put("day_" + d, rs.getString("DAY_" + d));
             employees.add(emp);
         }
-        rs.close();
-        ps.close();
+        rs.close(); ps.close();
 
         if (employees.isEmpty()) {
-            String queryEmp = "select ad_id, FIRSTNAME || ' ' || LASTNAME as Fullname from eisupport_employee_master where TEAM = ? and isactive='Active'";
-            PreparedStatement ps2 = conn.prepareStatement(queryEmp);
+            PreparedStatement ps2 = conn.prepareStatement("select ad_id, FIRSTNAME || ' ' || LASTNAME as Fullname from eisupport_employee_master where TEAM = ? and isactive='Active'");
             ps2.setString(1, m_strroles);
             ResultSet rs2 = ps2.executeQuery();
             while (rs2.next()) {
@@ -624,127 +972,149 @@ html[data-theme="dark"] .roster-table tbody tr.summary-row td.emp-col{
                 for (int d = 1; d <= noOfDays; d++) emp.put("day_" + d, "Morning");
                 employees.add(emp);
             }
-            rs2.close();
-            ps2.close();
+            rs2.close(); ps2.close();
         }
-    } catch (Exception e) {
-        e.printStackTrace();
-    } finally {
-        if (conn != null) try { conn.close(); } catch (Exception e) {}
-    }
+    } catch (Exception e) { e.printStackTrace(); }
+    finally { if (conn != null) try { conn.close(); } catch (Exception e) {} }
 
     int totalEmp = employees.size();
+    String userInitial = (username != null && username.length() > 0) ? username.substring(0,1).toUpperCase() : "U";
 %>
 
-<!-- ============ TOP HEADER ============ -->
-<header class="top-header">
-  <div class="header-left">
-    <div class="badge">
-      <span class="dot"></span>
-      <%= m_strroles %> &middot; Roster Dashboard
+<!-- ============ APP BAR ============ -->
+<header class="appbar">
+  <div class="appbar-brand">
+    <div class="appbar-logo">
+      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
     </div>
-    <h1>
-      <span class="gradient"><%= nameOfMonth %> <%= selectedYear %></span>
-    </h1>
-    <div class="meta">
-      <span>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-        <%= totalEmp %> Employees
-      </span>
-      <span>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        <%= noOfDays %> Days
-      </span>
-      <span>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-        <%= username %>
-      </span>
+    <div class="appbar-title">
+      EIS Portal
+      <span class="crumb">/ Team Roster</span>
     </div>
   </div>
 
-  <div class="header-right">
-    <form method="get" style="display:flex;gap:8px;align-items:center;">
-      <div class="month-picker">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        <select name="month" id="month">
-          <option value="">Month</option>
-          <% for (int m = 1; m <= 12; m++) {
-              String mn = String.format("%02d", m);
-              String sel = (m == month) ? "selected" : "";
-              String[] mNames = {"","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
-          %>
-          <option value="<%= mn %>" <%= sel %>><%= mNames[m] %></option>
-          <% } %>
-        </select>
-        <input type="number" name="year" min="2024" max="2100" value="<%= selectedYear %>" required>
-      </div>
-      <input type="hidden" name="m_strroles" value="<%= m_strroles %>">
-      <input type="hidden" name="username" value="<%= username %>">
-      <button type="submit" class="btn-header btn-primary-header">
-        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        View
-      </button>
-    </form>
+  <div class="appbar-divider"></div>
 
-    <!-- THEME TOGGLE -->
-    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Theme">
+  <div class="appbar-context">
+    <span class="dot"></span>
+    <span class="label">Team</span>
+    <span class="value"><%= m_strroles %></span>
+  </div>
+
+  <div class="appbar-context">
+    <span class="label">Period</span>
+    <span class="value"><%= nameOfMonth %> <%= selectedYear %></span>
+  </div>
+
+  <div class="appbar-spacer"></div>
+
+  <div class="appbar-actions">
+    <button class="icon-btn" onclick="toggleTheme()" title="Toggle theme">
       <svg class="icon-sun" viewBox="0 0 24 24">
-        <circle cx="12" cy="12" r="5"/>
-        <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
-        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-        <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
-        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        <circle cx="12" cy="12" r="4"/>
+        <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
       </svg>
       <svg class="icon-moon" viewBox="0 0 24 24">
         <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
       </svg>
     </button>
+    <div class="user-chip">
+      <div class="avatar"><%= userInitial %></div>
+      <span class="name"><%= username %></span>
+    </div>
   </div>
 </header>
 
-<!-- ============ STATS ============ -->
-<section class="stats-bar">
-  <div class="stat-box">
-    <div class="st-lbl">Total Employees</div>
-    <div class="st-val primary"><%= totalEmp %></div>
-  </div>
-  <div class="stat-box">
-    <div class="st-lbl">Days in Month</div>
-    <div class="st-val"><%= noOfDays %></div>
-  </div>
-  <div class="stat-box">
-    <div class="st-lbl">Team</div>
-    <div class="st-val primary" style="font-size:.95rem;margin-top:8px;"><%= m_strroles %></div>
-  </div>
-  <div class="stat-box">
-    <div class="st-lbl">Period</div>
-    <div class="st-val" style="font-size:.95rem;margin-top:8px;"><%= nameOfMonth %> <%= selectedYear %></div>
+<!-- ============ PAGE HEADER ============ -->
+<section class="page-head">
+  <div class="page-head-inner">
+    <div>
+      <h1>Team Roster &middot; <span class="accent"><%= nameOfMonth %> <%= selectedYear %></span></h1>
+      <div class="page-desc">
+        <span><b><%= totalEmp %></b> employees</span>
+        <span class="sep"></span>
+        <span><b><%= noOfDays %></b> days</span>
+        <span class="sep"></span>
+        <span><%= m_strroles %></span>
+        <span class="sep"></span>
+        <span>Last updated just now</span>
+      </div>
+    </div>
+
+    <form method="get" class="filter-group">
+      <span class="filter-label">Filter</span>
+      <div class="input-wrap">
+        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <select name="month">
+          <% String[] mns = {"","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
+             for (int m = 1; m <= 12; m++) {
+                 String val = String.format("%02d", m);
+                 String sel = (m == month) ? "selected" : "";
+          %>
+          <option value="<%= val %>" <%= sel %>><%= mns[m] %></option>
+          <% } %>
+        </select>
+      </div>
+      <div class="input-wrap no-icon">
+        <input type="number" name="year" min="2024" max="2100" value="<%= selectedYear %>" required style="width:88px;">
+      </div>
+      <input type="hidden" name="m_strroles" value="<%= m_strroles %>">
+      <input type="hidden" name="username" value="<%= username %>">
+      <button type="submit" class="btn btn-primary">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Apply
+      </button>
+    </form>
   </div>
 </section>
 
-<!-- ============ LEGEND ============ -->
-<section class="legend-bar">
-  <span class="legend-label">Legend:</span>
-  <span class="legend-item"><span class="legend-dot morning"></span>Morning</span>
-  <span class="legend-item"><span class="legend-dot general"></span>General</span>
-  <span class="legend-item"><span class="legend-dot afternoon"></span>Afternoon</span>
-  <span class="legend-item"><span class="legend-dot night"></span>Night</span>
-  <span class="legend-item"><span class="legend-dot weekoff"></span>Weekoff</span>
-  <span class="legend-item"><span class="legend-dot leave"></span>Leave</span>
-  <span class="legend-item"><span class="legend-dot flexi"></span>Flexi</span>
-  <span class="legend-item"><span class="legend-dot holiday"></span>Holiday</span>
-</section>
-
-<!-- ============ SEARCH ============ -->
-<section class="search-bar">
-  <div class="search-box">
-    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-    <input type="text" id="searchInput" placeholder="Search employee by name or position..." oninput="filterEmployees()">
+<!-- ============ KPI STRIP ============ -->
+<section class="kpi-strip">
+  <div class="kpi">
+    <div class="kpi-label">Employees</div>
+    <div class="kpi-value"><%= totalEmp %></div>
+    <div class="kpi-meta">Active this month</div>
   </div>
-  <div class="search-info" id="searchInfo">Showing <b><%= totalEmp %></b> employees</div>
+  <div class="kpi">
+    <div class="kpi-label">Days</div>
+    <div class="kpi-value"><%= noOfDays %></div>
+    <div class="kpi-meta"><%= nameOfMonth %> <%= selectedYear %></div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">Team</div>
+    <div class="kpi-value" style="font-size:16px;letter-spacing:0;"><%= m_strroles %></div>
+    <div class="kpi-meta">Assigned roster</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">Status</div>
+    <div class="kpi-value" style="font-size:16px;letter-spacing:0;color:var(--success);">Ready</div>
+    <div class="kpi-meta">All fields editable</div>
+  </div>
 </section>
 
-<!-- ============ ROSTER TABLE ============ -->
+<!-- ============ TOOLBAR ============ -->
+<section class="toolbar">
+  <div class="toolbar-left">
+    <div class="search-input">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="searchInput" placeholder="Search employees..." oninput="filterEmployees()">
+    </div>
+    <span style="font-size:12px;color:var(--text-tertiary);font-weight:500;" id="searchInfo">Showing <b style="color:var(--text-primary);"><%= totalEmp %></b> of <%= totalEmp %></span>
+  </div>
+
+  <div class="legend-inline">
+    <span class="legend-chip shift-btn morning"><span class="swatch" style="background:var(--shift-morning-fg);"></span>M</span>
+    <span class="legend-chip shift-btn general"><span class="swatch" style="background:var(--shift-general-fg);"></span>D</span>
+    <span class="legend-chip shift-btn afternoon"><span class="swatch" style="background:var(--shift-afternoon-fg);"></span>A</span>
+    <span class="legend-chip shift-btn night"><span class="swatch" style="background:var(--shift-night-fg);"></span>N</span>
+    <span class="legend-chip shift-btn weekoff"><span class="swatch" style="background:var(--shift-weekoff-fg);"></span>W</span>
+    <span class="legend-chip shift-btn leave"><span class="swatch" style="background:var(--shift-leave-fg);"></span>L</span>
+    <span class="legend-chip shift-btn flexi"><span class="swatch" style="background:var(--shift-flexi-fg);"></span>FL</span>
+    <span class="legend-chip shift-btn holiday"><span class="swatch" style="background:var(--shift-holiday-fg);"></span>HL</span>
+  </div>
+</section>
+
+<!-- ============ ROSTER GRID ============ -->
 <form id="rosterForm" method="post" action="<%=request.getContextPath()%>/RosterServlet">
 <input type="hidden" name="tableData" id="tableData">
 <input type="hidden" name="m_strroles" value="<%= m_strroles %>">
@@ -752,32 +1122,32 @@ html[data-theme="dark"] .roster-table tbody tr.summary-row td.emp-col{
 <input type="hidden" name="selectedMonth" value="<%= selectedMonth %>">
 <input type="hidden" name="selectedYear" value="<%= selectedYear %>">
 
-<div class="roster-wrap">
+<div class="grid-wrap">
 <% if (totalEmp == 0) { %>
-  <div class="empty-state">
+  <div class="empty">
     <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-    <h3>No Employees Found</h3>
-    <p>No active employees found in team <b><%= m_strroles %></b>.</p>
+    <h3>No employees found</h3>
+    <p>No active employees in team <b><%= m_strroles %></b>.</p>
   </div>
 <% } else { %>
 
-<table class="roster-table" id="rosterTable">
+<table class="roster-grid">
   <thead>
     <tr>
-      <th class="emp-col">Employee</th>
-      <th class="pos-col">Position</th>
+      <th class="col-emp">Employee</th>
+      <th class="col-pos">Position</th>
       <% for (int d = 1; d <= noOfDays; d++) {
-          LocalDate curDate = LocalDate.of(year, month, d);
-          DayOfWeek dow = curDate.getDayOfWeek();
-          boolean isWeekend = (dow == DayOfWeek.SATURDAY || dow == DayOfWeek.SUNDAY);
-          String dayShort = dow.getDisplayName(TextStyle.SHORT, Locale.ENGLISH);
+          LocalDate cd = LocalDate.of(year, month, d);
+          DayOfWeek dow = cd.getDayOfWeek();
+          boolean wknd = (dow == DayOfWeek.SATURDAY || dow == DayOfWeek.SUNDAY);
       %>
-      <th class="<%= isWeekend ? "weekend-header" : "" %>" title="<%= curDate %> - <%= dayShort %>">
-        <%= d %><br><span style="font-size:.6rem;opacity:.7;"><%= dayShort %></span>
+      <th class="<%= wknd ? "is-weekend" : "" %>">
+        <span class="day-num"><%= d %></span>
+        <span class="day-name"><%= dow.getDisplayName(TextStyle.SHORT, Locale.ENGLISH) %></span>
       </th>
       <% } %>
-      <th title="Weekoffs">WO</th>
-      <th title="Leaves">LV</th>
+      <th class="col-sum">WO</th>
+      <th class="col-sum">LV</th>
     </tr>
   </thead>
   <tbody>
@@ -785,236 +1155,217 @@ html[data-theme="dark"] .roster-table tbody tr.summary-row td.emp-col{
         Map<String,Object> emp = employees.get(i);
         String name = (String) emp.get("name");
         String pos = (String) emp.get("position");
-        String initial = (name != null && name.length() > 0) ? name.substring(0,1).toUpperCase() : "?";
+        String adId = (String) emp.get("adId");
+        String init = (name != null && name.length() > 0) ? name.substring(0,1).toUpperCase() : "?";
     %>
-    <tr class="emp-row" data-name="<%= name != null ? name.toLowerCase() : "" %>" data-pos="<%= pos != null ? pos.toLowerCase() : "" %>">
-      <td class="emp-col">
-        <div class="emp-cell">
-          <div class="emp-avatar"><%= initial %></div>
-          <div class="emp-name">
-            <%= name %>
+    <tr class="emp-row-tr" data-name="<%= name != null ? name.toLowerCase() : "" %>" data-pos="<%= pos != null ? pos.toLowerCase() : "" %>">
+      <td class="col-emp">
+        <div class="emp-row">
+          <div class="emp-avatar"><%= init %></div>
+          <div class="emp-info">
+            <div class="emp-name"><%= name %></div>
+            <div class="emp-meta"><%= adId != null ? adId : "" %></div>
             <input type="hidden" name="employeeName" value="<%= name %>">
-            <input type="hidden" name="adId" value="<%= emp.get("adId") %>">
+            <input type="hidden" name="adId" value="<%= adId %>">
           </div>
         </div>
       </td>
-      <td class="pos-col">
-        <% if (pos != null && !pos.trim().isEmpty()) { %>
-          <%= pos %>
-        <% } else { %>
-          <span style="color:var(--muted);font-size:.72rem;">-</span>
-        <% } %>
+      <td class="col-pos">
+        <%= (pos != null && !pos.trim().isEmpty()) ? pos : "—" %>
         <input type="hidden" name="position_<%= i %>" value="<%= pos != null ? pos : "" %>">
       </td>
       <%
         int woCount = 0, lvCount = 0;
         for (int d = 1; d <= noOfDays; d++) {
           String shift = (String) emp.get("day_" + d);
-          if (shift == null) shift = "Morning";
-          String shiftLc = shift.toLowerCase();
+          if (shift == null || shift.trim().isEmpty()) shift = "Morning";
+          String lc = shift.toLowerCase();
 
-          String cls = "morning";
-          String val = "Morning";
-          String label = "M";
-
-          // Determine shift class + label
-          if (shiftLc.equals("morning"))         { cls="morning";   val="Morning";       label="M"; }
-          else if (shiftLc.equals("wfh-morning")){ cls="morning";   val="WFH-Morning";   label="WFH-M"; }
-          else if (shiftLc.equals("cc-morning")) { cls="morning";   val="CC-Morning";    label="CC-M"; }
-          else if (shiftLc.equals("general")||shiftLc.equals("genral")) { cls="general"; val="General"; label="D"; }
-          else if (shiftLc.equals("wfh-general")||shiftLc.equals("wfh-genral")) { cls="general"; val="WFH-General"; label="WFH-D"; }
-          else if (shiftLc.equals("cc-general")) { cls="general";   val="CC-General";    label="CC-D"; }
-          else if (shiftLc.equals("afternoon"))  { cls="afternoon"; val="Afternoon";     label="A"; }
-          else if (shiftLc.equals("wfh-afternoon")){ cls="afternoon"; val="WFH-Afternoon"; label="WFH-A"; }
-          else if (shiftLc.equals("cc-afternoon")) { cls="afternoon"; val="CC-Afternoon"; label="CC-A"; }
-          else if (shiftLc.equals("night"))      { cls="night";     val="Night";         label="N"; }
-          else if (shiftLc.equals("wfh-night"))  { cls="night";     val="WFH-Night";     label="WFH-N"; }
-          else if (shiftLc.equals("cc-night"))   { cls="night";     val="CC-Night";      label="CC-N"; }
-          else if (shiftLc.equals("weekoff"))    { cls="weekoff";   val="Weekoff";       label="W"; woCount++; }
-          else if (shiftLc.equals("weekoffadjust")){ cls="weekoff"; val="WeekoffAdjust"; label="WA"; }
-          else if (shiftLc.equals("leave"))      { cls="leave";     val="Leave";         label="L"; lvCount++; }
-          else if (shiftLc.equals("sickleave"))  { cls="leave";     val="SickLeave";     label="SL"; lvCount++; }
-          else if (shiftLc.equals("casualleave")){ cls="leave";     val="CasualLeave";   label="CL"; lvCount++; }
-          else if (shiftLc.equals("earnedleave")){ cls="leave";     val="EarnedLeave";   label="EL"; lvCount++; }
-          else if (shiftLc.equals("flexileave")) { cls="flexi";     val="FlexiLeave";    label="FL"; }
-          else if (shiftLc.equals("holidayleave")){cls="holiday";   val="HolidayLeave";  label="HL"; }
-          else if (shiftLc.equals("na"))         { cls="na";        val="NA";            label="-"; }
+          String cls = "morning", label = "M";
+          if (lc.equals("morning"))                 { cls="morning";   label="M"; }
+          else if (lc.equals("wfh-morning"))        { cls="morning";   label="WFH-M"; }
+          else if (lc.equals("cc-morning"))         { cls="morning";   label="CC-M"; }
+          else if (lc.equals("general")||lc.equals("genral")) { cls="general"; label="D"; }
+          else if (lc.equals("wfh-general")||lc.equals("wfh-genral")) { cls="general"; label="WFH-D"; }
+          else if (lc.equals("cc-general"))         { cls="general";   label="CC-D"; }
+          else if (lc.equals("afternoon"))          { cls="afternoon"; label="A"; }
+          else if (lc.equals("wfh-afternoon"))      { cls="afternoon"; label="WFH-A"; }
+          else if (lc.equals("cc-afternoon"))       { cls="afternoon"; label="CC-A"; }
+          else if (lc.equals("night"))              { cls="night";     label="N"; }
+          else if (lc.equals("wfh-night"))          { cls="night";     label="WFH-N"; }
+          else if (lc.equals("cc-night"))           { cls="night";     label="CC-N"; }
+          else if (lc.equals("weekoff"))            { cls="weekoff";   label="W"; woCount++; }
+          else if (lc.equals("weekoffadjust"))      { cls="weekoff";   label="WA"; }
+          else if (lc.equals("leave"))              { cls="leave";     label="L"; lvCount++; }
+          else if (lc.equals("sickleave"))          { cls="leave";     label="SL"; lvCount++; }
+          else if (lc.equals("casualleave"))        { cls="leave";     label="CL"; lvCount++; }
+          else if (lc.equals("earnedleave"))        { cls="leave";     label="EL"; lvCount++; }
+          else if (lc.equals("flexileave"))         { cls="flexi";     label="FL"; }
+          else if (lc.equals("holidayleave"))       { cls="holiday";   label="HL"; }
+          else if (lc.equals("na"))                 { cls="na";        label="—"; }
       %>
       <td class="shift-cell">
-        <select name="mnt_<%= i %>_<%= d %>" class="shift-select <%= cls %>"
-                onchange="updateShiftClass(this)">
-          <option value="Morning" class="morning" <%= shiftLc.equals("morning")?"selected":"" %>>M</option>
-          <option value="WFH-Morning" class="morning" <%= shiftLc.equals("wfh-morning")?"selected":"" %>>WFH-M</option>
-          <option value="CC-Morning" class="morning" <%= shiftLc.equals("cc-morning")?"selected":"" %>>CC-M</option>
-          <option value="General" class="general" <%= (shiftLc.equals("general")||shiftLc.equals("genral"))?"selected":"" %>>D</option>
-          <option value="WFH-General" class="general" <%= (shiftLc.equals("wfh-general")||shiftLc.equals("wfh-genral"))?"selected":"" %>>WFH-D</option>
-          <option value="CC-General" class="general" <%= shiftLc.equals("cc-general")?"selected":"" %>>CC-D</option>
-          <option value="Afternoon" class="afternoon" <%= shiftLc.equals("afternoon")?"selected":"" %>>A</option>
-          <option value="WFH-Afternoon" class="afternoon" <%= shiftLc.equals("wfh-afternoon")?"selected":"" %>>WFH-A</option>
-          <option value="CC-Afternoon" class="afternoon" <%= shiftLc.equals("cc-afternoon")?"selected":"" %>>CC-A</option>
-          <option value="Night" class="night" <%= shiftLc.equals("night")?"selected":"" %>>N</option>
-          <option value="WFH-Night" class="night" <%= shiftLc.equals("wfh-night")?"selected":"" %>>WFH-N</option>
-          <option value="CC-Night" class="night" <%= shiftLc.equals("cc-night")?"selected":"" %>>CC-N</option>
-          <option value="Weekoff" class="weekoff" <%= shiftLc.equals("weekoff")?"selected":"" %>>W</option>
-          <option value="WeekoffAdjust" class="weekoff" <%= shiftLc.equals("weekoffadjust")?"selected":"" %>>WA</option>
-          <option value="Leave" class="leave" <%= shiftLc.equals("leave")?"selected":"" %>>L</option>
-          <option value="SickLeave" class="leave" <%= shiftLc.equals("sickleave")?"selected":"" %>>SL</option>
-          <option value="CasualLeave" class="leave" <%= shiftLc.equals("casualleave")?"selected":"" %>>CL</option>
-          <option value="EarnedLeave" class="leave" <%= shiftLc.equals("earnedleave")?"selected":"" %>>EL</option>
-          <option value="FlexiLeave" class="flexi" <%= shiftLc.equals("flexileave")?"selected":"" %>>FL</option>
-          <option value="HolidayLeave" class="holiday" <%= shiftLc.equals("holidayleave")?"selected":"" %>>HL</option>
-          <option value="NA" class="na" <%= shiftLc.equals("na")?"selected":"" %>>-</option>
+        <span class="shift-btn <%= cls %>" aria-hidden="true"><%= label %></span>
+        <select name="mnt_<%= i %>_<%= d %>" class="shift-native" onchange="onShiftChange(this)">
+          <option value="Morning"        <%= lc.equals("morning")?"selected":"" %>>M — Morning</option>
+          <option value="WFH-Morning"    <%= lc.equals("wfh-morning")?"selected":"" %>>WFH-M</option>
+          <option value="CC-Morning"     <%= lc.equals("cc-morning")?"selected":"" %>>CC-M</option>
+          <option value="General"        <%= (lc.equals("general")||lc.equals("genral"))?"selected":"" %>>D — General</option>
+          <option value="WFH-General"    <%= (lc.equals("wfh-general")||lc.equals("wfh-genral"))?"selected":"" %>>WFH-D</option>
+          <option value="CC-General"     <%= lc.equals("cc-general")?"selected":"" %>>CC-D</option>
+          <option value="Afternoon"      <%= lc.equals("afternoon")?"selected":"" %>>A — Afternoon</option>
+          <option value="WFH-Afternoon"  <%= lc.equals("wfh-afternoon")?"selected":"" %>>WFH-A</option>
+          <option value="CC-Afternoon"   <%= lc.equals("cc-afternoon")?"selected":"" %>>CC-A</option>
+          <option value="Night"          <%= lc.equals("night")?"selected":"" %>>N — Night</option>
+          <option value="WFH-Night"      <%= lc.equals("wfh-night")?"selected":"" %>>WFH-N</option>
+          <option value="CC-Night"       <%= lc.equals("cc-night")?"selected":"" %>>CC-N</option>
+          <option value="Weekoff"        <%= lc.equals("weekoff")?"selected":"" %>>W — Weekoff</option>
+          <option value="WeekoffAdjust"  <%= lc.equals("weekoffadjust")?"selected":"" %>>WA — Weekoff Adjust</option>
+          <option value="Leave"          <%= lc.equals("leave")?"selected":"" %>>L — Leave</option>
+          <option value="SickLeave"      <%= lc.equals("sickleave")?"selected":"" %>>SL — Sick Leave</option>
+          <option value="CasualLeave"    <%= lc.equals("casualleave")?"selected":"" %>>CL — Casual Leave</option>
+          <option value="EarnedLeave"    <%= lc.equals("earnedleave")?"selected":"" %>>EL — Earned Leave</option>
+          <option value="FlexiLeave"     <%= lc.equals("flexileave")?"selected":"" %>>FL — Flexi Leave</option>
+          <option value="HolidayLeave"   <%= lc.equals("holidayleave")?"selected":"" %>>HL — Holiday</option>
+          <option value="NA"             <%= lc.equals("na")?"selected":"" %>>— Not Assigned</option>
         </select>
       </td>
       <% } %>
-      <td style="font-weight:900;color:var(--weekoff);font-size:.95rem;"><%= woCount %></td>
-      <td style="font-weight:900;color:var(--leave);font-size:.95rem;"><%= lvCount %></td>
+      <td style="text-align:center;font-weight:700;font-variant-numeric:tabular-nums;color:var(--shift-weekoff-fg);"><%= woCount %></td>
+      <td style="text-align:center;font-weight:700;font-variant-numeric:tabular-nums;color:var(--shift-leave-fg);"><%= lvCount %></td>
     </tr>
     <% } %>
 
-    <!-- ============ SUMMARY ROWS ============ -->
+    <!-- Summary -->
     <tr class="summary-row">
-      <td class="emp-col">Morning Total</td>
-      <td class="pos-col"></td>
+      <td class="col-emp">Morning</td>
+      <td class="col-pos"></td>
       <% for (int d = 1; d <= noOfDays; d++) {
-          int cnt = 0;
-          for (Map<String,Object> emp : employees) {
-              String s = (String) emp.get("day_" + d);
-              if (s != null && s.toLowerCase().contains("morning")) cnt++;
-          }
+          int c = 0; for (Map<String,Object> e : employees) { String s = (String) e.get("day_" + d); if (s != null && s.toLowerCase().contains("morning")) c++; }
       %>
-      <td><%= cnt %></td>
+      <td style="text-align:center;"><span class="badge-count"><%= c %></span></td>
       <% } %>
       <td colspan="2"></td>
     </tr>
     <tr class="summary-row">
-      <td class="emp-col">General Total</td>
-      <td class="pos-col"></td>
+      <td class="col-emp">General</td>
+      <td class="col-pos"></td>
       <% for (int d = 1; d <= noOfDays; d++) {
-          int cnt = 0;
-          for (Map<String,Object> emp : employees) {
-              String s = (String) emp.get("day_" + d);
-              if (s != null && (s.toLowerCase().contains("general") || s.toLowerCase().contains("genral"))) cnt++;
-          }
+          int c = 0; for (Map<String,Object> e : employees) { String s = (String) e.get("day_" + d); if (s != null && (s.toLowerCase().contains("general")||s.toLowerCase().contains("genral"))) c++; }
       %>
-      <td><%= cnt %></td>
+      <td style="text-align:center;"><span class="badge-count"><%= c %></span></td>
       <% } %>
       <td colspan="2"></td>
     </tr>
     <tr class="summary-row">
-      <td class="emp-col">Afternoon Total</td>
-      <td class="pos-col"></td>
+      <td class="col-emp">Afternoon</td>
+      <td class="col-pos"></td>
       <% for (int d = 1; d <= noOfDays; d++) {
-          int cnt = 0;
-          for (Map<String,Object> emp : employees) {
-              String s = (String) emp.get("day_" + d);
-              if (s != null && s.toLowerCase().contains("afternoon")) cnt++;
-          }
+          int c = 0; for (Map<String,Object> e : employees) { String s = (String) e.get("day_" + d); if (s != null && s.toLowerCase().contains("afternoon")) c++; }
       %>
-      <td><%= cnt %></td>
+      <td style="text-align:center;"><span class="badge-count"><%= c %></span></td>
       <% } %>
       <td colspan="2"></td>
     </tr>
     <tr class="summary-row">
-      <td class="emp-col">Night Total</td>
-      <td class="pos-col"></td>
+      <td class="col-emp">Night</td>
+      <td class="col-pos"></td>
       <% for (int d = 1; d <= noOfDays; d++) {
-          int cnt = 0;
-          for (Map<String,Object> emp : employees) {
-              String s = (String) emp.get("day_" + d);
-              if (s != null && s.toLowerCase().contains("night")) cnt++;
-          }
+          int c = 0; for (Map<String,Object> e : employees) { String s = (String) e.get("day_" + d); if (s != null && s.toLowerCase().contains("night")) c++; }
       %>
-      <td><%= cnt %></td>
+      <td style="text-align:center;"><span class="badge-count"><%= c %></span></td>
       <% } %>
       <td colspan="2"></td>
     </tr>
-
   </tbody>
 </table>
 <% } %>
 </div>
 
-<!-- ============ FOOTER ============ -->
-<div class="footer-actions">
-  <div class="footer-info">
-    <b><%= m_strroles %></b> &middot; <%= nameOfMonth %> <%= selectedYear %> &middot; <%= totalEmp %> employees
+<!-- ============ ACTION BAR ============ -->
+<div class="action-bar">
+  <div class="action-bar-info">
+    <span class="badge"><span class="dot"></span>All changes saved locally</span>
+    <span><b><%= m_strroles %></b> &middot; <%= nameOfMonth %> <%= selectedYear %></span>
   </div>
   <div>
-    <% if (year > YearMonth.now().getYear() || (year == YearMonth.now().getYear() && month >= YearMonth.now().getMonthValue())) { %>
-      <button type="button" class="btn-primary" onclick="prepareData()">
+    <% boolean isFutureOrCurrent = (year > YearMonth.now().getYear() || (year == YearMonth.now().getYear() && month >= YearMonth.now().getMonthValue())); %>
+    <% if (isFutureOrCurrent) { %>
+      <button type="button" class="btn btn-primary" onclick="prepareData()" style="padding:10px 20px;font-size:13px;">
         <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-        Submit Roster
+        Save Roster
       </button>
     <% } else { %>
-      <span class="footer-info" style="color:var(--warning);">
-        Past month &middot; read only
-      </span>
+      <span style="font-size:12px;color:var(--text-tertiary);font-weight:500;">Past month &middot; read only</span>
     <% } %>
   </div>
 </div>
 </form>
 
 <script>
-// ============ THEME ============
+/* ============ THEME ============ */
 (function(){
   try {
-    var t = localStorage.getItem('eis-theme');
-    if (!t) { t = 'light'; localStorage.setItem('eis-theme', 'light'); }
+    var t = localStorage.getItem('eis-roster-theme') || 'light';
     document.documentElement.setAttribute('data-theme', t);
   } catch(e){}
 })();
-
 function toggleTheme() {
   var cur = document.documentElement.getAttribute('data-theme') || 'light';
   var next = cur === 'light' ? 'dark' : 'light';
   document.documentElement.setAttribute('data-theme', next);
-  try { localStorage.setItem('eis-theme', next); } catch(e){}
+  try { localStorage.setItem('eis-roster-theme', next); } catch(e){}
 }
 
-// ============ SEARCH ============
+/* ============ SEARCH ============ */
 function filterEmployees() {
-  var input = document.getElementById('searchInput').value.toLowerCase();
-  var rows = document.querySelectorAll('.emp-row');
-  var visible = 0;
-  rows.forEach(function(row) {
-    var name = row.getAttribute('data-name') || '';
-    var pos = row.getAttribute('data-pos') || '';
-    if (name.includes(input) || pos.includes(input)) {
-      row.style.display = '';
-      visible++;
-    } else {
-      row.style.display = 'none';
-    }
+  var v = document.getElementById('searchInput').value.toLowerCase();
+  var rows = document.querySelectorAll('.emp-row-tr');
+  var vis = 0;
+  rows.forEach(function(r){
+    var n = r.getAttribute('data-name') || '';
+    var p = r.getAttribute('data-pos') || '';
+    if (n.includes(v) || p.includes(v)) { r.style.display = ''; vis++; }
+    else { r.style.display = 'none'; }
   });
-  document.getElementById('searchInfo').innerHTML = 'Showing <b>' + visible + '</b> employees';
+  document.getElementById('searchInfo').innerHTML = 'Showing <b style="color:var(--text-primary);">' + vis + '</b> of ' + rows.length;
 }
 
-// ============ SHIFT CLASS UPDATE ============
-function updateShiftClass(selectEl) {
-  // Remove all shift classes
-  var classes = ['morning','general','afternoon','night','weekoff','leave','flexi','holiday','na'];
-  classes.forEach(function(c){ selectEl.classList.remove(c); });
+/* ============ SHIFT CHANGE — update badge ============ */
+function onShiftChange(sel) {
+  var cell = sel.closest('.shift-cell');
+  var badge = cell.querySelector('.shift-btn');
+  var v = sel.value.toLowerCase();
 
-  // Determine new class from selected value
-  var v = selectEl.value.toLowerCase();
-  var cls = 'morning';
-  if (v.includes('morning')) cls = 'morning';
-  else if (v.includes('general') || v.includes('genral')) cls = 'general';
-  else if (v.includes('afternoon')) cls = 'afternoon';
-  else if (v.includes('night')) cls = 'night';
-  else if (v.includes('weekoff')) cls = 'weekoff';
-  else if (v.includes('sickleave') || v.includes('casualleave') || v.includes('earnedleave') || v === 'leave') cls = 'leave';
-  else if (v.includes('flexi')) cls = 'flexi';
-  else if (v.includes('holiday')) cls = 'holiday';
-  else if (v === 'na') cls = 'na';
+  var cls = 'morning', label = 'M';
+  if (v === 'morning') { cls='morning'; label='M'; }
+  else if (v === 'wfh-morning') { cls='morning'; label='WFH-M'; }
+  else if (v === 'cc-morning') { cls='morning'; label='CC-M'; }
+  else if (v === 'general') { cls='general'; label='D'; }
+  else if (v === 'wfh-general') { cls='general'; label='WFH-D'; }
+  else if (v === 'cc-general') { cls='general'; label='CC-D'; }
+  else if (v === 'afternoon') { cls='afternoon'; label='A'; }
+  else if (v === 'wfh-afternoon') { cls='afternoon'; label='WFH-A'; }
+  else if (v === 'cc-afternoon') { cls='afternoon'; label='CC-A'; }
+  else if (v === 'night') { cls='night'; label='N'; }
+  else if (v === 'wfh-night') { cls='night'; label='WFH-N'; }
+  else if (v === 'cc-night') { cls='night'; label='CC-N'; }
+  else if (v === 'weekoff') { cls='weekoff'; label='W'; }
+  else if (v === 'weekoffadjust') { cls='weekoff'; label='WA'; }
+  else if (v === 'leave') { cls='leave'; label='L'; }
+  else if (v === 'sickleave') { cls='leave'; label='SL'; }
+  else if (v === 'casualleave') { cls='leave'; label='CL'; }
+  else if (v === 'earnedleave') { cls='leave'; label='EL'; }
+  else if (v === 'flexileave') { cls='flexi'; label='FL'; }
+  else if (v === 'holidayleave') { cls='holiday'; label='HL'; }
+  else if (v === 'na') { cls='na'; label='—'; }
 
-  selectEl.classList.add(cls);
+  badge.className = 'shift-btn ' + cls;
+  badge.textContent = label;
 }
 
-// ============ SUBMIT ============
+/* ============ SUBMIT ============ */
 function prepareData() {
-  document.getElementById('rosterForm').action = '<%=request.getContextPath()%>/RosterServlet';
   document.getElementById('rosterForm').submit();
 }
 </script>
