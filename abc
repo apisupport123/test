@@ -1,697 +1,1042 @@
-<!DOCTYPE html>
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ page import="java.sql.*" %>
 <%@ page import="java.util.*" %>
-<%@ page import="java.util.Locale" %>
-<%@ page import="java.time.DayOfWeek" %>
-<%@ page import="java.time.LocalDate" %>
-<%@ page import="java.time.Month" %>
+<%@ page import="java.time.*" %>
 <%@ page import="java.time.format.TextStyle" %>
-<%@ page import="java.time.YearMonth" %>
-<%@ page import="java.time.ZoneId" %>
 <%@ page import="com.jdbc.DBUtilityAuto" %>
-<%@ page import="com.jdbc.DBUtility" %>
-
-<%!
-  // Shift value -> CSS class suffix
-  public String mapShiftToClass(String val) {
-      if (val == null) return "General";
-      String v = val.toLowerCase().trim();
-      if (v.contains("morning"))   return "Morning";
-      if (v.contains("general") || v.contains("genral")) return "General";
-      if (v.contains("afternoon")) return "Afternoon";
-      if (v.contains("night"))     return "Night";
-      if (v.contains("weekoff"))   return "Weekoff";
-      if (v.contains("sick") || v.contains("casual") ||
-          v.contains("earned") || v.equals("leave")) return "Leave";
-      if (v.contains("flexi"))     return "Flexi";
-      if (v.contains("holiday"))   return "Holiday";
-      return "General";
-  }
-
-  public String safe(String s) {
-      return s == null ? "" : s;
-  }
-%>
-
 <%
-  // ============ GET PARAMETERS ============
-  String monthYr      = request.getParameter("myViewMonth");
-  String m_strroles   = request.getParameter("m_strroles");
-  String username     = request.getParameter("username");
-
-  String selectedYear  = null;
-  String selectedMonth = null;
-
-  if (monthYr != null && monthYr.contains("-")) {
-      String[] s = monthYr.split("-");
-      selectedYear  = s[0];
-      selectedMonth = s[1];
-  } else {
-      // Fallback: current month
-      YearMonth now = YearMonth.now(ZoneId.of("Asia/Kolkata"));
-      selectedYear  = String.valueOf(now.getYear());
-      selectedMonth = String.format("%02d", now.getMonthValue());
-  }
-
-  if (m_strroles == null) m_strroles = "Manager";
-  if (username   == null) username   = "";
-
-  int year     = Integer.parseInt(selectedYear);
-  int month    = Integer.parseInt(selectedMonth);
-  int noOfDays = 0;
-
-  if (month == 1 || month == 3 || month == 5 || month == 7 ||
-      month == 8 || month == 10 || month == 12) {
-      noOfDays = 31;
-  } else if (month == 4 || month == 6 || month == 9 || month == 11) {
-      noOfDays = 30;
-  } else if (month == 2) {
-      noOfDays = ((year % 400 == 0) || ((year % 100 != 0) && (year % 4 == 0))) ? 29 : 28;
-  }
-
-  // Month names
-  String nameOfMonth = "January";
-  String sortMonth   = "Jan";
-  String[][] mn = {
-      {"01","January","Jan"}, {"02","February","Feb"}, {"03","March","Mar"},
-      {"04","April","Apr"},   {"05","May","May"},      {"06","June","Jun"},
-      {"07","July","Jul"},    {"08","August","Aug"},   {"09","September","Sep"},
-      {"10","October","Oct"}, {"11","November","Nov"}, {"12","December","Dec"}
-  };
-  for (String[] m : mn) {
-      if (m[0].equals(selectedMonth)) {
-          nameOfMonth = m[1];
-          sortMonth   = m[2];
-          break;
-      }
-  }
-
-  String sort_MonthYear = sortMonth + "_" + selectedYear;
-
-  YearMonth currentYM = YearMonth.now(ZoneId.of("Asia/Kolkata"));
-  int currentYear     = currentYM.getYear();
-  int currentMonth    = currentYM.getMonthValue();
-  boolean showSubmit  = (year > currentYear) || (year == currentYear && month >= currentMonth);
+    // ---- AUTH GUARD ----
+    String __role = (session != null) ? (String) session.getAttribute("role") : null;
+    if (__role == null || __role.trim().isEmpty()) {
+        response.sendRedirect(request.getContextPath() + "/login.action");
+        return;
+    }
 %>
-
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EIS Team Roster — <%= nameOfMonth %> <%= selectedYear %></title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<title>Team Roster - EIS Portal</title>
+
 <style>
-  :root {
-    --bg-0: #0a0e1a;
-    --bg-1: #111827;
-    --bg-2: #1a2234;
-    --bg-3: #232d42;
-    --border: #2a3548;
-    --text-0: #f1f5f9;
-    --text-1: #cbd5e1;
-    --text-2: #94a3b8;
-    --accent: #6366f1;
-    --accent-hover: #818cf8;
+:root{
+  --primary:#7C3AED;
+  --primary-2:#8B5CF6;
+  --primary-light:#F3E8FF;
+  --accent:#EC4899;
+  --accent-2:#F472B6;
 
-    --morning: #f97316;   --morning-bg: rgba(249, 115, 22, 0.15);
-    --general: #94a3b8;   --general-bg: rgba(148, 163, 184, 0.15);
-    --afternoon: #eab308; --afternoon-bg: rgba(234, 179, 8, 0.15);
-    --night: #3b82f6;     --night-bg: rgba(59, 130, 246, 0.15);
-    --weekoff: #8b5cf6;   --weekoff-bg: rgba(139, 92, 246, 0.15);
-    --leave: #ef4444;     --leave-bg: rgba(239, 68, 68, 0.15);
-    --flexi: #ec4899;     --flexi-bg: rgba(236, 72, 153, 0.15);
-    --holiday: #10b981;   --holiday-bg: rgba(16, 185, 129, 0.15);
-  }
+  --ink:#0A0A0A;
+  --muted:#6B7280;
+  --line:#EAEAEA;
+  --bg:#F5F7FA;
+  --card:#FFFFFF;
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  /* Shift colors */
+  --morning:#FF8C00;
+  --morning-light:#FFF4E6;
+  --general:#696969;
+  --general-light:#F5F5F5;
+  --afternoon:#FFD700;
+  --afternoon-light:#FFFBE6;
+  --night:#1E90FF;
+  --night-light:#EBF5FF;
+  --weekoff:#0000CD;
+  --weekoff-light:#E6E6FF;
+  --leave:#FF0000;
+  --leave-light:#FFEBEE;
+  --flexi:#FF3333;
+  --flexi-light:#FFF0F0;
+  --holiday:#90EE90;
+  --holiday-light:#F0FFF0;
+  --na:#000000;
+  --na-light:#E0E0E0;
 
-  body {
-    font-family: 'Inter', -apple-system, sans-serif;
-    background: var(--bg-0);
-    color: var(--text-0);
-    min-height: 100vh;
-    padding: 20px;
-    background-image:
-      radial-gradient(circle at 20% 0%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
-      radial-gradient(circle at 80% 100%, rgba(59, 130, 246, 0.06) 0%, transparent 50%);
-  }
+  --success:#16A34A;
+  --danger:#DC2626;
+  --warning:#F59E0B;
 
-  /* HEADER */
-  .app-header {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 18px 24px;
-    background: linear-gradient(135deg, var(--bg-1), var(--bg-2));
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    margin-bottom: 20px;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
-    flex-wrap: wrap; gap: 12px;
-  }
-  .header-left h1 {
-    font-size: 22px; font-weight: 800; letter-spacing: -0.02em;
-    background: linear-gradient(135deg, #fff, #94a3b8);
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-  .header-left p { font-size: 13px; color: var(--text-2); margin-top: 4px; }
-  .header-right { display: flex; gap: 10px; align-items: center; }
+  --topnav-h:64px;
 
-  /* CONTROLS */
-  .control-bar {
-    display: flex; gap: 12px; flex-wrap: wrap;
-    padding: 16px 20px;
-    background: var(--bg-1);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    margin-bottom: 16px;
-    align-items: flex-end;
-  }
-  .field { display: flex; flex-direction: column; gap: 4px; }
-  .field label {
-    font-size: 11px; font-weight: 600; color: var(--text-2);
-    text-transform: uppercase; letter-spacing: 0.05em;
-  }
-  .field select, .field input {
-    background: var(--bg-2); border: 1px solid var(--border); color: var(--text-0);
-    padding: 9px 12px; border-radius: 9px; font-size: 14px;
-    font-family: inherit; outline: none; transition: all 0.2s; min-width: 140px;
-  }
-  .field select:focus, .field input:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
-  }
+  --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
 
-  .btn {
-    padding: 10px 20px; border-radius: 9px; border: none;
-    font-family: inherit; font-weight: 600; font-size: 14px;
-    cursor: pointer; transition: all 0.2s;
-    display: inline-flex; align-items: center; gap: 6px;
-  }
-  .btn-primary {
-    background: linear-gradient(135deg, var(--accent), #4f46e5);
-    color: white; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
-  }
-  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(99, 102, 241, 0.45); }
-  .btn-success {
-    background: linear-gradient(135deg, #10b981, #059669);
-    color: white; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-  }
-  .btn-success:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(16, 185, 129, 0.45); }
+html[data-theme="dark"]{
+  --ink:#F5F5F5;
+  --muted:#9CA3AF;
+  --line:#272727;
+  --bg:#0A0614;
+  --card:#130A24;
+}
 
-  /* LEGEND */
-  .legend {
-    display: flex; flex-wrap: wrap; gap: 8px;
-    padding: 12px 16px;
-    background: var(--bg-1);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    margin-bottom: 16px;
-  }
-  .legend-item {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 5px 10px; border-radius: 7px;
-    font-size: 12px; font-weight: 600;
-    background: var(--bg-2); border: 1px solid var(--border);
-    color: var(--text-1);
-  }
-  .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  font-family:var(--font-stack);
+  font-weight:600;
+  background:var(--bg);
+  color:var(--ink);
+  -webkit-font-smoothing:antialiased;
+  transition:background .3s ease,color .3s ease;
+}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer;border:none}
 
-  /* TABLE */
-  .table-wrapper {
-    background: var(--bg-1);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    overflow: hidden;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-  }
-  .table-scroll {
-    overflow-x: auto;
-    overflow-y: auto;
-    max-height: 68vh;
-  }
-  table {
-    border-collapse: separate; border-spacing: 0;
-    width: 100%; font-size: 13px; white-space: nowrap;
-  }
-  thead th {
-    position: sticky; top: 0; z-index: 10;
-    background: var(--bg-3); color: var(--text-1);
-    font-weight: 700; font-size: 11px; text-transform: uppercase;
-    letter-spacing: 0.05em; padding: 12px 10px;
-    border-bottom: 2px solid var(--border);
-    text-align: center;
-  }
-  thead th:first-child { position: sticky; left: 0; z-index: 12; text-align: left; min-width: 200px; }
-  thead th:nth-child(2) { position: sticky; left: 200px; z-index: 12; min-width: 140px; }
+/* ============ TOP HEADER ============ */
+.top-header{
+  position:sticky;
+  top:0;
+  z-index:100;
+  background:
+    radial-gradient(circle at top right, rgba(236,72,153,.2), transparent 60%),
+    radial-gradient(circle at bottom left, rgba(124,58,237,.3), transparent 60%),
+    linear-gradient(135deg, #1A0B2E 0%, #2D1854 100%);
+  color:#fff;
+  padding:24px 40px;
+  box-shadow:0 4px 20px rgba(0,0,0,.15);
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:24px;
+  flex-wrap:wrap;
+}
 
-  tbody td {
-    padding: 4px 6px;
-    border-bottom: 1px solid var(--border);
-    text-align: center;
-    color: var(--text-1);
-    background: var(--bg-1);
-    transition: background 0.15s;
-  }
-  tbody td:first-child {
-    position: sticky; left: 0; z-index: 5;
-    background: var(--bg-2);
-    text-align: left; font-weight: 600; color: var(--text-0);
-    min-width: 200px; max-width: 200px;
-    overflow: hidden; text-overflow: ellipsis;
-    padding-left: 12px;
-  }
-  tbody td:nth-child(2) {
-    position: sticky; left: 200px; z-index: 5;
-    background: var(--bg-2);
-    min-width: 140px;
-  }
-  tbody tr:hover td { background: var(--bg-2); }
-  tbody tr:hover td:first-child,
-  tbody tr:hover td:nth-child(2) { background: var(--bg-3); }
+.top-header::before{
+  content:"";
+  position:absolute;
+  top:-150px;right:-150px;
+  width:400px;height:400px;border-radius:50%;
+  background:radial-gradient(circle, rgba(124,58,237,.3) 0%, transparent 70%);
+  pointer-events:none;
+}
 
-  /* SHIFT SELECT */
-  .shift-select {
-    width: 100%; border: none; background: transparent;
-    color: inherit; font-family: inherit; font-weight: 700;
-    font-size: 12px; text-align: center; cursor: pointer;
-    padding: 6px 4px; border-radius: 6px; outline: none;
-    transition: all 0.15s;
-    appearance: none; -webkit-appearance: none;
-    text-align-last: center;
-  }
-  .shift-select:hover { background: rgba(255,255,255,0.06); }
-  .shift-select:focus { box-shadow: 0 0 0 2px var(--accent); }
+.header-left{
+  position:relative;
+  z-index:2;
+}
+.header-left .badge{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:5px 12px;
+  background:rgba(236,72,153,.2);
+  border:1px solid rgba(236,72,153,.4);
+  border-radius:999px;
+  font-size:.68rem;
+  font-weight:800;
+  color:var(--accent-2);
+  letter-spacing:1px;
+  text-transform:uppercase;
+  margin-bottom:12px;
+}
+.header-left .badge .dot{
+  width:6px;height:6px;border-radius:50%;
+  background:var(--accent-2);
+  box-shadow:0 0 8px var(--accent-2);
+  animation:pulse 2s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 
-  .shift-Morning   { color: var(--morning);   background: var(--morning-bg);   }
-  .shift-General   { color: var(--general);   background: var(--general-bg);   }
-  .shift-Afternoon { color: var(--afternoon); background: var(--afternoon-bg); }
-  .shift-Night     { color: var(--night);     background: var(--night-bg);     }
-  .shift-Weekoff   { color: var(--weekoff);   background: var(--weekoff-bg);   }
-  .shift-Leave     { color: var(--leave);     background: var(--leave-bg);     }
-  .shift-Flexi     { color: var(--flexi);     background: var(--flexi-bg);     }
-  .shift-Holiday   { color: var(--holiday);   background: var(--holiday-bg);   }
+.header-left h1{
+  font-size:1.9rem;
+  font-weight:900;
+  letter-spacing:-.8px;
+  line-height:1.15;
+}
+.header-left h1 .gradient{
+  background:linear-gradient(135deg,var(--primary-2),var(--accent-2));
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent;
+}
+.header-left .meta{
+  font-size:.82rem;
+  color:rgba(255,255,255,.7);
+  margin-top:6px;
+  display:flex;
+  gap:16px;
+  flex-wrap:wrap;
+}
+.header-left .meta span{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+}
 
-  /* SUMMARY */
-  .summary-row td {
-    font-weight: 700; font-size: 12px;
-    background: var(--bg-3) !important;
-    color: var(--text-0);
-    border-top: 2px solid var(--border);
-    padding: 10px 8px;
-  }
-  .summary-row td:first-child {
-    position: sticky; left: 0; z-index: 6;
-    background: var(--bg-3) !important;
-    text-transform: uppercase; letter-spacing: 0.04em;
-    font-size: 11px; text-align: left; padding-left: 12px;
-    min-width: 200px;
-  }
-  .summary-row td:nth-child(2) {
-    position: sticky; left: 200px; z-index: 6;
-    background: var(--bg-3) !important;
-    min-width: 140px;
-  }
+.header-right{
+  position:relative;
+  z-index:2;
+  display:flex;
+  gap:10px;
+  align-items:center;
+  flex-wrap:wrap;
+}
 
-  .badge {
-    display: inline-block; padding: 3px 9px; border-radius: 6px;
-    font-size: 11px; font-weight: 700; min-width: 26px;
-  }
-  .badge-morning   { background: var(--morning-bg);   color: var(--morning);   }
-  .badge-general   { background: var(--general-bg);   color: var(--general);   }
-  .badge-afternoon { background: var(--afternoon-bg); color: var(--afternoon); }
-  .badge-night     { background: var(--night-bg);     color: var(--night);     }
+.month-picker{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  background:rgba(255,255,255,.1);
+  border:1px solid rgba(255,255,255,.15);
+  border-radius:12px;
+  padding:6px 12px;
+  backdrop-filter:blur(10px);
+}
+.month-picker select,
+.month-picker input{
+  padding:8px 12px;
+  background:transparent;
+  border:none;
+  color:#fff;
+  font-weight:700;
+  font-size:.85rem;
+  outline:none;
+  cursor:pointer;
+  font-family:inherit;
+}
+.month-picker select option{color:var(--ink);background:var(--card)}
+.month-picker input[type="number"]{width:70px}
+.month-picker input[type="number"]::-webkit-outer-spin-button,
+.month-picker input[type="number"]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 
-  /* FOOTER */
-  .footer-actions {
-    display: flex; justify-content: flex-end; gap: 12px;
-    padding: 16px 20px;
-    background: var(--bg-2);
-    border-top: 1px solid var(--border);
-  }
+.btn-header{
+  padding:10px 18px;
+  border-radius:10px;
+  font-weight:800;
+  font-size:.78rem;
+  text-transform:uppercase;
+  letter-spacing:.5px;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  transition:all .2s ease;
+  cursor:pointer;
+  border:1px solid transparent;
+}
+.btn-header svg{
+  width:16px;height:16px;
+  stroke:currentColor;fill:none;
+  stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;
+}
+.btn-primary-header{
+  background:linear-gradient(135deg,var(--primary),var(--accent));
+  color:#fff;
+  box-shadow:0 6px 18px -6px var(--primary);
+}
+.btn-primary-header:hover{
+  transform:translateY(-2px);
+  box-shadow:0 10px 24px -6px var(--primary);
+}
+.btn-ghost-header{
+  background:rgba(255,255,255,.1);
+  color:#fff;
+  border-color:rgba(255,255,255,.2);
+}
+.btn-ghost-header:hover{background:rgba(255,255,255,.2)}
 
-  /* EMPTY STATE */
-  .empty-state {
-    text-align: center; padding: 60px 20px; color: var(--text-2);
-  }
-  .empty-state h3 { font-size: 18px; margin-bottom: 8px; color: var(--text-1); }
+/* ============ STATS BAR ============ */
+.stats-bar{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));
+  gap:14px;
+  padding:20px 40px;
+  background:var(--card);
+  border-bottom:1px solid var(--line);
+}
+.stat-box{
+  background:var(--bg);
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:14px 18px;
+  transition:all .2s ease;
+}
+.stat-box:hover{
+  border-color:var(--primary);
+  transform:translateY(-2px);
+  box-shadow:0 8px 20px -8px rgba(124,58,237,.2);
+}
+.stat-box .st-lbl{
+  font-size:.68rem;
+  text-transform:uppercase;
+  letter-spacing:.8px;
+  color:var(--muted);
+  font-weight:800;
+}
+.stat-box .st-val{
+  font-size:1.5rem;
+  font-weight:900;
+  color:var(--ink);
+  margin-top:4px;
+  letter-spacing:-.5px;
+}
+.stat-box .st-val.primary{color:var(--primary)}
+.stat-box .st-val.morning{color:var(--morning)}
+.stat-box .st-val.general{color:var(--general)}
+.stat-box .st-val.afternoon{color:#B8860B}
+.stat-box .st-val.night{color:var(--night)}
 
-  /* SCROLLBAR */
-  .table-scroll::-webkit-scrollbar { width: 10px; height: 10px; }
-  .table-scroll::-webkit-scrollbar-track { background: var(--bg-0); }
-  .table-scroll::-webkit-scrollbar-thumb { background: var(--bg-3); border-radius: 5px; }
-  .table-scroll::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+/* ============ LEGEND BAR ============ */
+.legend-bar{
+  padding:14px 40px;
+  background:var(--card);
+  border-bottom:1px solid var(--line);
+  display:flex;
+  gap:16px;
+  flex-wrap:wrap;
+  align-items:center;
+  font-size:.75rem;
+  font-weight:700;
+}
+.legend-label{
+  color:var(--muted);
+  text-transform:uppercase;
+  letter-spacing:1px;
+  font-size:.68rem;
+  font-weight:800;
+  margin-right:8px;
+}
+.legend-item{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:4px 10px;
+  border-radius:999px;
+  background:var(--bg);
+  border:1px solid var(--line);
+}
+.legend-dot{
+  width:12px;
+  height:12px;
+  border-radius:4px;
+  flex-shrink:0;
+}
+.legend-dot.morning{background:var(--morning)}
+.legend-dot.general{background:var(--general)}
+.legend-dot.afternoon{background:var(--afternoon)}
+.legend-dot.night{background:var(--night)}
+.legend-dot.weekoff{background:var(--weekoff)}
+.legend-dot.leave{background:var(--leave)}
+.legend-dot.flexi{background:var(--flexi)}
+.legend-dot.holiday{background:var(--holiday)}
+.legend-dot.na{background:var(--na)}
 
-  /* TOAST */
-  .toast {
-    position: fixed; bottom: 24px; right: 24px;
-    background: linear-gradient(135deg, #10b981, #059669);
-    color: white; padding: 14px 20px; border-radius: 12px;
-    box-shadow: 0 10px 40px rgba(16,185,129,0.4);
-    font-weight: 600; font-size: 14px;
-    opacity: 0; transform: translateY(20px);
-    transition: all 0.3s; pointer-events: none; z-index: 9999;
-  }
-  .toast.show { opacity: 1; transform: translateY(0); }
+/* ============ SEARCH BAR ============ */
+.search-bar{
+  padding:14px 40px;
+  background:var(--card);
+  border-bottom:1px solid var(--line);
+  display:flex;
+  gap:12px;
+  align-items:center;
+  flex-wrap:wrap;
+}
+.search-box{
+  position:relative;
+  flex:1;
+  max-width:420px;
+}
+.search-box svg{
+  position:absolute;
+  left:14px;
+  top:50%;
+  transform:translateY(-50%);
+  width:16px;height:16px;
+  stroke:var(--muted);fill:none;
+  stroke-width:2.4;
+  pointer-events:none;
+}
+.search-box input{
+  width:100%;
+  padding:10px 14px 10px 42px;
+  background:var(--bg);
+  border:1.5px solid var(--line);
+  border-radius:11px;
+  color:var(--ink);
+  font-family:inherit;
+  font-size:.85rem;
+  font-weight:600;
+  outline:none;
+  transition:all .2s ease;
+}
+.search-box input:focus{
+  border-color:var(--primary);
+  background:var(--card);
+  box-shadow:0 0 0 4px rgba(124,58,237,.1);
+}
+.search-info{
+  color:var(--muted);
+  font-size:.78rem;
+  font-weight:700;
+}
 
-  @media (max-width: 768px) {
-    body { padding: 10px; }
-    .app-header { flex-direction: column; align-items: flex-start; }
-    .control-bar { flex-direction: column; align-items: stretch; }
-    .field select, .field input { width: 100%; }
-  }
+/* ============ MAIN TABLE WRAP ============ */
+.roster-wrap{
+  padding:20px 40px 60px;
+  overflow-x:auto;
+}
+
+.roster-table{
+  width:100%;
+  min-width:1400px;
+  border-collapse:separate;
+  border-spacing:0;
+  background:var(--card);
+  border-radius:16px;
+  overflow:hidden;
+  box-shadow:0 4px 20px rgba(0,0,0,.05);
+}
+
+.roster-table thead th{
+  position:sticky;
+  top:0;
+  background:var(--card);
+  z-index:10;
+  padding:12px 8px;
+  font-size:.72rem;
+  font-weight:800;
+  text-transform:uppercase;
+  letter-spacing:.5px;
+  color:var(--muted);
+  border-bottom:2px solid var(--line);
+  text-align:center;
+  white-space:nowrap;
+}
+.roster-table thead th.emp-col{
+  position:sticky;
+  left:0;
+  z-index:20;
+  text-align:left;
+  padding-left:20px;
+  min-width:200px;
+  background:var(--card);
+  box-shadow:2px 0 8px -4px rgba(0,0,0,.1);
+}
+.roster-table thead th.pos-col{
+  position:sticky;
+  left:200px;
+  z-index:20;
+  text-align:left;
+  min-width:130px;
+  background:var(--card);
+  box-shadow:2px 0 8px -4px rgba(0,0,0,.1);
+}
+.roster-table thead th.weekend-header{
+  background:#FEF3C7;
+  color:#92400E;
+}
+html[data-theme="dark"] .roster-table thead th.weekend-header{
+  background:rgba(254,243,199,.15);
+  color:#FCD34D;
+}
+
+.roster-table tbody tr{
+  transition:background .15s ease;
+}
+.roster-table tbody tr:hover{
+  background:var(--bg);
+}
+.roster-table tbody td{
+  padding:10px 8px;
+  border-bottom:1px solid var(--line);
+  text-align:center;
+  font-size:.82rem;
+  font-weight:700;
+  color:var(--ink);
+}
+.roster-table tbody td.emp-col{
+  position:sticky;
+  left:0;
+  z-index:5;
+  text-align:left;
+  padding-left:20px;
+  background:var(--card);
+  box-shadow:2px 0 8px -4px rgba(0,0,0,.1);
+  font-weight:800;
+}
+.roster-table tbody tr:hover td.emp-col{
+  background:var(--bg);
+}
+.roster-table tbody td.pos-col{
+  position:sticky;
+  left:200px;
+  z-index:5;
+  text-align:left;
+  background:var(--card);
+  box-shadow:2px 0 8px -4px rgba(0,0,0,.1);
+}
+.roster-table tbody tr:hover td.pos-col{
+  background:var(--bg);
+}
+
+.emp-cell{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.emp-avatar{
+  width:32px;height:32px;
+  border-radius:50%;
+  background:linear-gradient(135deg,var(--primary),var(--accent));
+  color:#fff;
+  display:grid;
+  place-items:center;
+  font-weight:900;
+  font-size:.78rem;
+  flex-shrink:0;
+}
+.emp-name{
+  font-size:.82rem;
+  color:var(--ink);
+  line-height:1.2;
+}
+
+/* ============ BADGES ============ */
+.shift-badge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:32px;
+  height:32px;
+  border-radius:8px;
+  font-size:.72rem;
+  font-weight:900;
+  cursor:pointer;
+  transition:all .2s ease;
+  border:1.5px solid transparent;
+  position:relative;
+}
+.shift-badge:hover{
+  transform:scale(1.15);
+  border-color:var(--ink);
+  z-index:2;
+}
+.shift-badge.morning{background:var(--morning);color:#fff}
+.shift-badge.general{background:var(--general);color:#fff}
+.shift-badge.afternoon{background:var(--afternoon);color:#1A1A1A}
+.shift-badge.night{background:var(--night);color:#fff}
+.shift-badge.weekoff{background:var(--weekoff);color:#fff}
+.shift-badge.leave{background:var(--leave);color:#fff}
+.shift-badge.flexi{background:var(--flexi);color:#fff}
+.shift-badge.holiday{background:var(--holiday);color:#1A1A1A}
+.shift-badge.na{background:var(--na);color:#fff;font-size:.65rem}
+
+/* ============ SUMMARY ROWS ============ */
+.roster-table tbody tr.summary-row{
+  background:#F8F5FF;
+  font-weight:900;
+}
+html[data-theme="dark"] .roster-table tbody tr.summary-row{
+  background:rgba(124,58,237,.08);
+}
+.roster-table tbody tr.summary-row td{
+  font-size:.78rem;
+  color:var(--primary);
+  border-bottom:1px solid var(--line);
+}
+.roster-table tbody tr.summary-row td.emp-col{
+  background:#F8F5FF;
+  font-size:.8rem;
+  text-transform:uppercase;
+  letter-spacing:.5px;
+}
+html[data-theme="dark"] .roster-table tbody tr.summary-row td.emp-col{
+  background:rgba(124,58,237,.08);
+}
+
+/* ============ FOOTER ACTIONS ============ */
+.footer-actions{
+  position:sticky;
+  bottom:0;
+  background:var(--card);
+  border-top:1px solid var(--line);
+  padding:16px 40px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:16px;
+  z-index:50;
+  box-shadow:0 -4px 20px rgba(0,0,0,.05);
+  flex-wrap:wrap;
+}
+.footer-info{
+  font-size:.78rem;
+  color:var(--muted);
+  font-weight:700;
+}
+.btn-primary{
+  padding:14px 32px;
+  border-radius:12px;
+  background:linear-gradient(135deg,var(--primary),var(--accent));
+  color:#fff;
+  font-size:.85rem;
+  font-weight:800;
+  text-transform:uppercase;
+  letter-spacing:.5px;
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  transition:all .25s ease;
+  box-shadow:0 8px 22px -8px var(--primary);
+}
+.btn-primary:hover{
+  transform:translateY(-2px);
+  box-shadow:0 14px 32px -8px var(--primary);
+}
+.btn-primary svg{
+  width:18px;height:18px;
+  stroke:currentColor;fill:none;
+  stroke-width:2.4;
+}
+
+/* ============ EMPTY STATE ============ */
+.empty-state{
+  text-align:center;
+  padding:80px 40px;
+  color:var(--muted);
+}
+.empty-state svg{
+  width:64px;height:64px;
+  stroke:var(--primary);
+  fill:none;
+  stroke-width:1.5;
+  opacity:.4;
+  margin-bottom:16px;
+}
+.empty-state h3{
+  font-size:1.2rem;
+  color:var(--ink);
+  margin-bottom:8px;
+}
+
+/* ============ RESPONSIVE ============ */
+@media (max-width:900px){
+  .top-header{padding:20px 20px;}
+  .header-left h1{font-size:1.4rem;}
+  .stats-bar{padding:16px 20px;grid-template-columns:repeat(2,1fr);}
+  .legend-bar{padding:12px 20px;}
+  .search-bar{padding:12px 20px;}
+  .roster-wrap{padding:16px 12px 40px;}
+  .footer-actions{padding:14px 20px;}
+  .roster-table thead th.emp-col{min-width:150px;padding-left:12px;}
+  .roster-table thead th.pos-col{left:150px;min-width:100px;}
+  .roster-table tbody td.emp-col{padding-left:12px;}
+  .roster-table tbody td.pos-col{left:150px;}
+}
 </style>
 </head>
 <body>
 
-<!-- ============ HEADER ============ -->
-<div class="app-header">
-  <div class="header-left">
-    <h1>EIS Team Roster</h1>
-    <p><%= m_strroles %> &nbsp;•&nbsp; <%= nameOfMonth %> <%= selectedYear %></p>
-  </div>
-  <div class="header-right">
-    <button class="btn btn-success" onclick="prepareData()">💾 Submit Roster</button>
-  </div>
-</div>
+<%
+    // ---- PARAMETERS ----
+    String monthYr = request.getParameter("myViewMonth");
+    String m_strroles = request.getParameter("m_strroles");
+    String username = request.getParameter("username");
 
-<!-- ============ CONTROLS ============ -->
-<form id="monthYearForm" method="get" class="control-bar">
-  <div class="field">
-    <label for="month">Month</label>
-    <select name="month" id="month" required>
-      <% for (String[] m : mn) {
-           String sel = m[0].equals(selectedMonth) ? "selected" : "";
-      %>
-        <option value="<%= m[0] %>" <%= sel %>><%= m[1] %></option>
-      <% } %>
-    </select>
+    // Fallbacks from session
+    if (m_strroles == null || m_strroles.trim().isEmpty()) {
+        m_strroles = (String) session.getAttribute("m_strrole");
+    }
+    if (username == null || username.trim().isEmpty()) {
+        username = (String) session.getAttribute("user");
+    }
+    if (m_strroles == null) m_strroles = "";
+    if (username == null) username = "";
+
+    int year = 0, month = 0, noOfDays = 0;
+    String selectedYear = null, selectedMonth = null, nameOfMonth = null, sortMonth = null;
+    String sort_MonthYear = null;
+    boolean showTable = false;
+
+    if (monthYr != null && !monthYr.trim().isEmpty()) {
+        String[] s = monthYr.split("-");
+        if (s.length >= 2) {
+            selectedYear = s[0];
+            selectedMonth = s[1];
+            try {
+                year = Integer.parseInt(selectedYear);
+                month = Integer.parseInt(selectedMonth);
+                showTable = true;
+                if (month == 1 || month == 3 || month == 5 || month == 7 || month == 8 || month == 10 || month == 12) {
+                    noOfDays = 31;
+                } else if (month == 4 || month == 6 || month == 9 || month == 11) {
+                    noOfDays = 30;
+                } else if (month == 2) {
+                    noOfDays = ((year % 400 == 0) || (year % 100 != 0) && (year % 4 == 0)) ? 29 : 28;
+                }
+                String[] monthNames = {"", "January","February","March","April","May","June","July","August","September","October","November","December"};
+                String[] shortNames = {"", "Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
+                nameOfMonth = monthNames[month];
+                sortMonth = shortNames[month];
+                sort_MonthYear = sortMonth + "_" + selectedYear;
+            } catch (Exception e) {
+                showTable = false;
+            }
+        }
+    }
+
+    // Default to current month
+    if (!showTable) {
+        YearMonth ym = YearMonth.now(ZoneId.of("Asia/Kolkata"));
+        year = ym.getYear();
+        month = ym.getMonthValue();
+        noOfDays = ym.lengthOfMonth();
+        selectedYear = String.valueOf(year);
+        selectedMonth = (month < 10 ? "0" : "") + month;
+        String[] monthNames = {"", "January","February","March","April","May","June","July","August","September","October","November","December"};
+        String[] shortNames = {"", "Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
+        nameOfMonth = monthNames[month];
+        sortMonth = shortNames[month];
+        sort_MonthYear = sortMonth + "_" + selectedYear;
+        showTable = true;
+    }
+
+    // ---- LOAD DATA ----
+    List<Map<String,Object>> employees = new ArrayList<>();
+    Connection conn = null;
+    try {
+        conn = DBUtilityAuto.getReportDBConnection();
+
+        // Check if roster exists
+        String getDataQuery = "select * from rostertable where UPPER(TEAM)=UPPER(?) and UPPER(MONTHYEAR)=UPPER(?) order by id";
+        PreparedStatement ps = conn.prepareStatement(getDataQuery);
+        ps.setString(1, m_strroles);
+        ps.setString(2, sort_MonthYear);
+        ResultSet rs = ps.executeQuery();
+        while (rs.next()) {
+            Map<String,Object> emp = new HashMap<>();
+            emp.put("name", rs.getString("NAME"));
+            emp.put("adId", rs.getString("AD_ID"));
+            emp.put("position", rs.getString("POSITION"));
+            for (int d = 1; d <= noOfDays; d++) {
+                emp.put("day_" + d, rs.getString("DAY_" + d));
+            }
+            employees.add(emp);
+        }
+        rs.close();
+        ps.close();
+
+        // If no roster, load from employee master
+        if (employees.isEmpty()) {
+            String queryEmp = "select ad_id, FIRSTNAME || ' ' || LASTNAME as Fullname from eisupport_employee_master where TEAM = ? and isactive='Active'";
+            PreparedStatement ps2 = conn.prepareStatement(queryEmp);
+            ps2.setString(1, m_strroles);
+            ResultSet rs2 = ps2.executeQuery();
+            while (rs2.next()) {
+                Map<String,Object> emp = new HashMap<>();
+                emp.put("name", rs2.getString("Fullname"));
+                emp.put("adId", rs2.getString("ad_id"));
+                emp.put("position", null);
+                for (int d = 1; d <= noOfDays; d++) emp.put("day_" + d, "Morning");
+                employees.add(emp);
+            }
+            rs2.close();
+            ps2.close();
+        }
+    } catch (Exception e) {
+        e.printStackTrace();
+    } finally {
+        if (conn != null) try { conn.close(); } catch (Exception e) {}
+    }
+
+    // Count stats
+    int totalEmp = employees.size();
+%>
+
+<!-- ============ TOP HEADER ============ -->
+<header class="top-header">
+  <div class="header-left">
+    <div class="badge">
+      <span class="dot"></span>
+      <%= m_strroles %> &middot; Roster Dashboard
+    </div>
+    <h1>
+      <span class="gradient"><%= nameOfMonth %> <%= selectedYear %></span>
+    </h1>
+    <div class="meta">
+      <span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        <%= totalEmp %> Employees
+      </span>
+      <span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <%= noOfDays %> Days
+      </span>
+      <span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <%= username %>
+      </span>
+    </div>
   </div>
-  <div class="field">
-    <label for="year">Year</label>
-    <input type="number" id="year" name="year" min="2024" max="2100"
-           value="<%= selectedYear %>" required>
+
+  <div class="header-right">
+    <form method="get" style="display:flex;gap:8px;align-items:center;">
+      <div class="month-picker">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <select name="month" id="month">
+          <option value="">Month</option>
+          <% for (int m = 1; m <= 12; m++) {
+              String mn = String.format("%02d", m);
+              String sel = (m == month) ? "selected" : "";
+              String[] mNames = {"","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
+          %>
+          <option value="<%= mn %>" <%= sel %>><%= mNames[m] %></option>
+          <% } %>
+        </select>
+        <input type="number" name="year" min="2024" max="2100" value="<%= selectedYear %>" required>
+      </div>
+      <input type="hidden" name="m_strroles" value="<%= m_strroles %>">
+      <input type="hidden" name="username" value="<%= username %>">
+      <button type="submit" class="btn-header btn-primary-header">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        View
+      </button>
+    </form>
   </div>
-  <div class="field">
-    <label for="myViewMonth">Or Pick (YYYY-MM)</label>
-    <input type="text" id="myViewMonth" name="myViewMonth"
-           placeholder="<%= selectedYear %>-<%= selectedMonth %>"
-           value="<%= selectedYear %>-<%= selectedMonth %>">
+</header>
+
+<!-- ============ STATS BAR ============ -->
+<section class="stats-bar">
+  <div class="stat-box">
+    <div class="st-lbl">Total Employees</div>
+    <div class="st-val primary"><%= totalEmp %></div>
   </div>
-  <input type="hidden" name="m_strroles" value="<%= m_strroles %>">
-  <input type="hidden" name="username"   value="<%= username %>">
-  <div class="field">
-    <label>&nbsp;</label>
-    <button type="button" class="btn btn-primary" onclick="submitMonthForm()">🔄 Load Roster</button>
+  <div class="stat-box">
+    <div class="st-lbl">Days in Month</div>
+    <div class="st-val"><%= noOfDays %></div>
   </div>
-</form>
+  <div class="stat-box">
+    <div class="st-lbl">Team</div>
+    <div class="st-val primary" style="font-size:1rem;margin-top:8px;"><%= m_strroles %></div>
+  </div>
+  <div class="stat-box">
+    <div class="st-lbl">Period</div>
+    <div class="st-val" style="font-size:1rem;margin-top:8px;"><%= nameOfMonth %> <%= selectedYear %></div>
+  </div>
+</section>
 
 <!-- ============ LEGEND ============ -->
-<div class="legend">
-  <span class="legend-item"><span class="legend-dot" style="background:var(--morning)"></span>Morning</span>
-  <span class="legend-item"><span class="legend-dot" style="background:var(--general)"></span>General</span>
-  <span class="legend-item"><span class="legend-dot" style="background:var(--afternoon)"></span>Afternoon</span>
-  <span class="legend-item"><span class="legend-dot" style="background:var(--night)"></span>Night</span>
-  <span class="legend-item"><span class="legend-dot" style="background:var(--weekoff)"></span>Weekoff</span>
-  <span class="legend-item"><span class="legend-dot" style="background:var(--leave)"></span>Leave</span>
-  <span class="legend-item"><span class="legend-dot" style="background:var(--flexi)"></span>Flexi</span>
-  <span class="legend-item"><span class="legend-dot" style="background:var(--holiday)"></span>Holiday</span>
-</div>
+<section class="legend-bar">
+  <span class="legend-label">Shift Legend:</span>
+  <span class="legend-item"><span class="legend-dot morning"></span>Morning</span>
+  <span class="legend-item"><span class="legend-dot general"></span>General</span>
+  <span class="legend-item"><span class="legend-dot afternoon"></span>Afternoon</span>
+  <span class="legend-item"><span class="legend-dot night"></span>Night</span>
+  <span class="legend-item"><span class="legend-dot weekoff"></span>Weekoff</span>
+  <span class="legend-item"><span class="legend-dot leave"></span>Leave</span>
+  <span class="legend-item"><span class="legend-dot flexi"></span>Flexi</span>
+  <span class="legend-item"><span class="legend-dot holiday"></span>Holiday</span>
+</section>
+
+<!-- ============ SEARCH BAR ============ -->
+<section class="search-bar">
+  <div class="search-box">
+    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input type="text" id="searchInput" placeholder="Search employee by name or position..." oninput="filterEmployees()">
+  </div>
+  <div class="search-info" id="searchInfo">Showing <b><%= totalEmp %></b> employees</div>
+</section>
 
 <!-- ============ ROSTER TABLE ============ -->
-<form id="rosterForm" action="RosterServlet" method="post">
-  <input type="hidden" id="tableData" name="tableData">
+<form id="rosterForm" method="post" action="<%=request.getContextPath()%>/RosterServlet">
+<input type="hidden" name="tableData" id="tableData">
+<input type="hidden" name="m_strroles" value="<%= m_strroles %>">
+<input type="hidden" name="username" value="<%= username %>">
+<input type="hidden" name="selectedMonth" value="<%= selectedMonth %>">
+<input type="hidden" name="selectedYear" value="<%= selectedYear %>">
 
-  <div class="table-wrapper">
-    <div class="table-scroll">
-      <table id="rosterTable">
-        <thead>
-          <tr>
-            <th>Employee</th>
-            <th>Position</th>
-            <% for (int d = 1; d <= noOfDays; d++) {
-                 LocalDate dt = LocalDate.of(year, month, d);
-                 String dow = dt.getDayOfWeek().getDisplayName(TextStyle.SHORT, Locale.ENGLISH);
-            %>
-              <th><%= d %><br><span style="font-size:9px;color:var(--text-2);font-weight:500;"><%= dow %></span></th>
-            <% } %>
-            <th>W/Off</th>
-            <th>Leave</th>
-          </tr>
-        </thead>
-
-        <tbody>
-        <%
-          Connection conn = null;
-          PreparedStatement pstmt = null;
-          ResultSet rs2 = null;
-          boolean hasData = false;
-          int rowIdx = 0;
-
-          try {
-              conn = DBUtilityAuto.getReportDBConnection();
-
-              String q = "SELECT * FROM rostertable " +
-                         "WHERE UPPER(TEAM) = UPPER(?) " +
-                         "AND UPPER(MONTHYEAR) = UPPER(?) " +
-                         "ORDER BY id";
-              pstmt = conn.prepareStatement(q);
-              pstmt.setString(1, m_strroles);
-              pstmt.setString(2, sort_MonthYear);
-              rs2 = pstmt.executeQuery();
-
-              while (rs2.next()) {
-                  hasData = true;
-                  String empName  = safe(rs2.getString("NAME"));
-                  String adId     = safe(rs2.getString("AD_ID"));
-                  String position = safe(rs2.getString("POSITION"));
-        %>
-          <tr>
-            <td title="<%= empName %>">
-              <%= empName %>
-              <input type="hidden" name="employeeName" value="<%= empName %>">
-              <input type="hidden" name="adId"         value="<%= adId %>">
-            </td>
-
-            <td>
-              <select name="position_<%= rowIdx %>"
-                      class="shift-select shift-General"
-                      style="font-weight:600;">
-                <option value="">-- Select --</option>
-                <option value="Manager"   <%= "Manager".equalsIgnoreCase(position)?"selected":"" %>>Manager</option>
-                <option value="Team Lead" <%= "Team Lead".equalsIgnoreCase(position)?"selected":"" %>>Team Lead</option>
-                <option value="Senior"    <%= "Senior".equalsIgnoreCase(position)?"selected":"" %>>Senior</option>
-                <option value="Junior"    <%= "Junior".equalsIgnoreCase(position)?"selected":"" %>>Junior</option>
-              </select>
-            </td>
-
-            <%
-              int weekOff = 0, leaveCount = 0;
-              for (int day = 1; day <= noOfDays; day++) {
-                  String dayCol = "DAY_" + day;
-                  String val    = safe(rs2.getString(dayCol));
-                  if (val.isEmpty()) val = "NA";
-
-                  String lv = val.toLowerCase();
-                  if (lv.equals("weekoff") || lv.equals("weekoffadjust")) weekOff++;
-                  if (lv.equals("leave") || lv.equals("sickleave") ||
-                      lv.equals("casualleave") || lv.equals("earnedleave") ||
-                      lv.equals("flexileave") || lv.equals("holidayleave")) leaveCount++;
-
-                  String cls = mapShiftToClass(val);
-                  String shortVal =
-                      lv.contains("morning")   ? "M(o)"   :
-                      (lv.contains("general") || lv.contains("genral")) ? "D(o)" :
-                      lv.contains("afternoon") ? "A(o)"   :
-                      lv.contains("night")     ? "N(o)"   :
-                      lv.equals("weekoff")     ? "W"      :
-                      lv.equals("sickleave")   ? "SL"     :
-                      lv.equals("casualleave") ? "CL"     :
-                      lv.equals("earnedleave") ? "EL"     :
-                      lv.equals("flexileave")  ? "FL"     :
-                      lv.equals("holidayleave")? "HL"     :
-                      lv.equals("na")          ? " "      : val;
-            %>
-              <td>
-                <select name="mnt_<%= rowIdx %>_<%= day %>"
-                        class="shift-select shift-<%= cls %>"
-                        onchange="onShiftChange(this)">
-                  <option value="Morning"      <%= val.equalsIgnoreCase("Morning")?"selected":"" %>>M(o)</option>
-                  <option value="WFH-Morning"  <%= val.equalsIgnoreCase("WFH-Morning")?"selected":"" %>>WFH-M</option>
-                  <option value="CC-Morning"   <%= val.equalsIgnoreCase("CC-Morning")?"selected":"" %>>CC-M</option>
-                  <option value="General"      <%= (val.equalsIgnoreCase("General")||val.equalsIgnoreCase("Genral"))?"selected":"" %>>D(o)</option>
-                  <option value="WFH-General"  <%= (val.equalsIgnoreCase("WFH-General")||val.equalsIgnoreCase("WFH-Genral"))?"selected":"" %>>WFH-D</option>
-                  <option value="CC-General"   <%= val.equalsIgnoreCase("CC-General")?"selected":"" %>>CC-D</option>
-                  <option value="Afternoon"    <%= val.equalsIgnoreCase("Afternoon")?"selected":"" %>>A(o)</option>
-                  <option value="WFH-Afternoon"<%= val.equalsIgnoreCase("WFH-Afternoon")?"selected":"" %>>WFH-A</option>
-                  <option value="CC-Afternoon" <%= val.equalsIgnoreCase("CC-Afternoon")?"selected":"" %>>CC-A</option>
-                  <option value="Night"        <%= val.equalsIgnoreCase("Night")?"selected":"" %>>N(o)</option>
-                  <option value="WFH-Night"    <%= val.equalsIgnoreCase("WFH-Night")?"selected":"" %>>WFH-N</option>
-                  <option value="CC-Night"     <%= val.equalsIgnoreCase("CC-Night")?"selected":"" %>>CC-N</option>
-                  <option value="Weekoff"      <%= val.equalsIgnoreCase("Weekoff")?"selected":"" %>>W</option>
-                  <option value="SickLeave"    <%= val.equalsIgnoreCase("SickLeave")?"selected":"" %>>SL</option>
-                  <option value="CasualLeave"  <%= val.equalsIgnoreCase("CasualLeave")?"selected":"" %>>CL</option>
-                  <option value="EarnedLeave"  <%= val.equalsIgnoreCase("EarnedLeave")?"selected":"" %>>EL</option>
-                  <option value="FlexiLeave"   <%= val.equalsIgnoreCase("FlexiLeave")?"selected":"" %>>FL</option>
-                  <option value="HolidayLeave" <%= val.equalsIgnoreCase("HolidayLeave")?"selected":"" %>>HL</option>
-                  <option value="NA"           <%= val.equalsIgnoreCase("NA")?"selected":"" %>> </option>
-                </select>
-              </td>
-            <% } %>
-            <td><span class="badge badge-general"><%= weekOff %></span></td>
-            <td><span class="badge badge-general"><%= leaveCount %></span></td>
-          </tr>
-        <%
-            rowIdx++;
-            } // end while
-
-            if (!hasData) {
-        %>
-          <tr>
-            <td colspan="<%= noOfDays + 4 %>" class="empty-state">
-              <h3>No roster data found</h3>
-              <p>Team: <b><%= m_strroles %></b> | Month: <b><%= sort_MonthYear %></b></p>
-            </td>
-          </tr>
-        <%
-            }
-          } catch (Exception e) {
-              e.printStackTrace();
-        %>
-          <tr>
-            <td colspan="<%= noOfDays + 4 %>" class="empty-state">
-              <h3>⚠️ Error loading roster</h3>
-              <p><%= e.getMessage() %></p>
-            </td>
-          </tr>
-        <%
-          } finally {
-              try { if (rs2   != null) rs2.close();   } catch (Exception ignored) {}
-              try { if (pstmt != null) pstmt.close(); } catch (Exception ignored) {}
-              try { if (conn  != null) conn.close();  } catch (Exception ignored) {}
-          }
-        %>
-        </tbody>
-
-        <!-- ============ SUMMARY ROWS ============ -->
-        <tfoot>
-        <%
-          String[] shifts = {"Morning", "General", "Afternoon", "Night"};
-          String[] badge  = {"badge-morning", "badge-general", "badge-afternoon", "badge-night"};
-          String[] conds  = {
-              "('morning','wfh-morning','cc-morning')",
-              "('genral','general','wfh-genral','wfh-general','cc-general')",
-              "('afternoon','wfh-afternoon','cc-afternoon')",
-              "('night','wfh-night','cc-night')"
-          };
-
-          // Re-open connection for summary (previous closed)
-          Connection conn2 = null;
-          try {
-              conn2 = DBUtilityAuto.getReportDBConnection();
-
-              for (int sIdx = 0; sIdx < shifts.length; sIdx++) {
-        %>
-          <tr class="summary-row">
-            <td colspan="2">No. of Emp in <%= shifts[sIdx] %></td>
-            <%
-                for (int k = 1; k <= noOfDays; k++) {
-                    String q = "SELECT COUNT(1) c FROM rostertable " +
-                               "WHERE LOWER(DAY_" + k + ") IN " + conds[sIdx] +
-                               " AND UPPER(MONTHYEAR) = UPPER(?) " +
-                               " AND UPPER(TEAM) = UPPER(?)";
-                    int c = 0;
-                    try (PreparedStatement ps = conn2.prepareStatement(q)) {
-                        ps.setString(1, sort_MonthYear);
-                        ps.setString(2, m_strroles);
-                        try (ResultSet r = ps.executeQuery()) {
-                            if (r.next()) c = r.getInt("c");
-                        }
-                    } catch (Exception ignored) {}
-            %>
-              <td><span class="badge <%= badge[sIdx] %>"><%= c %></span></td>
-            <% } %>
-            <td></td><td></td>
-          </tr>
-        <%
-              } // end for shifts
-          } catch (Exception e) {
-              e.printStackTrace();
-          } finally {
-              try { if (conn2 != null) conn2.close(); } catch (Exception ignored) {}
-          }
-        %>
-        </tfoot>
-      </table>
-    </div>
-
-    <!-- FOOTER -->
-    <div class="footer-actions">
-      <input type="hidden" name="selectedMonth" value="<%= selectedMonth %>">
-      <input type="hidden" name="selectedYear"  value="<%= selectedYear %>">
-      <input type="hidden" name="m_strroles"    value="<%= m_strroles %>">
-      <input type="hidden" name="username"      value="<%= username %>">
-      <% if (showSubmit) { %>
-        <button type="button" class="btn btn-success" onclick="prepareData()">
-          ✓ Submit Roster
-        </button>
-      <% } else { %>
-        <button type="button" class="btn" disabled
-                style="background:var(--bg-3);color:var(--text-2);cursor:not-allowed;">
-          🔒 Past month — read only
-        </button>
-      <% } %>
-    </div>
+<div class="roster-wrap">
+<% if (totalEmp == 0) { %>
+  <div class="empty-state">
+    <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    <h3>No Employees Found</h3>
+    <p>No active employees found in team <b><%= m_strroles %></b>.</p>
   </div>
+<% } else { %>
+
+<table class="roster-table" id="rosterTable">
+  <thead>
+    <tr>
+      <th class="emp-col">Employee</th>
+      <th class="pos-col">Position</th>
+      <% for (int d = 1; d <= noOfDays; d++) {
+          LocalDate curDate = LocalDate.of(year, month, d);
+          DayOfWeek dow = curDate.getDayOfWeek();
+          boolean isWeekend = (dow == DayOfWeek.SATURDAY || dow == DayOfWeek.SUNDAY);
+          String dayShort = dow.getDisplayName(TextStyle.SHORT, Locale.ENGLISH);
+      %>
+      <th class="<%= isWeekend ? "weekend-header" : "" %>" title="<%= curDate %> - <%= dayShort %>">
+        <%= d %><br><span style="font-size:.6rem;opacity:.7;"><%= dayShort %></span>
+      </th>
+      <% } %>
+      <th title="Weekoffs">WO</th>
+      <th title="Leaves">LV</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% for (int i = 0; i < employees.size(); i++) {
+        Map<String,Object> emp = employees.get(i);
+        String name = (String) emp.get("name");
+        String pos = (String) emp.get("position");
+        String initial = (name != null && name.length() > 0) ? name.substring(0,1).toUpperCase() : "?";
+    %>
+    <tr class="emp-row" data-name="<%= name != null ? name.toLowerCase() : "" %>" data-pos="<%= pos != null ? pos.toLowerCase() : "" %>">
+      <td class="emp-col">
+        <div class="emp-cell">
+          <div class="emp-avatar"><%= initial %></div>
+          <div class="emp-name">
+            <%= name %>
+            <input type="hidden" name="employeeName" value="<%= name %>">
+            <input type="hidden" name="adId" value="<%= emp.get("adId") %>">
+          </div>
+        </div>
+      </td>
+      <td class="pos-col">
+        <% if (pos != null) { %>
+          <%= pos %>
+          <input type="hidden" name="position_<%= i %>" value="<%= pos %>">
+        <% } else { %>
+          <span style="color:var(--muted);font-size:.72rem;">-</span>
+          <input type="hidden" name="position_<%= i %>" value="">
+        <% } %>
+      </td>
+      <%
+        int woCount = 0, lvCount = 0;
+        for (int d = 1; d <= noOfDays; d++) {
+          String shift = (String) emp.get("day_" + d);
+          String shiftLc = (shift != null) ? shift.toLowerCase() : "";
+
+          String cls = "general";
+          String label = shift != null ? shift : "-";
+          if (shiftLc.contains("morning")) { cls = "morning"; label = "M"; }
+          else if (shiftLc.contains("general") || shiftLc.contains("genral")) { cls = "general"; label = "D"; }
+          else if (shiftLc.contains("afternoon")) { cls = "afternoon"; label = "A"; }
+          else if (shiftLc.contains("night")) { cls = "night"; label = "N"; }
+          else if (shiftLc.contains("weekoff")) { cls = "weekoff"; label = "W"; woCount++; }
+          else if (shiftLc.contains("leave")) { cls = "leave"; label = "L"; lvCount++; }
+          else if (shiftLc.contains("flexi")) { cls = "flexi"; label = "F"; }
+          else if (shiftLc.contains("holiday")) { cls = "holiday"; label = "H"; }
+          else if (shiftLc.equals("na") || shiftLc.trim().isEmpty()) { cls = "na"; label = "-"; }
+
+          String tooltip = (shift != null) ? shift : "Not Set";
+      %>
+      <td>
+        <span class="shift-badge <%= cls %>" title="<%= tooltip %>"><%= label %></span>
+        <input type="hidden" name="mnt_<%= i %>_<%= d %>" value="<%= shift != null ? shift : "" %>">
+      </td>
+      <% } %>
+      <td style="font-weight:900;color:var(--weekoff);"><%= woCount %></td>
+      <td style="font-weight:900;color:var(--leave);"><%= lvCount %></td>
+    </tr>
+    <% } %>
+
+    <!-- ============ SUMMARY ROWS ============ -->
+    <tr class="summary-row">
+      <td class="emp-col">Morning Total</td>
+      <td class="pos-col"></td>
+      <% for (int d = 1; d <= noOfDays; d++) {
+          int cnt = 0;
+          for (Map<String,Object> emp : employees) {
+              String s = (String) emp.get("day_" + d);
+              if (s != null && s.toLowerCase().contains("morning")) cnt++;
+          }
+      %>
+      <td><%= cnt %></td>
+      <% } %>
+      <td colspan="2"></td>
+    </tr>
+    <tr class="summary-row">
+      <td class="emp-col">General Total</td>
+      <td class="pos-col"></td>
+      <% for (int d = 1; d <= noOfDays; d++) {
+          int cnt = 0;
+          for (Map<String,Object> emp : employees) {
+              String s = (String) emp.get("day_" + d);
+              if (s != null && (s.toLowerCase().contains("general") || s.toLowerCase().contains("genral"))) cnt++;
+          }
+      %>
+      <td><%= cnt %></td>
+      <% } %>
+      <td colspan="2"></td>
+    </tr>
+    <tr class="summary-row">
+      <td class="emp-col">Afternoon Total</td>
+      <td class="pos-col"></td>
+      <% for (int d = 1; d <= noOfDays; d++) {
+          int cnt = 0;
+          for (Map<String,Object> emp : employees) {
+              String s = (String) emp.get("day_" + d);
+              if (s != null && s.toLowerCase().contains("afternoon")) cnt++;
+          }
+      %>
+      <td><%= cnt %></td>
+      <% } %>
+      <td colspan="2"></td>
+    </tr>
+    <tr class="summary-row">
+      <td class="emp-col">Night Total</td>
+      <td class="pos-col"></td>
+      <% for (int d = 1; d <= noOfDays; d++) {
+          int cnt = 0;
+          for (Map<String,Object> emp : employees) {
+              String s = (String) emp.get("day_" + d);
+              if (s != null && s.toLowerCase().contains("night")) cnt++;
+          }
+      %>
+      <td><%= cnt %></td>
+      <% } %>
+      <td colspan="2"></td>
+    </tr>
+
+  </tbody>
+</table>
+<% } %>
+</div>
+
+<!-- ============ FOOTER ACTIONS ============ -->
+<div class="footer-actions">
+  <div class="footer-info">
+    <b><%= m_strroles %></b> &middot; <%= nameOfMonth %> <%= selectedYear %> &middot; <%= totalEmp %> employees
+  </div>
+  <div>
+    <% if (year > YearMonth.now().getYear() || (year == YearMonth.now().getYear() && month >= YearMonth.now().getMonthValue())) { %>
+      <button type="button" class="btn-primary" onclick="prepareData()">
+        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        Submit Roster
+      </button>
+    <% } else { %>
+      <span class="footer-info" style="color:var(--warning);">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" style="vertical-align:middle;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Past month - read only
+      </span>
+    <% } %>
+  </div>
+</div>
 </form>
 
-<!-- TOAST -->
-<div class="toast" id="toast">✓ Saved successfully</div>
-
 <script>
-  // ============ SHIFT COLOR UPDATER ============
-  function onShiftChange(selectEl) {
-    const val = selectEl.value.toLowerCase();
-    const all = ['shift-Morning','shift-General','shift-Afternoon','shift-Night',
-                 'shift-Weekoff','shift-Leave','shift-Flexi','shift-Holiday'];
-    selectEl.classList.remove(...all);
-
-    let cls = 'shift-General';
-    if (val.includes('morning'))   cls = 'shift-Morning';
-    else if (val.includes('general') || val.includes('genral')) cls = 'shift-General';
-    else if (val.includes('afternoon')) cls = 'shift-Afternoon';
-    else if (val.includes('night')) cls = 'shift-Night';
-    else if (val.includes('weekoff')) cls = 'shift-Weekoff';
-    else if (val.includes('sick') || val.includes('casual') ||
-             val.includes('earned') || val === 'leave') cls = 'shift-Leave';
-    else if (val.includes('flexi')) cls = 'shift-Flexi';
-    else if (val.includes('holiday')) cls = 'shift-Holiday';
-
-    selectEl.classList.add(cls);
-  }
-
-  // ============ MONTH FORM SUBMIT ============
-  function submitMonthForm() {
-    const form = document.getElementById("monthYearForm");
-    const y = document.getElementById("year").value;
-    const m = document.getElementById("month").value;
-    // Set myViewMonth so JSP picks it up
-    document.getElementById("myViewMonth").value =
-        y + "-" + (m.length === 1 ? "0" + m : m);
-    form.submit();
-  }
-
-  // ============ ROSTER SUBMIT ============
-  function prepareData() {
-    // Serialize the table for the servlet
-    const form = document.forms["rosterForm"];
-    form.action = '<%= request.getContextPath() + "/RosterServlet" %>';
-    form.submit();
-  }
-
-  // ============ URL CLEANUP ============
-  window.addEventListener('load', function () {
-    // no-op — kept for compatibility
+function filterEmployees() {
+  var input = document.getElementById('searchInput').value.toLowerCase();
+  var rows = document.querySelectorAll('.emp-row');
+  var visible = 0;
+  rows.forEach(function(row) {
+    var name = row.getAttribute('data-name') || '';
+    var pos = row.getAttribute('data-pos') || '';
+    if (name.includes(input) || pos.includes(input)) {
+      row.style.display = '';
+      visible++;
+    } else {
+      row.style.display = 'none';
+    }
   });
+  document.getElementById('searchInfo').innerHTML = 'Showing <b>' + visible + '</b> employees';
+}
+
+function prepareData() {
+  document.getElementById('rosterForm').action = '<%=request.getContextPath()%>/RosterServlet';
+  document.getElementById('rosterForm').submit();
+}
 </script>
+
 </body>
 </html>
