@@ -46,7 +46,6 @@
 
   --radius-sm:6px; --radius-md:8px; --radius-lg:12px;
 
-  --shadow-xs:0 1px 2px 0 rgba(16,24,40,.05);
   --shadow-sm:0 1px 3px 0 rgba(16,24,40,.10);
   --shadow-md:0 4px 8px -2px rgba(16,24,40,.10);
   --shadow-lg:0 12px 16px -4px rgba(16,24,40,.10);
@@ -77,7 +76,6 @@ html[data-theme="dark"]{
   --border:var(--gray-200); --border-strong:var(--gray-300);
   --text-primary:var(--gray-900); --text-secondary:var(--gray-600); --text-tertiary:var(--gray-500);
 
-  --shadow-xs:0 1px 2px 0 rgba(0,0,0,.4);
   --shadow-sm:0 1px 3px 0 rgba(0,0,0,.5);
   --shadow-md:0 4px 8px -2px rgba(0,0,0,.4);
   --shadow-lg:0 12px 16px -4px rgba(0,0,0,.5);
@@ -357,7 +355,6 @@ html[data-theme="dark"] .roster-grid thead th.is-weekend{background:#3A1D0A; col
 .shift-btn.holiday  {background:var(--h-bg);color:var(--h-fg);border-color:var(--h-bd);}
 .shift-btn.na       {background:var(--x-bg);color:var(--x-fg);border-color:var(--x-bd);}
 
-/* Hidden native select for form submit */
 .shift-cell select.shift-hidden{
   position:absolute;
   opacity:0;
@@ -420,24 +417,8 @@ html[data-theme="dark"] .roster-grid thead th.is-weekend{background:#3A1D0A; col
 .empty p{font-size:12px;}
 
 /* ============================================================
-   CUSTOM DROPDOWN — 2 COLUMN, CENTERED
+   CUSTOM DROPDOWN — side-anchored, below badge
    ============================================================ */
-.dd-backdrop{
-  position:fixed;
-  inset:0;
-  background:rgba(16,24,40,.35);
-  backdrop-filter:blur(2px);
-  -webkit-backdrop-filter:blur(2px);
-  z-index:9998;
-  display:none;
-}
-.dd-backdrop.open{display:block; animation:ddFadeIn .15s ease;}
-
-@keyframes ddFadeIn{
-  from{opacity:0;}
-  to{opacity:1;}
-}
-
 .dropdown-menu{
   position:fixed;
   z-index:9999;
@@ -445,39 +426,37 @@ html[data-theme="dark"] .roster-grid thead th.is-weekend{background:#3A1D0A; col
   border:1px solid var(--border-strong);
   border-radius:var(--radius-lg);
   box-shadow:var(--shadow-xl);
-  padding:10px;
-  width:520px;
+  padding:8px;
+  width:400px;
   max-width:calc(100vw - 20px);
   display:none;
-  animation:ddPop .15s ease;
+  animation:ddPop .12s ease;
 }
-
 @keyframes ddPop{
-  from{opacity:0; transform:scale(.95);}
-  to{opacity:1; transform:scale(1);}
+  from{opacity:0; transform:translateY(-4px);}
+  to{opacity:1; transform:translateY(0);}
 }
-
 .dropdown-menu.open{display:block;}
 
 .dd-header{
   display:flex;
   justify-content:space-between;
   align-items:center;
-  padding:4px 6px 10px;
+  padding:4px 6px 8px;
   border-bottom:1px solid var(--border);
-  margin-bottom:8px;
+  margin-bottom:6px;
 }
 .dd-header .dd-title{
-  font-size:11px;
+  font-size:10px;
   font-weight:700;
   text-transform:uppercase;
   letter-spacing:.6px;
   color:var(--text-tertiary);
 }
 .dd-header .dd-close{
-  width:26px; height:26px;
+  width:22px; height:22px;
   display:grid; place-items:center;
-  border-radius:6px;
+  border-radius:5px;
   color:var(--text-tertiary);
   cursor:pointer;
   transition:all .15s ease;
@@ -487,7 +466,7 @@ html[data-theme="dark"] .roster-grid thead th.is-weekend{background:#3A1D0A; col
   color:var(--text-primary);
 }
 .dd-header .dd-close svg{
-  width:14px;height:14px;
+  width:12px;height:12px;
   stroke:currentColor;fill:none;stroke-width:2.2;
   stroke-linecap:round;
 }
@@ -495,26 +474,26 @@ html[data-theme="dark"] .roster-grid thead th.is-weekend{background:#3A1D0A; col
 .dd-grid{
   display:grid;
   grid-template-columns:1fr 1fr;
-  gap:6px;
-  max-height:380px;
+  gap:4px;
+  max-height:340px;
   overflow-y:auto;
-  padding-right:4px;
+  padding-right:2px;
 }
-.dd-grid::-webkit-scrollbar{width:6px;}
+.dd-grid::-webkit-scrollbar{width:5px;}
 .dd-grid::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:3px;}
 .dd-grid::-webkit-scrollbar-track{background:transparent;}
 
 .dd-item{
   display:flex;
   align-items:center;
-  gap:8px;
-  padding:8px 10px;
+  gap:6px;
+  padding:7px 9px;
   border-radius:var(--radius-sm);
   font-family:var(--font);
-  font-size:12px;
+  font-size:11px;
   font-weight:700;
   cursor:pointer;
-  transition:all .12s ease;
+  transition:all .1s ease;
   border:1.5px solid transparent;
   white-space:nowrap;
   overflow:hidden;
@@ -526,11 +505,11 @@ html[data-theme="dark"] .roster-grid thead th.is-weekend{background:#3A1D0A; col
 }
 .dd-item.selected{
   border-color:var(--accent);
-  box-shadow:0 0 0 3px var(--accent-soft);
+  box-shadow:0 0 0 2px var(--accent-soft);
 }
 
 .dd-dot{
-  width:10px;height:10px;border-radius:3px;flex-shrink:0;
+  width:8px;height:8px;border-radius:2px;flex-shrink:0;
 }
 
 /* Dropdown item colors — vivid */
@@ -568,7 +547,7 @@ html[data-theme="dark"] .roster-grid thead th.is-weekend{background:#3A1D0A; col
   .roster-grid thead th.col-pos{left:150px;min-width:80px;}
   .roster-grid tbody td.col-emp{padding-left:12px;}
   .roster-grid tbody td.col-pos{left:150px;}
-  .dropdown-menu{width:calc(100vw - 20px);}
+  .dropdown-menu{width:320px;}
   .dd-grid{grid-template-columns:1fr;}
 }
 </style>
@@ -941,7 +920,6 @@ html[data-theme="dark"] .roster-grid thead th.is-weekend{background:#3A1D0A; col
 </form>
 
 <!-- ============ CUSTOM DROPDOWN ============ -->
-<div class="dd-backdrop" id="ddBackdrop" onclick="closeDropdown()"></div>
 <div class="dropdown-menu" id="dropdownMenu">
   <div class="dd-header">
     <div class="dd-title">Select Shift</div>
@@ -1015,7 +993,7 @@ var SHIFT_OPTIONS = [
 var activeRow = null, activeDay = null;
 
 /* ============================================================
-   OPEN DROPDOWN — centered, modal-like
+   OPEN DROPDOWN — side-anchored to badge
    ============================================================ */
 function openDropdown(ev, rowIdx, dayIdx, currentCls, currentLabel) {
   ev.stopPropagation();
@@ -1024,10 +1002,8 @@ function openDropdown(ev, rowIdx, dayIdx, currentCls, currentLabel) {
   activeDay = dayIdx;
 
   var dd = document.getElementById('dropdownMenu');
-  var backdrop = document.getElementById('ddBackdrop');
   var grid = document.getElementById('ddGrid');
 
-  // Get current value
   var sel = document.getElementById('sel_' + rowIdx + '_' + dayIdx);
   var currentValue = sel ? sel.value : 'Morning';
 
@@ -1045,24 +1021,41 @@ function openDropdown(ev, rowIdx, dayIdx, currentCls, currentLabel) {
   }
   grid.innerHTML = html;
 
-  // Center on screen
-  dd.style.top = '50%';
-  dd.style.left = '50%';
-  dd.style.transform = 'translate(-50%, -50%)';
-
+  // Show to measure size
   dd.classList.add('open');
-  backdrop.classList.add('open');
+
+  // Calculate position — anchored to badge
+  var btn = ev.currentTarget;
+  var rect = btn.getBoundingClientRect();
+  var ddRect = dd.getBoundingClientRect();
+
+  var top = rect.bottom + 6;
+  var left = rect.left;
+
+  // If not enough space below, flip above
+  if (top + ddRect.height > window.innerHeight - 10) {
+    top = rect.top - ddRect.height - 6;
+    if (top < 10) top = 10;
+  }
+
+  // If overflow right, shift left
+  if (left + ddRect.width > window.innerWidth - 10) {
+    left = window.innerWidth - ddRect.width - 10;
+  }
+  if (left < 10) left = 10;
+
+  dd.style.top = top + 'px';
+  dd.style.left = left + 'px';
 
   // Scroll to selected item
   setTimeout(function(){
     var selItem = grid.querySelector('.dd-item.selected');
-    if (selItem) selItem.scrollIntoView({ block: 'center', behavior: 'instant' });
+    if (selItem) selItem.scrollIntoView({ block: 'nearest', behavior: 'instant' });
   }, 10);
 }
 
 function closeDropdown() {
   document.getElementById('dropdownMenu').classList.remove('open');
-  document.getElementById('ddBackdrop').classList.remove('open');
   activeRow = null;
   activeDay = null;
 }
@@ -1070,11 +1063,9 @@ function closeDropdown() {
 function selectShift(ev, rowIdx, dayIdx, value, cls, shortLabel) {
   ev.stopPropagation();
 
-  // Update hidden select
   var sel = document.getElementById('sel_' + rowIdx + '_' + dayIdx);
   if (sel) sel.value = value;
 
-  // Update badge
   var cell = document.querySelector('td.shift-cell[data-cell-id="' + rowIdx + '_' + dayIdx + '"]');
   if (cell) {
     var btn = cell.querySelector('.shift-btn');
@@ -1087,9 +1078,25 @@ function selectShift(ev, rowIdx, dayIdx, value, cls, shortLabel) {
   closeDropdown();
 }
 
-/* Esc key closes */
+/* Close on outside click */
+document.addEventListener('click', function(e){
+  var dd = document.getElementById('dropdownMenu');
+  if (!dd.classList.contains('open')) return;
+  if (!dd.contains(e.target)) closeDropdown();
+});
+
+/* Close on Esc */
 document.addEventListener('keydown', function(e){
   if (e.key === 'Escape') closeDropdown();
+});
+
+/* Close on scroll/resize — clean behavior */
+window.addEventListener('scroll', function(){
+  closeDropdown();
+}, true); // capture phase to catch all scrolls
+
+window.addEventListener('resize', function(){
+  closeDropdown();
 });
 
 /* ============================================================
