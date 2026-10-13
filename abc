@@ -22,9 +22,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
-/* ============================================================
-   DESIGN TOKENS
-   ============================================================ */
 :root{
   --gray-0:#FFFFFF; --gray-25:#FCFCFD; --gray-50:#F9FAFB; --gray-100:#F2F4F7;
   --gray-200:#EAECF0; --gray-300:#D0D5DD; --gray-400:#98A2B3; --gray-500:#667085;
@@ -33,7 +30,6 @@
   --accent:#635BFF; --accent-hover:#5249E0; --accent-soft:#EEF0FF; --accent-line:#C7CBFF;
   --success:#12B76A; --warning:#F79009; --danger:#F04438;
 
-  /* Shift colors (light) — vivid */
   --m-bg:#FFE4CC; --m-fg:#8A2C00; --m-bd:#FFB380; --m-dot:#FF8C00;
   --d-bg:#E5E8EC; --d-fg:#1F2937; --d-bd:#B8BFC9; --d-dot:#696969;
   --a-bg:#FFF1B8; --a-fg:#7A4F00; --a-bd:#F5D45F; --a-dot:#DAA520;
@@ -220,7 +216,7 @@ html[data-theme="dark"] .icon-btn .icon-moon{display:block;}
 }
 .stat-inline b{color:var(--text-primary); font-weight:700; font-variant-numeric:tabular-nums;}
 
-/* ============ LEGEND BAR — HORIZONTAL ============ */
+/* ============ LEGEND BAR ============ */
 .legend-bar{
   background:var(--bg-surface); border-bottom:1px solid var(--border);
   padding:10px 20px; display:flex; align-items:center; gap:8px;
@@ -239,7 +235,7 @@ html[data-theme="dark"] .icon-btn .icon-moon{display:block;}
 .legend-chip{
   flex-shrink:0; display:inline-flex; align-items:center; gap:6px;
   padding:5px 10px; border-radius:6px; font-size:11px; font-weight:700;
-  border:1px solid; white-space:nowrap; transition:all .12s ease;
+  border:1px solid; white-space:nowrap;
   font-variant-numeric:tabular-nums;
 }
 .legend-chip .swatch{width:8px;height:8px;border-radius:2px;flex-shrink:0;}
@@ -345,6 +341,7 @@ html[data-theme="dark"] .roster-grid thead th.is-weekend{background:#3A1D0A; col
   transition:all .12s ease;
   cursor:pointer;
   box-shadow:inset 0 -1px 0 rgba(0,0,0,.05);
+  user-select:none;
 }
 .shift-btn:hover{
   transform:translateY(-1px);
@@ -360,7 +357,7 @@ html[data-theme="dark"] .roster-grid thead th.is-weekend{background:#3A1D0A; col
 .shift-btn.holiday  {background:var(--h-bg);color:var(--h-fg);border-color:var(--h-bd);}
 .shift-btn.na       {background:var(--x-bg);color:var(--x-fg);border-color:var(--x-bd);}
 
-/* Hidden native select (for form submission) */
+/* Hidden native select for form submit */
 .shift-cell select.shift-hidden{
   position:absolute;
   opacity:0;
@@ -370,76 +367,6 @@ html[data-theme="dark"] .roster-grid thead th.is-weekend{background:#3A1D0A; col
   border:none;
   padding:0;
 }
-
-/* ============ CUSTOM DROPDOWN ============ */
-.dropdown-menu{
-  position:fixed;
-  z-index:9999;
-  background:var(--bg-surface);
-  border:1px solid var(--border-strong);
-  border-radius:var(--radius-md);
-  box-shadow:var(--shadow-xl);
-  padding:4px;
-  min-width:180px;
-  max-height:400px;
-  overflow-y:auto;
-  display:none;
-  animation:ddFade .12s ease;
-}
-@keyframes ddFade{
-  from{opacity:0;transform:translateY(-2px);}
-  to{opacity:1;transform:translateY(0);}
-}
-.dropdown-menu.open{display:block;}
-
-.dropdown-menu::-webkit-scrollbar{width:6px;}
-.dropdown-menu::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:3px;}
-
-.dd-item{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  padding:8px 10px;
-  border-radius:var(--radius-sm);
-  font-family:var(--font);
-  font-size:12px;
-  font-weight:700;
-  cursor:pointer;
-  transition:all .1s ease;
-  border:1px solid transparent;
-  white-space:nowrap;
-}
-.dd-item:hover{
-  transform:translateX(2px);
-  box-shadow:var(--shadow-sm);
-}
-.dd-item.selected{
-  box-shadow:inset 0 0 0 2px var(--accent);
-}
-
-.dd-dot{
-  width:10px;height:10px;border-radius:3px;flex-shrink:0;
-}
-
-/* Dropdown item colors — vivid, same as badge */
-.dd-item.morning  {background:var(--m-bg);color:var(--m-fg);border-color:var(--m-bd);}
-.dd-item.morning .dd-dot{background:var(--m-dot);}
-.dd-item.general  {background:var(--d-bg);color:var(--d-fg);border-color:var(--d-bd);}
-.dd-item.general .dd-dot{background:var(--d-dot);}
-.dd-item.afternoon{background:var(--a-bg);color:var(--a-fg);border-color:var(--a-bd);}
-.dd-item.afternoon .dd-dot{background:var(--a-dot);}
-.dd-item.night    {background:var(--n-bg);color:var(--n-fg);border-color:var(--n-bd);}
-.dd-item.night .dd-dot{background:var(--n-dot);}
-.dd-item.weekoff  {background:var(--w-bg);color:var(--w-fg);border-color:var(--w-bd);}
-.dd-item.weekoff .dd-dot{background:var(--w-dot);}
-.dd-item.leave    {background:var(--l-bg);color:var(--l-fg);border-color:var(--l-bd);}
-.dd-item.leave .dd-dot{background:var(--l-dot);}
-.dd-item.flexi    {background:var(--f-bg);color:var(--f-fg);border-color:var(--f-bd);}
-.dd-item.flexi .dd-dot{background:var(--f-dot);}
-.dd-item.holiday  {background:var(--h-bg);color:var(--h-fg);border-color:var(--h-bd);}
-.dd-item.holiday .dd-dot{background:var(--h-dot);}
-.dd-item.na       {background:var(--x-bg);color:var(--x-fg);border-color:var(--x-bd);}
-.dd-item.na .dd-dot{background:var(--x-dot);}
 
 /* ============ SUMMARY ROWS ============ */
 .summary-row td{
@@ -492,6 +419,140 @@ html[data-theme="dark"] .roster-grid thead th.is-weekend{background:#3A1D0A; col
 .empty h3{font-size:14px;font-weight:600;color:var(--text-primary);margin-bottom:4px;}
 .empty p{font-size:12px;}
 
+/* ============================================================
+   CUSTOM DROPDOWN — 2 COLUMN, CENTERED
+   ============================================================ */
+.dd-backdrop{
+  position:fixed;
+  inset:0;
+  background:rgba(16,24,40,.35);
+  backdrop-filter:blur(2px);
+  -webkit-backdrop-filter:blur(2px);
+  z-index:9998;
+  display:none;
+}
+.dd-backdrop.open{display:block; animation:ddFadeIn .15s ease;}
+
+@keyframes ddFadeIn{
+  from{opacity:0;}
+  to{opacity:1;}
+}
+
+.dropdown-menu{
+  position:fixed;
+  z-index:9999;
+  background:var(--bg-surface);
+  border:1px solid var(--border-strong);
+  border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-xl);
+  padding:10px;
+  width:520px;
+  max-width:calc(100vw - 20px);
+  display:none;
+  animation:ddPop .15s ease;
+}
+
+@keyframes ddPop{
+  from{opacity:0; transform:scale(.95);}
+  to{opacity:1; transform:scale(1);}
+}
+
+.dropdown-menu.open{display:block;}
+
+.dd-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:4px 6px 10px;
+  border-bottom:1px solid var(--border);
+  margin-bottom:8px;
+}
+.dd-header .dd-title{
+  font-size:11px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.6px;
+  color:var(--text-tertiary);
+}
+.dd-header .dd-close{
+  width:26px; height:26px;
+  display:grid; place-items:center;
+  border-radius:6px;
+  color:var(--text-tertiary);
+  cursor:pointer;
+  transition:all .15s ease;
+}
+.dd-header .dd-close:hover{
+  background:var(--bg-subtle);
+  color:var(--text-primary);
+}
+.dd-header .dd-close svg{
+  width:14px;height:14px;
+  stroke:currentColor;fill:none;stroke-width:2.2;
+  stroke-linecap:round;
+}
+
+.dd-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:6px;
+  max-height:380px;
+  overflow-y:auto;
+  padding-right:4px;
+}
+.dd-grid::-webkit-scrollbar{width:6px;}
+.dd-grid::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:3px;}
+.dd-grid::-webkit-scrollbar-track{background:transparent;}
+
+.dd-item{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:8px 10px;
+  border-radius:var(--radius-sm);
+  font-family:var(--font);
+  font-size:12px;
+  font-weight:700;
+  cursor:pointer;
+  transition:all .12s ease;
+  border:1.5px solid transparent;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.dd-item:hover{
+  transform:translateX(2px);
+  box-shadow:var(--shadow-sm);
+}
+.dd-item.selected{
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px var(--accent-soft);
+}
+
+.dd-dot{
+  width:10px;height:10px;border-radius:3px;flex-shrink:0;
+}
+
+/* Dropdown item colors — vivid */
+.dd-item.morning  {background:var(--m-bg);color:var(--m-fg);border-color:var(--m-bd);}
+.dd-item.morning .dd-dot{background:var(--m-dot);}
+.dd-item.general  {background:var(--d-bg);color:var(--d-fg);border-color:var(--d-bd);}
+.dd-item.general .dd-dot{background:var(--d-dot);}
+.dd-item.afternoon{background:var(--a-bg);color:var(--a-fg);border-color:var(--a-bd);}
+.dd-item.afternoon .dd-dot{background:var(--a-dot);}
+.dd-item.night    {background:var(--n-bg);color:var(--n-fg);border-color:var(--n-bd);}
+.dd-item.night .dd-dot{background:var(--n-dot);}
+.dd-item.weekoff  {background:var(--w-bg);color:var(--w-fg);border-color:var(--w-bd);}
+.dd-item.weekoff .dd-dot{background:var(--w-dot);}
+.dd-item.leave    {background:var(--l-bg);color:var(--l-fg);border-color:var(--l-bd);}
+.dd-item.leave .dd-dot{background:var(--l-dot);}
+.dd-item.flexi    {background:var(--f-bg);color:var(--f-fg);border-color:var(--f-bd);}
+.dd-item.flexi .dd-dot{background:var(--f-dot);}
+.dd-item.holiday  {background:var(--h-bg);color:var(--h-fg);border-color:var(--h-bd);}
+.dd-item.holiday .dd-dot{background:var(--h-dot);}
+.dd-item.na       {background:var(--x-bg);color:var(--x-fg);border-color:var(--x-bd);}
+.dd-item.na .dd-dot{background:var(--x-dot);}
+
 /* ============ RESPONSIVE ============ */
 @media (max-width:900px){
   .appbar{padding:0 14px;}
@@ -507,13 +568,14 @@ html[data-theme="dark"] .roster-grid thead th.is-weekend{background:#3A1D0A; col
   .roster-grid thead th.col-pos{left:150px;min-width:80px;}
   .roster-grid tbody td.col-emp{padding-left:12px;}
   .roster-grid tbody td.col-pos{left:150px;}
+  .dropdown-menu{width:calc(100vw - 20px);}
+  .dd-grid{grid-template-columns:1fr;}
 }
 </style>
 </head>
 <body>
 
 <%
-    // ============ PARAMS ============
     String monthYr = request.getParameter("myViewMonth");
     String m_strroles = request.getParameter("m_strroles");
     String username = request.getParameter("username");
@@ -556,7 +618,6 @@ html[data-theme="dark"] .roster-grid thead th.is-weekend{background:#3A1D0A; col
         showTable = true;
     }
 
-    // ============ LOAD ============
     List<Map<String,Object>> employees = new ArrayList<>();
     Connection conn = null;
     try {
@@ -593,9 +654,6 @@ html[data-theme="dark"] .roster-grid thead th.is-weekend{background:#3A1D0A; col
 
     int totalEmp = employees.size();
     String userInitial = (username != null && username.length() > 0) ? username.substring(0,1).toUpperCase() : "U";
-
-    // ============ SHIFT OPTIONS (server-side, will be reused for dropdown) ============
-    // Order: value|label|class
 %>
 
 <!-- ============ APP BAR ============ -->
@@ -668,7 +726,7 @@ html[data-theme="dark"] .roster-grid thead th.is-weekend{background:#3A1D0A; col
   </div>
 </section>
 
-<!-- ============ LEGEND BAR — HORIZONTAL ============ -->
+<!-- ============ LEGEND BAR ============ -->
 <section class="legend-bar">
   <span class="legend-label">Legend</span>
   <span class="legend-chip morning"><span class="swatch" style="background:var(--m-dot);"></span>M &middot; Morning</span>
@@ -882,8 +940,17 @@ html[data-theme="dark"] .roster-grid thead th.is-weekend{background:#3A1D0A; col
 </div>
 </form>
 
-<!-- ============ CUSTOM DROPDOWN (shared) ============ -->
-<div class="dropdown-menu" id="dropdownMenu"></div>
+<!-- ============ CUSTOM DROPDOWN ============ -->
+<div class="dd-backdrop" id="ddBackdrop" onclick="closeDropdown()"></div>
+<div class="dropdown-menu" id="dropdownMenu">
+  <div class="dd-header">
+    <div class="dd-title">Select Shift</div>
+    <div class="dd-close" onclick="closeDropdown()">
+      <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </div>
+  </div>
+  <div class="dd-grid" id="ddGrid"></div>
+</div>
 
 <script>
 /* ============================================================
@@ -919,99 +986,89 @@ function filterEmployees() {
 }
 
 /* ============================================================
-   SHIFT OPTIONS MASTER
+   SHIFT OPTIONS
    ============================================================ */
 var SHIFT_OPTIONS = [
-  { value:'Morning',       label:'M — Morning',        cls:'morning'   },
-  { value:'WFH-Morning',   label:'WFH-M — Work From Home', cls:'morning'   },
-  { value:'CC-Morning',    label:'CC-M — Contact Center',  cls:'morning'   },
-  { value:'General',       label:'D — General',        cls:'general'   },
-  { value:'WFH-General',   label:'WFH-D — Work From Home', cls:'general'   },
-  { value:'CC-General',    label:'CC-D — Contact Center',  cls:'general'   },
-  { value:'Afternoon',     label:'A — Afternoon',      cls:'afternoon' },
-  { value:'WFH-Afternoon', label:'WFH-A — Work From Home', cls:'afternoon' },
-  { value:'CC-Afternoon',  label:'CC-A — Contact Center',  cls:'afternoon' },
-  { value:'Night',         label:'N — Night',          cls:'night'     },
-  { value:'WFH-Night',     label:'WFH-N — Work From Home', cls:'night'     },
-  { value:'CC-Night',      label:'CC-N — Contact Center',  cls:'night'     },
-  { value:'Weekoff',       label:'W — Weekoff',        cls:'weekoff'   },
-  { value:'WeekoffAdjust', label:'WA — Weekoff Adjust', cls:'weekoff'   },
-  { value:'Leave',         label:'L — Leave',          cls:'leave'     },
-  { value:'SickLeave',     label:'SL — Sick Leave',    cls:'leave'     },
-  { value:'CasualLeave',   label:'CL — Casual Leave',  cls:'leave'     },
-  { value:'EarnedLeave',   label:'EL — Earned Leave',  cls:'leave'     },
-  { value:'FlexiLeave',    label:'FL — Flexi Leave',   cls:'flexi'     },
-  { value:'HolidayLeave',  label:'HL — Holiday',       cls:'holiday'   },
-  { value:'NA',            label:'NA — Not Assigned',  cls:'na'        }
+  { value:'Morning',       label:'M — Morning',        cls:'morning',   short:'M' },
+  { value:'WFH-Morning',   label:'WFH-M',              cls:'morning',   short:'WFH-M' },
+  { value:'CC-Morning',    label:'CC-M',               cls:'morning',   short:'CC-M' },
+  { value:'General',       label:'D — General',        cls:'general',   short:'D' },
+  { value:'WFH-General',   label:'WFH-D',              cls:'general',   short:'WFH-D' },
+  { value:'CC-General',    label:'CC-D',               cls:'general',   short:'CC-D' },
+  { value:'Afternoon',     label:'A — Afternoon',      cls:'afternoon', short:'A' },
+  { value:'WFH-Afternoon', label:'WFH-A',              cls:'afternoon', short:'WFH-A' },
+  { value:'CC-Afternoon',  label:'CC-A',               cls:'afternoon', short:'CC-A' },
+  { value:'Night',         label:'N — Night',          cls:'night',     short:'N' },
+  { value:'WFH-Night',     label:'WFH-N',              cls:'night',     short:'WFH-N' },
+  { value:'CC-Night',      label:'CC-N',               cls:'night',     short:'CC-N' },
+  { value:'Weekoff',       label:'W — Weekoff',        cls:'weekoff',   short:'W' },
+  { value:'WeekoffAdjust', label:'WA — Weekoff Adjust',cls:'weekoff',   short:'WA' },
+  { value:'Leave',         label:'L — Leave',          cls:'leave',     short:'L' },
+  { value:'SickLeave',     label:'SL — Sick Leave',    cls:'leave',     short:'SL' },
+  { value:'CasualLeave',   label:'CL — Casual Leave',  cls:'leave',     short:'CL' },
+  { value:'EarnedLeave',   label:'EL — Earned Leave',  cls:'leave',     short:'EL' },
+  { value:'FlexiLeave',    label:'FL — Flexi Leave',   cls:'flexi',     short:'FL' },
+  { value:'HolidayLeave',  label:'HL — Holiday',       cls:'holiday',   short:'HL' },
+  { value:'NA',            label:'NA — Not Assigned',  cls:'na',        short:'—' }
 ];
 
-/* Map value → short label for the badge */
-var LABEL_MAP = {
-  'Morning':'M', 'WFH-Morning':'WFH-M', 'CC-Morning':'CC-M',
-  'General':'D', 'WFH-General':'WFH-D', 'CC-General':'CC-D',
-  'Afternoon':'A', 'WFH-Afternoon':'WFH-A', 'CC-Afternoon':'CC-A',
-  'Night':'N', 'WFH-Night':'WFH-N', 'CC-Night':'CC-N',
-  'Weekoff':'W', 'WeekoffAdjust':'WA', 'Leave':'L',
-  'SickLeave':'SL', 'CasualLeave':'CL', 'EarnedLeave':'EL',
-  'FlexiLeave':'FL', 'HolidayLeave':'HL', 'NA':'—'
-};
+var activeRow = null, activeDay = null;
 
 /* ============================================================
-   CUSTOM DROPDOWN
+   OPEN DROPDOWN — centered, modal-like
    ============================================================ */
-var activeCellId = null;
-
 function openDropdown(ev, rowIdx, dayIdx, currentCls, currentLabel) {
   ev.stopPropagation();
 
-  var dd = document.getElementById('dropdownMenu');
-  var btn = ev.currentTarget;
-  var rect = btn.getBoundingClientRect();
+  activeRow = rowIdx;
+  activeDay = dayIdx;
 
-  // Build items
+  var dd = document.getElementById('dropdownMenu');
+  var backdrop = document.getElementById('ddBackdrop');
+  var grid = document.getElementById('ddGrid');
+
+  // Get current value
   var sel = document.getElementById('sel_' + rowIdx + '_' + dayIdx);
   var currentValue = sel ? sel.value : 'Morning';
 
+  // Build items
   var html = '';
   for (var k = 0; k < SHIFT_OPTIONS.length; k++) {
     var o = SHIFT_OPTIONS[k];
     var isSel = (o.value === currentValue) ? ' selected' : '';
     html += '<div class="dd-item ' + o.cls + isSel + '"'
          +  ' data-value="' + o.value + '"'
-         +  ' data-cls="' + o.cls + '"'
-         +  ' onclick="selectShift(event, ' + rowIdx + ', ' + dayIdx + ', \'' + o.value + '\', \'' + o.cls + '\')">'
+         +  ' onclick="selectShift(event, ' + rowIdx + ', ' + dayIdx + ', \'' + o.value + '\', \'' + o.cls + '\', \'' + o.short + '\')">'
          +  '<span class="dd-dot"></span>'
          +  '<span>' + o.label + '</span>'
          +  '</div>';
   }
-  dd.innerHTML = html;
+  grid.innerHTML = html;
 
-  // Position
-  var top = rect.bottom + 4;
-  var left = rect.left;
-  var minW = 220;
-  var maxLeft = window.innerWidth - minW - 10;
-  if (left > maxLeft) left = maxLeft;
-  if (left < 10) left = 10;
+  // Center on screen
+  dd.style.top = '50%';
+  dd.style.left = '50%';
+  dd.style.transform = 'translate(-50%, -50%)';
 
-  dd.style.top = top + 'px';
-  dd.style.left = left + 'px';
-  dd.style.minWidth = minW + 'px';
-
-  // If dropdown would overflow bottom, flip up
   dd.classList.add('open');
-  var ddRect = dd.getBoundingClientRect();
-  if (ddRect.bottom > window.innerHeight - 10) {
-    dd.style.top = (rect.top - ddRect.height - 4) + 'px';
-  }
+  backdrop.classList.add('open');
 
-  activeCellId = rowIdx + '_' + dayIdx;
+  // Scroll to selected item
+  setTimeout(function(){
+    var selItem = grid.querySelector('.dd-item.selected');
+    if (selItem) selItem.scrollIntoView({ block: 'center', behavior: 'instant' });
+  }, 10);
 }
 
-function selectShift(ev, rowIdx, dayIdx, value, cls) {
+function closeDropdown() {
+  document.getElementById('dropdownMenu').classList.remove('open');
+  document.getElementById('ddBackdrop').classList.remove('open');
+  activeRow = null;
+  activeDay = null;
+}
+
+function selectShift(ev, rowIdx, dayIdx, value, cls, shortLabel) {
   ev.stopPropagation();
-  var dd = document.getElementById('dropdownMenu');
-  dd.classList.remove('open');
 
   // Update hidden select
   var sel = document.getElementById('sel_' + rowIdx + '_' + dayIdx);
@@ -1023,30 +1080,17 @@ function selectShift(ev, rowIdx, dayIdx, value, cls) {
     var btn = cell.querySelector('.shift-btn');
     if (btn) {
       btn.className = 'shift-btn ' + cls;
-      btn.textContent = LABEL_MAP[value] || value;
+      btn.textContent = shortLabel;
     }
   }
-  activeCellId = null;
+
+  closeDropdown();
 }
 
-/* Close dropdown on outside click / Esc */
-document.addEventListener('click', function(e){
-  var dd = document.getElementById('dropdownMenu');
-  if (!dd.contains(e.target)) dd.classList.remove('open');
-});
+/* Esc key closes */
 document.addEventListener('keydown', function(e){
-  if (e.key === 'Escape') {
-    document.getElementById('dropdownMenu').classList.remove('open');
-  }
+  if (e.key === 'Escape') closeDropdown();
 });
-
-/* Reposition on scroll/resize */
-window.addEventListener('resize', function(){
-  document.getElementById('dropdownMenu').classList.remove('open');
-});
-window.addEventListener('scroll', function(){
-  document.getElementById('dropdownMenu').classList.remove('open');
-}, true);
 
 /* ============================================================
    SUBMIT
