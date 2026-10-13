@@ -1,876 +1,207 @@
-<%--
-  ============================================================
-  moduleHeader.jsp - Universal Role-Based Header
-  ============================================================
-  Auth: sirf login check (koi role restriction NAHI)
-  Display: m_strrole (DB team) - e.g. Process Improvement
-  Role checks: __role (session) - e.g. ModuleLead
-  ============================================================
---%>
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%
- response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0, private");
- response.setHeader("Pragma", "no-cache");
- response.setDateHeader("Expires", 0);
-
- // ---- AUTH GUARD: sirf login check ----
- String __role = (session != null) ? (String) session.getAttribute("role") : null;
- if (__role == null || __role.trim().isEmpty()) {
-     response.sendRedirect(request.getContextPath() + "/login.action");
-     return;
- }
- // NOTE: Koi bhi logged-in role is page ko khol sakta hai
+ response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate"); // HTTP 1.1
+ response.setHeader("Pragma", "no-cache"); // HTTP 1.0
+ response.setDateHeader("Expires", 0); // Proxies
 %>
-<%@ page import="com.jdbc.DBUtilityAuto"%>
+<%@page import="com.jdbc.DBUtilityAuto"%>
 <%@ page import="java.sql.*"%>
+<html>
+  <head>
+ <style type="text/css">
+ @import url(https://maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css);
 
-<%
-  // ---- Session se username ----
-  String user = (session != null) ? (String) session.getAttribute("username") : null;
-  if (user == null || user.trim().isEmpty()) {
-      user = request.getParameter("user");
-  }
-  if (user == null) user = "";
-
-  // ---- DB se team nikalna ----
-  String m_strrole = null;
-  Connection con = null;
-  PreparedStatement ps = null;
-  ResultSet rs = null;
-  try {
-      con = DBUtilityAuto.getReportDBConnection();
-      String query = "select TEAM from a_module_leads where lower(username)=lower(?)";
-      ps = con.prepareStatement(query);
-      ps.setString(1, user);
-      rs = ps.executeQuery();
-      if (rs.next()) {
-          m_strrole = rs.getString("TEAM");
-      }
-  } catch (Exception e) {
-      e.printStackTrace();
-  } finally {
-      if (rs != null) try { rs.close(); } catch (Exception e) {}
-      if (ps != null) try { ps.close(); } catch (Exception e) {}
-      if (con != null) try { con.close(); } catch (Exception e) {}
-  }
-
-  // Agar team nahi mili, role hi use karo
-  if (m_strrole == null || m_strrole.trim().isEmpty()) {
-      m_strrole = __role;
-  }
-
-  String ctx = request.getContextPath();
-%>
-
-<script src="<%=ctx%>/js/jquery.min.js"></script>
-
-<style>
-:root{
-  --ml-primary:#7C3AED;
-  --ml-primary-2:#8B5CF6;
-  --ml-primary-light:#F3E8FF;
-  --ml-accent:#EC4899;
-  --ml-accent-2:#F472B6;
-
-  --brand:#F86F03;
-  --brand-light:#FFF4EC;
-
-  --ink:#0A0A0A;
-  --muted:#6B7280;
-  --line:#EAEAEA;
-  --bg:#F5F7FA;
-  --card:#FFFFFF;
-
-  --sidebar-bg:#1A0B2E;
-  --sidebar-text:#C4B5FD;
-  --sidebar-hover:#2D1854;
-  --sidebar-active:#7C3AED;
-
-  --topnav-bg:rgba(255,255,255,.95);
-  --topnav-h:64px;
-  --sidebar-w:260px;
-
-  --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+@import url(css/cssfont.css);
+.fa-2x {
+font-size: 2em;
 }
-html[data-theme="dark"]{
-  --ink:#F5F5F5;
-  --muted:#9CA3AF;
-  --line:#272727;
-  --bg:#0A0614;
-  --card:#130A24;
-  --topnav-bg:rgba(15,6,32,.95);
-  --sidebar-bg:#0F0422;
-  --sidebar-hover:#1F0E3D;
+.fa {
+position: relative;
+display: table-cell;
+width: 60px;
+height: 36px;
+text-align: center;
+vertical-align: middle;
+font-size:20px;
 }
 
-*{margin:0;padding:0;box-sizing:border-box}
-html,body{height:100%}
-body{
-  font-family:var(--font-stack);
-  font-weight:700;
-  background:var(--bg);
-  color:var(--ink);
-  -webkit-font-smoothing:antialiased;
-  transition:background .3s ease,color .3s ease;
-}
-a{color:inherit;text-decoration:none}
-h1,h2,h3,h4,h5,h6,strong,b{font-weight:800;letter-spacing:-.3px}
 
-.icon-svg{
-  width:16px;height:16px;
-  display:inline-block;flex-shrink:0;
-  stroke:currentColor;fill:none;
-  stroke-width:2.2;
-  stroke-linecap:round;stroke-linejoin:round;
+.main-menu:hover,nav.main-menu.expanded {
+width:250px;
+overflow:visible;
 }
 
-/* ============ SIDEBAR ============ */
-.sidebar{
-  position:fixed;top:0;left:0;bottom:0;
-  width:var(--sidebar-w);
-  background:linear-gradient(180deg, var(--sidebar-bg) 0%, #0F0422 100%);
-  border-right:1px solid rgba(255,255,255,.05);
-  z-index:60;
-  display:flex;flex-direction:column;
-  transition:transform .3s cubic-bezier(.4,0,.2,1);
-}
-html.sb-collapsed .sidebar{transform:translateX(-100%)}
-html.sb-collapsed .topnav{left:0}
-html.sb-collapsed .new-wrapper{margin-left:0}
-
-.sb-head{
-  padding:18px 16px 18px 20px;
-  height:var(--topnav-h);
-  display:flex;align-items:center;gap:11px;
-  border-bottom:1px solid rgba(255,255,255,.08);
-  flex-shrink:0;
-}
-.sb-logo{
-  width:38px;height:38px;
-  background:linear-gradient(135deg,var(--ml-primary),var(--ml-accent));
-  border-radius:10px;
-  display:grid;place-items:center;color:#fff;
-  box-shadow:0 8px 20px -6px var(--ml-primary);
-  flex-shrink:0;
-}
-.sb-logo .icon-svg{width:20px;height:20px;stroke-width:2.6}
-.sb-title{
-  font-weight:900;font-size:.95rem;
-  letter-spacing:-.3px;line-height:1.1;
-  flex:1;min-width:0;color:#fff;
-  text-transform:uppercase;
-}
-.sb-title small{
-  display:block;font-size:.65rem;font-weight:700;
-  color:var(--ml-primary-2);letter-spacing:.8px;text-transform:uppercase;margin-top:2px;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-}
-.sb-collapse-btn{
-  width:28px;height:28px;
-  display:grid;place-items:center;
-  background:rgba(255,255,255,.08);
-  border:1px solid rgba(255,255,255,.1);
-  border-radius:7px;
-  color:var(--sidebar-text);
-  cursor:pointer;
-  transition:all .15s ease;
-  flex-shrink:0;
-}
-.sb-collapse-btn .icon-svg{width:14px;height:14px}
-.sb-collapse-btn:hover{
-  background:var(--ml-primary);border-color:var(--ml-primary);color:#fff;
+.main-menu {
+background:#212121;
+border-right:1px solid #e5e5e5;
+position:absolute;
+top:0;
+bottom:0;
+height:100%;
+left:0;
+width:60px;
+overflow:hidden;
+-webkit-transition:width .05s linear;
+transition:width .05s linear;
+-webkit-transform:translateZ(0) scale(1,1);
+z-index:1000;
 }
 
-.sb-home-btn{
-  display:flex;align-items:center;gap:10px;
-  margin:14px 12px 4px 12px;
-  padding:12px 14px;
-  background:linear-gradient(135deg,var(--ml-primary),var(--ml-accent));
-  color:#fff;
-  border-radius:10px;
-  font-weight:900;font-size:.85rem;
-  text-decoration:none;
-  transition:all .2s ease;
-  box-shadow:0 6px 20px -6px var(--ml-primary);
-  flex-shrink:0;text-transform:uppercase;letter-spacing:.5px;
-}
-.sb-home-btn:hover{transform:translateY(-1px);box-shadow:0 10px 28px -6px var(--ml-primary)}
-.sb-home-btn .icon-svg{width:16px;height:16px;stroke-width:2.6}
-
-.sb-user-card{
-  margin:12px 12px 6px 12px;
-  padding:12px 14px;
-  background:rgba(255,255,255,.05);
-  border:1px solid rgba(255,255,255,.08);
-  border-radius:10px;
-  display:flex;align-items:center;gap:10px;
-}
-.sb-user-avatar{
-  width:36px;height:36px;border-radius:50%;
-  background:linear-gradient(135deg,var(--ml-primary-2),var(--ml-accent-2));
-  display:grid;place-items:center;color:#fff;
-  font-weight:900;font-size:.85rem;
-  flex-shrink:0;
-}
-.sb-user-info{flex:1;min-width:0;}
-.sb-user-name{
-  font-size:.82rem;font-weight:800;color:#fff;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-}
-.sb-user-role{
-  font-size:.65rem;color:var(--ml-primary-2);
-  text-transform:uppercase;letter-spacing:.5px;font-weight:700;
-  margin-top:2px;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+.main-menu>ul {
+margin:7px 0;
 }
 
-.sb-search{padding:8px 16px 8px;flex-shrink:0}
-.sb-search-box{position:relative;display:flex;align-items:center}
-.sb-search-box .icon-svg{
-  position:absolute;left:12px;color:var(--sidebar-text);
-  width:14px;height:14px;pointer-events:none;
-}
-.sb-search-box input{
-  width:100%;padding:10px 12px 10px 36px;
-  background:rgba(0,0,0,.25);
-  border:1px solid rgba(255,255,255,.08);
-  border-radius:9px;
-  color:#fff;font-family:inherit;font-size:.82rem;font-weight:700;outline:none;
-  transition:all .2s ease;
-}
-.sb-search-box input::placeholder{color:var(--sidebar-text);opacity:.6;font-weight:600}
-.sb-search-box input:focus{
-  background:rgba(0,0,0,.35);
-  border-color:var(--ml-primary);
-  box-shadow:0 0 0 3px rgba(124,58,237,.2);
+.main-menu li {
+position:relative;
+display:block;
+width:250px;
 }
 
-.sb-body{flex:1;overflow-y:auto;padding:8px 12px 20px;}
-.sb-body::-webkit-scrollbar{width:6px}
-.sb-body::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:3px}
-
-.sb-group{
-  padding:14px 10px 6px;
-  font-size:.65rem;font-weight:800;
-  color:var(--sidebar-text);opacity:.6;
-  letter-spacing:1.2px;text-transform:uppercase;
-}
-.sb-item{
-  display:flex;align-items:center;gap:11px;
-  padding:10px 11px;border-radius:8px;
-  font-size:.82rem;font-weight:700;
-  color:var(--sidebar-text);text-decoration:none;
-  transition:all .15s ease;cursor:pointer;line-height:1.35;
-}
-.sb-item:hover{background:var(--sidebar-hover);color:#fff;}
-.sb-item .sb-icon{
-  width:26px;height:26px;
-  display:grid;place-items:center;
-  background:rgba(255,255,255,.06);
-  border-radius:7px;
-  color:var(--sidebar-text);flex-shrink:0;
-  transition:all .15s ease;
-}
-.sb-item .sb-icon .icon-svg{width:14px;height:14px;stroke-width:2.4}
-.sb-item:hover .sb-icon{
-  background:rgba(124,58,237,.25);color:var(--ml-primary-2);
-}
-.sb-item.sb-active{
-  background:rgba(124,58,237,.2);color:#fff;font-weight:800;
-}
-.sb-item.sb-active .sb-icon{background:var(--ml-primary);color:#fff}
-.sb-item.sb-logout{color:#FF8A8A;margin-top:6px;}
-.sb-item.sb-logout .sb-icon{background:rgba(229,57,53,.15);color:#FF8A8A}
-.sb-item.sb-logout:hover{background:rgba(229,57,53,.2);color:#FFB0B0}
-.sb-item.sb-logout:hover .sb-icon{background:#E53935;color:#fff}
-
-/* ============ TOPNAV ============ */
-.topnav{
-  position:fixed;top:0;left:var(--sidebar-w);right:0;
-  height:var(--topnav-h);
-  background:var(--topnav-bg);
-  backdrop-filter:blur(14px) saturate(180%);
-  -webkit-backdrop-filter:blur(14px) saturate(180%);
-  border-bottom:1px solid var(--line);
-  z-index:50;
-  display:flex;align-items:center;padding:0 24px;gap:16px;
-  transition:left .3s cubic-bezier(.4,0,.2,1);
-}
-.tn-toggle{
-  display:none;width:36px;height:36px;
-  background:transparent;border:1px solid var(--line);
-  border-radius:9px;color:var(--ink);cursor:pointer;
-  place-items:center;
-}
-.tn-toggle .icon-svg{width:16px;height:16px}
-.tn-menu-btn{
-  display:grid;place-items:center;
-  width:36px;height:36px;
-  background:var(--bg);
-  border:1px solid var(--line);
-  border-radius:9px;color:var(--ink);
-  cursor:pointer;transition:all .15s ease;
-}
-.tn-menu-btn .icon-svg{width:16px;height:16px;stroke-width:2.4}
-.tn-menu-btn:hover{background:var(--ml-primary);border-color:var(--ml-primary);color:#fff}
-.tn-brand{
-  display:flex;align-items:center;gap:8px;
-  font-size:.9rem;font-weight:900;
-  color:var(--ml-primary);letter-spacing:-.3px;
-}
-html[data-theme="dark"] .tn-brand{color:#F5F5F5}
-.tn-brand .brand-badge{
-  background:linear-gradient(135deg,var(--ml-primary),var(--ml-accent));
-  color:#fff;font-size:.6rem;font-weight:800;
-  padding:3px 9px;border-radius:999px;
-  text-transform:uppercase;letter-spacing:.6px;
-}
-.tn-right{margin-left:auto;display:flex;align-items:center;gap:10px}
-
-.tn-btn{
-  width:36px;height:36px;
-  display:grid;place-items:center;
-  background:transparent;border:1px solid var(--line);
-  border-radius:9px;color:var(--ink);
-  cursor:pointer;transition:all .15s ease;text-decoration:none;
-}
-.tn-btn .icon-svg{width:16px;height:16px}
-.tn-btn:hover{background:var(--ml-primary);border-color:var(--ml-primary);color:#fff}
-.tn-avatar{
-  width:38px;height:38px;border-radius:50%;
-  background:linear-gradient(135deg,var(--ml-primary),var(--ml-accent));
-  display:grid;place-items:center;color:#fff;
-  font-weight:900;font-size:.85rem;cursor:pointer;
-  border:2px solid var(--ml-accent-2);
-  box-shadow:0 4px 12px rgba(124,58,237,.2);
+.main-menu li>a {
+position:relative;
+display:table;
+border-collapse:collapse;
+border-spacing:0;
+color:#999;
+ font-family: arial;
+font-size: 14px;
+text-decoration:none;
+-webkit-transform:translateZ(0) scale(1,1);
+-webkit-transition:all .1s linear;
+transition:all .1s linear;
+  
 }
 
-.new-wrapper{
-  margin-left:var(--sidebar-w);
-  padding-top:var(--topnav-h);
-  transition:margin-left .3s cubic-bezier(.4,0,.2,1);
-  min-height:100vh;
-}
-html.sb-collapsed .new-wrapper{margin-left:0}
-
-.sb-overlay{
-  position:fixed;inset:0;
-  background:rgba(0,0,0,.4);
-  backdrop-filter:blur(2px);
-  z-index:55;opacity:0;pointer-events:none;
-  transition:opacity .25s ease;
-}
-html.sb-open .sb-overlay{opacity:1;pointer-events:auto}
-
-/* ============ DASHBOARD CONTENT ============ */
-.ml-dash{
-  padding:28px 32px 60px;
-  max-width:1500px;
-  margin:0 auto;
+.main-menu .nav-icon {
+position:relative;
+display:table-cell;
+width:60px;
+height:36px;
+text-align:center;
+vertical-align:middle;
+font-size:18px;
 }
 
-.ml-hero{
-  background:
-    radial-gradient(circle at top right, rgba(236,72,153,.3), transparent 60%),
-    radial-gradient(circle at bottom left, rgba(124,58,237,.4), transparent 60%),
-    linear-gradient(135deg, #1A0B2E 0%, #2D1854 100%);
-  border-radius:20px;
-  padding:36px 40px;
-  color:#fff;
-  position:relative;overflow:hidden;
-  margin-bottom:24px;
-  border:1px solid rgba(124,58,237,.3);
-}
-.ml-hero::before{
-  content:"";position:absolute;top:-100px;right:-100px;
-  width:400px;height:400px;border-radius:50%;
-  background:radial-gradient(circle, rgba(124,58,237,.4) 0%, transparent 70%);
-}
-.ml-hero-inner{
-  position:relative;z-index:2;
-  display:flex;justify-content:space-between;align-items:center;
-  gap:24px;flex-wrap:wrap;
-}
-.ml-hero-text .badge-line{
-  display:inline-flex;align-items:center;gap:8px;
-  padding:6px 14px;
-  background:rgba(236,72,153,.2);
-  border:1px solid rgba(236,72,153,.4);
-  border-radius:999px;
-  font-size:.7rem;font-weight:800;
-  color:var(--ml-accent-2);letter-spacing:1px;
-  text-transform:uppercase;margin-bottom:16px;
-}
-.ml-hero-text .badge-line .dot{
-  width:6px;height:6px;border-radius:50%;
-  background:var(--ml-accent-2);
-  box-shadow:0 0 8px var(--ml-accent-2);
-  animation:pulse 2s ease-in-out infinite;
-}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-.ml-hero-text h1{
-  font-size:2.2rem;font-weight:900;
-  letter-spacing:-1px;line-height:1.15;margin-bottom:12px;
-}
-.ml-hero-text h1 .gradient{
-  background:linear-gradient(135deg,var(--ml-primary-2),var(--ml-accent-2));
-  -webkit-background-clip:text;background-clip:text;color:transparent;
-}
-.ml-hero-text p{
-  font-size:.92rem;color:rgba(255,255,255,.75);
-  font-weight:600;max-width:520px;line-height:1.6;
+.main-menu .nav-text {
+position:relative;
+display:table-cell;
+vertical-align:middle;
+width:190px;
+  font-family: 'Titillium Web', sans-serif;
 }
 
-.ml-hero-visual{display:flex;gap:14px;flex-wrap:wrap;}
-.hero-stat{
-  background:rgba(255,255,255,.08);
-  border:1px solid rgba(255,255,255,.15);
-  border-radius:14px;
-  padding:16px 20px;min-width:120px;
-  backdrop-filter:blur(8px);
-}
-.hero-stat .hs-icon{
-  width:32px;height:32px;border-radius:9px;
-  background:rgba(124,58,237,.3);color:#fff;
-  display:grid;place-items:center;margin-bottom:10px;
-}
-.hero-stat .hs-icon .icon-svg{width:16px;height:16px}
-.hero-stat .hs-num{
-  font-size:1.4rem;font-weight:900;
-  color:#fff;letter-spacing:-.5px;line-height:1;
-}
-.hero-stat .hs-lbl{
-  font-size:.65rem;font-weight:700;
-  color:rgba(255,255,255,.6);
-  text-transform:uppercase;letter-spacing:.5px;
-  margin-top:4px;
+.main-menu>ul.logout {
+position:absolute;
+left:0;
+bottom:0;
 }
 
-.section-title{
-  display:flex;align-items:center;justify-content:space-between;
-  margin-bottom:16px;
-}
-.section-title h2{
-  font-size:1rem;font-weight:900;color:var(--ink);
-  text-transform:uppercase;letter-spacing:.8px;
-  display:flex;align-items:center;gap:10px;
-}
-.section-title h2 .icon-svg{color:var(--ml-primary);width:18px;height:18px}
-html[data-theme="dark"] .section-title h2 .icon-svg{color:var(--ml-primary-2)}
-
-.quick-actions{
-  display:grid;grid-template-columns:repeat(4, 1fr);
-  gap:16px;margin-bottom:28px;
-}
-.qa-card{
-  background:var(--card);
-  border:1.5px solid var(--line);
-  border-radius:16px;
-  padding:22px 20px;
-  display:flex;flex-direction:column;gap:12px;
-  transition:all .25s ease;cursor:pointer;
-  position:relative;overflow:hidden;text-decoration:none;
-}
-.qa-card:hover{
-  border-color:var(--ml-primary);
-  transform:translateY(-4px);
-  box-shadow:0 16px 40px -12px rgba(124,58,237,.35);
-}
-.qa-card:hover .qa-icon{
-  background:var(--ml-primary);color:#fff;transform:scale(1.08);
-}
-.qa-card:hover .qa-arrow{
-  opacity:1;transform:translateX(4px);color:var(--ml-primary);
-}
-.qa-icon{
-  width:48px;height:48px;border-radius:14px;
-  background:var(--ml-primary-light);color:var(--ml-primary);
-  display:grid;place-items:center;transition:all .25s ease;
-}
-html[data-theme="dark"] .qa-icon{
-  background:rgba(124,58,237,.2);color:var(--ml-primary-2);
-}
-.qa-icon .icon-svg{width:22px;height:22px;stroke-width:2.2}
-.qa-title{
-  font-size:.92rem;font-weight:800;color:var(--ink);
-  display:flex;align-items:center;gap:6px;
-}
-.qa-arrow{
-  opacity:0;transition:all .2s ease;color:var(--muted);
-}
-.qa-arrow .icon-svg{width:14px;height:14px}
-.qa-desc{
-  font-size:.72rem;color:var(--muted);font-weight:600;line-height:1.4;
+.no-touch .scrollable.hover {
+overflow-y:hidden;
 }
 
-.foot{
-  margin-top:40px;padding-top:24px;
-  border-top:1px solid var(--line);
-  display:flex;justify-content:space-between;align-items:center;
-  font-size:.75rem;color:var(--muted);font-weight:700;
-  flex-wrap:wrap;gap:12px;
+.no-touch .scrollable.hover:hover {
+overflow-y:auto;
+overflow:visible;
 }
-.foot b{color:var(--ml-primary)}
-html[data-theme="dark"] .foot b{color:var(--ml-primary-2)}
 
-@media (max-width:1100px){
-  .quick-actions{grid-template-columns:repeat(2,1fr)}
+a:hover,a:focus {
+text-decoration:none;
 }
-@media (max-width:900px){
-  .sidebar{transform:translateX(-100%)}
-  html.sb-open .sidebar{transform:translateX(0)}
-  .topnav{left:0}
-  .tn-toggle{display:grid;place-items:center}
-  .tn-menu-btn{display:none}
-  .new-wrapper{margin-left:0}
-  .sb-collapse-btn{display:none}
-  .ml-dash{padding:20px 16px 40px}
-  .ml-hero{padding:28px 24px}
-  .ml-hero-text h1{font-size:1.6rem}
-  .quick-actions{grid-template-columns:1fr}
+
+nav {
+-webkit-user-select:none;
+-moz-user-select:none;
+-ms-user-select:none;
+-o-user-select:none;
+user-select:none;
 }
-</style>
 
-<script>
-(function(){
-  try{
-    var t = localStorage.getItem('eis-theme');
-    if(!t){ t = 'dark'; localStorage.setItem('eis-theme', 'dark'); }
-    document.documentElement.setAttribute('data-theme', t);
-    var sbClosed = localStorage.getItem('eis-sidebar-closed');
-    if (sbClosed === 'true') {
-      document.documentElement.classList.add('sb-collapsed');
-    }
-  }catch(e){}
-})();
-</script>
+nav ul,nav li {
+outline:0;
+margin:0;
+padding:0;
+}
+.main-menu li:hover>a,nav.main-menu li.active>a,.dropdown-menu>li>a:hover,.dropdown-menu>li>a:focus,.dropdown-menu>.active>a,.dropdown-menu>.active>a:hover,.dropdown-menu>.active>a:focus,.no-touch .dashboard-page nav.dashboard-menu ul li:hover a,.dashboard-page nav.dashboard-menu ul li.active a {
+color:#fff;
+background-color:#5fa2db;
+}
+.area {
+padding:10px;
+float: left;
 
-<!-- ============ SIDEBAR ============ -->
-<aside class="sidebar" id="sidebar">
-  <div class="sb-head">
-    <div class="sb-logo">
-      <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-    </div>
-    <div class="sb-title">
-      EIS Portal
-      <small><%= m_strrole != null && !m_strrole.trim().isEmpty() ? m_strrole : "User" %></small>
-    </div>
-    <button class="sb-collapse-btn" onclick="toggleSidebar()" title="Hide sidebar">
-      <svg class="icon-svg" viewBox="0 0 24 24"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg>
-    </button>
+width: 100%;
+height: 100%;
+}
+@font-face {
+  font-family: 'Titillium Web';
+  font-style: normal;
+  font-weight: 300;
+  src: local('Titillium WebLight'), local('TitilliumWeb-Light'), url(../fonts/anMUvcNT0H1YN4FII8wpr24bNCNEoFTpS2BTjF6FB5E.woff) format('woff');
+}
+
+
+ 
+ 
+ 
+ 
+ </style>
+  </head>
+  <body >
+  
+  <nav class="main-menu">
+            <ul>
+                <li>
+                    <a href="#">
+                        <i class="fa fa-home fa-2x"></i>
+                        <span class="nav-text">
+                            Home
+                        </span>
+                    </a>
+                 
+                </li>
+               
+				 <%
+					    String user =request.getParameter("m_stradminUserName");
+					    Connection con=DBUtilityAuto.getReportDBConnection();
+						String query="select * from a_module_leads where lower(username)=lower('"+user+"')";
+						System.out.println(query);
+				        Statement smt=con.createStatement();
+				        ResultSet rs=smt.executeQuery(query);
+				        String m_strrole=null;
+				        while(rs.next()) {
+				        	m_strrole= rs.getString("TEAM");
+				        }
+					 %>
+               <li>
+                    <a href="<%=request.getContextPath()%>/jsp/ExcelRoster.jsp?&role=<%=m_strrole%>&user=<%=user %>" target="_blank">
+                       <i
+								class="fa fa-dashboard"></i>
+                        <span class="nav-text"> Roster
+                        </span>
+                    </a>
+                </li>
+                
+            </ul>
+
+            <ul class="logout">
+                <li>
+                   <a href="<%=request.getContextPath() + "/logout.action"%>">
+                         <i class="fa fa-power-off fa-2x"></i>
+                        <span class="nav-text">
+                            Logout
+                        </span>
+                    </a>
+                </li>  
+            </ul>
+        </nav>
+       
+  
   </div>
-
-  <a class="sb-home-btn" href="<%=ctx%>/userhomescreen.action" title="Home">
-    <svg class="icon-svg" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-    <span>Home</span>
-  </a>
-
-  <div class="sb-user-card">
-    <div class="sb-user-avatar">
-      <%= (user != null && user.length() > 0) ? user.substring(0,1).toUpperCase() : "U" %>
-    </div>
-    <div class="sb-user-info">
-      <div class="sb-user-name"><%= user != null && !user.isEmpty() ? user : "User" %></div>
-      <div class="sb-user-role"><%= m_strrole != null && !m_strrole.trim().isEmpty() ? m_strrole : "User" %></div>
-    </div>
-  </div>
-
-  <div class="sb-search">
-    <div class="sb-search-box">
-      <svg class="icon-svg" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input type="text" id="searchbar" onkeyup="search_animal()" placeholder="Search..." autocomplete="off">
-    </div>
-  </div>
-
-  <nav class="sb-body" id="list">
-
-    <%-- ==================== COMMON: Dashboards ==================== --%>
-    <div class="sb-group">Dashboards</div>
-    <a class="sb-item animals" href="<%=ctx%>/ErrorDashboard" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
-      <span>Error Dashboard</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/PortStatus.jsp" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg></span>
-      <span>Service Status</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/statMgmtDashboard.jsp" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>
-      <span>Strategic Mgmt. Status</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/TransactionEndPointBank.jsp" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
-      <span>Transaction End Point</span>
-    </a>
-
-    <%-- ==================== COMMON: Team ==================== --%>
-    <div class="sb-group">Team</div>
-    <% if ("Manager".equals(__role) || "Team Lead".equals(__role)) { %>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/ExcelRoster.jsp?&role=<%=m_strrole%>&user=<%=user%>" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
-      <span>Roster</span>
-    </a>
-    <% } else { %>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/ExcelRoster_new.jsp?&role=<%=m_strrole%>&user=<%=user%>" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
-      <span>Roster</span>
-    </a>
-    <% } %>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/TicketHome.jsp?&role=<%=m_strrole%>" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M2 9a3 3 0 0 1 3-3h14a3 3 0 0 1 3 3v.5a2.5 2.5 0 0 0 0 5V15a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3v-.5a2.5 2.5 0 0 0 0-5z"/></svg></span>
-      <span>Ticketing Portal</span>
-    </a>
-
-    <%-- ==================== Checklists - Role-based ==================== --%>
-    <div class="sb-group">Checklists</div>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/DRChecklistHomePage.jsp" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
-      <span>Module DR Checklist</span>
-    </a>
-
-    <% if ("Service Reporting Management".equals(m_strrole)) { %>
-    <a class="sb-item animals" href="<%=ctx%>/ServletConn" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
-      <span>Adhoc Checklist</span>
-    </a>
-    <% } else if ("Service Desk".equals(m_strrole)) { %>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/userscorechecklist.jsp" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
-      <span>SCORE Checklist</span>
-    </a>
-    <% } else if ("Event Management".equals(m_strrole)) { %>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/MonitoringChecklistUser.jsp" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
-      <span>Monitoring Checklist</span>
-    </a>
-    <% } else if ("Incident Management".equals(m_strrole)) { %>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/IssueMgmtEmployeemain.jsp" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
-      <span>Mail's Checklist</span>
-    </a>
-    <% } else if ("Problem Management".equals(m_strrole)) { %>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/Problemuserchecklist.jsp" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
-      <span>Problem Mgmt Checklist</span>
-    </a>
-    <% } else if ("Process Improvement".equals(m_strrole)) { %>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/ProcessChecklist.jsp" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
-      <span>Process Checklist</span>
-    </a>
-    <% } %>
-
-    <a class="sb-item animals" href="<%=ctx%>/jsp/NightShiftUser.jsp" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span>
-      <span>Nightshift Checklist</span>
-    </a>
-
-    <%-- ==================== Account ==================== --%>
-    <div class="sb-group">Account</div>
-    <a class="sb-item sb-logout" href="<%=ctx%>/login.action?logout=true" onclick="event.preventDefault(); mlLogout();">
-      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span>
-      <span>Logout</span>
-    </a>
-
-  </nav>
-</aside>
-
-<div class="sb-overlay" onclick="document.documentElement.classList.remove('sb-open')"></div>
-
-<!-- ============ TOPNAV ============ -->
-<header class="topnav">
-  <button class="tn-toggle" onclick="document.documentElement.classList.toggle('sb-open')">
-    <svg class="icon-svg" viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-  </button>
-
-  <button class="tn-menu-btn" onclick="toggleSidebar()" title="Show sidebar">
-    <svg class="icon-svg" viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-  </button>
-
-  <div class="tn-brand">
-    <span class="brand-badge">EIS</span>
-    <%= m_strrole != null && !m_strrole.trim().isEmpty() ? m_strrole : "Portal" %>
-  </div>
-
-  <div class="tn-right">
-    <button class="tn-btn" onclick="toggleTheme()" title="Toggle theme">
-      <svg class="icon-svg" id="themeIconSun" viewBox="0 0 24 24" style="display:none;">
-        <circle cx="12" cy="12" r="5"/>
-        <line x1="12" y1="1" x2="12" y2="3"/>
-        <line x1="12" y1="21" x2="12" y2="23"/>
-        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
-        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-        <line x1="1" y1="12" x2="3" y2="12"/>
-        <line x1="21" y1="12" x2="23" y2="12"/>
-        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
-        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-      </svg>
-      <svg class="icon-svg" id="themeIconMoon" viewBox="0 0 24 24">
-        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-      </svg>
-    </button>
-
-    <a class="tn-btn" href="<%=ctx%>/login.action?logout=true" title="Logout" onclick="event.preventDefault(); mlLogout();">
-      <svg class="icon-svg" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-    </a>
-
-    <div class="tn-avatar" title="<%=user%>">
-      <%= (user != null && user.length() > 0) ? user.substring(0,1).toUpperCase() : "U" %>
-    </div>
-  </div>
-</header>
-
-<!-- ============ DASHBOARD CONTENT ============ -->
-<div class="new-wrapper">
-  <div class="ml-dash">
-
-    <!-- HERO -->
-    <section class="ml-hero">
-      <div class="ml-hero-inner">
-        <div class="ml-hero-text">
-          <div class="badge-line">
-            <span class="dot"></span>
-            <%= m_strrole != null && !m_strrole.trim().isEmpty() ? m_strrole : "User" %> Access
-          </div>
-          <h1>Welcome, <span class="gradient"><%= user != null && !user.isEmpty() ? user : "User" %></span></h1>
-          <p>Your personalized portal - access dashboards, checklists, and team tools based on your assigned role.</p>
-        </div>
-        <div class="ml-hero-visual">
-          <div class="hero-stat">
-            <div class="hs-icon">
-              <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            </div>
-            <div class="hs-num">Active</div>
-            <div class="hs-lbl">Status</div>
-          </div>
-          <div class="hero-stat">
-            <div class="hs-icon">
-              <svg class="icon-svg" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-            </div>
-            <div class="hs-num"><%= m_strrole != null && m_strrole.length() > 8 ? m_strrole.substring(0,8) + "..." : (m_strrole != null ? m_strrole : "User") %></div>
-            <div class="hs-lbl">Role</div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- QUICK ACTIONS -->
-    <div class="section-title">
-      <h2>
-        <svg class="icon-svg" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-        Quick Actions
-      </h2>
-    </div>
-
-    <section class="quick-actions">
-
-      <a class="qa-card" href="<%=ctx%>/ErrorDashboard" target="_blank" rel="noopener noreferrer">
-        <div class="qa-icon">
-          <svg class="icon-svg" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-        </div>
-        <div class="qa-title">Error Dashboard <span class="qa-arrow"><svg class="icon-svg" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span></div>
-        <div class="qa-desc">Live error tracking</div>
-      </a>
-
-      <a class="qa-card" href="<%=ctx%>/jsp/PortStatus.jsp" target="_blank" rel="noopener noreferrer">
-        <div class="qa-icon">
-          <svg class="icon-svg" viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
-        </div>
-        <div class="qa-title">Service Status <span class="qa-arrow"><svg class="icon-svg" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span></div>
-        <div class="qa-desc">Port status monitoring</div>
-      </a>
-
-      <a class="qa-card" href="<%=ctx%>/jsp/ExcelRoster_new.jsp?&role=<%=m_strrole%>&user=<%=user%>" target="_blank" rel="noopener noreferrer">
-        <div class="qa-icon">
-          <svg class="icon-svg" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        </div>
-        <div class="qa-title">Team Roster <span class="qa-arrow"><svg class="icon-svg" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span></div>
-        <div class="qa-desc">View team roster</div>
-      </a>
-
-      <a class="qa-card" href="<%=ctx%>/jsp/TicketHome.jsp?&role=<%=m_strrole%>" target="_blank" rel="noopener noreferrer">
-        <div class="qa-icon">
-          <svg class="icon-svg" viewBox="0 0 24 24"><path d="M2 9a3 3 0 0 1 3-3h14a3 3 0 0 1 3 3v.5a2.5 2.5 0 0 0 0 5V15a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3v-.5a2.5 2.5 0 0 0 0-5z"/></svg>
-        </div>
-        <div class="qa-title">Ticketing <span class="qa-arrow"><svg class="icon-svg" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span></div>
-        <div class="qa-desc">Access ticketing portal</div>
-      </a>
-
-    </section>
-
-    <!-- FOOTER -->
-    <footer class="foot">
-      <div>&copy; <%= java.time.Year.now() %> <b>EIS Portal</b> &middot; <%= m_strrole != null && !m_strrole.trim().isEmpty() ? m_strrole : "User" %> Portal</div>
-      <div>User: <b><%= user != null && !user.isEmpty() ? user : "Unknown" %></b></div>
-    </footer>
-
-  </div>
-</div>
-
-<script>
-function mlLogout(){
-  window.__logoutInProgress = true;
-  try{
-    sessionStorage.clear();
-    localStorage.removeItem('eis-sidebar-closed');
-  }catch(e){}
-  window.location.replace('<%=ctx%>/login.action?logout=true');
-}
-
-function toggleTheme(){
-  var cur = document.documentElement.getAttribute('data-theme') || 'dark';
-  var next = cur === 'light' ? 'dark' : 'light';
-  document.documentElement.setAttribute('data-theme', next);
-  try{ localStorage.setItem('eis-theme', next); }catch(e){}
-  updateThemeIcon();
-}
-function updateThemeIcon(){
-  var t = document.documentElement.getAttribute('data-theme') || 'dark';
-  var sun = document.getElementById('themeIconSun');
-  var moon = document.getElementById('themeIconMoon');
-  if(!sun || !moon) return;
-  if(t === 'dark'){
-    sun.style.display = 'block';
-    moon.style.display = 'none';
-  } else {
-    sun.style.display = 'none';
-    moon.style.display = 'block';
-  }
-}
-document.addEventListener('DOMContentLoaded', updateThemeIcon);
-updateThemeIcon();
-
-function toggleSidebar(){
-  var root = document.documentElement;
-  if(window.innerWidth <= 900){
-    root.classList.toggle('sb-open');
-  } else {
-    root.classList.toggle('sb-collapsed');
-    try{
-      localStorage.setItem('eis-sidebar-closed', root.classList.contains('sb-collapsed'));
-    }catch(e){}
-  }
-}
-
-function search_animal() {
-  var input = document.getElementById('searchbar').value.toLowerCase();
-  var x = document.getElementsByClassName('animals');
-  var groups = document.querySelectorAll('.sb-group');
-  for (var i = 0; i < x.length; i++) {
-    if (!x[i].innerText.toLowerCase().includes(input)) {
-      x[i].style.display = "none";
-    } else {
-      x[i].style.display = "flex";
-    }
-  }
-  groups.forEach(function(g){
-    var next = g.nextElementSibling;
-    var hasVisible = false;
-    while(next && !next.classList.contains('sb-group')){
-      if(next.classList.contains('animals') && next.style.display !== 'none'){ hasVisible = true; break; }
-      next = next.nextElementSibling;
-    }
-    g.style.display = (hasVisible || input === '') ? 'block' : 'none';
-  });
-}
-</script>
+  
+   
+      
+  </body>
+    </html> 
+    
+  
