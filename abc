@@ -17,7 +17,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Team Roster &mdash; EIS Portal</title>
-
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
@@ -27,7 +26,6 @@
    DESIGN TOKENS
    ============================================================ */
 :root{
-  /* Neutral scale */
   --gray-0:#FFFFFF;
   --gray-25:#FCFCFD;
   --gray-50:#F9FAFB;
@@ -41,32 +39,25 @@
   --gray-800:#1D2939;
   --gray-900:#101828;
 
-  /* Accent */
-  --accent:#635BFF;              /* Stripe-like indigo */
+  --accent:#635BFF;
   --accent-hover:#5249E0;
   --accent-soft:#EEF0FF;
   --accent-line:#C7CBFF;
 
-  /* Semantic */
   --success:#12B76A;
-  --success-soft:#ECFDF3;
   --warning:#F79009;
-  --warning-soft:#FFFAEB;
   --danger:#F04438;
-  --danger-soft:#FEF3F2;
-  --info:#2E90FA;
-  --info-soft:#EFF8FF;
 
-  /* Shift palette — muted, professional */
-  --shift-morning-bg:#FFF6ED;   --shift-morning-fg:#C4320A;   --shift-morning-bd:#F9DBAF;
-  --shift-general-bg:#F2F4F7;   --shift-general-fg:#344054;   --shift-general-bd:#D0D5DD;
-  --shift-afternoon-bg:#FFFAEB; --shift-afternoon-fg:#B54708; --shift-afternoon-bd:#FEDF89;
-  --shift-night-bg:#EFF8FF;     --shift-night-fg:#175CD3;     --shift-night-bd:#B2DDFF;
-  --shift-weekoff-bg:#EEF4FF;   --shift-weekoff-fg:#3538CD;   --shift-weekoff-bd:#C7D7FE;
-  --shift-leave-bg:#FEF3F2;     --shift-leave-fg:#B42318;     --shift-leave-bd:#FECDCA;
-  --shift-flexi-bg:#FDF2FA;     --shift-flexi-fg:#C11574;     --shift-flexi-bd:#FCCEEE;
-  --shift-holiday-bg:#ECFDF3;   --shift-holiday-fg:#027A48;   --shift-holiday-bd:#A6F4C5;
-  --shift-na-bg:#F9FAFB;        --shift-na-fg:#98A2B3;        --shift-na-bd:#EAECF0;
+  /* Shift colors */
+  --m-bg:#FFF6ED; --m-fg:#C4320A; --m-bd:#F9DBAF;
+  --d-bg:#F2F4F7; --d-fg:#344054; --d-bd:#D0D5DD;
+  --a-bg:#FFFAEB; --a-fg:#B54708; --a-bd:#FEDF89;
+  --n-bg:#EFF8FF; --n-fg:#175CD3; --n-bd:#B2DDFF;
+  --w-bg:#EEF4FF; --w-fg:#3538CD; --w-bd:#C7D7FE;
+  --l-bg:#FEF3F2; --l-fg:#B42318; --l-bd:#FECDCA;
+  --f-bg:#FDF2FA; --f-fg:#C11574; --f-bd:#FCCEEE;
+  --h-bg:#ECFDF3; --h-fg:#027A48; --h-bd:#A6F4C5;
+  --x-bg:#F9FAFB; --x-fg:#98A2B3; --x-bd:#EAECF0;
 
   --bg-page:var(--gray-50);
   --bg-surface:var(--gray-0);
@@ -80,16 +71,15 @@
   --radius-sm:6px;
   --radius-md:8px;
   --radius-lg:12px;
-  --radius-xl:16px;
 
   --shadow-xs:0 1px 2px 0 rgba(16,24,40,.05);
-  --shadow-sm:0 1px 3px 0 rgba(16,24,40,.10), 0 1px 2px -1px rgba(16,24,40,.06);
-  --shadow-md:0 4px 8px -2px rgba(16,24,40,.10), 0 2px 4px -2px rgba(16,24,40,.06);
-  --shadow-lg:0 12px 16px -4px rgba(16,24,40,.08), 0 4px 6px -2px rgba(16,24,40,.03);
-  --shadow-xl:0 20px 24px -4px rgba(16,24,40,.08), 0 8px 8px -4px rgba(16,24,40,.03);
+  --shadow-sm:0 1px 3px 0 rgba(16,24,40,.10);
+  --shadow-md:0 4px 8px -2px rgba(16,24,40,.10);
+  --shadow-lg:0 12px 16px -4px rgba(16,24,40,.10);
+  --shadow-xl:0 20px 24px -4px rgba(16,24,40,.10);
 
   --font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
-  --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
+  --mono:'JetBrains Mono',ui-monospace,monospace;
 }
 
 html[data-theme="dark"]{
@@ -111,24 +101,15 @@ html[data-theme="dark"]{
   --accent-soft:#1E1B4B;
   --accent-line:#3730A3;
 
-  --success:#32D583;
-  --success-soft:#052E1F;
-  --warning:#FDB022;
-  --warning-soft:#3D2A05;
-  --danger:#F97066;
-  --danger-soft:#3A1211;
-  --info:#53B1FD;
-  --info-soft:#0A2540;
-
-  --shift-morning-bg:#3A1D0A;   --shift-morning-fg:#FDB022;   --shift-morning-bd:#5C2C0F;
-  --shift-general-bg:#1A1E26;   --shift-general-fg:#A6B0C2;   --shift-general-bd:#2E333C;
-  --shift-afternoon-bg:#3D2A05; --shift-afternoon-fg:#FDB022; --shift-afternoon-bd:#5C3F0F;
-  --shift-night-bg:#0A2540;     --shift-night-fg:#53B1FD;     --shift-night-bd:#0F3A66;
-  --shift-weekoff-bg:#1E1B4B;   --shift-weekoff-fg:#8B83FF;   --shift-weekoff-bd:#3730A3;
-  --shift-leave-bg:#3A1211;     --shift-leave-fg:#F97066;     --shift-leave-bd:#5A1A18;
-  --shift-flexi-bg:#3D1030;     --shift-flexi-fg:#F670C7;     --shift-flexi-bd:#5E1A4A;
-  --shift-holiday-bg:#052E1F;   --shift-holiday-fg:#32D583;   --shift-holiday-bd:#0A5133;
-  --shift-na-bg:#12161D;        --shift-na-fg:#5A6270;        --shift-na-bd:#22262F;
+  --m-bg:#3A1D0A; --m-fg:#FDB022; --m-bd:#5C2C0F;
+  --d-bg:#1A1E26; --d-fg:#A6B0C2; --d-bd:#2E333C;
+  --a-bg:#3D2A05; --a-fg:#FDB022; --a-bd:#5C3F0F;
+  --n-bg:#0A2540; --n-fg:#53B1FD; --n-bd:#0F3A66;
+  --w-bg:#1E1B4B; --w-fg:#8B83FF; --w-bd:#3730A3;
+  --l-bg:#3A1211; --l-fg:#F97066; --l-bd:#5A1A18;
+  --f-bg:#3D1030; --f-fg:#F670C7; --f-bd:#5E1A4A;
+  --h-bg:#052E1F; --h-fg:#32D583; --h-bd:#0A5133;
+  --x-bg:#12161D; --x-fg:#5A6270; --x-bd:#22262F;
 
   --bg-page:var(--gray-50);
   --bg-surface:var(--gray-25);
@@ -152,12 +133,10 @@ body{
   font-family:var(--font);
   font-size:14px;
   line-height:1.5;
-  font-weight:400;
   background:var(--bg-page);
   color:var(--text-primary);
   -webkit-font-smoothing:antialiased;
   -moz-osx-font-smoothing:grayscale;
-  font-feature-settings:"cv02","cv03","cv04","cv11";
   transition:background-color .2s ease, color .2s ease;
   overflow-x:hidden;
 }
@@ -165,104 +144,39 @@ a{color:inherit;text-decoration:none}
 button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit;}
 
 /* ============================================================
-   TOP NAVIGATION BAR
+   APP BAR — compact
    ============================================================ */
 .appbar{
-  position:sticky;
-  top:0;
-  z-index:100;
+  position:sticky; top:0; z-index:100;
   background:var(--bg-surface);
   border-bottom:1px solid var(--border);
-  height:64px;
-  display:flex;
-  align-items:center;
-  padding:0 24px;
-  gap:20px;
-  transition:background-color .2s ease, border-color .2s ease;
-}
-
-.appbar-brand{
-  display:flex;
-  align-items:center;
-  gap:12px;
-  flex-shrink:0;
+  height:56px;
+  display:flex; align-items:center;
+  padding:0 20px; gap:14px;
 }
 .appbar-logo{
-  width:32px;height:32px;
-  border-radius:8px;
-  background:linear-gradient(135deg,var(--accent) 0%, #7A5CFF 100%);
-  display:grid;place-items:center;
-  color:#fff;
-  box-shadow:0 1px 3px rgba(99,91,255,.3);
+  width:28px;height:28px;border-radius:7px;
+  background:linear-gradient(135deg,var(--accent), #7A5CFF);
+  display:grid;place-items:center;color:#fff;
 }
-.appbar-logo svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.4;}
-.appbar-title{
-  font-size:15px;
-  font-weight:700;
-  letter-spacing:-.2px;
-  color:var(--text-primary);
-}
-.appbar-title .crumb{
-  color:var(--text-tertiary);
-  font-weight:500;
-  margin-left:6px;
-}
-
-.appbar-divider{
-  width:1px;
-  height:24px;
-  background:var(--border);
-  flex-shrink:0;
-}
-
-.appbar-context{
-  display:flex;
-  align-items:center;
-  gap:8px;
-  padding:6px 12px;
-  border-radius:var(--radius-md);
-  background:var(--bg-subtle);
-  border:1px solid var(--border);
-  flex-shrink:0;
-}
-.appbar-context .dot{
-  width:6px;height:6px;border-radius:50%;
-  background:var(--accent);
-}
-.appbar-context .label{
-  font-size:12px;
-  font-weight:600;
-  color:var(--text-secondary);
-}
-.appbar-context .value{
-  font-size:13px;
-  font-weight:700;
-  color:var(--text-primary);
-}
-
+.appbar-logo svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2.4;}
+.appbar-title{font-size:14px;font-weight:700;letter-spacing:-.2px;}
+.appbar-title .crumb{color:var(--text-tertiary);font-weight:500;margin-left:4px;}
 .appbar-spacer{flex:1;}
-
-.appbar-actions{
-  display:flex;
-  align-items:center;
-  gap:8px;
-}
+.appbar-actions{display:flex;align-items:center;gap:4px;}
 
 .icon-btn{
-  width:36px;height:36px;
+  width:34px;height:34px;
   display:grid;place-items:center;
   border-radius:var(--radius-md);
-  border:1px solid transparent;
   color:var(--text-secondary);
   transition:all .15s ease;
 }
 .icon-btn:hover{
-  background:var(--bg-subtle);
-  color:var(--text-primary);
-  border-color:var(--border);
+  background:var(--bg-subtle); color:var(--text-primary);
 }
 .icon-btn svg{
-  width:18px;height:18px;
+  width:17px;height:17px;
   stroke:currentColor;fill:none;
   stroke-width:1.8;
   stroke-linecap:round;stroke-linejoin:round;
@@ -273,105 +187,65 @@ html[data-theme="dark"] .icon-btn .icon-sun{display:none;}
 html[data-theme="dark"] .icon-btn .icon-moon{display:block;}
 
 .user-chip{
-  display:flex;
-  align-items:center;
-  gap:8px;
-  padding:6px 10px 6px 6px;
+  display:flex; align-items:center; gap:7px;
+  padding:4px 10px 4px 4px;
   border-radius:999px;
   border:1px solid var(--border);
-  background:var(--bg-surface);
   transition:all .15s ease;
+  margin-left:4px;
 }
-.user-chip:hover{
-  border-color:var(--border-strong);
-  background:var(--bg-subtle);
-}
+.user-chip:hover{border-color:var(--border-strong); background:var(--bg-subtle);}
 .user-chip .avatar{
-  width:26px;height:26px;
-  border-radius:50%;
+  width:24px;height:24px;border-radius:50%;
   background:linear-gradient(135deg,var(--accent),#7A5CFF);
-  color:#fff;
-  display:grid;place-items:center;
-  font-size:11px;
-  font-weight:700;
-  letter-spacing:.3px;
+  color:#fff;display:grid;place-items:center;
+  font-size:10px;font-weight:700;
 }
-.user-chip .name{
-  font-size:13px;
-  font-weight:600;
-  color:var(--text-primary);
-}
+.user-chip .name{font-size:12px;font-weight:600;}
 
 /* ============================================================
-   PAGE HEADER
+   CONTEXT ROW — single compact line
    ============================================================ */
-.page-head{
+.context-row{
   background:var(--bg-surface);
   border-bottom:1px solid var(--border);
-  padding:24px 32px 20px;
-}
-.page-head-inner{
-  max-width:100%;
+  padding:14px 20px;
   display:flex;
+  align-items:center;
   justify-content:space-between;
-  align-items:flex-start;
-  gap:24px;
+  gap:16px;
   flex-wrap:wrap;
 }
-.page-head h1{
-  font-size:22px;
+.context-left{
+  display:flex;
+  align-items:baseline;
+  gap:16px;
+  flex-wrap:wrap;
+}
+.context-title{
+  font-size:17px;
   font-weight:700;
-  letter-spacing:-.4px;
+  letter-spacing:-.3px;
   color:var(--text-primary);
-  line-height:1.3;
 }
-.page-head h1 .accent{
-  color:var(--accent);
+.context-title .accent{color:var(--accent);}
+.context-meta{
+  display:flex; align-items:center; gap:8px;
+  font-size:12px; color:var(--text-tertiary); font-weight:500;
 }
-.page-head .page-desc{
-  font-size:13px;
-  color:var(--text-tertiary);
-  margin-top:4px;
+.context-meta b{color:var(--text-primary); font-weight:600;}
+.context-meta .sep{
+  width:3px;height:3px;border-radius:50%;background:var(--gray-300);
+}
+
+.context-right{
   display:flex;
   align-items:center;
-  gap:12px;
-  flex-wrap:wrap;
-}
-.page-head .page-desc .sep{
-  width:3px;height:3px;border-radius:50%;
-  background:var(--gray-300);
-}
-.page-head .page-desc b{color:var(--text-secondary);font-weight:600;}
-
-/* Filter group */
-.filter-group{
-  display:flex;
   gap:8px;
-  align-items:center;
-  flex-wrap:wrap;
-}
-.filter-label{
-  font-size:12px;
-  font-weight:600;
-  color:var(--text-secondary);
-  margin-right:4px;
 }
 
-.input-wrap{
-  position:relative;
-  display:flex;
-  align-items:center;
-}
-.input-wrap svg{
-  position:absolute;
-  left:10px;
-  width:14px;height:14px;
-  stroke:var(--text-tertiary);fill:none;
-  stroke-width:2;
-  pointer-events:none;
-}
-.input-wrap input,
-.input-wrap select{
+/* Compact inputs */
+.c-input{
   font-family:var(--font);
   font-size:13px;
   font-weight:500;
@@ -379,32 +253,24 @@ html[data-theme="dark"] .icon-btn .icon-moon{display:block;}
   background:var(--bg-surface);
   border:1px solid var(--border-strong);
   border-radius:var(--radius-md);
-  padding:8px 12px 8px 32px;
+  padding:6px 10px;
   outline:none;
   transition:all .15s ease;
-  min-width:120px;
+  height:34px;
 }
-.input-wrap.no-icon input,
-.input-wrap.no-icon select{
-  padding-left:12px;
-}
-.input-wrap input:focus,
-.input-wrap select:focus{
+.c-input:focus{
   border-color:var(--accent);
   box-shadow:0 0 0 3px var(--accent-soft);
 }
 
 .btn{
-  display:inline-flex;
-  align-items:center;
-  gap:6px;
-  padding:8px 14px;
-  font-family:var(--font);
-  font-size:13px;
-  font-weight:600;
+  display:inline-flex; align-items:center; gap:6px;
+  padding:6px 14px;
+  font-family:var(--font); font-size:13px; font-weight:600;
   border-radius:var(--radius-md);
   border:1px solid transparent;
   transition:all .15s ease;
+  height:34px;
   white-space:nowrap;
 }
 .btn svg{
@@ -412,77 +278,15 @@ html[data-theme="dark"] .icon-btn .icon-moon{display:block;}
   stroke:currentColor;fill:none;stroke-width:2;
   stroke-linecap:round;stroke-linejoin:round;
 }
-.btn-primary{
-  background:var(--accent);
-  color:#fff;
-  box-shadow:var(--shadow-xs);
-}
-.btn-primary:hover{
-  background:var(--accent-hover);
-}
-.btn-secondary{
-  background:var(--bg-surface);
-  color:var(--text-secondary);
-  border-color:var(--border-strong);
-}
-.btn-secondary:hover{
-  background:var(--bg-subtle);
-  color:var(--text-primary);
-}
+.btn-primary{background:var(--accent); color:#fff;}
+.btn-primary:hover{background:var(--accent-hover);}
 
 /* ============================================================
-   KPI STRIP
-   ============================================================ */
-.kpi-strip{
-  background:var(--bg-surface);
-  border-bottom:1px solid var(--border);
-  padding:16px 32px;
-  display:grid;
-  grid-template-columns:repeat(auto-fit, minmax(180px,1fr));
-  gap:1px;
-  background-image:linear-gradient(var(--border),var(--border));
-}
-.kpi{
-  padding:8px 20px;
-  border-left:1px solid var(--border);
-  display:flex;
-  flex-direction:column;
-  gap:4px;
-}
-.kpi:first-child{border-left:none;padding-left:0;}
-.kpi-label{
-  font-size:11px;
-  font-weight:600;
-  text-transform:uppercase;
-  letter-spacing:.5px;
-  color:var(--text-tertiary);
-}
-.kpi-value{
-  font-size:22px;
-  font-weight:700;
-  letter-spacing:-.5px;
-  color:var(--text-primary);
-  font-variant-numeric:tabular-nums;
-  line-height:1.1;
-}
-.kpi-value .unit{
-  font-size:12px;
-  font-weight:500;
-  color:var(--text-tertiary);
-  margin-left:4px;
-}
-.kpi-meta{
-  font-size:11px;
-  color:var(--text-tertiary);
-  font-weight:500;
-}
-
-/* ============================================================
-   TOOLBAR
+   TOOLBAR — single line, compact
    ============================================================ */
 .toolbar{
   background:var(--bg-page);
-  padding:12px 32px;
+  padding:12px 20px;
   display:flex;
   justify-content:space-between;
   align-items:center;
@@ -490,37 +294,30 @@ html[data-theme="dark"] .icon-btn .icon-moon{display:block;}
   flex-wrap:wrap;
 }
 .toolbar-left{
-  display:flex;
-  align-items:center;
-  gap:12px;
-  flex-wrap:wrap;
+  display:flex; align-items:center; gap:10px;
 }
 .search-input{
   position:relative;
-  display:flex;
-  align-items:center;
+  display:flex; align-items:center;
   width:280px;
-  max-width:100%;
 }
 .search-input svg{
-  position:absolute;
-  left:12px;
+  position:absolute; left:11px;
   width:14px;height:14px;
-  stroke:var(--text-tertiary);fill:none;stroke-width:2;
+  stroke:var(--text-tertiary); fill:none; stroke-width:2;
   pointer-events:none;
 }
 .search-input input{
   width:100%;
-  font-family:var(--font);
-  font-size:13px;
-  font-weight:500;
-  color:var(--text-primary);
+  font-family:var(--font); font-size:13px; font-weight:500;
   background:var(--bg-surface);
   border:1px solid var(--border-strong);
   border-radius:var(--radius-md);
-  padding:8px 12px 8px 34px;
+  padding:7px 12px 7px 32px;
   outline:none;
+  color:var(--text-primary);
   transition:all .15s ease;
+  height:34px;
 }
 .search-input input::placeholder{color:var(--text-tertiary);}
 .search-input input:focus{
@@ -528,35 +325,108 @@ html[data-theme="dark"] .icon-btn .icon-moon{display:block;}
   box-shadow:0 0 0 3px var(--accent-soft);
 }
 
-.legend-inline{
-  display:flex;
-  align-items:center;
-  gap:4px;
-  flex-wrap:wrap;
+.toolbar-right{
+  display:flex; align-items:center; gap:8px;
 }
-.legend-chip{
+.stat-inline{
+  display:inline-flex; align-items:center; gap:6px;
+  padding:5px 10px;
+  background:var(--bg-surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius-md);
+  font-size:12px; font-weight:500;
+  color:var(--text-secondary);
+}
+.stat-inline b{color:var(--text-primary); font-weight:700; font-variant-numeric:tabular-nums;}
+
+/* Legend trigger button */
+.legend-trigger{
+  display:inline-flex; align-items:center; gap:6px;
+  padding:5px 12px;
+  background:var(--bg-surface);
+  border:1px solid var(--border-strong);
+  border-radius:var(--radius-md);
+  font-size:12px; font-weight:600;
+  color:var(--text-secondary);
+  cursor:pointer;
+  transition:all .15s ease;
+  height:34px;
+}
+.legend-trigger:hover{
+  border-color:var(--accent);
+  color:var(--accent);
+  background:var(--accent-soft);
+}
+.legend-trigger svg{
+  width:14px;height:14px;
+  stroke:currentColor;fill:none;stroke-width:2;
+  stroke-linecap:round;stroke-linejoin:round;
+}
+
+/* Legend Popover */
+.legend-pop{
+  position:absolute;
+  top:calc(100% + 8px);
+  right:0;
+  z-index:200;
+  background:var(--bg-surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-xl);
+  padding:14px;
+  width:340px;
+  display:none;
+}
+.legend-pop.open{display:block; animation:pop .15s ease;}
+@keyframes pop{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:translateY(0);}}
+
+.legend-pop h4{
+  font-size:11px; font-weight:700;
+  text-transform:uppercase; letter-spacing:.5px;
+  color:var(--text-tertiary);
+  margin-bottom:10px;
+}
+.legend-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:6px;
+}
+.legend-item{
+  display:flex; align-items:center; gap:8px;
+  padding:6px 8px;
+  border-radius:var(--radius-sm);
+  font-size:12px;
+  font-weight:500;
+  color:var(--text-secondary);
+  transition:background .1s ease;
+}
+.legend-item:hover{background:var(--bg-subtle);}
+.legend-swatch{
   display:inline-flex;
-  align-items:center;
-  gap:5px;
-  padding:4px 9px;
-  border-radius:6px;
-  font-size:11px;
-  font-weight:600;
+  align-items:center; justify-content:center;
+  width:26px; height:22px;
+  border-radius:4px;
+  font-size:10px; font-weight:800;
   border:1px solid;
-  white-space:nowrap;
+  flex-shrink:0;
 }
-.legend-chip .swatch{
-  width:8px;height:8px;border-radius:2px;
-}
+.legend-swatch.morning{background:var(--m-bg);color:var(--m-fg);border-color:var(--m-bd);}
+.legend-swatch.general{background:var(--d-bg);color:var(--d-fg);border-color:var(--d-bd);}
+.legend-swatch.afternoon{background:var(--a-bg);color:var(--a-fg);border-color:var(--a-bd);}
+.legend-swatch.night{background:var(--n-bg);color:var(--n-fg);border-color:var(--n-bd);}
+.legend-swatch.weekoff{background:var(--w-bg);color:var(--w-fg);border-color:var(--w-bd);}
+.legend-swatch.leave{background:var(--l-bg);color:var(--l-fg);border-color:var(--l-bd);}
+.legend-swatch.flexi{background:var(--f-bg);color:var(--f-fg);border-color:var(--f-bd);}
+.legend-swatch.holiday{background:var(--h-bg);color:var(--h-fg);border-color:var(--h-bd);}
+.legend-swatch.na{background:var(--x-bg);color:var(--x-fg);border-color:var(--x-bd);}
 
 /* ============================================================
    ROSTER GRID
    ============================================================ */
 .grid-wrap{
-  padding:0 32px 100px;
+  padding:0 20px 90px;
   overflow-x:auto;
 }
-
 .roster-grid{
   width:100%;
   min-width:1200px;
@@ -568,14 +438,11 @@ html[data-theme="dark"] .icon-btn .icon-moon{display:block;}
   overflow:hidden;
   font-size:13px;
 }
-
 .roster-grid thead th{
-  position:sticky;
-  top:0;
-  z-index:10;
+  position:sticky; top:0; z-index:10;
   background:var(--bg-subtle);
-  padding:10px 8px;
-  font-size:11px;
+  padding:8px 6px;
+  font-size:10px;
   font-weight:600;
   text-transform:uppercase;
   letter-spacing:.4px;
@@ -585,50 +452,35 @@ html[data-theme="dark"] .icon-btn .icon-moon{display:block;}
   white-space:nowrap;
 }
 .roster-grid thead th .day-num{
-  font-size:12px;
-  font-weight:700;
+  font-size:12px; font-weight:700;
   color:var(--text-primary);
   font-variant-numeric:tabular-nums;
 }
 .roster-grid thead th .day-name{
-  display:block;
-  font-size:9px;
-  font-weight:600;
-  color:var(--text-tertiary);
-  margin-top:1px;
+  display:block; font-size:9px; font-weight:600;
+  color:var(--text-tertiary); margin-top:1px;
 }
 .roster-grid thead th.is-weekend{
-  background:#FEF6EE;
-  color:#C4320A;
+  background:#FEF6EE; color:#C4320A;
 }
 html[data-theme="dark"] .roster-grid thead th.is-weekend{
-  background:#3A1D0A;
-  color:#FDB022;
+  background:#3A1D0A; color:#FDB022;
 }
 
 .roster-grid thead th.col-emp{
-  position:sticky;
-  left:0;
-  z-index:20;
-  text-align:left;
-  padding-left:20px;
-  min-width:220px;
+  position:sticky; left:0; z-index:20;
+  text-align:left; padding-left:16px;
+  min-width:200px;
   background:var(--bg-subtle);
   box-shadow:1px 0 0 var(--border);
 }
 .roster-grid thead th.col-pos{
-  position:sticky;
-  left:220px;
-  z-index:20;
-  text-align:left;
-  min-width:120px;
+  position:sticky; left:200px; z-index:20;
+  text-align:left; min-width:110px;
   background:var(--bg-subtle);
   box-shadow:1px 0 0 var(--border);
 }
-.roster-grid thead th.col-sum{
-  min-width:52px;
-  font-variant-numeric:tabular-nums;
-}
+.roster-grid thead th.col-sum{min-width:44px; font-variant-numeric:tabular-nums;}
 
 .roster-grid tbody td{
   padding:0;
@@ -638,124 +490,90 @@ html[data-theme="dark"] .roster-grid thead th.is-weekend{
 }
 .roster-grid tbody tr:last-child td{border-bottom:none;}
 .roster-grid tbody tr:hover td{background:var(--bg-subtle);}
-
 .roster-grid tbody td.col-emp{
-  position:sticky;
-  left:0;
-  z-index:5;
-  padding:8px 16px 8px 20px;
+  position:sticky; left:0; z-index:5;
+  padding:7px 14px 7px 16px;
   background:var(--bg-surface);
   box-shadow:1px 0 0 var(--border);
 }
 .roster-grid tbody tr:hover td.col-emp{background:var(--bg-subtle);}
-
-.emp-row{
-  display:flex;
-  align-items:center;
-  gap:10px;
-}
+.emp-row{display:flex; align-items:center; gap:9px;}
 .emp-avatar{
-  width:28px;height:28px;
-  border-radius:50%;
-  background:var(--gray-200);
-  color:var(--text-secondary);
+  width:26px;height:26px;border-radius:50%;
+  background:var(--gray-200); color:var(--text-secondary);
   display:grid;place-items:center;
-  font-size:11px;
-  font-weight:700;
-  flex-shrink:0;
+  font-size:10px; font-weight:700; flex-shrink:0;
   border:1px solid var(--border);
 }
-html[data-theme="dark"] .emp-avatar{
-  background:var(--gray-200);
-  color:var(--text-secondary);
-}
-.emp-info{min-width:0;}
 .emp-name{
-  font-size:13px;
-  font-weight:600;
+  font-size:13px; font-weight:600;
   color:var(--text-primary);
-  line-height:1.3;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  line-height:1.2;
 }
-.emp-meta{
-  font-size:11px;
-  color:var(--text-tertiary);
-  font-family:var(--mono);
-  margin-top:1px;
+.emp-id{
+  font-size:10px; color:var(--text-tertiary);
+  font-family:var(--mono); margin-top:1px;
 }
-
 .roster-grid tbody td.col-pos{
-  position:sticky;
-  left:220px;
-  z-index:5;
-  padding:8px 12px;
+  position:sticky; left:200px; z-index:5;
+  padding:7px 10px;
   background:var(--bg-surface);
   box-shadow:1px 0 0 var(--border);
-  font-size:12px;
-  font-weight:500;
+  font-size:12px; font-weight:500;
   color:var(--text-secondary);
   white-space:nowrap;
 }
 .roster-grid tbody tr:hover td.col-pos{background:var(--bg-subtle);}
 
 /* ============================================================
-   SHIFT CELLS
+   SHIFT CELL — tight, badge + hidden native select
    ============================================================ */
 .shift-cell{
   position:relative;
-  padding:4px !important;
+  padding:3px !important;
 }
-.shift-btn{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  width:100%;
-  height:32px;
-  border-radius:6px;
-  font-family:var(--font);
-  font-size:11px;
-  font-weight:700;
+.shift-badge{
+  display:flex; align-items:center; justify-content:center;
+  width:100%; height:28px;
+  border-radius:5px;
+  font-size:10px; font-weight:700;
   letter-spacing:.2px;
   border:1px solid;
-  cursor:pointer;
-  transition:all .12s ease;
   font-variant-numeric:tabular-nums;
+  transition:all .12s ease;
+  pointer-events:none;
 }
-.shift-btn:hover{
-  transform:translateY(-1px);
+.shift-cell:hover .shift-badge{
   box-shadow:var(--shadow-sm);
 }
-.shift-btn.morning  { background:var(--shift-morning-bg);   color:var(--shift-morning-fg);   border-color:var(--shift-morning-bd); }
-.shift-btn.general  { background:var(--shift-general-bg);   color:var(--shift-general-fg);   border-color:var(--shift-general-bd); }
-.shift-btn.afternoon{ background:var(--shift-afternoon-bg); color:var(--shift-afternoon-fg); border-color:var(--shift-afternoon-bd); }
-.shift-btn.night    { background:var(--shift-night-bg);     color:var(--shift-night-fg);     border-color:var(--shift-night-bd); }
-.shift-btn.weekoff  { background:var(--shift-weekoff-bg);   color:var(--shift-weekoff-fg);   border-color:var(--shift-weekoff-bd); }
-.shift-btn.leave    { background:var(--shift-leave-bg);     color:var(--shift-leave-fg);     border-color:var(--shift-leave-bd); }
-.shift-btn.flexi    { background:var(--shift-flexi-bg);     color:var(--shift-flexi-fg);     border-color:var(--shift-flexi-bd); }
-.shift-btn.holiday  { background:var(--shift-holiday-bg);   color:var(--shift-holiday-fg);   border-color:var(--shift-holiday-bd); }
-.shift-btn.na       { background:var(--shift-na-bg);        color:var(--shift-na-fg);        border-color:var(--shift-na-bd); }
+.shift-badge.morning  {background:var(--m-bg);color:var(--m-fg);border-color:var(--m-bd);}
+.shift-badge.general  {background:var(--d-bg);color:var(--d-fg);border-color:var(--d-bd);}
+.shift-badge.afternoon{background:var(--a-bg);color:var(--a-fg);border-color:var(--a-bd);}
+.shift-badge.night    {background:var(--n-bg);color:var(--n-fg);border-color:var(--n-bd);}
+.shift-badge.weekoff  {background:var(--w-bg);color:var(--w-fg);border-color:var(--w-bd);}
+.shift-badge.leave    {background:var(--l-bg);color:var(--l-fg);border-color:var(--l-bd);}
+.shift-badge.flexi    {background:var(--f-bg);color:var(--f-fg);border-color:var(--f-bd);}
+.shift-badge.holiday  {background:var(--h-bg);color:var(--h-fg);border-color:var(--h-bd);}
+.shift-badge.na       {background:var(--x-bg);color:var(--x-fg);border-color:var(--x-bd);}
 
-/* Native dropdown overlay */
 .shift-cell select.shift-native{
   position:absolute;
-  inset:4px;
-  width:calc(100% - 8px);
-  height:32px;
+  inset:3px;
+  width:calc(100% - 6px);
+  height:28px;
   opacity:0;
   cursor:pointer;
   font-family:var(--font);
-  font-size:11px;
-  font-weight:700;
-  border-radius:6px;
+  font-size:10px;
+  border-radius:5px;
   border:1px solid var(--border-strong);
 }
 .shift-cell select.shift-native:focus{
   opacity:1;
   box-shadow:var(--shadow-md);
   outline:2px solid var(--accent);
-  outline-offset:-2px;
+  outline-offset:-1px;
 }
 
 /* ============================================================
@@ -763,165 +581,113 @@ html[data-theme="dark"] .emp-avatar{
    ============================================================ */
 .summary-row td{
   background:var(--bg-subtle) !important;
-  padding:6px 8px !important;
-  font-size:12px;
-  font-weight:700;
+  padding:5px 6px !important;
+  font-size:11px; font-weight:700;
   color:var(--text-primary);
   font-variant-numeric:tabular-nums;
   border-top:1px solid var(--border);
+  text-align:center;
 }
 .summary-row td.col-emp{
   background:var(--bg-subtle) !important;
-  font-size:11px;
-  font-weight:600;
-  text-transform:uppercase;
-  letter-spacing:.4px;
+  font-size:10px; font-weight:600;
+  text-transform:uppercase; letter-spacing:.4px;
   color:var(--text-tertiary);
+  text-align:left;
+  padding-left:16px !important;
 }
 .summary-row td.col-pos{
   background:var(--bg-subtle) !important;
 }
-.summary-row td .badge-count{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  min-width:22px;
-  height:22px;
-  padding:0 6px;
+.summary-row .pill{
+  display:inline-flex; align-items:center; justify-content:center;
+  min-width:22px; height:20px; padding:0 5px;
   background:var(--bg-surface);
   border:1px solid var(--border);
-  border-radius:5px;
-  font-size:11px;
-  font-weight:700;
+  border-radius:4px;
+  font-size:10px; font-weight:700;
   color:var(--text-primary);
-}
-.summary-row td .badge-count.accent{
-  background:var(--accent-soft);
-  border-color:var(--accent-line);
-  color:var(--accent);
 }
 
 /* ============================================================
-   FOOTER ACTION BAR
+   ACTION BAR
    ============================================================ */
 .action-bar{
-  position:fixed;
-  bottom:0;left:0;right:0;
-  z-index:50;
+  position:fixed; bottom:0; left:0; right:0; z-index:50;
   background:var(--bg-surface);
   border-top:1px solid var(--border);
-  padding:12px 32px;
+  padding:10px 20px;
   display:flex;
   justify-content:space-between;
   align-items:center;
   gap:16px;
   box-shadow:0 -1px 3px rgba(16,24,40,.06);
 }
-.action-bar-info{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  font-size:12px;
-  color:var(--text-tertiary);
+.action-info{
+  display:flex; align-items:center; gap:10px;
+  font-size:12px; color:var(--text-tertiary);
 }
-.action-bar-info .badge{
-  display:inline-flex;
-  align-items:center;
-  gap:6px;
-  padding:4px 10px;
-  background:var(--bg-subtle);
-  border:1px solid var(--border);
-  border-radius:6px;
-  font-size:11px;
-  font-weight:600;
-  color:var(--text-secondary);
-}
-.action-bar-info .badge .dot{
-  width:6px;height:6px;
-  border-radius:50%;
+.action-info .dot{
+  width:6px;height:6px;border-radius:50%;
   background:var(--success);
+  box-shadow:0 0 0 2px rgba(18,183,106,.2);
 }
+.action-info b{color:var(--text-secondary); font-weight:600;}
 
 /* ============================================================
-   EMPTY STATE
+   EMPTY
    ============================================================ */
-.empty{
-  text-align:center;
-  padding:80px 40px;
-  color:var(--text-tertiary);
-}
-.empty svg{
-  width:48px;height:48px;
-  stroke:var(--text-tertiary);
-  fill:none;stroke-width:1.5;
-  margin-bottom:16px;
-  opacity:.5;
-}
-.empty h3{
-  font-size:15px;
-  font-weight:600;
-  color:var(--text-primary);
-  margin-bottom:4px;
-}
-.empty p{font-size:13px;}
+.empty{text-align:center; padding:80px 40px; color:var(--text-tertiary);}
+.empty svg{width:44px;height:44px;stroke:var(--text-tertiary);fill:none;stroke-width:1.5;margin-bottom:12px;opacity:.5;}
+.empty h3{font-size:14px;font-weight:600;color:var(--text-primary);margin-bottom:4px;}
+.empty p{font-size:12px;}
 
 /* ============================================================
    RESPONSIVE
    ============================================================ */
-@media (max-width:1024px){
-  .appbar{padding:0 16px;gap:12px;}
+@media (max-width:900px){
+  .appbar{padding:0 14px;}
   .appbar-title .crumb{display:none;}
-  .page-head{padding:20px 16px 16px;}
-  .kpi-strip{padding:12px 16px;}
-  .kpi{padding:8px 14px;}
-  .toolbar{padding:12px 16px;}
-  .grid-wrap{padding:0 16px 100px;}
-  .action-bar{padding:12px 16px;}
-  .roster-grid thead th.col-emp{min-width:160px;padding-left:14px;}
-  .roster-grid thead th.col-pos{left:160px;min-width:90px;}
-  .roster-grid tbody td.col-emp{padding-left:14px;}
-  .roster-grid tbody td.col-pos{left:160px;}
-}
-@media (max-width:640px){
-  .appbar-context{display:none;}
-  .user-chip .name{display:none;}
-  .kpi-strip{grid-template-columns:repeat(2,1fr);}
-  .kpi{border-left:none;padding:8px 0;}
+  .context-row{padding:12px 14px;}
+  .context-title{font-size:15px;}
+  .toolbar{padding:10px 14px;}
+  .search-input{width:100%; max-width:100%;}
+  .grid-wrap{padding:0 14px 90px;}
+  .action-bar{padding:10px 14px;}
+  .roster-grid thead th.col-emp{min-width:150px;padding-left:12px;}
+  .roster-grid thead th.col-pos{left:150px;min-width:80px;}
+  .roster-grid tbody td.col-emp{padding-left:12px;}
+  .roster-grid tbody td.col-pos{left:150px;}
 }
 </style>
 </head>
 <body>
 
 <%
-    // ============ PARAMETERS ============
+    // ============ PARAMS ============
     String monthYr = request.getParameter("myViewMonth");
     String m_strroles = request.getParameter("m_strroles");
     String username = request.getParameter("username");
-
-    if (m_strroles == null || m_strroles.trim().isEmpty())
-        m_strroles = (String) session.getAttribute("m_strrole");
-    if (username == null || username.trim().isEmpty())
-        username = (String) session.getAttribute("user");
+    if (m_strroles == null || m_strroles.trim().isEmpty()) m_strroles = (String) session.getAttribute("m_strrole");
+    if (username == null || username.trim().isEmpty()) username = (String) session.getAttribute("user");
     if (m_strroles == null) m_strroles = "";
     if (username == null) username = "";
 
     int year = 0, month = 0, noOfDays = 0;
-    String selectedYear = null, selectedMonth = null, nameOfMonth = null;
-    String sort_MonthYear = null;
+    String selectedYear = null, selectedMonth = null, nameOfMonth = null, sort_MonthYear = null;
     boolean showTable = false;
 
     if (monthYr != null && !monthYr.trim().isEmpty()) {
         String[] s = monthYr.split("-");
         if (s.length >= 2) {
-            selectedYear = s[0];
-            selectedMonth = s[1];
+            selectedYear = s[0]; selectedMonth = s[1];
             try {
                 year = Integer.parseInt(selectedYear);
                 month = Integer.parseInt(selectedMonth);
                 showTable = true;
-                if (month == 1 || month == 3 || month == 5 || month == 7 || month == 8 || month == 10 || month == 12) noOfDays = 31;
-                else if (month == 4 || month == 6 || month == 9 || month == 11) noOfDays = 30;
-                else if (month == 2) noOfDays = ((year % 400 == 0) || (year % 100 != 0) && (year % 4 == 0)) ? 29 : 28;
+                if (month==1||month==3||month==5||month==7||month==8||month==10||month==12) noOfDays = 31;
+                else if (month==4||month==6||month==9||month==11) noOfDays = 30;
+                else if (month==2) noOfDays = ((year % 400 == 0) || (year % 100 != 0) && (year % 4 == 0)) ? 29 : 28;
                 String[] mn = {"","January","February","March","April","May","June","July","August","September","October","November","December"};
                 String[] sn = {"","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
                 nameOfMonth = mn[month];
@@ -959,7 +725,6 @@ html[data-theme="dark"] .emp-avatar{
             employees.add(emp);
         }
         rs.close(); ps.close();
-
         if (employees.isEmpty()) {
             PreparedStatement ps2 = conn.prepareStatement("select ad_id, FIRSTNAME || ' ' || LASTNAME as Fullname from eisupport_employee_master where TEAM = ? and isactive='Active'");
             ps2.setString(1, m_strroles);
@@ -983,31 +748,11 @@ html[data-theme="dark"] .emp-avatar{
 
 <!-- ============ APP BAR ============ -->
 <header class="appbar">
-  <div class="appbar-brand">
-    <div class="appbar-logo">
-      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
-    </div>
-    <div class="appbar-title">
-      EIS Portal
-      <span class="crumb">/ Team Roster</span>
-    </div>
+  <div class="appbar-logo">
+    <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
   </div>
-
-  <div class="appbar-divider"></div>
-
-  <div class="appbar-context">
-    <span class="dot"></span>
-    <span class="label">Team</span>
-    <span class="value"><%= m_strroles %></span>
-  </div>
-
-  <div class="appbar-context">
-    <span class="label">Period</span>
-    <span class="value"><%= nameOfMonth %> <%= selectedYear %></span>
-  </div>
-
+  <div class="appbar-title">EIS Portal <span class="crumb">/ Team Roster</span></div>
   <div class="appbar-spacer"></div>
-
   <div class="appbar-actions">
     <button class="icon-btn" onclick="toggleTheme()" title="Toggle theme">
       <svg class="icon-sun" viewBox="0 0 24 24">
@@ -1025,71 +770,39 @@ html[data-theme="dark"] .emp-avatar{
   </div>
 </header>
 
-<!-- ============ PAGE HEADER ============ -->
-<section class="page-head">
-  <div class="page-head-inner">
-    <div>
-      <h1>Team Roster &middot; <span class="accent"><%= nameOfMonth %> <%= selectedYear %></span></h1>
-      <div class="page-desc">
-        <span><b><%= totalEmp %></b> employees</span>
-        <span class="sep"></span>
-        <span><b><%= noOfDays %></b> days</span>
-        <span class="sep"></span>
-        <span><%= m_strroles %></span>
-        <span class="sep"></span>
-        <span>Last updated just now</span>
-      </div>
+<!-- ============ CONTEXT ROW ============ -->
+<section class="context-row">
+  <div class="context-left">
+    <div class="context-title">
+      Team Roster &middot; <span class="accent"><%= nameOfMonth %> <%= selectedYear %></span>
     </div>
+    <div class="context-meta">
+      <span><b><%= totalEmp %></b> employees</span>
+      <span class="sep"></span>
+      <span><b><%= noOfDays %></b> days</span>
+      <span class="sep"></span>
+      <span><%= m_strroles %></span>
+    </div>
+  </div>
 
-    <form method="get" class="filter-group">
-      <span class="filter-label">Filter</span>
-      <div class="input-wrap">
-        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        <select name="month">
-          <% String[] mns = {"","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
-             for (int m = 1; m <= 12; m++) {
-                 String val = String.format("%02d", m);
-                 String sel = (m == month) ? "selected" : "";
-          %>
-          <option value="<%= val %>" <%= sel %>><%= mns[m] %></option>
-          <% } %>
-        </select>
-      </div>
-      <div class="input-wrap no-icon">
-        <input type="number" name="year" min="2024" max="2100" value="<%= selectedYear %>" required style="width:88px;">
-      </div>
-      <input type="hidden" name="m_strroles" value="<%= m_strroles %>">
-      <input type="hidden" name="username" value="<%= username %>">
-      <button type="submit" class="btn btn-primary">
-        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        Apply
-      </button>
-    </form>
-  </div>
-</section>
-
-<!-- ============ KPI STRIP ============ -->
-<section class="kpi-strip">
-  <div class="kpi">
-    <div class="kpi-label">Employees</div>
-    <div class="kpi-value"><%= totalEmp %></div>
-    <div class="kpi-meta">Active this month</div>
-  </div>
-  <div class="kpi">
-    <div class="kpi-label">Days</div>
-    <div class="kpi-value"><%= noOfDays %></div>
-    <div class="kpi-meta"><%= nameOfMonth %> <%= selectedYear %></div>
-  </div>
-  <div class="kpi">
-    <div class="kpi-label">Team</div>
-    <div class="kpi-value" style="font-size:16px;letter-spacing:0;"><%= m_strroles %></div>
-    <div class="kpi-meta">Assigned roster</div>
-  </div>
-  <div class="kpi">
-    <div class="kpi-label">Status</div>
-    <div class="kpi-value" style="font-size:16px;letter-spacing:0;color:var(--success);">Ready</div>
-    <div class="kpi-meta">All fields editable</div>
-  </div>
+  <form method="get" class="context-right">
+    <select name="month" class="c-input">
+      <% String[] mns = {"","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
+         for (int m = 1; m <= 12; m++) {
+             String val = String.format("%02d", m);
+             String sel = (m == month) ? "selected" : "";
+      %>
+      <option value="<%= val %>" <%= sel %>><%= mns[m] %></option>
+      <% } %>
+    </select>
+    <input type="number" name="year" class="c-input" min="2024" max="2100" value="<%= selectedYear %>" required style="width:80px;">
+    <input type="hidden" name="m_strroles" value="<%= m_strroles %>">
+    <input type="hidden" name="username" value="<%= username %>">
+    <button type="submit" class="btn btn-primary">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      View
+    </button>
+  </form>
 </section>
 
 <!-- ============ TOOLBAR ============ -->
@@ -1099,18 +812,40 @@ html[data-theme="dark"] .emp-avatar{
       <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       <input type="text" id="searchInput" placeholder="Search employees..." oninput="filterEmployees()">
     </div>
-    <span style="font-size:12px;color:var(--text-tertiary);font-weight:500;" id="searchInfo">Showing <b style="color:var(--text-primary);"><%= totalEmp %></b> of <%= totalEmp %></span>
+    <span class="stat-inline" id="searchInfo">Showing <b><%= totalEmp %></b> of <%= totalEmp %></span>
   </div>
 
-  <div class="legend-inline">
-    <span class="legend-chip shift-btn morning"><span class="swatch" style="background:var(--shift-morning-fg);"></span>M</span>
-    <span class="legend-chip shift-btn general"><span class="swatch" style="background:var(--shift-general-fg);"></span>D</span>
-    <span class="legend-chip shift-btn afternoon"><span class="swatch" style="background:var(--shift-afternoon-fg);"></span>A</span>
-    <span class="legend-chip shift-btn night"><span class="swatch" style="background:var(--shift-night-fg);"></span>N</span>
-    <span class="legend-chip shift-btn weekoff"><span class="swatch" style="background:var(--shift-weekoff-fg);"></span>W</span>
-    <span class="legend-chip shift-btn leave"><span class="swatch" style="background:var(--shift-leave-fg);"></span>L</span>
-    <span class="legend-chip shift-btn flexi"><span class="swatch" style="background:var(--shift-flexi-fg);"></span>FL</span>
-    <span class="legend-chip shift-btn holiday"><span class="swatch" style="background:var(--shift-holiday-fg);"></span>HL</span>
+  <div class="toolbar-right" style="position:relative;">
+    <button type="button" class="legend-trigger" onclick="toggleLegend(event)">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+      Legend
+    </button>
+    <div class="legend-pop" id="legendPop">
+      <h4>Shift Codes</h4>
+      <div class="legend-grid">
+        <div class="legend-item"><span class="legend-swatch morning">M</span> Morning</div>
+        <div class="legend-item"><span class="legend-swatch morning">WFH-M</span> WFH Morning</div>
+        <div class="legend-item"><span class="legend-swatch morning">CC-M</span> CC Morning</div>
+        <div class="legend-item"><span class="legend-swatch general">D</span> General</div>
+        <div class="legend-item"><span class="legend-swatch general">WFH-D</span> WFH General</div>
+        <div class="legend-item"><span class="legend-swatch general">CC-D</span> CC General</div>
+        <div class="legend-item"><span class="legend-swatch afternoon">A</span> Afternoon</div>
+        <div class="legend-item"><span class="legend-swatch afternoon">WFH-A</span> WFH Afternoon</div>
+        <div class="legend-item"><span class="legend-swatch afternoon">CC-A</span> CC Afternoon</div>
+        <div class="legend-item"><span class="legend-swatch night">N</span> Night</div>
+        <div class="legend-item"><span class="legend-swatch night">WFH-N</span> WFH Night</div>
+        <div class="legend-item"><span class="legend-swatch night">CC-N</span> CC Night</div>
+        <div class="legend-item"><span class="legend-swatch weekoff">W</span> Weekoff</div>
+        <div class="legend-item"><span class="legend-swatch weekoff">WA</span> Weekoff Adjust</div>
+        <div class="legend-item"><span class="legend-swatch leave">L</span> Leave</div>
+        <div class="legend-item"><span class="legend-swatch leave">SL</span> Sick Leave</div>
+        <div class="legend-item"><span class="legend-swatch leave">CL</span> Casual Leave</div>
+        <div class="legend-item"><span class="legend-swatch leave">EL</span> Earned Leave</div>
+        <div class="legend-item"><span class="legend-swatch flexi">FL</span> Flexi Leave</div>
+        <div class="legend-item"><span class="legend-swatch holiday">HL</span> Holiday</div>
+        <div class="legend-item"><span class="legend-swatch na">—</span> Not Assigned</div>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -1162,9 +897,9 @@ html[data-theme="dark"] .emp-avatar{
       <td class="col-emp">
         <div class="emp-row">
           <div class="emp-avatar"><%= init %></div>
-          <div class="emp-info">
+          <div style="min-width:0;">
             <div class="emp-name"><%= name %></div>
-            <div class="emp-meta"><%= adId != null ? adId : "" %></div>
+            <div class="emp-id"><%= adId != null ? adId : "" %></div>
             <input type="hidden" name="employeeName" value="<%= name %>">
             <input type="hidden" name="adId" value="<%= adId %>">
           </div>
@@ -1180,70 +915,69 @@ html[data-theme="dark"] .emp-avatar{
           String shift = (String) emp.get("day_" + d);
           if (shift == null || shift.trim().isEmpty()) shift = "Morning";
           String lc = shift.toLowerCase();
-
           String cls = "morning", label = "M";
-          if (lc.equals("morning"))                 { cls="morning";   label="M"; }
-          else if (lc.equals("wfh-morning"))        { cls="morning";   label="WFH-M"; }
-          else if (lc.equals("cc-morning"))         { cls="morning";   label="CC-M"; }
-          else if (lc.equals("general")||lc.equals("genral")) { cls="general"; label="D"; }
-          else if (lc.equals("wfh-general")||lc.equals("wfh-genral")) { cls="general"; label="WFH-D"; }
-          else if (lc.equals("cc-general"))         { cls="general";   label="CC-D"; }
-          else if (lc.equals("afternoon"))          { cls="afternoon"; label="A"; }
-          else if (lc.equals("wfh-afternoon"))      { cls="afternoon"; label="WFH-A"; }
-          else if (lc.equals("cc-afternoon"))       { cls="afternoon"; label="CC-A"; }
-          else if (lc.equals("night"))              { cls="night";     label="N"; }
-          else if (lc.equals("wfh-night"))          { cls="night";     label="WFH-N"; }
-          else if (lc.equals("cc-night"))           { cls="night";     label="CC-N"; }
-          else if (lc.equals("weekoff"))            { cls="weekoff";   label="W"; woCount++; }
-          else if (lc.equals("weekoffadjust"))      { cls="weekoff";   label="WA"; }
-          else if (lc.equals("leave"))              { cls="leave";     label="L"; lvCount++; }
-          else if (lc.equals("sickleave"))          { cls="leave";     label="SL"; lvCount++; }
-          else if (lc.equals("casualleave"))        { cls="leave";     label="CL"; lvCount++; }
-          else if (lc.equals("earnedleave"))        { cls="leave";     label="EL"; lvCount++; }
-          else if (lc.equals("flexileave"))         { cls="flexi";     label="FL"; }
-          else if (lc.equals("holidayleave"))       { cls="holiday";   label="HL"; }
-          else if (lc.equals("na"))                 { cls="na";        label="—"; }
+          if (lc.equals("morning"))                 {cls="morning";   label="M";}
+          else if (lc.equals("wfh-morning"))        {cls="morning";   label="WFH-M";}
+          else if (lc.equals("cc-morning"))         {cls="morning";   label="CC-M";}
+          else if (lc.equals("general")||lc.equals("genral")) {cls="general"; label="D";}
+          else if (lc.equals("wfh-general")||lc.equals("wfh-genral")) {cls="general"; label="WFH-D";}
+          else if (lc.equals("cc-general"))         {cls="general";   label="CC-D";}
+          else if (lc.equals("afternoon"))          {cls="afternoon"; label="A";}
+          else if (lc.equals("wfh-afternoon"))      {cls="afternoon"; label="WFH-A";}
+          else if (lc.equals("cc-afternoon"))       {cls="afternoon"; label="CC-A";}
+          else if (lc.equals("night"))              {cls="night";     label="N";}
+          else if (lc.equals("wfh-night"))          {cls="night";     label="WFH-N";}
+          else if (lc.equals("cc-night"))           {cls="night";     label="CC-N";}
+          else if (lc.equals("weekoff"))            {cls="weekoff";   label="W"; woCount++;}
+          else if (lc.equals("weekoffadjust"))      {cls="weekoff";   label="WA";}
+          else if (lc.equals("leave"))              {cls="leave";     label="L"; lvCount++;}
+          else if (lc.equals("sickleave"))          {cls="leave";     label="SL"; lvCount++;}
+          else if (lc.equals("casualleave"))        {cls="leave";     label="CL"; lvCount++;}
+          else if (lc.equals("earnedleave"))        {cls="leave";     label="EL"; lvCount++;}
+          else if (lc.equals("flexileave"))         {cls="flexi";     label="FL";}
+          else if (lc.equals("holidayleave"))       {cls="holiday";   label="HL";}
+          else if (lc.equals("na"))                 {cls="na";        label="—";}
       %>
       <td class="shift-cell">
-        <span class="shift-btn <%= cls %>" aria-hidden="true"><%= label %></span>
+        <span class="shift-badge <%= cls %>"><%= label %></span>
         <select name="mnt_<%= i %>_<%= d %>" class="shift-native" onchange="onShiftChange(this)">
-          <option value="Morning"        <%= lc.equals("morning")?"selected":"" %>>M — Morning</option>
-          <option value="WFH-Morning"    <%= lc.equals("wfh-morning")?"selected":"" %>>WFH-M</option>
-          <option value="CC-Morning"     <%= lc.equals("cc-morning")?"selected":"" %>>CC-M</option>
-          <option value="General"        <%= (lc.equals("general")||lc.equals("genral"))?"selected":"" %>>D — General</option>
-          <option value="WFH-General"    <%= (lc.equals("wfh-general")||lc.equals("wfh-genral"))?"selected":"" %>>WFH-D</option>
-          <option value="CC-General"     <%= lc.equals("cc-general")?"selected":"" %>>CC-D</option>
-          <option value="Afternoon"      <%= lc.equals("afternoon")?"selected":"" %>>A — Afternoon</option>
-          <option value="WFH-Afternoon"  <%= lc.equals("wfh-afternoon")?"selected":"" %>>WFH-A</option>
-          <option value="CC-Afternoon"   <%= lc.equals("cc-afternoon")?"selected":"" %>>CC-A</option>
-          <option value="Night"          <%= lc.equals("night")?"selected":"" %>>N — Night</option>
-          <option value="WFH-Night"      <%= lc.equals("wfh-night")?"selected":"" %>>WFH-N</option>
-          <option value="CC-Night"       <%= lc.equals("cc-night")?"selected":"" %>>CC-N</option>
-          <option value="Weekoff"        <%= lc.equals("weekoff")?"selected":"" %>>W — Weekoff</option>
-          <option value="WeekoffAdjust"  <%= lc.equals("weekoffadjust")?"selected":"" %>>WA — Weekoff Adjust</option>
-          <option value="Leave"          <%= lc.equals("leave")?"selected":"" %>>L — Leave</option>
-          <option value="SickLeave"      <%= lc.equals("sickleave")?"selected":"" %>>SL — Sick Leave</option>
-          <option value="CasualLeave"    <%= lc.equals("casualleave")?"selected":"" %>>CL — Casual Leave</option>
-          <option value="EarnedLeave"    <%= lc.equals("earnedleave")?"selected":"" %>>EL — Earned Leave</option>
-          <option value="FlexiLeave"     <%= lc.equals("flexileave")?"selected":"" %>>FL — Flexi Leave</option>
-          <option value="HolidayLeave"   <%= lc.equals("holidayleave")?"selected":"" %>>HL — Holiday</option>
-          <option value="NA"             <%= lc.equals("na")?"selected":"" %>>— Not Assigned</option>
+          <option value="Morning"       <%= lc.equals("morning")?"selected":"" %>>M — Morning</option>
+          <option value="WFH-Morning"   <%= lc.equals("wfh-morning")?"selected":"" %>>WFH-M</option>
+          <option value="CC-Morning"    <%= lc.equals("cc-morning")?"selected":"" %>>CC-M</option>
+          <option value="General"       <%= (lc.equals("general")||lc.equals("genral"))?"selected":"" %>>D — General</option>
+          <option value="WFH-General"   <%= (lc.equals("wfh-general")||lc.equals("wfh-genral"))?"selected":"" %>>WFH-D</option>
+          <option value="CC-General"    <%= lc.equals("cc-general")?"selected":"" %>>CC-D</option>
+          <option value="Afternoon"     <%= lc.equals("afternoon")?"selected":"" %>>A — Afternoon</option>
+          <option value="WFH-Afternoon" <%= lc.equals("wfh-afternoon")?"selected":"" %>>WFH-A</option>
+          <option value="CC-Afternoon"  <%= lc.equals("cc-afternoon")?"selected":"" %>>CC-A</option>
+          <option value="Night"         <%= lc.equals("night")?"selected":"" %>>N — Night</option>
+          <option value="WFH-Night"     <%= lc.equals("wfh-night")?"selected":"" %>>WFH-N</option>
+          <option value="CC-Night"      <%= lc.equals("cc-night")?"selected":"" %>>CC-N</option>
+          <option value="Weekoff"       <%= lc.equals("weekoff")?"selected":"" %>>W — Weekoff</option>
+          <option value="WeekoffAdjust" <%= lc.equals("weekoffadjust")?"selected":"" %>>WA — Weekoff Adjust</option>
+          <option value="Leave"         <%= lc.equals("leave")?"selected":"" %>>L — Leave</option>
+          <option value="SickLeave"     <%= lc.equals("sickleave")?"selected":"" %>>SL — Sick Leave</option>
+          <option value="CasualLeave"   <%= lc.equals("casualleave")?"selected":"" %>>CL — Casual Leave</option>
+          <option value="EarnedLeave"   <%= lc.equals("earnedleave")?"selected":"" %>>EL — Earned Leave</option>
+          <option value="FlexiLeave"    <%= lc.equals("flexileave")?"selected":"" %>>FL — Flexi Leave</option>
+          <option value="HolidayLeave"  <%= lc.equals("holidayleave")?"selected":"" %>>HL — Holiday</option>
+          <option value="NA"            <%= lc.equals("na")?"selected":"" %>>— Not Assigned</option>
         </select>
       </td>
       <% } %>
-      <td style="text-align:center;font-weight:700;font-variant-numeric:tabular-nums;color:var(--shift-weekoff-fg);"><%= woCount %></td>
-      <td style="text-align:center;font-weight:700;font-variant-numeric:tabular-nums;color:var(--shift-leave-fg);"><%= lvCount %></td>
+      <td style="text-align:center;font-weight:700;font-variant-numeric:tabular-nums;color:var(--w-fg);"><%= woCount %></td>
+      <td style="text-align:center;font-weight:700;font-variant-numeric:tabular-nums;color:var(--l-fg);"><%= lvCount %></td>
     </tr>
     <% } %>
 
-    <!-- Summary -->
+    <!-- Summary rows -->
     <tr class="summary-row">
       <td class="col-emp">Morning</td>
       <td class="col-pos"></td>
       <% for (int d = 1; d <= noOfDays; d++) {
           int c = 0; for (Map<String,Object> e : employees) { String s = (String) e.get("day_" + d); if (s != null && s.toLowerCase().contains("morning")) c++; }
       %>
-      <td style="text-align:center;"><span class="badge-count"><%= c %></span></td>
+      <td><span class="pill"><%= c %></span></td>
       <% } %>
       <td colspan="2"></td>
     </tr>
@@ -1253,7 +987,7 @@ html[data-theme="dark"] .emp-avatar{
       <% for (int d = 1; d <= noOfDays; d++) {
           int c = 0; for (Map<String,Object> e : employees) { String s = (String) e.get("day_" + d); if (s != null && (s.toLowerCase().contains("general")||s.toLowerCase().contains("genral"))) c++; }
       %>
-      <td style="text-align:center;"><span class="badge-count"><%= c %></span></td>
+      <td><span class="pill"><%= c %></span></td>
       <% } %>
       <td colspan="2"></td>
     </tr>
@@ -1263,7 +997,7 @@ html[data-theme="dark"] .emp-avatar{
       <% for (int d = 1; d <= noOfDays; d++) {
           int c = 0; for (Map<String,Object> e : employees) { String s = (String) e.get("day_" + d); if (s != null && s.toLowerCase().contains("afternoon")) c++; }
       %>
-      <td style="text-align:center;"><span class="badge-count"><%= c %></span></td>
+      <td><span class="pill"><%= c %></span></td>
       <% } %>
       <td colspan="2"></td>
     </tr>
@@ -1273,7 +1007,7 @@ html[data-theme="dark"] .emp-avatar{
       <% for (int d = 1; d <= noOfDays; d++) {
           int c = 0; for (Map<String,Object> e : employees) { String s = (String) e.get("day_" + d); if (s != null && s.toLowerCase().contains("night")) c++; }
       %>
-      <td style="text-align:center;"><span class="badge-count"><%= c %></span></td>
+      <td><span class="pill"><%= c %></span></td>
       <% } %>
       <td colspan="2"></td>
     </tr>
@@ -1284,14 +1018,16 @@ html[data-theme="dark"] .emp-avatar{
 
 <!-- ============ ACTION BAR ============ -->
 <div class="action-bar">
-  <div class="action-bar-info">
-    <span class="badge"><span class="dot"></span>All changes saved locally</span>
+  <div class="action-info">
+    <span class="dot"></span>
+    <span>All changes saved</span>
+    <span>&middot;</span>
     <span><b><%= m_strroles %></b> &middot; <%= nameOfMonth %> <%= selectedYear %></span>
   </div>
   <div>
     <% boolean isFutureOrCurrent = (year > YearMonth.now().getYear() || (year == YearMonth.now().getYear() && month >= YearMonth.now().getMonthValue())); %>
     <% if (isFutureOrCurrent) { %>
-      <button type="button" class="btn btn-primary" onclick="prepareData()" style="padding:10px 20px;font-size:13px;">
+      <button type="button" class="btn btn-primary" onclick="prepareData()" style="padding:8px 18px;">
         <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
         Save Roster
       </button>
@@ -1328,39 +1064,50 @@ function filterEmployees() {
     if (n.includes(v) || p.includes(v)) { r.style.display = ''; vis++; }
     else { r.style.display = 'none'; }
   });
-  document.getElementById('searchInfo').innerHTML = 'Showing <b style="color:var(--text-primary);">' + vis + '</b> of ' + rows.length;
+  document.getElementById('searchInfo').innerHTML = 'Showing <b>' + vis + '</b> of ' + rows.length;
 }
 
-/* ============ SHIFT CHANGE — update badge ============ */
+/* ============ LEGEND POPOVER ============ */
+function toggleLegend(ev) {
+  ev.stopPropagation();
+  var pop = document.getElementById('legendPop');
+  pop.classList.toggle('open');
+}
+document.addEventListener('click', function(e){
+  var pop = document.getElementById('legendPop');
+  if (pop && !pop.contains(e.target) && !e.target.closest('.legend-trigger')) {
+    pop.classList.remove('open');
+  }
+});
+
+/* ============ SHIFT CHANGE ============ */
 function onShiftChange(sel) {
   var cell = sel.closest('.shift-cell');
-  var badge = cell.querySelector('.shift-btn');
+  var badge = cell.querySelector('.shift-badge');
   var v = sel.value.toLowerCase();
-
   var cls = 'morning', label = 'M';
-  if (v === 'morning') { cls='morning'; label='M'; }
-  else if (v === 'wfh-morning') { cls='morning'; label='WFH-M'; }
-  else if (v === 'cc-morning') { cls='morning'; label='CC-M'; }
-  else if (v === 'general') { cls='general'; label='D'; }
-  else if (v === 'wfh-general') { cls='general'; label='WFH-D'; }
-  else if (v === 'cc-general') { cls='general'; label='CC-D'; }
-  else if (v === 'afternoon') { cls='afternoon'; label='A'; }
-  else if (v === 'wfh-afternoon') { cls='afternoon'; label='WFH-A'; }
-  else if (v === 'cc-afternoon') { cls='afternoon'; label='CC-A'; }
-  else if (v === 'night') { cls='night'; label='N'; }
-  else if (v === 'wfh-night') { cls='night'; label='WFH-N'; }
-  else if (v === 'cc-night') { cls='night'; label='CC-N'; }
-  else if (v === 'weekoff') { cls='weekoff'; label='W'; }
-  else if (v === 'weekoffadjust') { cls='weekoff'; label='WA'; }
-  else if (v === 'leave') { cls='leave'; label='L'; }
-  else if (v === 'sickleave') { cls='leave'; label='SL'; }
-  else if (v === 'casualleave') { cls='leave'; label='CL'; }
-  else if (v === 'earnedleave') { cls='leave'; label='EL'; }
-  else if (v === 'flexileave') { cls='flexi'; label='FL'; }
-  else if (v === 'holidayleave') { cls='holiday'; label='HL'; }
-  else if (v === 'na') { cls='na'; label='—'; }
-
-  badge.className = 'shift-btn ' + cls;
+  if (v === 'morning') {cls='morning';label='M';}
+  else if (v === 'wfh-morning') {cls='morning';label='WFH-M';}
+  else if (v === 'cc-morning') {cls='morning';label='CC-M';}
+  else if (v === 'general') {cls='general';label='D';}
+  else if (v === 'wfh-general') {cls='general';label='WFH-D';}
+  else if (v === 'cc-general') {cls='general';label='CC-D';}
+  else if (v === 'afternoon') {cls='afternoon';label='A';}
+  else if (v === 'wfh-afternoon') {cls='afternoon';label='WFH-A';}
+  else if (v === 'cc-afternoon') {cls='afternoon';label='CC-A';}
+  else if (v === 'night') {cls='night';label='N';}
+  else if (v === 'wfh-night') {cls='night';label='WFH-N';}
+  else if (v === 'cc-night') {cls='night';label='CC-N';}
+  else if (v === 'weekoff') {cls='weekoff';label='W';}
+  else if (v === 'weekoffadjust') {cls='weekoff';label='WA';}
+  else if (v === 'leave') {cls='leave';label='L';}
+  else if (v === 'sickleave') {cls='leave';label='SL';}
+  else if (v === 'casualleave') {cls='leave';label='CL';}
+  else if (v === 'earnedleave') {cls='leave';label='EL';}
+  else if (v === 'flexileave') {cls='flexi';label='FL';}
+  else if (v === 'holidayleave') {cls='holiday';label='HL';}
+  else if (v === 'na') {cls='na';label='—';}
+  badge.className = 'shift-badge ' + cls;
   badge.textContent = label;
 }
 
