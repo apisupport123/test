@@ -1,709 +1,1525 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
-<%
- response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0, private");
- response.setHeader("Pragma", "no-cache");
- response.setDateHeader("Expires", 0);
-
- // ---- AUTH GUARD ----
- String __role = (session != null) ? (String) session.getAttribute("role") : null;
- if (__role == null || __role.trim().isEmpty()) {
-     response.sendRedirect(request.getContextPath() + "/login.action");
-     return;
- }
-%>
-<%@ page import="com.jdbc.DBUtilityAuto"%>
-<%@ page import="java.sql.*"%>
-
-<%
-  // ---- Session se username ----
-  String user = (session != null) ? (String) session.getAttribute("username") : null;
-  if (user == null || user.trim().isEmpty()) {
-      user = request.getParameter("m_stradminUserName");
-  }
-  if (user == null) user = "";
-
-  // ---- DB se team nikalna ----
-  String m_strrole = null;
-  Connection con = null;
-  PreparedStatement ps = null;
-  ResultSet rs = null;
-  try {
-      con = DBUtilityAuto.getReportDBConnection();
-      String query = "select TEAM from a_module_leads where lower(username)=lower(?)";
-      ps = con.prepareStatement(query);
-      ps.setString(1, user);
-      rs = ps.executeQuery();
-      if (rs.next()) {
-          m_strrole = rs.getString("TEAM");
-      }
-  } catch (Exception e) {
-      e.printStackTrace();
-  } finally {
-      if (rs != null) try { rs.close(); } catch (Exception e) {}
-      if (ps != null) try { ps.close(); } catch (Exception e) {}
-      if (con != null) try { con.close(); } catch (Exception e) {}
-  }
-
-  // Agar team nahi mili, role hi use karo
-  if (m_strrole == null || m_strrole.trim().isEmpty()) {
-      m_strrole = __role;
-  }
-
-  // ✅ Session me save karo (refresh pe mile)
-  if (m_strrole != null && !m_strrole.trim().isEmpty()) {
-      session.setAttribute("m_strrole", m_strrole);
-  }
-  if (user != null && !user.trim().isEmpty()) {
-      session.setAttribute("user", user);
-      session.setAttribute("username", user);
-  }
-
-  String ctx = request.getContextPath();
-%>
-
-
------------------------------------------------------------------------
-
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
-<%@ page import="java.time.LocalDate" %>
-<%@ page import="java.time.format.DateTimeFormatter" %>
-<%
-    // ---- AUTH GUARD ----
-    String __role = (session != null) ? (String) session.getAttribute("role") : null;
-    if (__role == null || __role.trim().isEmpty()) {
-        response.sendRedirect(request.getContextPath() + "/login.action");
-        return;
-    }
-%>
 <!DOCTYPE html>
-<html>
+<%@page import="org.apache.poi.util.*"%>
+<html lang="en">
+<%@ page import="java.sql.*"%>
+<%@ page import="javax.sql.*"%>
+<%@ page import="javax.naming.*"%>
+<%@ page import="java.util.*"%>
+<%@ page import="java.util.Locale"%>
+<%@ page import="java.time.DayOfWeek" %>
+<%@ page import="java.time.LocalDate" %>
+<%@ page import="java.time.Month" %>
+<%@ page import="java.time.format.TextStyle" %>
+<%@page import="com.jdbc.DBUtilityAuto"%>
+<%@page import="com.jdbc.DBUtility"%>
+<%@page import="java.time.YearMonth, java.time.ZoneId" %>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Roster Management</title>
-<script src="../js/Atmbootstrap.min.js"></script>
-
-<script type="text/javascript">
-function insertservice() {
-    var month = document.getElementById('myMonth').value;
-    var fileInput = document.querySelector('input[type="file"]');
-    if (!month) {
-        alert('Please select a month.');
-        return;
-    }
-    if (!fileInput.files.length) {
-        alert('Please select a file to upload.');
-        return;
-    }
-    document.forms[0].action = '<%=request.getContextPath() + "/ExcelRosterAction"%>';
-    document.forms[0].submit();
-}
-
-function viewDate() {
-    var month = document.getElementById('myViewMonth').value;
-    if (!month) {
-        alert('Please select a month.');
-        return;
-    }
-    document.forms[1].action = '<%=request.getContextPath() + "/jsp/testRoster.jsp"%>';
-    document.forms[1].submit();
-}
-
-function updateRoster() {
-    var month = document.getElementById('updateViewMonth').value;
-    if (!month) {
-        alert('Please select a month.');
-        return;
-    }
-    document.forms[2].action = '<%=request.getContextPath() + "/jsp/UpdateMonthlyRoster.jsp"%>';
-    document.forms[2].submit();
-}
-
-function viewRocDate() {
-    var month = document.getElementById('myRocMonthView').value;
-    if (!month) {
-        alert('Please select a month.');
-        return;
-    }
-    document.forms[3].action = '<%=request.getContextPath() + "/jsp/ROCRosterView.jsp"%>';
-    document.forms[3].submit();
-}
-
-function openNewRocPage() {
-    window.location.href = '<%=request.getContextPath() + "/jsp/ROCRoster.jsp"%>';
-}
-</script>
-
+<title>EIS Team Roster</title>
+<!-- <meta http-equiv="refresh" content="600"> -->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel='stylesheet' href='../css/font-awesome-sysexp.css'>
+    <link rel='stylesheet' href='../css/bootstrap-expsys.css'>
+    <link rel='stylesheet' href='../css/dataTables.bootstrap4.min.css'>
+    <link rel='stylesheet' href='../css/buttons.bootstrap4.min-expsys.css'>
+</head>
 <style>
-:root{
-  --ml-primary:#7C3AED;
-  --ml-primary-2:#8B5CF6;
-  --ml-primary-light:#F3E8FF;
-  --ml-accent:#EC4899;
-  --ml-accent-2:#F472B6;
-  --ml-accent-light:#FCE7F3;
-
-  --ink:#0A0A0A;
-  --muted:#6B7280;
-  --line:#EAEAEA;
-  --bg:#F5F7FA;
-  --card:#FFFFFF;
-
-  --success:#16A34A;
-  --danger:#DC2626;
-  --warning:#F59E0B;
-
-  --radius:20px;
-  --radius-sm:12px;
-
-  --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+.N_BROKERNAME_TD {
+	background: linear-gradient(to bottom right, #000000 40%, red 50%, #000000 60%);
+	background-size: 200% 200%;
+	background-repeat: no-repeat;
+	animation: placeholderShimmer 5s infinite linear;
 }
 
-html[data-theme="dark"]{
-  --ink:#F5F5F5;
-  --muted:#9CA3AF;
-  --line:#272727;
-  --bg:#0A0614;
-  --card:#130A24;
+@
+keyframes placeholderShimmer { 0% {
+	background-position: 100% 100%; /*OR bottom right*/
 }
 
-*{margin:0;padding:0;box-sizing:border-box}
-html,body{height:100%}
-body{
-  font-family:var(--font-stack);
-  font-weight:600;
-  background:var(--bg);
-  color:var(--ink);
-  -webkit-font-smoothing:antialiased;
-  min-height:100vh;
-  transition:background .3s ease,color .3s ease;
-}
-a{color:inherit;text-decoration:none}
+100
 
-/* ============ PAGE HEADER ============ */
-.page-head{
-  background:
-    radial-gradient(circle at top right, rgba(236,72,153,.15), transparent 60%),
-    radial-gradient(circle at bottom left, rgba(124,58,237,.2), transparent 60%),
-    linear-gradient(135deg, #1A0B2E 0%, #2D1854 100%);
-  border-radius:0 0 var(--radius) var(--radius);
-  padding:40px 40px 50px;
-  margin-bottom:32px;
-  color:#fff;
-  position:relative;
-  overflow:hidden;
+
+%
+{
+background-position
+
+
+:
+
+
+0
+
+
+0
+; /*OR top left*/
+
+
 }
-.page-head::before{
-  content:"";
-  position:absolute;top:-150px;right:-150px;
-  width:450px;height:450px;border-radius:50%;
-  background:radial-gradient(circle, rgba(124,58,237,.4) 0%, transparent 70%);
 }
-.page-head-inner{
-  max-width:1400px;
-  margin:0 auto;
-  position:relative;z-index:2;
-}
-.page-head .badge-line{
-  display:inline-flex;align-items:center;gap:8px;
-  padding:6px 14px;
-  background:rgba(236,72,153,.2);
-  border:1px solid rgba(236,72,153,.4);
-  border-radius:999px;
-  font-size:.7rem;font-weight:800;
-  color:var(--ml-accent-2);letter-spacing:1px;
-  text-transform:uppercase;margin-bottom:16px;
-}
-.page-head .badge-line .dot{
-  width:6px;height:6px;border-radius:50%;
-  background:var(--ml-accent-2);
-  box-shadow:0 0 8px var(--ml-accent-2);
-  animation:pulse 2s ease-in-out infinite;
-}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-.page-head h1{
-  font-size:2.4rem;font-weight:900;
-  letter-spacing:-1px;line-height:1.15;margin-bottom:10px;
-}
-.page-head h1 .gradient{
-  background:linear-gradient(135deg,var(--ml-primary-2),var(--ml-accent-2));
-  -webkit-background-clip:text;background-clip:text;color:transparent;
-}
-.page-head p{
-  font-size:.95rem;color:rgba(255,255,255,.75);
-  font-weight:500;max-width:620px;line-height:1.6;
+#pin_div {
+	display: flex;
+	background-color: #ffffff2b;
+	width: 100%;
+	/* height: 800px; */
+	justify-content: space-around;
+	flex-wrap: wrap;
+	align-content: center;
+	margin: 5px;
+	/* flex-direction: row;  */
 }
 
-/* ============ CARDS GRID ============ */
-.roster-grid{
-  max-width:1400px;
-  margin:0 auto;
-  padding:0 32px 60px;
-  display:grid;
-  grid-template-columns:repeat(auto-fit, minmax(340px, 1fr));
-  gap:24px;
+BROKERNAME_TD {
+	font-weight: bold;
+	color: ivory;
+	font-family: serif;
+
 }
 
-.roster-card{
-  background:var(--card);
-  border:1.5px solid var(--line);
-  border-radius:var(--radius);
-  padding:32px 28px;
-  display:flex;flex-direction:column;gap:20px;
-  transition:all .3s cubic-bezier(.4,0,.2,1);
-  position:relative;overflow:hidden;
-  box-shadow:0 2px 12px rgba(0,0,0,.03);
-}
-.roster-card::before{
-  content:"";
-  position:absolute;top:0;left:0;right:0;height:4px;
-  background:linear-gradient(90deg,var(--ml-primary),var(--ml-accent));
-  opacity:0;transition:opacity .3s ease;
-}
-.roster-card:hover::before{opacity:1}
-.roster-card:hover{
-  transform:translateY(-6px);
-  border-color:var(--ml-primary);
-  box-shadow:0 20px 48px -16px rgba(124,58,237,.35);
+.BK_PORTno_TD {
+	font-weight: bold;
+	color: ivory;
+	font-family: serif;
 }
 
-.card-icon-wrap{
-  width:64px;height:64px;border-radius:18px;
-  background:linear-gradient(135deg,var(--ml-primary-light),var(--ml-accent-light));
-  display:grid;place-items:center;
-  color:var(--ml-primary);
-  transition:all .3s ease;
-  flex-shrink:0;
-}
-html[data-theme="dark"] .card-icon-wrap{
-  background:linear-gradient(135deg,rgba(124,58,237,.2),rgba(236,72,153,.2));
-  color:var(--ml-primary-2);
-}
-.roster-card:hover .card-icon-wrap{
-  transform:scale(1.1) rotate(-5deg);
-  background:linear-gradient(135deg,var(--ml-primary),var(--ml-accent));
-  color:#fff;
-}
-.card-icon-wrap svg{
-  width:32px;height:32px;
-  stroke:currentColor;fill:none;
-  stroke-width:2;stroke-linecap:round;stroke-linejoin:round;
+.ip_update_div {
+	font-size: 16px;
+	display: none;
+	position: absolute;
+	background: #ffff00;
+	color: black;
+	padding: 5px;
+	text-align: center;
+	font-family: cursive;
+	width: max-content;
 }
 
-.card-title{
-  font-size:1.25rem;font-weight:900;
-  color:var(--ink);letter-spacing:-.4px;
-  line-height:1.2;
-}
-.card-desc{
-  font-size:.85rem;color:var(--muted);
-  font-weight:500;line-height:1.5;
-  margin-top:4px;
+td:hover .ip_update_div {
+	display: block;
 }
 
-.form-group{
-  display:flex;flex-direction:column;gap:8px;
-}
-.form-label{
-  font-size:.72rem;font-weight:800;
-  text-transform:uppercase;letter-spacing:.8px;
-  color:var(--muted);
-}
-.form-control{
-  width:100%;
-  padding:12px 16px;
-  background:var(--bg);
-  border:1.5px solid var(--line);
-  border-radius:var(--radius-sm);
-  color:var(--ink);
-  font-family:inherit;
-  font-size:.9rem;
-  font-weight:600;
-  outline:none;
-  transition:all .2s ease;
-}
-.form-control:focus{
-  border-color:var(--ml-primary);
-  background:var(--card);
-  box-shadow:0 0 0 4px rgba(124,58,237,.12);
+.tool_tip_div {
+	font-size: 16px;
+	display: none;
+	position: absolute;
+	background: #ffff00;
+	color: black;
+	padding: 5px;
+	text-align: center;
+	font-family: cursive;
+	width: max-content;
+	border-radius: 5px;
 }
 
-.file-input-wrap{
-  position:relative;
-}
-.file-input-wrap input[type="file"]{
-  width:100%;
-  padding:12px 16px;
-  background:var(--bg);
-  border:2px dashed var(--line);
-  border-radius:var(--radius-sm);
-  color:var(--ink);
-  font-family:inherit;
-  font-size:.82rem;
-  font-weight:600;
-  cursor:pointer;
-  outline:none;
-  transition:all .2s ease;
-}
-.file-input-wrap input[type="file"]:hover{
-  border-color:var(--ml-primary);
-  background:var(--ml-primary-light);
-}
-html[data-theme="dark"] .file-input-wrap input[type="file"]:hover{
-  background:rgba(124,58,237,.1);
-}
-.file-input-wrap input[type="file"]::file-selector-button{
-  margin-right:14px;
-  padding:8px 18px;
-  border:none;
-  border-radius:8px;
-  background:var(--ml-primary);
-  color:#fff;
-  font-family:inherit;
-  font-weight:700;
-  font-size:.78rem;
-  cursor:pointer;
-  transition:all .2s ease;
-  text-transform:uppercase;
-  letter-spacing:.4px;
-}
-.file-input-wrap input[type="file"]::file-selector-button:hover{
-  background:var(--ml-accent);
+td:hover .tool_tip_div {
+	display: block;
 }
 
-.btn{
-  width:100%;
-  padding:14px 20px;
-  border:none;
-  border-radius:var(--radius-sm);
-  font-family:inherit;
-  font-size:.88rem;
-  font-weight:800;
-  letter-spacing:.4px;
-  text-transform:uppercase;
-  cursor:pointer;
-  transition:all .25s ease;
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  gap:10px;
-  position:relative;
-  overflow:hidden;
-}
-.btn svg{
-  width:18px;height:18px;
-  stroke:currentColor;fill:none;
-  stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;
-}
-.btn-primary{
-  background:linear-gradient(135deg,var(--ml-primary),var(--ml-accent));
-  color:#fff;
-  box-shadow:0 8px 22px -8px var(--ml-primary);
-}
-.btn-primary:hover{
-  transform:translateY(-2px);
-  box-shadow:0 14px 32px -8px var(--ml-primary);
-}
-.btn-primary:active{transform:translateY(0)}
+title_div
 
-.btn-sample{
-  display:inline-flex;
-  align-items:center;
-  gap:8px;
-  padding:10px 16px;
-  background:var(--ml-primary-light);
-  color:var(--ml-primary);
-  border-radius:var(--radius-sm);
-  font-size:.78rem;
-  font-weight:800;
-  text-transform:uppercase;
-  letter-spacing:.4px;
-  text-decoration:none;
-  transition:all .2s ease;
-  border:1.5px solid transparent;
-}
-html[data-theme="dark"] .btn-sample{
-  background:rgba(124,58,237,.15);
-  color:var(--ml-primary-2);
-}
-.btn-sample:hover{
-  background:var(--ml-primary);
-  color:#fff;
-  border-color:var(--ml-primary);
-}
-.btn-sample svg{
-  width:14px;height:14px;
-  stroke:currentColor;fill:none;
-  stroke-width:2.4;
+
+.blink {
+	font-size: 20px;
+	font-weight: bold;
+	font-family: sans-serif;
 }
 
-.alert{
-  max-width:1400px;
-  margin:0 auto 24px;
-  padding:16px 22px;
-  border-radius:var(--radius-sm);
-  font-size:.88rem;
-  font-weight:600;
-  display:flex;
-  align-items:flex-start;
-  gap:12px;
-  animation:slideDown .4s ease;
-}
-@keyframes slideDown{
-  from{opacity:0;transform:translateY(-10px);}
-  to{opacity:1;transform:translateY(0);}
-}
-.alert-error{
-  background:#FEE2E2;
-  color:#991B1B;
-  border:1px solid #FCA5A5;
-}
-.alert-success{
-  background:#DCFCE7;
-  color:#166534;
-  border:1px solid #86EFAC;
-}
-.alert svg{
-  width:20px;height:20px;
-  flex-shrink:0;
-  stroke:currentColor;fill:none;
-  stroke-width:2.4;
-  margin-top:1px;
+.Td_for_ipadd {
+	background-color: aqua;
+	color: black;
 }
 
-.footer-note{
-  max-width:1400px;
-  margin:0 auto;
-  padding:0 32px 40px;
-  text-align:center;
-  color:var(--muted);
-  font-size:.78rem;
-  font-weight:600;
+/* tr {
+            /* border: 5px solid red; */
+/* border: 1px solid rgb(0, 255, 13); */
+
+/* width: 100%; */
+/* background-color: rgb(110, 98, 99); */
+
+/* } */
+.TH_IP_ALL {
+	background-color: rgb(96, 194, 255) !important;
 }
 
-@media (max-width:768px){
-  .page-head{padding:32px 20px 40px;border-radius:0 0 16px 16px;}
-  .page-head h1{font-size:1.6rem;}
-  .page-head p{font-size:.85rem;}
-  .roster-grid{padding:0 16px 40px;grid-template-columns:1fr;gap:16px;}
-  .roster-card{padding:24px 20px;}
-  .card-icon-wrap{width:52px;height:52px;border-radius:14px;}
-  .card-icon-wrap svg{width:26px;height:26px;}
-  .card-title{font-size:1.1rem;}
+body {
+	background-color: black;
+}
+
+.table_title_div {
+	color: white;
+	height: 25px;
+	display: flex;
+	width: 100%;
+	text-align: center !important;
+	align-content: center;
+	justify-content: center;
+	padding-top: 15px;
+	font-size: x-large;
+}
+
+.tablecontainer {
+	display: flex;
+	background-color: rgb(0, 0, 0);
+	width: 100%;
+	/* height: 800px; */
+	justify-content: space-around;
+	flex-wrap: wrap;
+	align-content: center;
+	margin: 5px;
+	/* flex-direction: row;  */
+}
+
+.onetable_div {
+	display: flex;
+	flex-direction: column;
+	background-color: black;
+	height: fit-content;
+	
+	border-radius: 16px;
+	
+	margin-top: 1%;
+}
+
+td {
+	transition: 0.25s;
+
+	/* min-width: 30px; */
+}
+
+td:hover {
+	transform: scale(0.9)
+}
+
+.demonclass {
+	border-radius: 10px;
+	overflow: visible;
+}
+
+.onetable_div:hover {
+	
+}
+
+.title_div {
+	background-color: black;
+	width: 100%;
+	text-align: center;
+	justify-content: center;
+	font-weight: bolder;
+	font-size: xx-large;
+	color: white;
+}
+
+td, th, table {
+	border: 6.5px solid black;
+	border-collapse: collapse;
+	/* width: 20rem; */
+	text-align: center;
+	margin: 10px;
+	padding: 0.2%;
+	background-color: #000000;
+	color: white;
+	border-radius: 0px;
+}
+
+tr {
+	border: 1px;
+	border-style: solid;
+	border-color: #96D4D4;
+
+	/*  min-width: 80px; */
+}
+
+.HN_title {
+	font-weight: bold;
+	font-size: 20px;
+	background-color: rgb(132, 136, 132);
+	color: whitesmoke;
+}
+
+table {
+	border: 1px;
+	border-radius: 5px !important;
+	border-style: solid;
+	border-color: #96D4D4;
+}
+
+td {
+	border: 1px;
+	height: 30px;
+	width: 1rem !important;
+	font-size: 15px;
+	border-style: solid;
+	border-color: #96D4D4;
+}
+
+.isolator_row {
+	color: black;
+}
+
+/* //////////////////////for all the heads  */
+.BROKER_title {
+	font-weight: bold;
+	padding: 6px;
+	background-color: rgb(167, 199, 231);
+	color: Black;
+}
+
+/*.BROKER_title,
+.PORT_title {
+    background-color: rgb(211 209 228 / 61%);
+    color: aqua;
+    font-weight: bold;
+    padding: 6px;
+
+}*/
+.isoltator_title, .iso_port {
+	font-weight: bold;
+	color: aqua;
+}
+
+.TH_IP_ALL, .Td_for_ipadd {
+	color: black;
+	font-weight: bold;
+	font-size: 1rem;
+}
+
+.blinkbroker {
+	animation: mymove 1s infinite;
+	animation-timing-function: ease-in;
+}
+
+@
+keyframes mymove {from { color:rgb(243, 2, 2);
+	
+}
+
+to {
+	color: rgb(125, 151, 251);
+}
+
+}
+.timer {
+	/* text-align: center; */
+	border: 5px solid white;
+	display: inline;
+	padding: 5px;
+	color: white;
+	font-family: Verdana, sans-serif, Arial;
+	font-size: 40px;
+	height: 50px;
+	font-weight: bold;
+	text-decoration: none;
+}
+
+.blink {
+	animation: blinker 0s linear infinite;
+	color: white;
+	font-family: sans-serif;
+	font-size: larger;
+	text-align-last: center;
+	font-weight: 900;
+}
+
+.popup {
+	display: none;
+	position: fixed;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	background-color: #f9f9f9;
+	padding: 50px;
+	border: 2px solid #ccc;
+	z-index: 9999;
+}
+
+.button-container{
+        display: flex;
+        justify-content: flex-end;
+        margin-right: 10px; 
+}
+
+.button{
+  padding: 10px 20px;
+  border: none;
+  border-radius:5px;
+  cursor: pointer;
+  margin-right: 10px; 
+}
+
+$gray-100: #f7fafc;
+$gray-200: #edf2f7;
+$gray-300: #e2e8f0;
+$gray-400: #cbd5e0;
+$gray-500: #a0aec0;
+$gray-600: #718096;
+$gray-700: #4a5568;
+$gray-800: #2d3748;
+$gray-900: #1a202c;
+
+$white: #ffffff;
+
+.container {
+  max-width: 500px;
+  margin: auto;
+  margin-top: 3rem;
+  overflow-x: auto;
+}
+
+table {
+    position: relative;
+    width: 100%;
+    white-space: nowrap;
+    thead tr {
+      
+        text-align: left;
+
+        th {
+           
+          vertical-align: middle;
+        }
+    }
+
+    tbody {
+        tr:nth-child(odd) td {
+         
+        }
+
+    
+  tr>th:first-child,tr>td:first-child {
+    /* position: sticky; */
+    left: 0;
+  }
+  
+}
+
+.MorningText{ background-color:#FF8C00; }
+
+.GenralText{ background-color:#696969; }
+
+.AfternoonText{ background-color:#FFD700; }
+
+.NightText{ background-color:#1E90FF; }
+
+.WeekoffText{ background-color:#0000CD; color: white; }
+.WeekoffAdjustText{ background-color:#800080; color: white; }
+
+.LeaveText{ background-color: #FF0000 }
+.FlexiText{ background-color: #FF3333}
+.HolidayText{ background-color: #90EE90 }
+.SeprationText{ background-color: #000000 }
+
+.hidden{
+   display:none;
+}
+
+.visible{
+display: block;
+}
+
+select:disabled {
+  
+  cursor: not-allowed;
 }
 </style>
-</head>
-<body>
-
-<%
-    session = request.getSession();
-
-    // ============ ROLE RESOLUTION (multi-fallback) ============
-    String m_strrole = (String) session.getAttribute("m_strrole");
-    if (m_strrole == null || m_strrole.trim().isEmpty()) {
-        m_strrole = (String) session.getAttribute("role");
-    }
-    if (m_strrole == null || m_strrole.trim().isEmpty()) {
-        m_strrole = request.getParameter("role");
-    }
-    if (m_strrole == null || m_strrole.trim().isEmpty()) {
-        m_strrole = request.getParameter("m_strrole");
-    }
-    if (m_strrole == null) m_strrole = "";
-
-    session.setAttribute("m_strrole", m_strrole);
-    session.setAttribute("role", m_strrole);
-    System.out.println("Role:-" + m_strrole);
-
-    // ============ USERNAME RESOLUTION ============
-    String username = null;
-    if ("Manager".equals(m_strrole)) {
-        username = "Manager";
-    } else if ("Team Lead".equals(m_strrole)) {
-        username = "TeamLead";
-    } else {
-        username = (String) session.getAttribute("user");
-        if (username == null || username.trim().isEmpty()) {
-            username = (String) session.getAttribute("username");
-        }
-        if (username == null || username.trim().isEmpty()) {
-            username = request.getParameter("user");
-        }
-    }
-    if (username == null) username = "";
-
-    session.setAttribute("user", username);
-    session.setAttribute("username", username);
-    System.out.println("User name: " + username);
-
-    LocalDate currentDate = LocalDate.now();
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM");
-    String currentMonth = currentDate.format(formatter);
-
-    String errorMessage = (String) request.getAttribute("errorMessage");
-    String successMessage = (String) request.getAttribute("successMessage");
-%>
-
-<!-- ============ PAGE HEADER ============ -->
-<section class="page-head">
-  <div class="page-head-inner">
-    <div class="badge-line">
-      <span class="dot"></span>
-      <%= m_strrole != null && !m_strrole.trim().isEmpty() ? m_strrole : "Roster" %> Management
-    </div>
-    <h1>Team <span class="gradient">Roster</span> Hub</h1>
-    <p>Upload, view, and manage your team's monthly roster &mdash; all in one place. Select a month and choose an action to get started.</p>
-  </div>
-</section>
-
-<!-- ============ ALERTS ============ -->
-<% if (errorMessage != null) { %>
-<div class="alert alert-error">
-  <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-  <div><strong>Upload Error:</strong> <%= errorMessage.replace("\n", "<br>") %></div>
-</div>
-<% } %>
-
-<% if (successMessage != null) { %>
-<div class="alert alert-success">
-  <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-  <div><strong>Success:</strong> <%= successMessage %></div>
-</div>
-<% } %>
-
-<!-- ============ CARDS GRID ============ -->
-<div class="roster-grid">
-
-  <!-- ============ CARD 1: UPLOAD ============ -->
-  <form action="<%=request.getContextPath()%>/ExcelRosterAction" method="post" enctype="multipart/form-data">
-    <div class="roster-card">
-      <div class="card-icon-wrap">
-        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-      </div>
-      <div>
-        <div class="card-title">Upload Roster</div>
-        <div class="card-desc">Upload the monthly roster Excel file for your team.</div>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label" for="myMonth">Select Month</label>
-        <input type="month" id="myMonth" name="myMonth" class="form-control" required>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">Select Roster File (.xlsx)</label>
-        <div class="file-input-wrap">
-          <input type="file" name="file" accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required>
-        </div>
-      </div>
-
-      <a href="<%=request.getContextPath()%>/XMLFile/Roster_Format.xlsx" class="btn-sample">
-        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        Download Sample Format
-      </a>
-
-      <input type="hidden" name="m_strroles" value="<%=m_strrole%>">
-      <input type="hidden" name="username" value="<%=username%>">
-      <button type="button" class="btn btn-primary" onclick="insertservice()">
-        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-        Upload Roster
-      </button>
-    </div>
-  </form>
-
-  <!-- ============ CARD 2: VIEW ============ -->
-  <form>
-    <div class="roster-card">
-      <div class="card-icon-wrap">
-        <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-      </div>
-      <div>
-        <div class="card-title">View Roster</div>
-        <div class="card-desc">View uploaded roster for any selected month.</div>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label" for="myViewMonth">Select Month</label>
-        <input type="month" id="myViewMonth" name="myViewMonth" class="form-control" required value="<%= currentMonth %>">
-      </div>
-
-      <input type="hidden" name="m_strroles" value="<%=m_strrole%>">
-      <input type="hidden" name="username" value="<%=username%>">
-      <button type="button" class="btn btn-primary" onclick="viewDate()">
-        <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-        View Uploaded Roster
-      </button>
-    </div>
-  </form>
-
-  <!-- ============ CARD 3: UPDATE ============ -->
-  <form>
-    <div class="roster-card">
-      <div class="card-icon-wrap">
-        <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-      </div>
-      <div>
-        <div class="card-title">Update Roster</div>
-        <div class="card-desc">Modify or update an existing monthly roster.</div>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label" for="updateViewMonth">Select Month</label>
-        <input type="month" id="updateViewMonth" name="myViewMonth" class="form-control" required value="<%= currentMonth %>">
-      </div>
-
-      <input type="hidden" name="m_strroles" value="<%=m_strrole%>">
-      <input type="hidden" name="username" value="<%=username%>">
-      <button type="button" class="btn btn-primary" onclick="updateRoster()">
-        <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-        Update Roster
-      </button>
-    </div>
-  </form>
-
-  <!-- ============ CARD 4: ROC (only for Event Management) ============ -->
-  <% if ("Event Management".equals(m_strrole)) { %>
-  <form>
-    <div class="roster-card">
-      <div class="card-icon-wrap">
-        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 16l2 2 4-4"/></svg>
-      </div>
-      <div>
-        <div class="card-title">View ROC Roster</div>
-        <div class="card-desc">Access the ROC roster for the selected month.</div>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label" for="myRocMonthView">Select Month</label>
-        <input type="month" id="myRocMonthView" name="myRocMonthView" class="form-control" required value="<%= currentMonth %>">
-      </div>
-
-      <button type="button" class="btn btn-primary" onclick="viewRocDate()">
-        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        View ROC Roster
-      </button>
-    </div>
-  </form>
-  <% } %>
-
-</div>
-
-<!-- ============ FOOTER ============ -->
-<div class="footer-note">
-  &copy; <%= java.time.Year.now() %> EIS Portal &middot; Team: <strong><%= m_strrole %></strong> &middot; User: <strong><%= username %></strong>
-</div>
-
 <script>
-// Auto-hide alerts after 30s
-setTimeout(function() {
-  var alerts = document.querySelectorAll('.alert');
-  alerts.forEach(function(a) {
-    a.style.transition = 'opacity .5s ease';
-    a.style.opacity = '0';
-    setTimeout(function(){ a.style.display = 'none'; }, 500);
-  });
-}, 30000);
-</script>
+ function submitForm(){
+	 
+	document.getElementById("monthYearForm").submit();
+ }
+ 
+ 
+ 
+ 
+ function prepareData(){
+	
+	 var flag = 'Y';
+	 
+	/*  if (flag == 'Y') {
+		 alert("Roster Cant Be Update or Submit Please contact Admin")
+		 }
+	 else { */
+	 
+	 document.forms["rosterForm"].action = '<%=request.getContextPath() + "/RosterServlet"%>';
+	document.forms["rosterForm"].submit();
+	
+	 /* } */
+ }
+ 
+ window.onload= function(){
+	  //location.replace("/EISPortal/jsp/NightChecklistTable.jsp")
+	  	 // location.replace('<%=request.getContextPath() + "/NightShiftChecklistAction"%>');
+	window.history.replaceState({},'View NightChecklist', '<%=request.getContextPath() + "/jsp/testRoster.jsp"%>');
+	  
+} ; 
+   </script>
+<body >
+ 		<%-- <% 
+ 		    session = request.getSession();
+ 		    String m_strrole = (String)session.getAttribute("role");
+			//String m_strrole = (String)request.getParameter("role");
+			if(m_strrole==null){
+				m_strrole = request.getParameter("role");
+				if(m_strrole != null){
+					session.setAttribute("role", m_strrole);
+				}
+			}
+			/* session.setAttribute("role", request.getParameter("m_strRole"));
+			session.setAttribute("role", m_strrole); */
+			System.out.println("Role:-"+m_strrole);  %>
+	<div class="onetable_div" id="aceprsys09_tablediv" style="order: -3;">
+		 <form id="monthYearForm" method="get" style="color: white; position: relative; top: 60px;">
+    <label for="month" >Month:</label>
+    <select name="month" id="month">
+    <option value=" "> </option>
+    <option value="1">Jan</option>
+    <option value="2">Feb</option>
+    <option value="3">Mar</option>
+    <option value="4">Apr</option>
+    <option value="5">May</option>
+    <option value="6">Jun</option>
+    <option value="7">Jul</option>
+    <option value="8">Aug</option>
+    <option value="9">Sep</option>
+    <option value="10">Oct</option>
+    <option value="11">Nov</option>
+    <option value="12">Dec</option>
+    </select>
+    
+    <label for="year">Year:</label>
+    <input type="number" id="year" name="year" min="2024" max="2100" value="2024" required>
+    <input type="hidden" id="<%=m_strrole%>" name ="m_strrole" value="<%=m_strrole%>">
+    
+<!--     <button name="button" class="button" id="submitButton" type="button" onclick="submitForm();" style="width: 80px; height: 40px;">Submit</button> -->
+    <input type="button"  name="button" class="button" id="submitButton"  onclick="submitForm();" value="Select Month" style="zoom: 80%; font-weight: bolder; background-color: green; color: white; ">
+   
+   <!-- <button type="submit"> Generate Calender</button> --> 
+    </form>
+    </div> --%>
+   <!-- <form id="dayFilterForm">
+  <label for="rosterDate">Select Date:</label>
+  <input type="date" id="rosterDate" name="rosterDate" />
+  <button type="button" onclick="filterByDay()">Filter</button>
+   </form> -->
+    <div>
+    <form id="rosterForm" action="RosterServlet" method="post">
+    <input type="hidden" id="tableData" name="tableData">
+    
+    
+    <%
+    YearMonth currentYearMonth = YearMonth.now(ZoneId.of("Asia/Kolkata"));
+ // Get the year as an integer
+    int yearValue = currentYearMonth.getYear();
+    // Get the month as an integer (1-12)
+    int monthValue = currentYearMonth.getMonthValue();
+    
+    String monthYr=request.getParameter("myViewMonth");
+	 System.out.println(monthYr);
+	 String[] s= monthYr.split("-");
+   String selectedYear= s[0];
+   String selectedMonth= s[1];
+   String m_strroles= request.getParameter("m_strroles");
+   String username= request.getParameter("username");
+    if(selectedMonth != null && selectedYear != null){
+    int year= Integer.parseInt(selectedYear);
+    int month=Integer.parseInt(selectedMonth);
+    System.out.println("Year :-"+year);
+    int noOfDays=0;
+    if(selectedMonth.equalsIgnoreCase("01") || selectedMonth.equalsIgnoreCase("03") || selectedMonth.equalsIgnoreCase("05") || selectedMonth.equalsIgnoreCase("07") || selectedMonth.equalsIgnoreCase("08") || selectedMonth.equalsIgnoreCase("10") || selectedMonth.equalsIgnoreCase("12")) {
+    	  noOfDays=31;	
+    	} else if(selectedMonth.equalsIgnoreCase("04") || selectedMonth.equalsIgnoreCase("06") || selectedMonth.equalsIgnoreCase("09") || selectedMonth.equalsIgnoreCase("11")) {
+    		noOfDays=30;
+    	} else if(selectedMonth.equalsIgnoreCase("02")) {
+    		if((year % 400 == 0) || (year % 100 != 0) && (year % 4 == 0)) {
+    			noOfDays=29;
+    		}else {
+    			noOfDays=28;
+    		}
+    	}
+    System.out.println("No Of Days :-"+noOfDays);
+    
+    boolean showTable= (selectedMonth != null && selectedYear != null);
+    %>
+		<div class="table_title_div">
+		<% String nameOfMonth= null;
+		String sortMonth=null;
+		if(selectedMonth.equalsIgnoreCase("01")) {
+			nameOfMonth= "January";
+			sortMonth= "Jan";
+		} else if(selectedMonth.equalsIgnoreCase("02")){
+			nameOfMonth= "February";
+			sortMonth= "Feb";
+		} else if(selectedMonth.equalsIgnoreCase("03")){
+			nameOfMonth= "March";
+			sortMonth= "Mar";
+		} else if(selectedMonth.equalsIgnoreCase("04")){
+			nameOfMonth= "April";
+			sortMonth= "Apr";
+		} else if(selectedMonth.equalsIgnoreCase("05")){
+			nameOfMonth= "May";
+			sortMonth= "May";
+		} else if(selectedMonth.equalsIgnoreCase("06")){
+			nameOfMonth= "June";
+			sortMonth= "Jun";
+		} else if(selectedMonth.equalsIgnoreCase("07")){
+			nameOfMonth= "July";
+			sortMonth= "Jul";
+		} else if(selectedMonth.equalsIgnoreCase("08")){
+			nameOfMonth= "August";
+			sortMonth= "Aug";
+		} else if(selectedMonth.equalsIgnoreCase("09")){
+			nameOfMonth= "September";
+			sortMonth= "Sep";
+		} else if(selectedMonth.equalsIgnoreCase("10")){
+			nameOfMonth= "October";
+			sortMonth= "Oct";
+		} else if(selectedMonth.equalsIgnoreCase("11")){
+			nameOfMonth= "November";
+			sortMonth= "Nov";
+		} else if(selectedMonth.equalsIgnoreCase("12")){
+			nameOfMonth= "December";
+			sortMonth= "Dec";
+		}
+		
+		 String m_strmthyr=nameOfMonth+"_"+selectedYear;
+		 String sort_MonthYear= sortMonth+"_"+selectedYear;
+		%>
+			<h2><%= m_strroles %>  Roster for <%=nameOfMonth %>  <%= selectedYear %></h2>
+		
+		</div>
+		
+		<br>
+		<br>
+		<table class="demonclass table table-border" id="aceprsys09_tb"
+<%
+Statement l_bjst = null;
+ResultSet l_bjres = null;
+Connection con = null;
+String l_strQuery = null;
+con = DBUtilityAuto.getReportDBConnection();
 
+l_strQuery = "select distinct(Team) as team from eisupport_employee_master";
+l_bjst = con.createStatement();
+l_bjres = l_bjst.executeQuery(l_strQuery);
+%>
+			style="border: 1px solid white; zoom: 80%; overflow-x: auto;">
+
+			<tr id="aceprsys09IP_th"> <td class="HN_title" colspan="2"><%=m_strroles%>
+
+				<%-- <select name="userModule" id="userModule" style="border: none" class="HN_title">
+					<option vaule="" selected >All Module</option>
+					<%
+					while (l_bjres.next()) {
+
+						String team = l_bjres.getString("team");
+					%>
+					<option value="<%=team%>"><%=team%></option>
+					<%
+					}
+					%>
+				</select> --%>
+
+				<%
+				for (int i = 1; i <= noOfDays; i++) {
+				%>
+				<td class="Td_for_ipadd" id="logprsys39_IP_td"
+					style="background: aqua;"><%= i %></td>
+				<%} %>
+                <td class="Td_for_ipadd" id="logprsys39_IP_td"
+					style="background: aqua;">Weekoffs</td>
+				<td class="Td_for_ipadd" id="logprsys39_IP_td"
+					style="background: aqua;">Leaves</td>
+
+			</tr>
+
+
+			<tr id="aceprsys09_th">
+				<td class="BROKER_title">Employee Name</td>
+				<td class="BROKER_title">Tasks</td>
+				<% for(int day=1; day<=noOfDays; day++) {
+				LocalDate currentDate= LocalDate.of(year, month, day);
+				DayOfWeek dayOfWeek= currentDate.getDayOfWeek();
+				String dayOfWeekShort= dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.ENGLISH);
+				%>
+				<td class=""><%=dayOfWeekShort %></td>
+				<%}%>
+				<td class=""> </td>
+				<td class=""> </td>
+			</tr>
+
+			<% 
+			
+			if(showTable){
+	String getDataQuery="select * from rostertable where UPPER(TEAM) = UPPER('"+ m_strroles + "') and UPPER(MONTHYEAR)=UPPER('"+ sort_MonthYear +"') order by id" ;	
+	System.out.println(getDataQuery);
+	 Connection conn=DBUtilityAuto.getReportDBConnection();
+	 PreparedStatement pstmt=null,pstmt1=null;
+	 ResultSet rs1=null,rs2=null;
+	 Statement stmt=null;
+	 ResultSet rs= null;
+	 boolean exists=false;
+	try{
+		pstmt=conn.prepareStatement(getDataQuery);
+		rs1=pstmt.executeQuery();
+		exists=rs1.next();
+	}catch(Exception z){
+		z.printStackTrace();
+	}
+	if(exists){
+		int i=0;
+		String getDataQuery1="select * from rostertable where UPPER(TEAM)= UPPER('"+ m_strroles + "') and UPPER(MONTHYEAR)=UPPER('"+ sort_MonthYear +"') order by id" ;
+		pstmt1=conn.prepareStatement(getDataQuery1);
+		rs2=pstmt.executeQuery();
+		while(rs2.next())	{%>
+			<tr id='block'>
+			
+			<td class="BROKERNAME_TD"
+				style="background-color: rgb(147, 197, 114); color: black; font-weight: bolder;"
+				id='employeeName'><%= rs2.getString("NAME")%><input type="hidden"
+				name="employeeName" value="<%=rs2.getString("NAME") %>">
+				<input type="hidden"
+				name="adId" value="<%=rs2.getString("AD_ID") %>"></td>
+<%if(rs2.getString("POSITION")!=null) { if(rs2.getString("POSITION").equalsIgnoreCase("Manager")){ %>	
+<td class="BK_PORTno_TD">		
+<select name="position_<%=i %>" id="position_<%=i %>"  style="width: 150px; font-size: 20px; margin: -20px; background-color: black; color: white; border: none;">
+<option value="Manager" selected>Manager</option>
+</select>
+</td>	
+<%} else if(rs2.getString("POSITION").equalsIgnoreCase("Team Lead")){ %>
+<td class="BK_PORTno_TD">		
+<select name="position_<%=i %>" id="position_<%=i %>"  style="width: 150px; font-size: 20px; margin: -20px; background-color: black; color: white; border: none;">
+<option value="Team Lead" selected>Team Lead</option>
+</select>
+</td>
+<%} else if(rs2.getString("POSITION").equalsIgnoreCase("Senior")){ %>
+<td class="BK_PORTno_TD">		
+<select name="position_<%=i %>" id="position_<%=i %>"  style="width: 150px; font-size: 20px; margin: -20px; background-color: black; color: white; border: none;">
+<option value="Senior" selected>Senior</option>
+<option value="Junior">Junior</option>
+</select>
+</td>
+<%} else if(rs2.getString("POSITION").equalsIgnoreCase("Junior")){ %>
+<td class="BK_PORTno_TD">		
+<select name="position_<%=i %>" id="position_<%=i %>"  style="width: 150px; font-size: 20px; margin: -20px; background-color: black; color: white; border: none;">
+<option value="Senior" >Senior</option>
+<option value="Junior" selected>Junior</option>
+</select>
+</td>
+<%}} else if(rs2.getString("POSITION")==null) {
+if(m_strroles.equals("Manager")){%>
+<td class="BK_PORTno_TD">		
+<select name="position_<%=i %>" id="position_<%=i %>"  style="width: 150px; font-size: 20px; margin: -20px; background-color: black; color: white; border: none;">
+<option  selected disabled>Select Here</option>
+    <option value="Manager">Manager</option>
+</select>
+</td>
+<%} else if(m_strroles.equals("Team Lead")){ %>
+<td class="BK_PORTno_TD">		
+<select name="position_<%=i %>" id="position_<%=i %>"  style="width: 150px; font-size: 20px; margin: -20px; background-color: black; color: white; border: none;">
+<option  selected disabled>Select Here</option>
+    <option value="Team Lead">Team Lead</option>
+</select>
+</td>
+<%} else { %>
+<td class="BK_PORTno_TD">
+<select name="position_<%=i %>" id="position_<%=i %>"  style="width: 150px; font-size: 20px; margin: -20px; background-color: black; color: white; border: none;">
+<option  selected disabled>Select Here</option>
+    <option value="Senior">Senior</option>
+    <option value="Junior">Junior</option>
+</select>
+</td>
+<%}
+ }%>
+			<% 
+			
+			for(int day=1;day<=noOfDays;day++){
+			String dayColumn= "DAY_"+ Integer.toString(day);
+			
+			if(rs2.getString(dayColumn).equalsIgnoreCase("Morning")){%>
+			<td id="block_"><select name="mnt_<%=i %>_<%=day %>"
+				class="MorningText"
+				onchange="this.className=this.options[this.selectedIndex].className"
+				style="width: 160%; height: 205%; position: relative; top: -11px; left: -11px; font-weight: bold;" >
+					<option class="MorningText" value="Morning" selected>M(o)</option>
+					<option class="MorningText" value="WFH-Morning" >WFH-M(o)</option>
+					<option class="MorningText" value="CC-Morning" >CC-M(o)</option>
+					<option class="GenralText" value="General">D(o)</option>
+					<option class="GenralText" value="WFH-General">WFH-D(o)</option>
+					<option class="GenralText" value="CC-General">CC-D(o)</option>
+					<option class="AfternoonText" value="Afternoon">A(o)</option>
+					<option class="AfternoonText" value="WFH-Afternoon">WFH-A(o)</option>
+					<option class="AfternoonText" value="CC-Afternoon">CC-A(o)</option>
+					<option class="NightText" value="Night">N(o)</option>
+					<option class="NightText" value="WFH-Night">WFH-N(o)</option>
+					<option class="NightText" value="CC-Night">CC-N(o)</option>
+					<option class="WeekoffText" value="Weekoff">W</option>
+					<!-- <option class="WeekoffAdjustText" value="WeekoffAdjust">WA</option> -->
+					<option class="LeaveText" value="SickLeave">SL</option>
+					<option class="LeaveText" value="CasualLeave">CL</option>
+					<option class="LeaveText" value="EarnedLeave">EL</option>
+					<option class="FlexiText" value="FlexiLeave">FL</option>
+					<option class="HolidayText" value="HolidayLeave">HL</option>
+					<option class="SeprationText" value="NA"> </option>
+
+			</select></td>
+			<% }else if(rs2.getString(dayColumn).equalsIgnoreCase("WFH-Morning")){%>
+			<td id="block_"><select name="mnt_<%=i %>_<%=day %>"
+				class="MorningText"
+				onchange="this.className=this.options[this.selectedIndex].className"
+				style="width: 160%; height: 205%; position: relative; top: -11px; left: -11px; font-weight: bold;" >
+					<option class="MorningText" value="Morning" >M(o)</option>
+					<option class="MorningText" value="WFH-Morning" selected>WFH-M(o)</option>
+					<option class="MorningText" value="CC-Morning" >CC-M(o)</option>
+					<option class="GenralText" value="General">D(o)</option>
+					<option class="GenralText" value="WFH-General">WFH-D(o)</option>
+					<option class="GenralText" value="CC-General">CC-D(o)</option>
+					<option class="AfternoonText" value="Afternoon">A(o)</option>
+					<option class="AfternoonText" value="WFH-Afternoon">WFH-A(o)</option>
+					<option class="AfternoonText" value="CC-Afternoon">CC-A(o)</option>
+					<option class="NightText" value="Night">N(o)</option>
+					<option class="NightText" value="WFH-Night">WFH-N(o)</option>
+					<option class="NightText" value="CC-Night">CC-N(o)</option>
+					<option class="WeekoffText" value="Weekoff">W</option>
+					<!-- <option class="WeekoffText" value="WeekoffAdjust">WA</option> -->
+					<option class="LeaveText" value="SickLeave">SL</option>
+					<option class="LeaveText" value="CasualLeave">CL</option>
+					<option class="LeaveText" value="EarnedLeave">EL</option>
+					<option class="FlexiText" value="FlexiLeave">FL</option>
+					<option class="HolidayText" value="HolidayLeave">HL</option>
+					<option class="SeprationText" value="NA"> </option>
+
+			</select></td>
+			<% }else if(rs2.getString(dayColumn).equalsIgnoreCase("CC-Morning")){%>
+			<td id="block_"><select name="mnt_<%=i %>_<%=day %>"
+				class="MorningText"
+				onchange="this.className=this.options[this.selectedIndex].className"
+				style="width: 160%; height: 205%; position: relative; top: -11px; left: -11px; font-weight: bold;" >
+					<option class="MorningText" value="Morning" >M(o)</option>
+					<option class="MorningText" value="WFH-Morning" >WFH-M(o)</option>
+					<option class="MorningText" value="CC-Morning" selected>CC-M(o)</option>
+					<option class="GenralText" value="General">D(o)</option>
+					<option class="GenralText" value="WFH-General">WFH-D(o)</option>
+					<option class="GenralText" value="CC-General">CC-D(o)</option>
+					<option class="AfternoonText" value="Afternoon">A(o)</option>
+					<option class="AfternoonText" value="WFH-Afternoon">WFH-A(o)</option>
+					<option class="AfternoonText" value="CC-Afternoon">CC-A(o)</option>
+					<option class="NightText" value="Night">N(o)</option>
+					<option class="NightText" value="WFH-Night">WFH-N(o)</option>
+					<option class="NightText" value="CC-Night">CC-N(o)</option>
+					<option class="WeekoffText" value="Weekoff">W</option>
+					<!-- <option class="WeekoffText" value="WeekoffAdjust">WA</option> -->
+					<option class="LeaveText" value="SickLeave">SL</option>
+					<option class="LeaveText" value="CasualLeave">CL</option>
+					<option class="LeaveText" value="EarnedLeave">EL</option>
+					<option class="FlexiText" value="FlexiLeave">FL</option>
+					<option class="HolidayText" value="HolidayLeave">HL</option>
+					<option class="SeprationText" value="NA"> </option>
+
+			</select></td>
+			<%} else if(rs2.getString(dayColumn).equalsIgnoreCase("Genral") || rs2.getString(dayColumn).equalsIgnoreCase("General") ){%>
+			<td id="block_"><select name="mnt_<%=i %>_<%=day %>"
+				class="GenralText"
+				onchange="this.className=this.options[this.selectedIndex].className"
+				style="width: 160%; height: 205%; position: relative; top: -11px; left: -11px; font-weight: bold;" >
+					<option class="MorningText" value="Morning">M(o)</option>
+					<option class="MorningText" value="WFH-Morning" >WFH-M(o)</option>
+					<option class="MorningText" value="CC-Morning" >CC-M(o)</option>
+					<option class="GenralText" value="General" selected>D(o)</option>
+					<option class="GenralText" value="WFH-General">WFH-D(o)</option>
+					<option class="GenralText" value="CC-General">CC-D(o)</option>
+					<option class="AfternoonText" value="Afternoon">A(o)</option>
+					<option class="AfternoonText" value="WFH-Afternoon">WFH-A(o)</option>
+					<option class="AfternoonText" value="CC-Afternoon">CC-A(o)</option>
+					<option class="NightText" value="Night">N(o)</option>
+					<option class="NightText" value="WFH-Night">WFH-N(o)</option>
+					<option class="NightText" value="CC-Night">CC-N(o)</option>
+					<option class="WeekoffText" value="Weekoff">W</option>
+					<!-- <option class="WeekoffAdjustText" value="WeekoffAdjust">WA</option> -->
+					<option class="LeaveText" value="SickLeave">SL</option>
+					<option class="LeaveText" value="CasualLeave">CL</option>
+					<option class="LeaveText" value="EarnedLeave">EL</option>
+					<option class="FlexiText" value="FlexiLeave">FL</option>
+					<option class="HolidayText" value="HolidayLeave">HL</option>
+					<option class="SeprationText" value="NA"> </option>
+
+			</select></td>
+			<%} else if(rs2.getString(dayColumn).equalsIgnoreCase("WFH-Genral") || rs2.getString(dayColumn).equalsIgnoreCase("WFH-General") ){%>
+			<td id="block_"><select name="mnt_<%=i %>_<%=day %>"
+				class="GenralText"
+				onchange="this.className=this.options[this.selectedIndex].className"
+				style="width: 160%; height: 205%; position: relative; top: -11px; left: -11px; font-weight: bold;" >
+					<option class="MorningText" value="Morning">M(o)</option>
+					<option class="MorningText" value="WFH-Morning" >WFH-M(o)</option>
+					<option class="MorningText" value="CC-Morning" >CC-M(o)</option>
+					<option class="GenralText" value="General" >D(o)</option>
+					<option class="GenralText" value="WFH-General" selected>WFH-D(o)</option>
+					<option class="GenralText" value="CC-General">CC-D(o)</option>
+					<option class="AfternoonText" value="Afternoon">A(o)</option>
+					<option class="AfternoonText" value="WFH-Afternoon">WFH-A(o)</option>
+					<option class="AfternoonText" value="CC-Afternoon">CC-A(o)</option>
+					<option class="NightText" value="Night">N(o)</option>
+					<option class="NightText" value="WFH-Night">WFH-N(o)</option>
+					<option class="NightText" value="CC-Night">CC-N(o)</option>
+					<option class="WeekoffText" value="Weekoff">W</option>
+					<!-- <option class="WeekoffAdjustText" value="WeekoffAdjust">WA</option> -->
+					<option class="LeaveText" value="SickLeave">SL</option>
+					<option class="LeaveText" value="CasualLeave">CL</option>
+					<option class="LeaveText" value="EarnedLeave">EL</option>
+					<option class="FlexiText" value="FlexiLeave">FL</option>
+					<option class="HolidayText" value="HolidayLeave">HL</option>
+					<option class="SeprationText" value="NA"> </option>
+
+			</select></td>
+			<%} else if(rs2.getString(dayColumn).equalsIgnoreCase("CC-General") ){%>
+			<td id="block_"><select name="mnt_<%=i %>_<%=day %>"
+				class="GenralText"
+				onchange="this.className=this.options[this.selectedIndex].className"
+				style="width: 160%; height: 205%; position: relative; top: -11px; left: -11px; font-weight: bold;" >
+					<option class="MorningText" value="Morning">M(o)</option>
+					<option class="MorningText" value="WFH-Morning" >WFH-M(o)</option>
+					<option class="MorningText" value="CC-Morning" >CC-M(o)</option>
+					<option class="GenralText" value="General" >D(o)</option>
+					<option class="GenralText" value="WFH-General" >WFH-D(o)</option>
+					<option class="GenralText" value="CC-General" selected>CC-D(o)</option>
+					<option class="AfternoonText" value="Afternoon">A(o)</option>
+					<option class="AfternoonText" value="WFH-Afternoon">WFH-A(o)</option>
+					<option class="AfternoonText" value="CC-Afternoon">CC-A(o)</option>
+					<option class="NightText" value="Night">N(o)</option>
+					<option class="NightText" value="WFH-Night">WFH-N(o)</option>
+					<option class="NightText" value="CC-Night">CC-N(o)</option>
+					<option class="WeekoffText" value="Weekoff">W</option>
+					<!-- <option class="WeekoffAdjustText" value="WeekoffAdjust">WA</option> -->
+					<option class="LeaveText" value="SickLeave">SL</option>
+					<option class="LeaveText" value="CasualLeave">CL</option>
+					<option class="LeaveText" value="EarnedLeave">EL</option>
+					<option class="FlexiText" value="FlexiLeave">FL</option>
+					<option class="HolidayText" value="HolidayLeave">HL</option>
+					<option class="SeprationText" value="NA"> </option>
+
+			</select></td>
+			<%} else if(rs2.getString(dayColumn).equalsIgnoreCase("Afternoon")){%>
+			<td id="block_"><select name="mnt_<%=i %>_<%=day %>"
+				class="AfternoonText"
+				onchange="this.className=this.options[this.selectedIndex].className"
+				style="width: 160%; height: 205%; position: relative; top: -11px; left: -11px; font-weight: bold;" >
+					<option class="MorningText" value="Morning">M(o)</option>
+					<option class="MorningText" value="WFH-Morning" >WFH-M(o)</option>
+					<option class="MorningText" value="CC-Morning" >CC-M(o)</option>
+					<option class="GenralText" value="General">D(o)</option>
+					<option class="GenralText" value="WFH-General">WFH-D(o)</option>
+					<option class="GenralText" value="CC-General">CC-D(o)</option>
+					<option class="AfternoonText" value="Afternoon" selected>A(o)</option>
+					<option class="AfternoonText" value="WFH-Afternoon">WFH-A(o)</option>
+					<option class="AfternoonText" value="CC-Afternoon">CC-A(o)</option>
+					<option class="NightText" value="Night">N(o)</option>
+					<option class="NightText" value="WFH-Night">WFH-N(o)</option>
+					<option class="NightText" value="CC-Night">CC-N(o)</option>
+					<option class="WeekoffText" value="Weekoff">W</option>
+					<!-- <option class="WeekoffAdjustText" value="WeekoffAdjust">WA</option> -->
+					<option class="LeaveText" value="SickLeave">SL</option>
+					<option class="LeaveText" value="CasualLeave">CL</option>
+					<option class="LeaveText" value="EarnedLeave">EL</option>
+					<option class="FlexiText" value="FlexiLeave">FL</option>
+					<option class="HolidayText" value="HolidayLeave">HL</option>
+					<option class="SeprationText" value="NA"> </option>
+
+			</select></td>
+			<%} else if(rs2.getString(dayColumn).equalsIgnoreCase("WFH-Afternoon")){%>
+			<td id="block_"><select name="mnt_<%=i %>_<%=day %>"
+				class="AfternoonText"
+				onchange="this.className=this.options[this.selectedIndex].className"
+				style="width: 160%; height: 205%; position: relative; top: -11px; left: -11px; font-weight: bold;" >
+					<option class="MorningText" value="Morning">M(o)</option>
+					<option class="MorningText" value="WFH-Morning" >WFH-M(o)</option>
+					<option class="MorningText" value="CC-Morning" >CC-M(o)</option>
+					<option class="GenralText" value="General">D(o)</option>
+					<option class="GenralText" value="WFH-General">WFH-D(o)</option>
+					<option class="GenralText" value="CC-General">CC-D(o)</option>
+					<option class="AfternoonText" value="Afternoon" >A(o)</option>
+					<option class="AfternoonText" value="WFH-Afternoon" selected>WFH-A(o)</option>
+					<option class="AfternoonText" value="CC-Afternoon">CC-A(o)</option>
+					<option class="NightText" value="Night">N(o)</option>
+					<option class="NightText" value="WFH-Night">WFH-N(o)</option>
+					<option class="NightText" value="CC-Night">CC-N(o)</option>
+					<option class="WeekoffText" value="Weekoff">W</option>
+				<!-- 	<option class="WeekoffAdjustText" value="WeekoffAdjust">WA</option> -->
+					<option class="LeaveText" value="SickLeave">SL</option>
+					<option class="LeaveText" value="CasualLeave">CL</option>
+					<option class="LeaveText" value="EarnedLeave">EL</option>
+					<option class="FlexiText" value="FlexiLeave">FL</option>
+					<option class="HolidayText" value="HolidayLeave">HL</option>
+					<option class="SeprationText" value="NA"> </option>
+
+			</select></td>
+			<%} else if(rs2.getString(dayColumn).equalsIgnoreCase("CC-Afternoon")){%>
+			<td id="block_"><select name="mnt_<%=i %>_<%=day %>"
+				class="AfternoonText"
+				onchange="this.className=this.options[this.selectedIndex].className"
+				style="width: 160%; height: 205%; position: relative; top: -11px; left: -11px; font-weight: bold;" >
+					<option class="MorningText" value="Morning">M(o)</option>
+					<option class="MorningText" value="WFH-Morning" >WFH-M(o)</option>
+					<option class="MorningText" value="CC-Morning" >CC-M(o)</option>
+					<option class="GenralText" value="General">D(o)</option>
+					<option class="GenralText" value="WFH-General">WFH-D(o)</option>
+					<option class="GenralText" value="CC-General">CC-D(o)</option>
+					<option class="AfternoonText" value="Afternoon" >A(o)</option>
+					<option class="AfternoonText" value="WFH-Afternoon" >WFH-A(o)</option>
+					<option class="AfternoonText" value="CC-Afternoon" selected>CC-A(o)</option>
+					<option class="NightText" value="Night">N(o)</option>
+					<option class="NightText" value="WFH-Night">WFH-N(o)</option>
+					<option class="NightText" value="CC-Night">CC-N(o)</option>
+					<option class="WeekoffText" value="Weekoff">W</option>
+					<!-- <option class="WeekoffAdjustText" value="WeekoffAdjust">WA</option> -->
+					<option class="LeaveText" value="SickLeave">SL</option>
+					<option class="LeaveText" value="CasualLeave">CL</option>
+					<option class="LeaveText" value="EarnedLeave">EL</option>
+					<option class="FlexiText" value="FlexiLeave">FL</option>
+					<option class="HolidayText" value="HolidayLeave">HL</option>
+					<option class="SeprationText" value="NA"> </option>
+
+			</select></td>
+			<%} else if(rs2.getString(dayColumn).equalsIgnoreCase("Night")){%>
+			<td id="block_"><select name="mnt_<%=i %>_<%=day %>"
+				class="NightText"
+				onchange="this.className=this.options[this.selectedIndex].className"
+				style="width: 160%; height: 205%; position: relative; top: -11px; left: -11px; font-weight: bold;" >
+					<option class="MorningText" value="Morning">M(o)</option>
+					<option class="MorningText" value="WFH-Morning" >WFH-M(o)</option>
+					<option class="MorningText" value="CC-Morning" >CC-M(o)</option>
+					<option class="GenralText" value="General">D(o)</option>
+					<option class="GenralText" value="WFH-General">WFH-D(o)</option>
+					<option class="GenralText" value="CC-General">CC-D(o)</option>
+					<option class="AfternoonText" value="Afternoon">A(o)</option>
+					<option class="AfternoonText" value="WFH-Afternoon">WFH-A(o)</option>
+					<option class="AfternoonText" value="CC-Afternoon">CC-A(o)</option>
+					<option class="NightText" value="Night" selected>N(o)</option>
+					<option class="NightText" value="WFH-Night">WFH-N(o)</option>
+					<option class="NightText" value="CC-Night">CC-N(o)</option>
+					<option class="WeekoffText" value="Weekoff">W</option>
+					<!-- <option class="WeekoffAdjustText" value="WeekoffAdjust">WA</option> -->
+					<option class="LeaveText" value="SickLeave">SL</option>
+					<option class="LeaveText" value="CasualLeave">CL</option>
+					<option class="LeaveText" value="EarnedLeave">EL</option>
+					<option class="FlexiText" value="FlexiLeave">FL</option>
+					<option class="HolidayText" value="HolidayLeave">HL</option>
+					<option class="SeprationText" value="NA"> </option>
+
+			</select></td>
+			<%} else if(rs2.getString(dayColumn).equalsIgnoreCase("WFH-Night")){%>
+			<td id="block_"><select name="mnt_<%=i %>_<%=day %>"
+				class="NightText"
+				onchange="this.className=this.options[this.selectedIndex].className"
+				style="width: 160%; height: 205%; position: relative; top: -11px; left: -11px; font-weight: bold;" >
+					<option class="MorningText" value="Morning">M(o)</option>
+					<option class="MorningText" value="WFH-Morning" >WFH-M(o)</option>
+					<option class="MorningText" value="CC-Morning" >CC-M(o)</option>
+					<option class="GenralText" value="General">D(o)</option>
+					<option class="GenralText" value="WFH-General">WFH-D(o)</option>
+					<option class="GenralText" value="CC-General">CC-D(o)</option>
+					<option class="AfternoonText" value="Afternoon">A(o)</option>
+					<option class="AfternoonText" value="WFH-Afternoon">WFH-A(o)</option>
+					<option class="AfternoonText" value="CC-Afternoon">CC-A(o)</option>
+					<option class="NightText" value="Night" >N(o)</option>
+					<option class="NightText" value="WFH-Night" selected>WFH-N(o)</option>
+					<option class="NightText" value="CC-Night">CC-N(o)</option>
+					<option class="WeekoffText" value="Weekoff">W</option>
+					<!-- <option class="WeekoffAdjustText" value="WeekoffAdjust">WA</option> -->
+					<option class="LeaveText" value="SickLeave">SL</option>
+					<option class="LeaveText" value="CasualLeave">CL</option>
+					<option class="LeaveText" value="EarnedLeave">EL</option>
+					<option class="FlexiText" value="FlexiLeave">FL</option>
+					<option class="HolidayText" value="HolidayLeave">HL</option>
+					<option class="SeprationText" value="NA"> </option>
+
+			</select></td>
+			<%} else if(rs2.getString(dayColumn).equalsIgnoreCase("CC-Night")){%>
+			<td id="block_"><select name="mnt_<%=i %>_<%=day %>"
+				class="NightText"
+				onchange="this.className=this.options[this.selectedIndex].className"
+				style="width: 160%; height: 205%; position: relative; top: -11px; left: -11px; font-weight: bold;" >
+					<option class="MorningText" value="Morning">M(o)</option>
+					<option class="MorningText" value="WFH-Morning" >WFH-M(o)</option>
+					<option class="MorningText" value="CC-Morning" >CC-M(o)</option>
+					<option class="GenralText" value="General">D(o)</option>
+					<option class="GenralText" value="WFH-General">WFH-D(o)</option>
+					<option class="GenralText" value="CC-General">CC-D(o)</option>
+					<option class="AfternoonText" value="Afternoon">A(o)</option>
+					<option class="AfternoonText" value="WFH-Afternoon">WFH-A(o)</option>
+					<option class="AfternoonText" value="CC-Afternoon">CC-A(o)</option>
+					<option class="NightText" value="Night" >N(o)</option>
+					<option class="NightText" value="WFH-Night" >WFH-N(o)</option>
+					<option class="NightText" value="CC-Night" selected>CC-N(o)</option>
+					<option class="WeekoffText" value="Weekoff">W</option>
+					<!-- <option class="WeekoffAdjustText" value="WeekoffAdjust">WA</option> -->
+					<option class="LeaveText" value="SickLeave">SL</option>
+					<option class="LeaveText" value="CasualLeave">CL</option>
+					<option class="LeaveText" value="EarnedLeave">EL</option>
+					<option class="FlexiText" value="FlexiLeave">FL</option>
+					<option class="HolidayText" value="HolidayLeave">HL</option>
+					<option class="SeprationText" value="NA"> </option>
+
+			</select></td>
+			<%} else if(rs2.getString(dayColumn).equalsIgnoreCase("Weekoff")){%>
+			<td id="block_"><select name="mnt_<%=i %>_<%=day %>"
+				class="WeekoffText"
+				onchange="this.className=this.options[this.selectedIndex].className"
+				style="width: 160%; height: 205%; position: relative; top: -11px; left: -11px; font-weight: bold;" >
+					<option class="MorningText" value="Morning">M(o)</option>
+					<option class="MorningText" value="WFH-Morning" >WFH-M(o)</option>
+					<option class="MorningText" value="CC-Morning" >CC-M(o)</option>
+					<option class="GenralText" value="General">D(o)</option>
+					<option class="GenralText" value="WFH-General">WFH-D(o)</option>
+					<option class="GenralText" value="CC-General">CC-D(o)</option>
+					<option class="AfternoonText" value="Afternoon">A(o)</option>
+					<option class="AfternoonText" value="WFH-Afternoon">WFH-A(o)</option>
+					<option class="AfternoonText" value="CC-Afternoon">CC-A(o)</option>
+					<option class="NightText" value="Night" >N(o)</option>
+					<option class="NightText" value="WFH-Night" >WFH-N(o)</option>
+					<option class="NightText" value="CC-Night">CC-N(o)</option>
+					<option class="WeekoffText" value="Weekoff" selected>W</option>
+					<!-- <option class="WeekoffAdjustText" value="WeekoffAdjust">WA</option> -->
+					<option class="LeaveText" value="SickLeave">SL</option>
+					<option class="LeaveText" value="CasualLeave">CL</option>
+					<option class="LeaveText" value="EarnedLeave">EL</option>
+					<option class="FlexiText" value="FlexiLeave">FL</option>
+					<option class="HolidayText" value="HolidayLeave">HL</option>
+					<option class="SeprationText" value="NA"> </option>
+
+			</select></td>
+			<%-- <%} else if(rs2.getString(dayColumn).equalsIgnoreCase("WeekoffAdjust")){%>
+			<td id="block_"><select name="mnt_<%=i %>_<%=day %>"
+				class="WeekoffText"
+				onchange="this.className=this.options[this.selectedIndex].className"
+				style="width: 160%; height: 205%; position: relative; top: -11px; left: -11px; font-weight: bold;" >
+					<option class="MorningText" value="Morning">M(o)</option>
+					<option class="MorningText" value="WFH-Morning" >WFH-M(o)</option>
+					<option class="MorningText" value="CC-Morning" >CC-M(o)</option>
+					<option class="GenralText" value="General">D(o)</option>
+					<option class="GenralText" value="WFH-General">WFH-D(o)</option>
+					<option class="GenralText" value="CC-General">CC-D(o)</option>
+					<option class="AfternoonText" value="Afternoon">A(o)</option>
+					<option class="AfternoonText" value="WFH-Afternoon">WFH-A(o)</option>
+					<option class="AfternoonText" value="CC-Afternoon">CC-A(o)</option>
+					<option class="NightText" value="Night" >N(o)</option>
+					<option class="NightText" value="WFH-Night" >WFH-N(o)</option>
+					<option class="NightText" value="CC-Night">CC-N(o)</option>
+					<option class="WeekoffText" value="Weekoff" >W</option>
+					<option class="WeekoffAdjustText" value="WeekoffAdjust" selected>WA</option>
+					<option class="LeaveText" value="SickLeave">SL</option>
+					<option class="LeaveText" value="CasualLeave">CL</option>
+					<option class="LeaveText" value="EarnedLeave">EL</option>
+					<option class="FlexiText" value="FlexiLeave">FL</option>
+					<option class="HolidayText" value="HolidayLeave">HL</option>
+					<option class="SeprationText" value="NA"> </option>
+
+			</select></td> --%>
+			<%} else if(rs2.getString(dayColumn).equalsIgnoreCase("Leave")){%>
+			<td id="block_"><select name="mnt_<%=i %>_<%=day %>"
+				class="LeaveText"
+				onchange="this.className=this.options[this.selectedIndex].className"
+				style="width: 160%; height: 205%; position: relative; top: -11px; left: -11px; font-weight: bold;" >
+					<option class="MorningText" value="Morning">M(o)</option>
+					<option class="MorningText" value="WFH-Morning" >WFH-M(o)</option>
+					<option class="MorningText" value="CC-Morning" >CC-M(o)</option>
+					<option class="GenralText" value="General">D(o)</option>
+					<option class="GenralText" value="WFH-General">WFH-D(o)</option>
+					<option class="GenralText" value="CC-General">CC-D(o)</option>
+					<option class="AfternoonText" value="Afternoon">A(o)</option>
+					<option class="AfternoonText" value="WFH-Afternoon">WFH-A(o)</option>
+					<option class="AfternoonText" value="CC-Afternoon">CC-A(o)</option>
+					<option class="NightText" value="Night" >N(o)</option>
+					<option class="NightText" value="WFH-Night" >WFH-N(o)</option>
+					<option class="NightText" value="CC-Night">CC-N(o)</option>
+					<option class="WeekoffText" value="Weekoff">W</option>
+					<!-- <option class="WeekoffAdjustText" value="WeekoffAdjust">WA</option> -->
+					<option class="LeaveText" value="Leave" selected>L</option>
+					<option class="LeaveText" value="SickLeave">SL</option>
+					<option class="LeaveText" value="CasualLeave">CL</option>
+					<option class="LeaveText" value="EarnedLeave">EL</option>
+					<option class="FlexiText" value="FlexiLeave" >FL</option>
+					<option class="HolidayText" value="HolidayLeave">HL</option>
+					<option class="SeprationText" value="NA"> </option>
+
+			</select></td>
+			
+			<%} else if(rs2.getString(dayColumn).equalsIgnoreCase("SickLeave")){%>
+			<td id="block_"><select name="mnt_<%=i %>_<%=day %>"
+				class="LeaveText"
+				onchange="this.className=this.options[this.selectedIndex].className"
+				style="width: 160%; height: 205%; position: relative; top: -11px; left: -11px; font-weight: bold;" >
+					<option class="MorningText" value="Morning">M(o)</option>
+					<option class="MorningText" value="WFH-Morning" >WFH-M(o)</option>
+					<option class="MorningText" value="CC-Morning" >CC-M(o)</option>
+					<option class="GenralText" value="General">D(o)</option>
+					<option class="GenralText" value="WFH-General">WFH-D(o)</option>
+					<option class="GenralText" value="CC-General">CC-D(o)</option>
+					<option class="AfternoonText" value="Afternoon">A(o)</option>
+					<option class="AfternoonText" value="WFH-Afternoon">WFH-A(o)</option>
+					<option class="AfternoonText" value="CC-Afternoon">CC-A(o)</option>
+					<option class="NightText" value="Night" >N(o)</option>
+					<option class="NightText" value="WFH-Night" >WFH-N(o)</option>
+					<option class="NightText" value="CC-Night">CC-N(o)</option>
+					<option class="WeekoffText" value="Weekoff" >W</option>
+					<!-- <option class="WeekoffAdjustText" value="WeekoffAdjust" >WA</option> -->
+					<option class="LeaveText" value="SickLeave" selected>SL</option>
+					<option class="LeaveText" value="CasualLeave">CL</option>
+					<option class="LeaveText" value="EarnedLeave">EL</option>
+					<option class="FlexiText" value="FlexiLeave">FL</option>
+					<option class="HolidayText" value="HolidayLeave">HL</option>
+					<option class="SeprationText" value="NA"> </option>
+
+			</select></td>
+			<%} else if(rs2.getString(dayColumn).equalsIgnoreCase("CasualLeave")){%>
+			<td id="block_"><select name="mnt_<%=i %>_<%=day %>"
+				class="LeaveText"
+				onchange="this.className=this.options[this.selectedIndex].className"
+				style="width: 160%; height: 205%; position: relative; top: -11px; left: -11px; font-weight: bold;" >
+					<option class="MorningText" value="Morning">M(o)</option>
+					<option class="MorningText" value="WFH-Morning" >WFH-M(o)</option>
+					<option class="MorningText" value="CC-Morning" >CC-M(o)</option>
+					<option class="GenralText" value="General">D(o)</option>
+					<option class="GenralText" value="WFH-General">WFH-D(o)</option>
+					<option class="GenralText" value="CC-General">CC-D(o)</option>
+					<option class="AfternoonText" value="Afternoon">A(o)</option>
+					<option class="AfternoonText" value="WFH-Afternoon">WFH-A(o)</option>
+					<option class="AfternoonText" value="CC-Afternoon">CC-A(o)</option>
+					<option class="NightText" value="Night" >N(o)</option>
+					<option class="NightText" value="WFH-Night" >WFH-N(o)</option>
+					<option class="NightText" value="CC-Night">CC-N(o)</option>
+					<option class="WeekoffText" value="Weekoff" >W</option>
+					<!-- <option class="WeekoffAdjustText" value="WeekoffAdjust" >WA</option> -->
+					<option class="LeaveText" value="SickLeave" >SL</option>
+					<option class="LeaveText" value="CasualLeave" selected>CL</option>
+					<option class="LeaveText" value="EarnedLeave">EL</option>
+					<option class="FlexiText" value="FlexiLeave">FL</option>
+					<option class="HolidayText" value="HolidayLeave">HL</option>
+					<option class="SeprationText" value="NA"> </option>
+
+			</select></td>
+			<%} else if(rs2.getString(dayColumn).equalsIgnoreCase("EarnedLeave")){%>
+			<td id="block_"><select name="mnt_<%=i %>_<%=day %>"
+				class="LeaveText"
+				onchange="this.className=this.options[this.selectedIndex].className"
+				style="width: 160%; height: 205%; position: relative; top: -11px; left: -11px; font-weight: bold;" >
+					<option class="MorningText" value="Morning">M(o)</option>
+					<option class="MorningText" value="WFH-Morning" >WFH-M(o)</option>
+					<option class="MorningText" value="CC-Morning" >CC-M(o)</option>
+					<option class="GenralText" value="General">D(o)</option>
+					<option class="GenralText" value="WFH-General">WFH-D(o)</option>
+					<option class="GenralText" value="CC-General">CC-D(o)</option>
+					<option class="AfternoonText" value="Afternoon">A(o)</option>
+					<option class="AfternoonText" value="WFH-Afternoon">WFH-A(o)</option>
+					<option class="AfternoonText" value="CC-Afternoon">CC-A(o)</option>
+					<option class="NightText" value="Night" >N(o)</option>
+					<option class="NightText" value="WFH-Night" >WFH-N(o)</option>
+					<option class="NightText" value="CC-Night">CC-N(o)</option>
+					<option class="WeekoffText" value="Weekoff" >W</option>
+					<!-- <option class="WeekoffAdjustText" value="WeekoffAdjust" >WA</option> -->
+					<option class="LeaveText" value="SickLeave" >SL</option>
+					<option class="LeaveText" value="CasualLeave" >CL</option>
+					<option class="LeaveText" value="EarnedLeave" selected>EL</option>
+					<option class="FlexiText" value="FlexiLeave">FL</option>
+					<option class="HolidayText" value="HolidayLeave">HL</option>
+					<option class="SeprationText" value="NA"> </option>
+
+			</select></td>
+			<%} else if(rs2.getString(dayColumn).equalsIgnoreCase("FlexiLeave")){%>
+			<td id="block_"><select name="mnt_<%=i %>_<%=day %>"
+				class="FlexiText"
+				onchange="this.className=this.options[this.selectedIndex].className"
+				style="width: 160%; height: 205%; position: relative; top: -11px; left: -11px; font-weight: bold;" >
+					<option class="MorningText" value="Morning">M(o)</option>
+					<option class="MorningText" value="WFH-Morning" >WFH-M(o)</option>
+					<option class="MorningText" value="CC-Morning" >CC-M(o)</option>
+					<option class="GenralText" value="General">D(o)</option>
+					<option class="GenralText" value="WFH-General">WFH-D(o)</option>
+					<option class="GenralText" value="CC-General">CC-D(o)</option>
+					<option class="AfternoonText" value="Afternoon">A(o)</option>
+					<option class="AfternoonText" value="WFH-Afternoon">WFH-A(o)</option>
+					<option class="AfternoonText" value="CC-Afternoon">CC-A(o)</option>
+					<option class="NightText" value="Night" >N(o)</option>
+					<option class="NightText" value="WFH-Night" >WFH-N(o)</option>
+					<option class="NightText" value="CC-Night">CC-N(o)</option>
+					<option class="WeekoffText" value="Weekoff">W</option>
+					<!-- <option class="WeekoffAdjustText" value="WeekoffAdjust">WA</option> -->
+					<option class="LeaveText" value="SickLeave" >SL</option>
+					<option class="LeaveText" value="CasualLeave" >CL</option>
+					<option class="LeaveText" value="EarnedLeave" >EL</option>
+					<option class="FlexiText" value="FlexiLeave" selected>FL</option>
+					<option class="HolidayText" value="HolidayLeave">HL</option>
+					<option class="SeprationText" value="NA"> </option>
+
+			</select></td>
+			<%} else if(rs2.getString(dayColumn).equalsIgnoreCase("HolidayLeave")){%>
+			<td id="block_"><select name="mnt_<%=i %>_<%=day %>"
+				class="HolidayText"
+				onchange="this.className=this.options[this.selectedIndex].className"
+				style="width: 160%; height: 205%; position: relative; top: -11px; left: -11px; font-weight: bold;" >
+					<option class="MorningText" value="Morning">M(o)</option>
+					<option class="MorningText" value="WFH-Morning" >WFH-M(o)</option>
+					<option class="MorningText" value="CC-Morning" >CC-M(o)</option>
+					<option class="GenralText" value="General">D(o)</option>
+					<option class="GenralText" value="WFH-General">WFH-D(o)</option>
+					<option class="GenralText" value="CC-General">CC-D(o)</option>
+					<option class="AfternoonText" value="Afternoon">A(o)</option>
+					<option class="AfternoonText" value="WFH-Afternoon">WFH-A(o)</option>
+					<option class="AfternoonText" value="CC-Afternoon">CC-A(o)</option>
+					<option class="NightText" value="Night" >N(o)</option>
+					<option class="NightText" value="WFH-Night" >WFH-N(o)</option>
+					<option class="NightText" value="CC-Night">CC-N(o)</option>
+					<option class="WeekoffText" value="Weekoff">W</option>
+					<!-- <option class="WeekoffAdjustText" value="WeekoffAdjust">WA</option> -->
+					<option class="LeaveText" value="SickLeave" >SL</option>
+					<option class="LeaveText" value="CasualLeave" >CL</option>
+					<option class="LeaveText" value="EarnedLeave" >EL</option>
+					<option class="FlexiText" value="FlexiLeave">FL</option>
+					<option class="HolidayText" value="HolidayLeave" selected>HL</option>
+					<option class="SeprationText" value="NA"> </option>
+
+			</select></td>
+			<%} else if(rs2.getString(dayColumn).equalsIgnoreCase("NA")){%>
+			<td id="block_"><select name="mnt_<%=i %>_<%=day %>"
+				class="SeprationText"
+				onchange="this.className=this.options[this.selectedIndex].className"
+				style="width: 160%; height: 205%; position: relative; top: -11px; left: -11px; font-weight: bold;" >
+					<option class="MorningText" value="Morning">M(o)</option>
+					<option class="MorningText" value="WFH-Morning" >WFH-M(o)</option>
+					<option class="MorningText" value="CC-Morning" >CC-M(o)</option>
+					<option class="GenralText" value="General">D(o)</option>
+					<option class="GenralText" value="WFH-General">WFH-D(o)</option>
+					<option class="GenralText" value="CC-General">CC-D(o)</option>
+					<option class="AfternoonText" value="Afternoon">A(o)</option>
+					<option class="AfternoonText" value="WFH-Afternoon">WFH-A(o)</option>
+					<option class="AfternoonText" value="CC-Afternoon">CC-A(o)</option>
+					<option class="NightText" value="Night" >N(o)</option>
+					<option class="NightText" value="WFH-Night" >WFH-N(o)</option>
+					<option class="NightText" value="CC-Night">CC-N(o)</option>
+					<option class="WeekoffText" value="Weekoff">W</option>
+					<!-- <option class="WeekoffAdjustText" value="WeekoffAdjust">WA</option> -->
+					<option class="LeaveText" value="SickLeave" >SL</option>
+					<option class="LeaveText" value="CasualLeave" >CL</option>
+					<option class="LeaveText" value="EarnedLeave" >EL</option>
+					<option class="FlexiText" value="FlexiLeave">FL</option>
+					<option class="HolidayText" value="HolidayLeave" >HL</option>
+					<option class="SeprationText" value="NA" selected> </option>
+
+			</select></td>
+		<% }}%>
+				<%
+        String name=rs2.getString("NAME");
+        String team=rs2.getString("TEAM");
+        StringBuilder tablequery= new StringBuilder("select numofWeekoffs, numofLeaves from( select ( case when LOWER(day_1) in ('weekoff','weekoffadjust') then 1 else 0 end ");
+    	for(int k=2; k<=noOfDays;k++) {
+    		tablequery.append(" + case when LOWER(day_"+k+") in ('weekoff','weekoffadjust') then 1 else 0 end");
+    	}
+    	tablequery.append(") as numofWeekoffs,");
+    	tablequery.append("(case when LOWER(day_1) in ('leave','sickleave','casualleave','earnedleave','flexileave','holidayleave') then 1 else 0 end");
+    	for(int k=2; k<=noOfDays;k++) {
+    		tablequery.append(" + case when LOWER(day_"+k+") in ('leave','sickleave','casualleave','earnedleave','flexileave','holidayleave') then 1 else 0 end");
+    	}
+    	tablequery.append(" ) as numofLeaves");
+    	tablequery.append(" from rostertable where UPPER(MONTHYEAR)=UPPER('"+sort_MonthYear+"') and UPPER(NAME)=UPPER('"+name+"') and UPPER(TEAM)=UPPER('"+team+"') )");
+        String finalQuery= tablequery.toString();
+    	//System.out.println("query:="+tablequery.toString());
+    	try{
+    		Statement smt=conn.createStatement();
+    		ResultSet rst=smt.executeQuery(finalQuery);
+    		while(rst.next()){
+    			int weekOff=rst.getInt("numofWeekoffs");
+    			int leave= rst.getInt("numofLeaves");
+    		    %>
+    			
+                        <td><%=weekOff %></td>
+				        <td><%=leave %></td>
+    		<%  }
+    	}catch(Exception e){
+    		e.printStackTrace();
+    	}	
+        %>
+	<%i++;} }else{
+   String query1="select ad_id, FIRSTNAME ||' '|| LASTNAME as Fullname from eisupport_employee_master where TEAM = '"+ m_strroles + "' and GENDER='Female' and isactive='Active'";
+   String query2="select ad_id, FIRSTNAME ||' '|| LASTNAME as Fullname from eisupport_employee_master where TEAM = '"+ m_strroles + "' and GENDER='Male' and isactive='Active'";
+   //System.out.println(query1);
+   List<String> femaleEmp= new ArrayList<String>();
+   List<String> maleEmp= new ArrayList<String>();
+   List<String> emp= new ArrayList<String>();
+   List<String> adid= new ArrayList<String>();
+   try{
+  
+    stmt=conn.createStatement();
+    rs=stmt.executeQuery(query1);
+   while(rs.next()){
+	   adid.add(rs.getString("ad_id"));
+	   femaleEmp.add(rs.getString("Fullname"));
+	   emp.add(rs.getString("Fullname"));
+   }
+   rs=stmt.executeQuery(query2);
+   while(rs.next()){
+	   adid.add(rs.getString("ad_id"));
+	   emp.add(rs.getString("Fullname"));
+   }
+   for(int i=0; i<emp.size();i++){
+	%>
+			<tr id='block'>
+				<td class="BROKERNAME_TD"
+					style="background-color: rgb(147, 197, 114); color: black; font-weight: bolder;"
+					id='employeeName'><%=emp.get(i) %><input type="hidden"
+					name="employeeName" value="<%=emp.get(i) %>">
+					<input type="hidden"
+					name="adId" value="<%=adid.get(i) %>"></td>
+		<% if(m_strroles.equals("Manager")){ %>			
+		<td class="BK_PORTno_TD">
+	<select name="position_<%=i %>" id="position_<%=i %>"  style="width: 150px; font-size: 20px; margin: -20px; background-color: black; color: white; border: none;">
+    <option value="Manager" selected>Manager</option>
+    </select>
+   </td>	<!-- <td class="BK_PORTno_TD">Module Lead</td> -->
+   <%} else if(m_strroles.equals("Team Lead")){ %>
+      <td class="BK_PORTno_TD">
+	<select name="position_<%=i %>" id="position_<%=i %>"  style="width: 150px; font-size: 20px; margin: -20px; background-color: black; color: white; border: none;">
+    <option value="Team Lead" selected>Team Lead</option>
+    </select>
+    </td>
+    <%} else{ %>
+     <td class="BK_PORTno_TD">
+	<select name="position_<%=i %>" id="position_<%=i %>"  style="width: 150px; font-size: 20px; margin: -20px; background-color: black; color: white; border: none;">
+    <option  selected disabled>Select Here</option>
+    <option value="Senior">Senior</option>
+    <option value="Junior">Junior</option>
+    </select>
+    </td>
+	<%}
+		for(int day=1;day<=noOfDays;day++){%>
+				<td id="block_"><select name="mnt_<%=i %>_<%=day %>"
+					class="MorningText"
+					onchange="this.className=this.options[this.selectedIndex].className"
+					style="width: 160%; height: 205%; position: relative; top: -11px; left: -11px; font-weight: bold;">
+						<option class="MorningText" value="Morning">M(o)</option>
+						<option class="MorningText" value="WFH-Morning" >WFH-M(o)</option>
+						<option class="MorningText" value="CC-Morning" >CC-M(o)</option>
+						<option class="GenralText" value="General">D(o)</option>
+						<option class="GenralText" value="WFH-General">WFH-D(o)</option>
+						<option class="GenralText" value="CC-General">CC-D(o)</option>
+						<option class="AfternoonText" value="Afternoon">A(o)</option>
+						<option class="AfternoonText" value="WFH-Afternoon">WFH-A(o)</option>
+						<option class="AfternoonText" value="CC-Afternoon">CC-A(o)</option>
+						<option class="NightText" value="Night" >N(o)</option>
+						<option class="NightText" value="WFH-Night" >WFH-N(o)</option>
+						<option class="NightText" value="CC-Night">CC-N(o)</option>
+						<option class="WeekoffText" value="Weekoff">W</option>
+						<!-- <option class="WeekoffAdjustText" value="WeekoffAdjust">WA</option> -->
+						<option class="LeaveText" value="SickLeave">SL</option>
+						<option class="LeaveText" value="CasualLeave">CL</option>
+						<option class="LeaveText" value="EarnedLeave">EL</option>
+						<option class="FlexiText" value="FlexiLeave">FL</option>
+						<option class="HolidayText" value="HolidayLeave">HL</option>
+						<option class="SeprationText" value="NA"> </option>
+
+				</select></td>
+				<% } %>
+				<%
+        String name=emp.get(i);
+        String team=m_strroles;
+        StringBuilder tablequery= new StringBuilder("select coalesce(sum ( case when LOWER(day_1) in ('weekoff','weekoffadjust') then 1 else 0 end ");
+    	for(int k=2; k<=noOfDays;k++) {
+    		tablequery.append(" + case when LOWER(day_"+k+") in ('weekoff','weekoffadjust') then 1 else 0 end");
+    	}
+    	tablequery.append("),0) as numofWeekoffs,");
+    	tablequery.append("coalesce(sum(case when LOWER(day_1) in ('leave','sickleave','casualleave','earnedleave','flexileave','holidayleave') then 1 else 0 end");
+    	for(int k=2; k<=noOfDays;k++) {
+    		tablequery.append(" + case when LOWER(day_"+k+") in ('leave','sickleave','casualleave','earnedleave','flexileave','holidayleave') then 1 else 0 end");
+    	}
+    	tablequery.append(" ),0) as numofLeaves");
+    	tablequery.append(" from rostertable where UPPER(MONTHYEAR)=UPPER('"+sort_MonthYear+"') and UPPER(NAME)=UPPER('"+name+"') and UPPER(TEAM)=UPPER('"+team+"') ");
+        String finalQuery= tablequery.toString();
+    	System.out.println("query:="+tablequery.toString());
+    	try{
+    		Statement smt=conn.createStatement();
+    		ResultSet rst=smt.executeQuery(finalQuery);
+    		while(rst.next()){
+    			int weekOff=rst.getInt("numofWeekoffs");
+    			int leave= rst.getInt("numofLeaves");
+    		    %>
+    			
+                        <td><%=weekOff %></td>
+				        <td><%=leave %></td>
+    		<%  }
+    	}catch(Exception e){
+    		e.printStackTrace();
+    	}	
+        %>
+			</tr>
+			<% }%>
+			
+			<%  
+	rs.close();
+   stmt.close();
+   //conn.close();
+  
+		
+		  }catch(Exception e) {
+				e.printStackTrace();
+			}	}%>
+			
+			<tr>
+    <td class="HN_title" colspan="2">No of Emp in Morning</td>
+    <%
+    for(int k=1;k<=noOfDays;k++){
+       String noQuery= "select count(1) as morningcount from rostertable where LOWER(DAY_"+k+") in('morning','wfh-morning','cc-morning') and UPPER(MONTHYEAR)=UPPER('"+sort_MonthYear+"') and UPPER(TEAM)=UPPER('"+m_strroles+"')"	;
+       Statement csmt=conn.createStatement();
+		ResultSet crst=csmt.executeQuery(noQuery);
+		while(crst.next()){%>
+			<td><%=crst.getInt("MORNINGCOUNT") %></td>
+		<% }}%>
+        </tr>
+        <tr>
+    <td class="HN_title" colspan="2">No of Emp in General</td>
+    <%
+    for(int k=1;k<=noOfDays;k++){
+       String noQuery= "select count(1) as generalcount from rostertable where LOWER(DAY_"+k+") in('genral','general','wfh-genral','wfh-general','cc-general') and UPPER(MONTHYEAR)=UPPER('"+sort_MonthYear+"') and UPPER(TEAM)=UPPER('"+m_strroles+"')"	;
+       Statement csmt=conn.createStatement();
+		ResultSet crst=csmt.executeQuery(noQuery);
+		while(crst.next()){%>
+			<td><%=crst.getInt("generalcount") %></td>
+		<% }}%>
+        </tr>
+         <tr>
+    <td class="HN_title" colspan="2">No of Emp in AfterNoon</td>
+    <%
+    for(int k=1;k<=noOfDays;k++){
+       String noQuery= "select count(1) as afternooncount from rostertable where LOWER(DAY_"+k+") in('afternoon','wfh-afternoon','cc-afternoon') and UPPER(MONTHYEAR)=UPPER('"+sort_MonthYear+"') and UPPER(TEAM)=UPPER('"+m_strroles+"')"	;
+       Statement csmt=conn.createStatement();
+		ResultSet crst=csmt.executeQuery(noQuery);
+		while(crst.next()){%>
+			<td><%=crst.getInt("afternooncount") %></td>
+		<% }}%>
+        </tr>
+         <tr>
+    <td class="HN_title" colspan="2">No of Emp in Night</td>
+    <%
+    for(int k=1;k<=noOfDays;k++){
+       String noQuery= "select count(1) as nightcount from rostertable where LOWER(DAY_"+k+") in('night','wfh-night','cc-night') and UPPER(MONTHYEAR)=UPPER('"+sort_MonthYear+"') and UPPER(TEAM)=UPPER('"+m_strroles+"')"	;
+       Statement csmt=conn.createStatement();
+		ResultSet crst=csmt.executeQuery(noQuery);
+		while(crst.next()){%>
+			<td><%=crst.getInt("nightcount") %></td>
+		<% }}%>
+        </tr>
+			 <input type="hidden" id="<%=selectedMonth%>" name ="selectedMonth" value="<%=selectedMonth%>">
+		<input type="hidden" id="<%=selectedYear%>" name ="selectedYear" value ="<%=selectedYear%>">
+		<input type="hidden" id="<%=m_strroles%>" name ="m_strroles" value ="<%=m_strroles%>">
+		<input type="hidden" id="<%=username%>" name ="username" value ="<%=username%>">
+		<% if(month>monthValue && year>= yearValue){%>
+  <p style="text-align: center;"> <input type="button" value="Submit" onclick="prepareData();"  style=" font-weight: bolder; background-color: DodgerBlue; color: white; width: 80px; height: 36px; border-radius: 5px; position: relative; align-items: center; top: 100%;  "> </p>
+  <% }}
+			
+}
+	 %>
+	 
+	  
+	 
+		</table>
+		
+			</form>
+	</div>
 </body>
+
 </html>
