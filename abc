@@ -1,548 +1,985 @@
-<%@page contentType="text/html" pageEncoding="UTF-8"%>
-
-
+<%@page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ taglib prefix="s" uri="/struts-tags" %>
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="ISO-8859-1">
-<title>Registration</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EIS Registration</title>
 
-<!-- Font Icon -->
-<link rel="stylesheet" href="fonts/material-design-iconic-font.min.css">
-
-<!-- Main css -->
-<link rel="stylesheet" href="css/styleReg.css">
-
-<script>
-        //input mask bundle ip address
-        var ipv4_address = $('#ipv4');
-        ipv4_address.inputmask({
-            alias: "ip",
-            greedy: false //The initial mask shown will be "" instead of "-____".
-        });
-    </script>
-
-<script type="text/javascript">
-	
-	function submitReg(){
-		if(document.forms[0].m_stremployee_id.value==""){
-			   alert("Please Enter Employee ID");
-		    return null;  
-			   
-		}
-		if(document.forms[0].m_streduqualification.value=="Select"){
-			   alert("Please Select Education Qualification");
-		    return null;  
-			   
-		}
-		if(document.forms[0].m_strtcsjoiningdate.value==""){
-			   alert("Please Select TCS Joining Date");
-		    return null;  
-			   
-		}
-		if(document.forms[0].m_strcontactno.value==""){
-			   alert("Please Enter Employee contact Number");
-		    return null;  
-			   
-		}
-		if(document.forms[0].m_strRole.value=="Select Role"){
-			   alert("Please Select Role");
-		    return null;  
-			   
-		}
-		if(document.forms[0].m_strtcsmailid.value==""){
-			   alert("Please Enter TCS mail ID");
-		    return null;  
-			   
-		}
-		if(document.forms[0].m_strstate.value=="Select"){
-			   alert("Please Select State");
-		    return null;  
-			   
-		}
-		if(document.forms[0].m_strcity.value==""){
-			   alert("Please Enter City");
-		    return null;  
-			   
-		}
-		if(document.forms[0].m_strlocaladdress.value==""){
-			   alert("Please Enter Local Address");
-		    return null;  
-			   
-		}
-		if(document.forms[0].m_strdob.value==""){
-			   alert("Please Enter Date of Birth");
-		    return null;  
-			   
-		}
-		if(document.forms[0].m_strfirstName.value==""){
-			   alert("Please Enter First Name");
-		    return null; 
-		}
-		if(document.forms[0].m_strmiddleName.value==""){
-			   alert("Please Enter Middle Name");
-		    return null; 
-		}
-		
-		if(document.forms[0].m_strlastName.value==""){
-			   alert("Please Enter Last Name");
-		    return null; 
-		}
-		
-		if(document.forms[0].m_strUserName.value==""){
-			   alert("Please Enter User Name");
-		    return null; 
-		}
-		if(document.forms[0].m_strPassword.value==""){
-			   alert("Please Enter Password");
-		    return null; 
-		}
-		
-		document.forms[0].action = '<%=request.getContextPath() + "/EisRegistration.do?action=insert"%>';
-		document.forms[0].submit();
-	}
-	
-	function submitClear(){
-		alert('clear');
-	}
-	
-	</script>
-
+<!-- Fonts & Icons -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
 <style>
-    .modal {
-        display: none;
-        /* Hidden by default */
+/* ================================================================
+   BASE / RESET
+   ================================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        z-index: 1;
-        /* Sit on top */
-        padding-top: 100px;
-        /* Location of the box */
-        left: 0;
-        top: 0;
-        width: 100%;
-        /* Full width */
-        height: 100%;
-        /* Full height */
-        overflow: auto;
-        /* Enable scroll if needed */
+:root {
+    --primary:        #ff6a00;
+    --primary-dark:   #e05300;
+    --primary-light:  #ffa04d;
+    --secondary:      #1f2937;
+    --text:           #111827;
+    --text-muted:     #6b7280;
+    --border:         #e5e7eb;
+    --bg:             #f3f4f6;
+    --white:          #ffffff;
+    --success:        #10b981;
+    --danger:         #ef4444;
+    --shadow-sm:      0 1px 2px rgba(0,0,0,.05);
+    --shadow-md:      0 4px 12px rgba(0,0,0,.08);
+    --shadow-lg:      0 20px 45px rgba(0,0,0,.12);
+    --radius:         12px;
+    --radius-lg:      20px;
+}
 
-    }
+html, body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+}
 
-    /* Modal Content */
-    .modal-content {
-        background-color: #fefefe;
-        margin: auto;
-        padding: 20px;
-        border: 1px solid #888;
-        width: 80%;
-    }
+/* Subtle background pattern */
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background:
+        radial-gradient(circle at 15% 20%, rgba(255,106,0,.10), transparent 40%),
+        radial-gradient(circle at 85% 80%, rgba(255,160,77,.10), transparent 40%);
+    z-index: -1;
+}
 
-    /* The Close Button */
-    .close {
-        color: #aaaaaa;
-        float: right;
-        font-size: 28px;
-        font-weight: bold;
-    }
+/* ================================================================
+   LAYOUT
+   ================================================================ */
+.page-wrap {
+    max-width: 1500px;
+    margin: 32px auto;
+    padding: 0 24px;
+}
 
-    .close:hover,
-    .close:focus {
-        color: #000;
-        text-decoration: none;
-        cursor: pointer;
-    }
-    .footer {
-   position: relative;
-   left: 0;
-   bottom: 0;
-   width: 100%;
-   color: white;
-   text-align: center;
+.reg-card {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+    min-height: 80vh;
+}
+
+/* -------- LEFT PANEL -------- */
+.reg-hero {
+    background: linear-gradient(150deg, var(--primary-dark), var(--primary) 60%, var(--primary-light));
+    color: var(--white);
+    padding: 56px 40px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+.reg-hero::before {
+    content: "";
+    position: absolute;
+    width: 420px; height: 420px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.08);
+    top: -160px; right: -160px;
+}
+.reg-hero::after {
+    content: "";
+    position: absolute;
+    width: 260px; height: 260px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.06);
+    bottom: -100px; left: -100px;
+}
+.reg-hero h1 {
+    font-size: 34px;
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -.5px;
+    position: relative;
+    z-index: 1;
+}
+.reg-hero p {
+    margin-top: 14px;
+    font-size: 15px;
+    opacity: .92;
+    line-height: 1.6;
+    position: relative;
+    z-index: 1;
+}
+.reg-hero .hero-icon {
+    font-size: 64px;
+    opacity: .35;
+    margin-bottom: 20px;
+    position: relative;
+    z-index: 1;
+}
+.reg-hero .hero-steps {
+    position: relative;
+    z-index: 1;
+    margin-top: 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+.hero-step {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+}
+.hero-step .step-num {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.20);
+    display: grid; place-items: center;
+    font-weight: 700; font-size: 14px;
+    flex-shrink: 0;
+}
+.hero-step .step-text {
+    font-size: 14px;
+    opacity: .95;
+    line-height: 1.5;
+}
+
+/* -------- RIGHT PANEL (FORM) -------- */
+.reg-form-wrap {
+    padding: 48px 56px;
+    overflow-y: auto;
+}
+
+.form-header {
+    margin-bottom: 32px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+}
+.form-header h2 {
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -.4px;
+    color: var(--secondary);
+}
+.form-header p {
+    color: var(--text-muted);
+    font-size: 14px;
+    margin-top: 6px;
+}
+
+/* -------- SECTIONS -------- */
+.form-section {
+    margin-bottom: 36px;
+}
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--primary);
+    margin-bottom: 18px;
+}
+.section-title i {
+    font-size: 14px;
+}
+.section-title::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, var(--border), transparent);
+    margin-left: 8px;
+}
+
+/* -------- GRID -------- */
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 18px 20px;
+}
+.form-grid .span-2 { grid-column: span 2; }
+@media (max-width: 640px) {
+    .form-grid .span-2 { grid-column: span 1; }
+}
+
+/* -------- FIELDS -------- */
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.field label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--secondary);
+}
+.field label .req { color: var(--danger); margin-left: 2px; }
+
+.field input[type="text"],
+.field input[type="number"],
+.field input[type="date"],
+.field input[type="password"],
+.field input[type="email"],
+.field input[type="file"],
+.field select,
+.field textarea {
+    width: 100%;
+    padding: 11px 14px;
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--text);
+    background: #f9fafb;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    transition: all .18s ease;
+    outline: none;
+}
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+    background: var(--white);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px rgba(255,106,0,.12);
+}
+.field input::placeholder { color: #9ca3af; }
+.field input:hover:not(:focus),
+.field select:hover:not(:focus) { border-color: #cbd5e1; }
+
+.field input[type="file"] {
+    padding: 8px 12px;
+    cursor: pointer;
+}
+.field input[type="file"]::file-selector-button {
+    padding: 6px 14px;
+    margin-right: 12px;
+    border: none;
+    background: var(--primary);
+    color: #fff;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background .18s;
+}
+.field input[type="file"]::file-selector-button:hover {
+    background: var(--primary-dark);
+}
+
+/* Select arrow */
+.field select {
+    appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'><polyline points='6 9 12 15 18 9'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 18px;
+    padding-right: 40px;
+}
+
+/* -------- RADIO GROUP -------- */
+.radio-group {
+    display: flex;
+    gap: 12px;
+    margin-top: 4px;
+}
+.radio-pill {
+    flex: 1;
+    position: relative;
+    cursor: pointer;
+}
+.radio-pill input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+.radio-pill span {
+    display: block;
+    padding: 10px 14px;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-muted);
+    background: #f9fafb;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    transition: all .18s;
+}
+.radio-pill input:checked + span {
+    background: rgba(255,106,0,.10);
+    border-color: var(--primary);
+    color: var(--primary-dark);
+}
+.radio-pill:hover span { border-color: #cbd5e1; }
+
+/* -------- ALERTS -------- */
+.alert {
+    padding: 14px 18px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 24px;
+    animation: slideDown .3s ease;
+}
+.alert-error {
+    background: #fef2f2;
+    color: #991b1b;
+    border-left: 4px solid var(--danger);
+}
+.alert-warn {
+    background: #fffbeb;
+    color: #92400e;
+    border-left: 4px solid #f59e0b;
+}
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* -------- BUTTONS -------- */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 13px 26px;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 700;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: all .18s ease;
+    text-decoration: none;
+    letter-spacing: .2px;
+}
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: #fff;
+    box-shadow: 0 8px 20px rgba(255,106,0,.35);
+}
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 26px rgba(255,106,0,.45);
+}
+.btn-primary:active { transform: translateY(0); }
+
+.btn-ghost {
+    background: transparent;
+    color: var(--secondary);
+    border: 1.5px solid var(--border);
+}
+.btn-ghost:hover { background: #f3f4f6; }
+
+.btn-block { width: 100%; }
+
+/* -------- FORM SUBMIT BAR -------- */
+.form-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 36px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+}
+
+/* ================================================================
+   MODAL — Laptop / VDI Details
+   ================================================================ */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, .55);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    padding: 24px;
+    overflow-y: auto;
+}
+.modal-overlay.open { display: grid; place-items: center; }
+
+.modal-box {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    width: 100%;
+    max-width: 720px;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: modalIn .25s cubic-bezier(.4,0,.2,1);
+}
+@keyframes modalIn {
+    from { opacity: 0; transform: scale(.94) translateY(10px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 22px 28px;
+    border-bottom: 1px solid var(--border);
+}
+.modal-head h3 {
+    font-size: 18px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--secondary);
+}
+.modal-head h3 i { color: var(--primary); }
+.modal-close {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: #f3f4f6;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    font-size: 18px;
+    transition: all .15s;
+}
+.modal-close:hover { background: #e5e7eb; color: var(--text); }
+
+.modal-body {
+    padding: 28px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px 20px;
+}
+.modal-body .span-2 { grid-column: span 2; }
+@media (max-width: 640px) {
+    .modal-body { grid-template-columns: 1fr; }
+    .modal-body .span-2 { grid-column: span 1; }
+}
+
+.modal-foot {
+    padding: 18px 28px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    background: #fafafa;
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+
+/* ================================================================
+   TOAST
+   ================================================================ */
+.toast-host {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.toast {
+    background: var(--secondary);
+    color: #fff;
+    padding: 13px 18px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 260px;
+    animation: toastIn .25s ease;
+}
+.toast.toast-error  { background: #b91c1c; }
+.toast.toast-success{ background: #047857; }
+@keyframes toastIn {
+    from { opacity: 0; transform: translateX(20px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+
+/* ================================================================
+   FOOTER
+   ================================================================ */
+.site-footer {
+    text-align: center;
+    padding: 28px 20px;
+    color: var(--text-muted);
+    font-size: 13px;
+}
+.site-footer strong { color: var(--primary-dark); }
+
+/* ================================================================
+   RESPONSIVE
+   ================================================================ */
+@media (max-width: 980px) {
+    .reg-card { grid-template-columns: 1fr; }
+    .reg-hero { padding: 40px 32px; }
+    .reg-form-wrap { padding: 32px 24px; }
+    .form-header h2 { font-size: 22px; }
 }
 </style>
 </head>
-<body style="zoom: 52%; background-color: orange;">
+<body>
 
-	<div class="main">
-		<div class="container" style="width: 2200px;">
-			<div class="signup-content">
-				<div class="signup-img">
-					<img src="images\ratantataimg.jpg" alt="img"
-						style="height: 1700px; width: 1500px;">
+<div class="page-wrap">
+  <div class="reg-card">
 
-				</div>
-				<div class="signup-form" style="zoom: 100%; width: 1300px; height: 1700px;">
-				<html:form action="/EisRegistration" method="post"
-					enctype="multipart/form-data" styleClass="register-form">
-						<div class="msg" style="color: red;">
-							<logic:equal name="RegForm" property="m_strmsg"
-								value="error">
-								<h1>
-                  Something Wents Wrong Please try Again!</h1>
-                </logic:equal>
-                
-                <logic:equal name="RegForm" property="m_strmsg"
-								value="duplicate">
-								<h1>
-                  Employee ID Already Exist Please try Another one</h1>
-                </logic:equal>
-						</div>
-					
-					<h2 style="font-size: 50px; font-weight: bolder;">EIS registration form</h2>
-					 <div class="form-row">
+    <!-- ============================================================
+         LEFT HERO PANEL
+         ============================================================ -->
+    <aside class="reg-hero">
+      <div>
+        <i class="fa-solid fa-id-card hero-icon"></i>
+        <h1>EIS Registration</h1>
+        <p>Onboard a new team member in a few minutes. Fill in the details below and attach the required documents.</p>
+      </div>
 
-                            <div class="form-group">
-                                <label for="pincode" style="font-size: 25px;">Employee ID :</label>
-                                <input type="number"  style="font-size: 25px;" name="m_stremployee_id" oninput="javascript: if (this.value.length > this.maxLength) this.value = this.value.slice(0, this.maxLength);"  maxlength="44"  id="Employee" title="Please fill the Employee ID" />
-                            </div>
+      <div class="hero-steps">
+        <div class="hero-step">
+          <div class="step-num">1</div>
+          <div class="step-text">Personal &amp; employee information</div>
+        </div>
+        <div class="hero-step">
+          <div class="step-num">2</div>
+          <div class="step-text">Contact &amp; address details</div>
+        </div>
+        <div class="hero-step">
+          <div class="step-num">3</div>
+          <div class="step-text">Laptop / VDI / VPN configuration</div>
+        </div>
+        <div class="hero-step">
+          <div class="step-num">4</div>
+          <div class="step-text">Upload documents &amp; submit</div>
+        </div>
+      </div>
+    </aside>
 
-                            <div class="form-group">
-                                <label for="adid" style="font-size: 25px;">AD ID :</label>
-                                <html:text style="font-size: 25px;" property="m_strad_id" maxlength="44"  styleId="adid" title="Please fill the AD ID" />
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="hid" style="font-size: 25px;">HID :</label>
-                                <html:text style="font-size: 25px;" property="m_strhid" maxlength="44" styleId="hid" title="Please fill the HID"/>
-                            </div>
+    <!-- ============================================================
+         RIGHT FORM PANEL
+         ============================================================ -->
+    <main class="reg-form-wrap">
 
-                            <div class="form-group">
-                                <label for="pincode" style="font-size: 25px;">Asset ID :</label>
-                                <html:text style="font-size: 25px;" property="m_strasset_id" maxlength="44" styleId="Accet" title="Please fill the Accet ID"/>
-                            </div>
+      <div class="form-header">
+        <h2>Registration Form</h2>
+        <p>Fields marked <span style="color:var(--danger)">*</span> are required.</p>
+      </div>
 
-                        </div>
-                        
-                        
-                        
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="state" style="font-size: 25px;">Education Qualification :</label>
-                                <div class="form-select">
-                                    <html:select property="m_streduqualification" style="font-size: 25px;" styleId="Education Qualification">
-                                      <html:option value="Select">Select Education Qualification</html:option>
-                                        <html:option value="B-Tech">B-Tech</html:option>
-                                        <html:option value="M-Tech">M-Tech</html:option>
-                                        <html:option value="BSC">BSC</html:option>
-                                        <html:option value="MSC">MSC</html:option>
-                                        <html:option value="BCA">BCA</html:option>
-                                        <html:option value="MCA">MCA</html:option>
-                                     
-                                       
-                                    </html:select>
-                                    <span class="select-icon"><i class="zmdi zmdi-chevron-down"></i></span>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label for="city" style="font-size: 25px;">TCS Joining Date :</label>
-                                <div class="form-select">
-                                    <input type="date" style="font-size: 25px;" name="m_strtcsjoiningdate">
+      <!-- Server-side messages -->
+      <s:if test="m_strmsg == 'error'">
+        <div class="alert alert-error">
+          <i class="fa-solid fa-circle-exclamation"></i>
+          Something went wrong. Please try again.
+        </div>
+      </s:if>
+      <s:if test="m_strmsg == 'duplicate'">
+        <div class="alert alert-warn">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          Employee ID already exists. Please use a different one.
+        </div>
+      </s:if>
 
-                                </div>
+      <s:form action="saveRegistration" method="post"
+              enctype="multipart/form-data" theme="simple" id="regForm">
 
-                            </div>
+        <!-- ============ SECTION 1: EMPLOYEE IDENTITY ============ -->
+        <section class="form-section">
+          <div class="section-title">
+            <i class="fa-solid fa-user"></i> Employee Identity
+          </div>
 
-                        </div>
-                        
-                        
-                        
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="state" style="font-size: 25px;">Employee contact Number :</label>
-                                <input type="number" pattern="[0-9]{10}" style="font-size: 25px;"  oninput="javascript: if (this.value.length > this.maxLength) this.value = this.value.slice(0, this.maxLength);" maxlength="10" title="Please Enter 10 Digit Mobile Number"
-                                    name="m_strcontactno" id="Pnum"    />
-                            </div>
-                            <div class="form-group">
-                                <label for="state" style="font-size: 25px;">Emergency contact Number :</label>
-                                <input type="number" pattern="[0-9]{10}" style="font-size: 25px;" oninput="javascript: if (this.value.length > this.maxLength) this.value = this.value.slice(0, this.maxLength);" maxlength="10" title="Please Enter 10 Digit Mobile Number"
-                                    name="m_stremergencycontactno" id="Pnum"    />
-                            </div>
+          <div class="form-grid">
+            <div class="field">
+              <label>Employee ID <span class="req">*</span></label>
+              <s:textfield name="m_stremployee_id" id="empId" maxlength="44"
+                           placeholder="e.g. 123456" cssClass=""/>
+            </div>
 
-                        </div>
-                        
-                        
-                        
-                             <div class="form-row">
-                            <div class="form-group">
-                                <label for="Team" style="font-size: 25px;">Team :</label>
-                                <div class="form-select">
-                                <html:select name="RegForm" property="m_strRole"
-										style="font-size: 25px;">
-										<html:options name="RegForm" property="rolelist" />
-									</html:select>
-                                 
-                                    <span class="select-icon"><i class="zmdi zmdi-chevron-down"></i></span>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label for="City" style="font-size: 25px;">TCS mail ID :</label>
-                                <html:text property="m_strtcsmailid" style="font-size: 25px;" maxlength="44" styleId="Email" title="Please fill EmailID (abc@tcs.com)"
-                                       />
-                            </div>
-                        </div>
-                        
-                        
-                        <div class="form-group">
-                            <label for="Address" style="font-size: 25px;">SBI mail ID :</label>
-                            <html:text property="m_strsbimailid" style="font-size: 25px;" maxlength="44" styleId="Email" title="Please fill EmailID (abc@sbitcs.com)"    />
-                        </div>
-                        
-                        
-                        
-                         <div class="form-row">
-                            <div class="form-group">
-                                <label for="state" style="font-size: 25px;">State :</label>
-                               <div class="form-select">
-                                    <html:select property="m_strstate" style="font-size: 25px;" styleId="state" >
-                                      <html:option value="Select">Select State</html:option>
-                                        <html:option value="Andhra Pradesh">Andhra Pradesh</html:option>
-                                        <html:option value="Andaman and Nicobar Islands">Andaman and Nicobar
-											Islands</html:option>
-										<html:option value="Arunachal Pradesh">Arunachal Pradesh</html:option>
-										<html:option value="Assam">Assam</html:option>
-										<html:option value="Bihar">Bihar</html:option>
-										<html:option value="Chandigarh">Chandigarh</html:option>
-										<html:option value="Chhattisgarh">Chhattisgarh</html:option>
-										<html:option value="Dadar and Nagar Haveli">Dadar and
-											Nagar Haveli</html:option>
-										<html:option value="Daman and Diu">Daman and Diu</html:option>
-										<html:option value="Delhi">Delhi</html:option>
-										<html:option value="Lakshadweep">Lakshadweep</html:option>
-										<html:option value="Puducherry">Puducherry</html:option>
-										<html:option value="Goa">Goa</html:option>
-										<html:option value="Gujarat">Gujarat</html:option>
-										<html:option value="Haryana">Haryana</html:option>
-										<html:option value="Himachal Pradesh">Himachal Pradesh</html:option>
-										<html:option value="Jammu and Kashmir">Jammu and Kashmir</html:option>
-										<html:option value="Jharkhand">Jharkhand</html:option>
-										<html:option value="Karnataka">Karnataka</html:option>
-										<html:option value="Kerala">Kerala</html:option>
-										<html:option value="Madhya Pradesh">Madhya Pradesh</html:option>
-										<html:option value="Maharashtra">Maharashtra</html:option>
-										<html:option value="Manipur">Manipur</html:option>
-										<html:option value="Meghalaya">Meghalaya</html:option>
-										<html:option value="Mizoram">Mizoram</html:option>
-										<html:option value="Nagaland">Nagaland</html:option>
-										<html:option value="Odisha">Odisha</html:option>
-										<html:option value="Punjab">Punjab</html:option>
-										<html:option value="Rajasthan">Rajasthan</html:option>
-										<html:option value="Sikkim">Sikkim</html:option>
-										<html:option value="Tamil Nadu">Tamil Nadu</html:option>
-										<html:option value="Telangana">Telangana</html:option>
-										<html:option value="Tripura">Tripura</html:option>
-										<html:option value="Uttar Pradesh">Uttar Pradesh</html:option>
-										<html:option value="Uttarakhand">Uttarakhand</html:option>
-										<html:option value="West Bengal">West Bengal</html:option>
+            <div class="field">
+              <label>AD ID</label>
+              <s:textfield name="m_strad_id" maxlength="44" placeholder="e.g. AD12345"/>
+            </div>
 
-									</html:select>
-                                    <span class="select-icon"><i class="zmdi zmdi-chevron-down"></i></span>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label for="City" style="font-size: 25px;">City :</label>
-                                <html:text property="m_strcity" style="font-size: 25px;" maxlength="70" styleId="City" title="Please fill the City Name"    />
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="Address" style="font-size: 25px;">Local Address :</label>
-                            <html:text property="m_strlocaladdress" style="font-size: 25px;" maxlength="180" styleId="Address" title="Please fill the Address"    />
-                        </div>
-                        
-                        
-                        
-                         <div class="form-row"> <div class="form-radio">
-                            <label for="gender" class="radio-label" style="font-size: 25px;">Gender :</label>
-                            <div class="form-radio-item">
-                                <input type="radio" name="m_strgender" id="male" value="Male" checked>
-                                <label for="male" style="font-size: 25px;">Male</label>
-                                <span class="check"></span>
-                            </div>
-                            <div class="form-radio-item">
-                                <input type="radio" name="m_strgender" value="Female" id="female">
-                                <label for="female" style="font-size: 25px;">Female</label>
-                                <span class="check"></span>
-                            </div>
-                            </div>
-                        
-                        
-                        
-                        <!-- Trigger/Open The Modal -->
-                            <input type="button" value="Add Laptop Details" id="myBtn"
-                                style="height: 50px;font-size: 20px; font-weight: bolder ; width: 200px; border-radius: 5%; background-color: darkgray; color: black;"/>
-                            
-                         </div>
-                            <!-- The Modal -->
-                            <div id="myModal" class="modal"
-                                style="width: 1012px; height: auto; position: absolute; top: 49%; margin: 0% ; padding:-100px;">
+            <div class="field">
+              <label>HID</label>
+              <s:textfield name="m_strhid" maxlength="44" placeholder="HID"/>
+            </div>
 
-                                <!-- Modal content -->
-                                <div class="modal-content">
-                                    <span class="close">&times;</span>
-                                    <center>
-                                        <h2 style="font-size: 25px;">Laptop and VDI/VPN Details</h2>
-                                        <div class="form-row">
-                                            <div class="form-group">
-                                                <label for="Hostname" style="font-size: 25px;">VPN Hostname :</label>
-                                                <html:text property="m_strvpnhostname" maxlength="44" style="font-size: 25px;" styleId="Hostname"
-                                                    title="Please fill the Hostname"    />
-                                            </div>
-                                            <div class="form-group">
-                                                <label for="Laptop" style="font-size: 25px;">Laptop Hostname :</label>
-                                                <html:text property="m_strlaptophostname" maxlength="44" style="font-size: 25px;" styleId="Laptop"
-                                                    title="Please fill the Laptop Hostname"    />
-                                            </div>
-                                        </div>
+            <div class="field">
+              <label>Asset ID</label>
+              <s:textfield name="m_strasset_id" maxlength="44" placeholder="Asset ID"/>
+            </div>
+          </div>
+        </section>
 
-                                        <label for="Team" style="font-size: 25px;">Select Remote Type</label>
-                                        <div class="form-select">
-                                            <html:select property="m_strremotetype" style="font-size: 25px;" styleId="Remote">
-                                                <html:option value="">Select Remote Type</html:option>
-                                                <html:option value="VPN">VPN</html:option>
-                                                <html:option value="VDI">VDI</html:option>
-                                                <html:option value="NONE">NONE</html:option>
-                                            </html:select>
-                                            <span class="select-icon"><i class="zmdi zmdi-chevron-down"></i></span>
-                                        </div>
-                                        <div class="form-row">
-                                            <div class="form-group">
-                                                <label for="iplap" style="font-size: 25px;">VPN/VDI MAC Address :</label>
-                                                <html:text style="font-size: 25px;" maxlength="44" styleId="ipv4" property="m_strvpnmacaddress"
-                                                    title="xxx.xxx.xxx.xxx" />
-                                            </div>
-                                            <div class="form-group">
-                                                <label for="ipsys" style="font-size: 25px;">VPN/VDI IP Address :</label>
-                                                <html:text  style="font-size: 25px;" maxlength="44" styleId="ipv4" property="m_strvpnipaddress"
-                                                    title="xxx.xxx.xxx.xxx" />
-                                            </div>
+        <!-- ============ SECTION 2: QUALIFICATION & JOINING ============ -->
+        <section class="form-section">
+          <div class="section-title">
+            <i class="fa-solid fa-graduation-cap"></i> Qualification &amp; Joining
+          </div>
 
+          <div class="form-grid">
+            <div class="field">
+              <label>Education Qualification <span class="req">*</span></label>
+              <s:select name="m_streduqualification"
+                        list="{'Select Education Qualification','B-Tech','M-Tech','BSC','MSC','BCA','MCA'}"
+                        headerKey="" headerValue=""/>
+            </div>
 
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="CV" style="font-size: 25px;">CV Document :</label>
-                                            <html:file property="m_strtheCvfile"></html:file>
-                                        </div>
-                                        
-                                    </center>
-                                </div>
+            <div class="field">
+              <label>TCS Joining Date <span class="req">*</span></label>
+              <s:textfield name="m_strtcsjoiningdate" type="date"/>
+            </div>
+          </div>
+        </section>
 
-                            </div>
+        <!-- ============ SECTION 3: CONTACT ============ -->
+        <section class="form-section">
+          <div class="section-title">
+            <i class="fa-solid fa-phone"></i> Contact Information
+          </div>
 
-                            <script>
+          <div class="form-grid">
+            <div class="field">
+              <label>Employee Contact Number <span class="req">*</span></label>
+              <s:textfield name="m_strcontactno" maxlength="10"
+                           placeholder="10-digit mobile"/>
+            </div>
 
+            <div class="field">
+              <label>Emergency Contact Number</label>
+              <s:textfield name="m_stremergencycontactno" maxlength="10"
+                           placeholder="10-digit mobile"/>
+            </div>
 
+            <div class="field">
+              <label>Team / Role <span class="req">*</span></label>
+              <s:select name="m_strRole" list="rolelist"/>
+            </div>
 
-                                // Get the modal
-                                var modal = document.getElementById("myModal");
+            <div class="field">
+              <label>TCS Mail ID <span class="req">*</span></label>
+              <s:textfield name="m_strtcsmailid" maxlength="44"
+                           placeholder="abc@tcs.com"/>
+            </div>
 
-                                // Get the button that opens the modal
-                                var btn = document.getElementById("myBtn");
+            <div class="field span-2">
+              <label>SBI Mail ID</label>
+              <s:textfield name="m_strsbimailid" maxlength="44"
+                           placeholder="abc@sbitcs.com"/>
+            </div>
+          </div>
+        </section>
 
-                                // Get the <span> element that closes the modal
-                                var span = document.getElementsByClassName("close")[0];
+        <!-- ============ SECTION 4: ADDRESS ============ -->
+        <section class="form-section">
+          <div class="section-title">
+            <i class="fa-solid fa-location-dot"></i> Address
+          </div>
 
-                                // When the user clicks the button, open the modal 
-                                btn.onclick = function () {
-                                    modal.style.display = "block";
-                                }
+          <div class="form-grid">
+            <div class="field">
+              <label>State <span class="req">*</span></label>
+              <s:select name="m_strstate"
+                        list="{'Select State','Maharashtra','Karnataka','Tamil Nadu','Delhi','Gujarat','Telangana','West Bengal'}"
+                        headerKey="" headerValue=""/>
+            </div>
 
-                                // When the user clicks on <span> (x), close the modal
-                                span.onclick = function () {
-                                    modal.style.display = "none";
-                                }
+            <div class="field">
+              <label>City <span class="req">*</span></label>
+              <s:textfield name="m_strcity" maxlength="70" placeholder="City"/>
+            </div>
 
-                                // When the user clicks anywhere outside of the modal, close it
-                                window.onclick = function (event) {
-                                    if (event.target == modal) {
-                                        modal.style.display = "none";
-                                    }
-                                }
-                            </script>
-                        
-                        
-                        
-                         <div class="form-group">
-                            <label for="birth_date" style="font-size: 25px;">Date Of Birth :</label>
-                            <input type="date" name="m_strdob" style="font-size: 25px;" id="birth_date">
-                        </div>
-                        
-                        
-                         <div class="form-row">
+            <div class="field span-2">
+              <label>Local Address <span class="req">*</span></label>
+              <s:textfield name="m_strlocaladdress" maxlength="180"
+                           placeholder="Building, street, area..."/>
+            </div>
+          </div>
+        </section>
 
+        <!-- ============ SECTION 5: PERSONAL ============ -->
+        <section class="form-section">
+          <div class="section-title">
+            <i class="fa-solid fa-user-circle"></i> Personal Details
+          </div>
 
-                            <div class="form-group">
-                                <label for="name" style="font-size: 25px;">First Name :</label>
-                                <html:text property="m_strfirstName" style="font-size: 25px;" maxlength="44" styleId="name" title="Please fill the First Name"    />
-                            </div>
+          <div class="form-grid">
+            <div class="field span-2">
+              <label>Gender <span class="req">*</span></label>
+              <div class="radio-group">
+                <label class="radio-pill">
+                  <s:radio name="m_strgender" list="#{'Male':'Male','Female':'Female'}"
+                           value="'Male'"/>
+                </label>
+              </div>
+            </div>
 
-                            <div class="form-group">
-                                <label for="Middle_name" style="font-size: 25px;">Middle Name :</label>
-                               <html:text property="m_strmiddleName" style="font-size: 25px;" maxlength="44" styleId="Last_name" title="Please fill the Last Name"
-                                      />
-                            </div>
-                            <div class="form-group">
-                                <label for="Last_name" style="font-size: 25px;">Last Name :</label>
-                                <html:text property="m_strlastName" style="font-size: 25px;" maxlength="44" styleId="Middle_name" title="Please fill the Middle Name"
-                                      />
-                            </div>
-                        </div>
-                        
-                         <div class="form-row">
-                            <div class="form-group">
-                                <label for="BGC" style="font-size: 25px;">BGC Documents :</label>
-                                <html:file name="RegForm" property="m_strtheBgcfile" styleId="BGC"></html:file>
-                            </div>
-                            <div class="form-group">
-                                <label for="Photo" style="font-size: 25px;">Photo :</label>
-                                <html:file name="RegForm" property="m_strthePhotofile" accept="image/*" styleId="Photo"></html:file>
-                                
-                            </div>
-                            <div class="form-group">
-                                <label for="Police" style="font-size: 25px;">Police Verification :</label>
-                                <html:file name="RegForm" property="m_strthePoliceverificationfile" styleId="Police"></html:file>
-                            </div>
+            <div class="field">
+              <label>Date Of Birth <span class="req">*</span></label>
+              <s:textfield name="m_strdob" type="date"/>
+            </div>
 
-                        </div>
+            <div class="field">
+              <label>First Name <span class="req">*</span></label>
+              <s:textfield name="m_strfirstName" maxlength="44" placeholder="First name"/>
+            </div>
 
+            <div class="field">
+              <label>Middle Name</label>
+              <s:textfield name="m_strmiddleName" maxlength="44" placeholder="Middle name"/>
+            </div>
 
-						<div class="form-row">
-							<div class="form-group">
-								<label for="pincode" style="font-size: 25px;">Username :</label>
-								<html:text name="RegForm" property="m_strUserName" maxlength="44"
-									style="font-size: 25px;" styleId="username"
-									title="Please fill the Username"></html:text>
-							</div>
-							<div class="form-group">
-								<label for="password" style="font-size: 25px;">Password
-									:</label>
-								<input type="password" name="m_strPassword" maxlength="44"
-									style="font-size: 25px;" id="password" 
-									title="Password should contain Special Character">
-							</div>
+            <div class="field">
+              <label>Last Name <span class="req">*</span></label>
+              <s:textfield name="m_strlastName" maxlength="44" placeholder="Last name"/>
+            </div>
+          </div>
+        </section>
 
-						</div>
+        <!-- ============ SECTION 6: LAPTOP/VDI (button opens modal) ============ -->
+        <section class="form-section">
+          <div class="section-title">
+            <i class="fa-solid fa-laptop"></i> Laptop &amp; VDI / VPN
+          </div>
 
+          <div class="form-grid">
+            <div class="field span-2">
+              <button type="button" class="btn btn-ghost" id="openLaptopModal">
+                <i class="fa-solid fa-plus"></i> Add Laptop / VDI Details
+              </button>
+            </div>
+          </div>
+        </section>
 
-						<div class="form-submit">
-                            <!--  <input type="button" value="Reset All"
-                                style="height: 80px; font-size: 25px; font-weight: bolder ; width: 200px; border-radius: 5%; background-color: darkgray; color: black;"
-                                class="submit" onclick="submitClear();"/>-->
-                            <input type="button" value="Submit Form" style="height: 80px; font-size: 25px; font-weight: bolder ; width: 200px; border-radius: 5%;background-color: #FF6801;"
-                                class="submit"  onclick="submitReg();" />
-                        </div>
-                        
-                        
-                        
-					
+        <!-- ============ SECTION 7: DOCUMENTS ============ -->
+        <section class="form-section">
+          <div class="section-title">
+            <i class="fa-solid fa-paperclip"></i> Documents
+          </div>
 
-				</html:form>
-				</div>
-			</div>
-		</div>
-	</div>
-	 <div class="footer">
-    <p class="font-italic text-center text-bottom" style="color: black; font-size: 30px">Designed by @Shubham Chaudhari & Developed by @Amit Avhad  </p>
+          <div class="form-grid">
+            <div class="field">
+              <label>BGC Document</label>
+              <s:file name="m_strtheBgcfile"/>
+            </div>
+
+            <div class="field">
+              <label>Photo</label>
+              <s:file name="m_strthePhotofile" accept="image/*"/>
+            </div>
+
+            <div class="field">
+              <label>Police Verification</label>
+              <s:file name="m_strthePoliceverificationfile"/>
+            </div>
+
+            <div class="field">
+              <label>CV Document</label>
+              <s:file name="m_strtheCvfile"/>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============ SECTION 8: CREDENTIALS ============ -->
+        <section class="form-section">
+          <div class="section-title">
+            <i class="fa-solid fa-key"></i> Credentials
+          </div>
+
+          <div class="form-grid">
+            <div class="field">
+              <label>Username <span class="req">*</span></label>
+              <s:textfield name="m_strUserName" maxlength="44" placeholder="Username"/>
+            </div>
+
+            <div class="field">
+              <label>Password <span class="req">*</span></label>
+              <s:password name="m_strPassword" maxlength="44" placeholder="Password"/>
+            </div>
+          </div>
+        </section>
+
+        <s:hidden name="action" value="insert"/>
+
+        <!-- ============ ACTION BAR ============ -->
+        <div class="form-actions">
+          <button type="reset" class="btn btn-ghost">
+            <i class="fa-solid fa-rotate-left"></i> Reset
+          </button>
+          <button type="button" class="btn btn-primary" id="submitBtn">
+            <i class="fa-solid fa-paper-plane"></i> Submit Registration
+          </button>
+        </div>
+      </s:form>
+
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <p>Designed by <strong>@Shubham Chaudhari</strong> &nbsp;·&nbsp; Developed by <strong>@Amit Avhad</strong></p>
+  </footer>
+</div>
+
+<!-- ================================================================
+     MODAL — Laptop / VDI Details
+     ================================================================ -->
+<div class="modal-overlay" id="laptopModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3><i class="fa-solid fa-laptop-code"></i> Laptop &amp; VDI / VPN Details</h3>
+      <button type="button" class="modal-close" id="closeLaptopModal">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
     </div>
+
+    <div class="modal-body">
+      <div class="field">
+        <label>VPN Hostname</label>
+        <s:textfield name="m_strvpnhostname" maxlength="44" placeholder="VPN hostname"/>
+      </div>
+
+      <div class="field">
+        <label>Laptop Hostname</label>
+        <s:textfield name="m_strlaptophostname" maxlength="44" placeholder="Laptop hostname"/>
+      </div>
+
+      <div class="field span-2">
+        <label>Remote Type</label>
+        <s:select name="m_strremotetype"
+                  list="{'NONE','VPN','VDI'}"
+                  headerKey="" headerValue="Select Remote Type"/>
+      </div>
+
+      <div class="field">
+        <label>VPN/VDI MAC Address</label>
+        <s:textfield name="m_strvpnmacaddress" maxlength="44" placeholder="xx:xx:xx:xx:xx:xx"/>
+      </div>
+
+      <div class="field">
+        <label>VPN/VDI IP Address</label>
+        <s:textfield name="m_strvpnipaddress" maxlength="44" placeholder="xxx.xxx.xxx.xxx"/>
+      </div>
+    </div>
+
+    <div class="modal-foot">
+      <button type="button" class="btn btn-ghost" id="cancelLaptopModal">Cancel</button>
+      <button type="button" class="btn btn-primary" id="saveLaptopModal">
+        <i class="fa-solid fa-check"></i> Save Details
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================
+     TOAST HOST
+     ================================================================ -->
+<div class="toast-host" id="toastHost"></div>
+
+<!-- ================================================================
+     SCRIPTS
+     ================================================================ -->
+<script>
+(function () {
+    'use strict';
+
+    // ---------- Toast helper ----------
+    const toastHost = document.getElementById('toastHost');
+    function toast(msg, type) {
+        const el = document.createElement('div');
+        el.className = 'toast' + (type ? ' toast-' + type : '');
+        el.innerHTML =
+            '<i class="fa-solid ' +
+            (type === 'error' ? 'fa-circle-xmark' : type === 'success' ? 'fa-circle-check' : 'fa-circle-info') +
+            '"></i><span>' + msg + '</span>';
+        toastHost.appendChild(el);
+        setTimeout(() => el.remove(), 3200);
+    }
+
+    // ---------- Modal ----------
+    const modal = document.getElementById('laptopModal');
+    const openBtn  = document.getElementById('openLaptopModal');
+    const closeBtn = document.getElementById('closeLaptopModal');
+    const cancelBtn= document.getElementById('cancelLaptopModal');
+    const saveBtn  = document.getElementById('saveLaptopModal');
+
+    openBtn.addEventListener('click', () => modal.classList.add('open'));
+    function closeModal() { modal.classList.remove('open'); }
+    closeBtn.addEventListener('click', closeModal);
+    cancelBtn.addEventListener('click', closeModal);
+    saveBtn.addEventListener('click', () => {
+        toast('Laptop / VDI details captured', 'success');
+        closeModal();
+    });
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('open')) closeModal();
+    });
+
+    // ---------- Validation + Submit ----------
+    const form = document.getElementById('regForm');
+    const submitBtn = document.getElementById('submitBtn');
+
+    function val(name) {
+        const el = form.querySelector('[name="' + name + '"]');
+        return el ? el.value.trim() : '';
+    }
+
+    function validate() {
+        const checks = [
+            ['m_stremployee_id',        'Please enter Employee ID'],
+            ['m_streduqualification',   'Please select Education Qualification'],
+            ['m_strtcsjoiningdate',     'Please select TCS Joining Date'],
+            ['m_strcontactno',          'Please enter Employee contact number'],
+            ['m_strRole',               'Please select Team / Role'],
+            ['m_strtcsmailid',          'Please enter TCS Mail ID'],
+            ['m_strstate',              'Please select State'],
+            ['m_strcity',               'Please enter City'],
+            ['m_strlocaladdress',       'Please enter Local Address'],
+            ['m_strdob',                'Please enter Date of Birth'],
+            ['m_strfirstName',          'Please enter First Name'],
+            ['m_strmiddleName',         'Please enter Middle Name'],
+            ['m_strlastName',           'Please enter Last Name'],
+            ['m_strUserName',           'Please enter Username'],
+            ['m_strPassword',           'Please enter Password']
+        ];
+        for (const [name, msg] of checks) {
+            if (!val(name)) { toast(msg, 'error'); return false; }
+        }
+        return true;
+    }
+
+    submitBtn.addEventListener('click', function () {
+        if (!validate()) return;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting...';
+        form.submit();
+    });
+
+    // ---------- Inline number-only guard ----------
+    form.querySelectorAll('input[name="m_strcontactno"],input[name="m_stremergencycontactno"]')
+        .forEach(inp => {
+            inp.addEventListener('input', () => {
+                inp.value = inp.value.replace(/\D/g, '').slice(0, 10);
+            });
+        });
+})();
+</script>
+
 </body>
 </html>
