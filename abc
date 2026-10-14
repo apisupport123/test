@@ -1,103 +1,548 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xmlns="https://jakarta.ee/xml/ns/jakartaee"
-         xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee
-                             https://jakarta.ee/xml/ns/jakartaee/web-app_5_0.xsd"
-         version="5.0">
+<%@page contentType="text/html" pageEncoding="UTF-8"%>
 
-  <display-name>EISPortal</display-name>
 
-  <!-- 12 hours session -->
-  <session-config>
-    <session-timeout>720</session-timeout>
-    <cookie-config>
-      <http-only>true</http-only>
-      <secure>false</secure>
-    </cookie-config>
-    <tracking-mode>COOKIE</tracking-mode>
-  </session-config>
 
-  <!-- Struts 2 filter -->
-  <filter>
-    <filter-name>struts2</filter-name>
-    <filter-class>org.apache.struts2.dispatcher.filter.StrutsPrepareAndExecuteFilter</filter-class>
-  </filter>
-  <filter-mapping>
-    <filter-name>struts2</filter-name>
-    <url-pattern>*.do</url-pattern>
-  </filter-mapping>
-  <filter-mapping>
-    <filter-name>struts2</filter-name>
-    <url-pattern>*.action</url-pattern>
-  </filter-mapping>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="ISO-8859-1">
+<title>Registration</title>
 
-  <!-- CORS filter -->
-  <filter>
-    <filter-name>CORSFilter</filter-name>
-    <filter-class>com.action.CORSFilter</filter-class>
-  </filter>
-  <filter-mapping>
-    <filter-name>CORSFilter</filter-name>
-    <url-pattern>/*</url-pattern>
-  </filter-mapping>
+<!-- Font Icon -->
+<link rel="stylesheet" href="fonts/material-design-iconic-font.min.css">
 
-  <login-config>
-    <auth-method>BASIC</auth-method>
-    <realm-name>LDAP Realm</realm-name>
-  </login-config>
+<!-- Main css -->
+<link rel="stylesheet" href="css/styleReg.css">
 
-  <servlet>
-    <servlet-name>TestServlet</servlet-name>
-    <jsp-file>/debug.jsp</jsp-file>
-  </servlet>
-  <servlet-mapping>
-    <servlet-name>TestServlet</servlet-name>
-    <url-pattern>/test</url-pattern>
-  </servlet-mapping>
+<script>
+        //input mask bundle ip address
+        var ipv4_address = $('#ipv4');
+        ipv4_address.inputmask({
+            alias: "ip",
+            greedy: false //The initial mask shown will be "" instead of "-____".
+        });
+    </script>
 
-  <servlet>
-    <servlet-name>DocumentDownloadServlet</servlet-name>
-    <servlet-class>com.action.DocumentDownloadServlet</servlet-class>
-  </servlet>
-  <servlet-mapping>
-    <servlet-name>DocumentDownloadServlet</servlet-name>
-    <url-pattern>/DocumentDownloadServlet</url-pattern>
-  </servlet-mapping>
+<script type="text/javascript">
+	
+	function submitReg(){
+		if(document.forms[0].m_stremployee_id.value==""){
+			   alert("Please Enter Employee ID");
+		    return null;  
+			   
+		}
+		if(document.forms[0].m_streduqualification.value=="Select"){
+			   alert("Please Select Education Qualification");
+		    return null;  
+			   
+		}
+		if(document.forms[0].m_strtcsjoiningdate.value==""){
+			   alert("Please Select TCS Joining Date");
+		    return null;  
+			   
+		}
+		if(document.forms[0].m_strcontactno.value==""){
+			   alert("Please Enter Employee contact Number");
+		    return null;  
+			   
+		}
+		if(document.forms[0].m_strRole.value=="Select Role"){
+			   alert("Please Select Role");
+		    return null;  
+			   
+		}
+		if(document.forms[0].m_strtcsmailid.value==""){
+			   alert("Please Enter TCS mail ID");
+		    return null;  
+			   
+		}
+		if(document.forms[0].m_strstate.value=="Select"){
+			   alert("Please Select State");
+		    return null;  
+			   
+		}
+		if(document.forms[0].m_strcity.value==""){
+			   alert("Please Enter City");
+		    return null;  
+			   
+		}
+		if(document.forms[0].m_strlocaladdress.value==""){
+			   alert("Please Enter Local Address");
+		    return null;  
+			   
+		}
+		if(document.forms[0].m_strdob.value==""){
+			   alert("Please Enter Date of Birth");
+		    return null;  
+			   
+		}
+		if(document.forms[0].m_strfirstName.value==""){
+			   alert("Please Enter First Name");
+		    return null; 
+		}
+		if(document.forms[0].m_strmiddleName.value==""){
+			   alert("Please Enter Middle Name");
+		    return null; 
+		}
+		
+		if(document.forms[0].m_strlastName.value==""){
+			   alert("Please Enter Last Name");
+		    return null; 
+		}
+		
+		if(document.forms[0].m_strUserName.value==""){
+			   alert("Please Enter User Name");
+		    return null; 
+		}
+		if(document.forms[0].m_strPassword.value==""){
+			   alert("Please Enter Password");
+		    return null; 
+		}
+		
+		document.forms[0].action = '<%=request.getContextPath() + "/EisRegistration.do?action=insert"%>';
+		document.forms[0].submit();
+	}
+	
+	function submitClear(){
+		alert('clear');
+	}
+	
+	</script>
 
-  <servlet>
-    <servlet-name>ViewDeploymentSheetActionServ</servlet-name>
-    <servlet-class>com.action.ViewDeploymentSheetActionServ</servlet-class>
-  </servlet>
-  <servlet-mapping>
-    <servlet-name>ViewDeploymentSheetActionServ</servlet-name>
-    <url-pattern>/ViewDeploymentSheetActionServ</url-pattern>
-  </servlet-mapping>
 
-  <servlet>
-    <servlet-name>DeploymentSheetServlet</servlet-name>
-    <servlet-class>com.action.DeploymentSheetServlet</servlet-class>
-  </servlet>
-  <servlet-mapping>
-    <servlet-name>DeploymentSheetServlet</servlet-name>
-    <url-pattern>/DeploymentSheetServlet</url-pattern>
-  </servlet-mapping>
+<style>
+    .modal {
+        display: none;
+        /* Hidden by default */
 
-  <servlet>
-    <servlet-name>UpdateMonthlyRosterAction</servlet-name>
-    <servlet-class>com.action.UpdateMonthlyRosterAction</servlet-class>
-  </servlet>
-  <servlet-mapping>
-    <servlet-name>UpdateMonthlyRosterAction</servlet-name>
-    <url-pattern>/UpdateMonthlyRosterAction</url-pattern>
-  </servlet-mapping>
+        z-index: 1;
+        /* Sit on top */
+        padding-top: 100px;
+        /* Location of the box */
+        left: 0;
+        top: 0;
+        width: 100%;
+        /* Full width */
+        height: 100%;
+        /* Full height */
+        overflow: auto;
+        /* Enable scroll if needed */
 
-  <welcome-file-list>
-    <welcome-file>index.html</welcome-file>
-    <welcome-file>index.htm</welcome-file>
-    <welcome-file>index.jsp</welcome-file>
-    <welcome-file>default.html</welcome-file>
-    <welcome-file>default.htm</welcome-file>
-    <welcome-file>default.jsp</welcome-file>
-  </welcome-file-list>
+    }
 
-</web-app>
+    /* Modal Content */
+    .modal-content {
+        background-color: #fefefe;
+        margin: auto;
+        padding: 20px;
+        border: 1px solid #888;
+        width: 80%;
+    }
+
+    /* The Close Button */
+    .close {
+        color: #aaaaaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+    }
+
+    .close:hover,
+    .close:focus {
+        color: #000;
+        text-decoration: none;
+        cursor: pointer;
+    }
+    .footer {
+   position: relative;
+   left: 0;
+   bottom: 0;
+   width: 100%;
+   color: white;
+   text-align: center;
+}
+</style>
+</head>
+<body style="zoom: 52%; background-color: orange;">
+
+	<div class="main">
+		<div class="container" style="width: 2200px;">
+			<div class="signup-content">
+				<div class="signup-img">
+					<img src="images\ratantataimg.jpg" alt="img"
+						style="height: 1700px; width: 1500px;">
+
+				</div>
+				<div class="signup-form" style="zoom: 100%; width: 1300px; height: 1700px;">
+				<html:form action="/EisRegistration" method="post"
+					enctype="multipart/form-data" styleClass="register-form">
+						<div class="msg" style="color: red;">
+							<logic:equal name="RegForm" property="m_strmsg"
+								value="error">
+								<h1>
+                  Something Wents Wrong Please try Again!</h1>
+                </logic:equal>
+                
+                <logic:equal name="RegForm" property="m_strmsg"
+								value="duplicate">
+								<h1>
+                  Employee ID Already Exist Please try Another one</h1>
+                </logic:equal>
+						</div>
+					
+					<h2 style="font-size: 50px; font-weight: bolder;">EIS registration form</h2>
+					 <div class="form-row">
+
+                            <div class="form-group">
+                                <label for="pincode" style="font-size: 25px;">Employee ID :</label>
+                                <input type="number"  style="font-size: 25px;" name="m_stremployee_id" oninput="javascript: if (this.value.length > this.maxLength) this.value = this.value.slice(0, this.maxLength);"  maxlength="44"  id="Employee" title="Please fill the Employee ID" />
+                            </div>
+
+                            <div class="form-group">
+                                <label for="adid" style="font-size: 25px;">AD ID :</label>
+                                <html:text style="font-size: 25px;" property="m_strad_id" maxlength="44"  styleId="adid" title="Please fill the AD ID" />
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="hid" style="font-size: 25px;">HID :</label>
+                                <html:text style="font-size: 25px;" property="m_strhid" maxlength="44" styleId="hid" title="Please fill the HID"/>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="pincode" style="font-size: 25px;">Asset ID :</label>
+                                <html:text style="font-size: 25px;" property="m_strasset_id" maxlength="44" styleId="Accet" title="Please fill the Accet ID"/>
+                            </div>
+
+                        </div>
+                        
+                        
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="state" style="font-size: 25px;">Education Qualification :</label>
+                                <div class="form-select">
+                                    <html:select property="m_streduqualification" style="font-size: 25px;" styleId="Education Qualification">
+                                      <html:option value="Select">Select Education Qualification</html:option>
+                                        <html:option value="B-Tech">B-Tech</html:option>
+                                        <html:option value="M-Tech">M-Tech</html:option>
+                                        <html:option value="BSC">BSC</html:option>
+                                        <html:option value="MSC">MSC</html:option>
+                                        <html:option value="BCA">BCA</html:option>
+                                        <html:option value="MCA">MCA</html:option>
+                                     
+                                       
+                                    </html:select>
+                                    <span class="select-icon"><i class="zmdi zmdi-chevron-down"></i></span>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="city" style="font-size: 25px;">TCS Joining Date :</label>
+                                <div class="form-select">
+                                    <input type="date" style="font-size: 25px;" name="m_strtcsjoiningdate">
+
+                                </div>
+
+                            </div>
+
+                        </div>
+                        
+                        
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="state" style="font-size: 25px;">Employee contact Number :</label>
+                                <input type="number" pattern="[0-9]{10}" style="font-size: 25px;"  oninput="javascript: if (this.value.length > this.maxLength) this.value = this.value.slice(0, this.maxLength);" maxlength="10" title="Please Enter 10 Digit Mobile Number"
+                                    name="m_strcontactno" id="Pnum"    />
+                            </div>
+                            <div class="form-group">
+                                <label for="state" style="font-size: 25px;">Emergency contact Number :</label>
+                                <input type="number" pattern="[0-9]{10}" style="font-size: 25px;" oninput="javascript: if (this.value.length > this.maxLength) this.value = this.value.slice(0, this.maxLength);" maxlength="10" title="Please Enter 10 Digit Mobile Number"
+                                    name="m_stremergencycontactno" id="Pnum"    />
+                            </div>
+
+                        </div>
+                        
+                        
+                        
+                             <div class="form-row">
+                            <div class="form-group">
+                                <label for="Team" style="font-size: 25px;">Team :</label>
+                                <div class="form-select">
+                                <html:select name="RegForm" property="m_strRole"
+										style="font-size: 25px;">
+										<html:options name="RegForm" property="rolelist" />
+									</html:select>
+                                 
+                                    <span class="select-icon"><i class="zmdi zmdi-chevron-down"></i></span>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="City" style="font-size: 25px;">TCS mail ID :</label>
+                                <html:text property="m_strtcsmailid" style="font-size: 25px;" maxlength="44" styleId="Email" title="Please fill EmailID (abc@tcs.com)"
+                                       />
+                            </div>
+                        </div>
+                        
+                        
+                        <div class="form-group">
+                            <label for="Address" style="font-size: 25px;">SBI mail ID :</label>
+                            <html:text property="m_strsbimailid" style="font-size: 25px;" maxlength="44" styleId="Email" title="Please fill EmailID (abc@sbitcs.com)"    />
+                        </div>
+                        
+                        
+                        
+                         <div class="form-row">
+                            <div class="form-group">
+                                <label for="state" style="font-size: 25px;">State :</label>
+                               <div class="form-select">
+                                    <html:select property="m_strstate" style="font-size: 25px;" styleId="state" >
+                                      <html:option value="Select">Select State</html:option>
+                                        <html:option value="Andhra Pradesh">Andhra Pradesh</html:option>
+                                        <html:option value="Andaman and Nicobar Islands">Andaman and Nicobar
+											Islands</html:option>
+										<html:option value="Arunachal Pradesh">Arunachal Pradesh</html:option>
+										<html:option value="Assam">Assam</html:option>
+										<html:option value="Bihar">Bihar</html:option>
+										<html:option value="Chandigarh">Chandigarh</html:option>
+										<html:option value="Chhattisgarh">Chhattisgarh</html:option>
+										<html:option value="Dadar and Nagar Haveli">Dadar and
+											Nagar Haveli</html:option>
+										<html:option value="Daman and Diu">Daman and Diu</html:option>
+										<html:option value="Delhi">Delhi</html:option>
+										<html:option value="Lakshadweep">Lakshadweep</html:option>
+										<html:option value="Puducherry">Puducherry</html:option>
+										<html:option value="Goa">Goa</html:option>
+										<html:option value="Gujarat">Gujarat</html:option>
+										<html:option value="Haryana">Haryana</html:option>
+										<html:option value="Himachal Pradesh">Himachal Pradesh</html:option>
+										<html:option value="Jammu and Kashmir">Jammu and Kashmir</html:option>
+										<html:option value="Jharkhand">Jharkhand</html:option>
+										<html:option value="Karnataka">Karnataka</html:option>
+										<html:option value="Kerala">Kerala</html:option>
+										<html:option value="Madhya Pradesh">Madhya Pradesh</html:option>
+										<html:option value="Maharashtra">Maharashtra</html:option>
+										<html:option value="Manipur">Manipur</html:option>
+										<html:option value="Meghalaya">Meghalaya</html:option>
+										<html:option value="Mizoram">Mizoram</html:option>
+										<html:option value="Nagaland">Nagaland</html:option>
+										<html:option value="Odisha">Odisha</html:option>
+										<html:option value="Punjab">Punjab</html:option>
+										<html:option value="Rajasthan">Rajasthan</html:option>
+										<html:option value="Sikkim">Sikkim</html:option>
+										<html:option value="Tamil Nadu">Tamil Nadu</html:option>
+										<html:option value="Telangana">Telangana</html:option>
+										<html:option value="Tripura">Tripura</html:option>
+										<html:option value="Uttar Pradesh">Uttar Pradesh</html:option>
+										<html:option value="Uttarakhand">Uttarakhand</html:option>
+										<html:option value="West Bengal">West Bengal</html:option>
+
+									</html:select>
+                                    <span class="select-icon"><i class="zmdi zmdi-chevron-down"></i></span>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="City" style="font-size: 25px;">City :</label>
+                                <html:text property="m_strcity" style="font-size: 25px;" maxlength="70" styleId="City" title="Please fill the City Name"    />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="Address" style="font-size: 25px;">Local Address :</label>
+                            <html:text property="m_strlocaladdress" style="font-size: 25px;" maxlength="180" styleId="Address" title="Please fill the Address"    />
+                        </div>
+                        
+                        
+                        
+                         <div class="form-row"> <div class="form-radio">
+                            <label for="gender" class="radio-label" style="font-size: 25px;">Gender :</label>
+                            <div class="form-radio-item">
+                                <input type="radio" name="m_strgender" id="male" value="Male" checked>
+                                <label for="male" style="font-size: 25px;">Male</label>
+                                <span class="check"></span>
+                            </div>
+                            <div class="form-radio-item">
+                                <input type="radio" name="m_strgender" value="Female" id="female">
+                                <label for="female" style="font-size: 25px;">Female</label>
+                                <span class="check"></span>
+                            </div>
+                            </div>
+                        
+                        
+                        
+                        <!-- Trigger/Open The Modal -->
+                            <input type="button" value="Add Laptop Details" id="myBtn"
+                                style="height: 50px;font-size: 20px; font-weight: bolder ; width: 200px; border-radius: 5%; background-color: darkgray; color: black;"/>
+                            
+                         </div>
+                            <!-- The Modal -->
+                            <div id="myModal" class="modal"
+                                style="width: 1012px; height: auto; position: absolute; top: 49%; margin: 0% ; padding:-100px;">
+
+                                <!-- Modal content -->
+                                <div class="modal-content">
+                                    <span class="close">&times;</span>
+                                    <center>
+                                        <h2 style="font-size: 25px;">Laptop and VDI/VPN Details</h2>
+                                        <div class="form-row">
+                                            <div class="form-group">
+                                                <label for="Hostname" style="font-size: 25px;">VPN Hostname :</label>
+                                                <html:text property="m_strvpnhostname" maxlength="44" style="font-size: 25px;" styleId="Hostname"
+                                                    title="Please fill the Hostname"    />
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="Laptop" style="font-size: 25px;">Laptop Hostname :</label>
+                                                <html:text property="m_strlaptophostname" maxlength="44" style="font-size: 25px;" styleId="Laptop"
+                                                    title="Please fill the Laptop Hostname"    />
+                                            </div>
+                                        </div>
+
+                                        <label for="Team" style="font-size: 25px;">Select Remote Type</label>
+                                        <div class="form-select">
+                                            <html:select property="m_strremotetype" style="font-size: 25px;" styleId="Remote">
+                                                <html:option value="">Select Remote Type</html:option>
+                                                <html:option value="VPN">VPN</html:option>
+                                                <html:option value="VDI">VDI</html:option>
+                                                <html:option value="NONE">NONE</html:option>
+                                            </html:select>
+                                            <span class="select-icon"><i class="zmdi zmdi-chevron-down"></i></span>
+                                        </div>
+                                        <div class="form-row">
+                                            <div class="form-group">
+                                                <label for="iplap" style="font-size: 25px;">VPN/VDI MAC Address :</label>
+                                                <html:text style="font-size: 25px;" maxlength="44" styleId="ipv4" property="m_strvpnmacaddress"
+                                                    title="xxx.xxx.xxx.xxx" />
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="ipsys" style="font-size: 25px;">VPN/VDI IP Address :</label>
+                                                <html:text  style="font-size: 25px;" maxlength="44" styleId="ipv4" property="m_strvpnipaddress"
+                                                    title="xxx.xxx.xxx.xxx" />
+                                            </div>
+
+
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="CV" style="font-size: 25px;">CV Document :</label>
+                                            <html:file property="m_strtheCvfile"></html:file>
+                                        </div>
+                                        
+                                    </center>
+                                </div>
+
+                            </div>
+
+                            <script>
+
+
+
+                                // Get the modal
+                                var modal = document.getElementById("myModal");
+
+                                // Get the button that opens the modal
+                                var btn = document.getElementById("myBtn");
+
+                                // Get the <span> element that closes the modal
+                                var span = document.getElementsByClassName("close")[0];
+
+                                // When the user clicks the button, open the modal 
+                                btn.onclick = function () {
+                                    modal.style.display = "block";
+                                }
+
+                                // When the user clicks on <span> (x), close the modal
+                                span.onclick = function () {
+                                    modal.style.display = "none";
+                                }
+
+                                // When the user clicks anywhere outside of the modal, close it
+                                window.onclick = function (event) {
+                                    if (event.target == modal) {
+                                        modal.style.display = "none";
+                                    }
+                                }
+                            </script>
+                        
+                        
+                        
+                         <div class="form-group">
+                            <label for="birth_date" style="font-size: 25px;">Date Of Birth :</label>
+                            <input type="date" name="m_strdob" style="font-size: 25px;" id="birth_date">
+                        </div>
+                        
+                        
+                         <div class="form-row">
+
+
+                            <div class="form-group">
+                                <label for="name" style="font-size: 25px;">First Name :</label>
+                                <html:text property="m_strfirstName" style="font-size: 25px;" maxlength="44" styleId="name" title="Please fill the First Name"    />
+                            </div>
+
+                            <div class="form-group">
+                                <label for="Middle_name" style="font-size: 25px;">Middle Name :</label>
+                               <html:text property="m_strmiddleName" style="font-size: 25px;" maxlength="44" styleId="Last_name" title="Please fill the Last Name"
+                                      />
+                            </div>
+                            <div class="form-group">
+                                <label for="Last_name" style="font-size: 25px;">Last Name :</label>
+                                <html:text property="m_strlastName" style="font-size: 25px;" maxlength="44" styleId="Middle_name" title="Please fill the Middle Name"
+                                      />
+                            </div>
+                        </div>
+                        
+                         <div class="form-row">
+                            <div class="form-group">
+                                <label for="BGC" style="font-size: 25px;">BGC Documents :</label>
+                                <html:file name="RegForm" property="m_strtheBgcfile" styleId="BGC"></html:file>
+                            </div>
+                            <div class="form-group">
+                                <label for="Photo" style="font-size: 25px;">Photo :</label>
+                                <html:file name="RegForm" property="m_strthePhotofile" accept="image/*" styleId="Photo"></html:file>
+                                
+                            </div>
+                            <div class="form-group">
+                                <label for="Police" style="font-size: 25px;">Police Verification :</label>
+                                <html:file name="RegForm" property="m_strthePoliceverificationfile" styleId="Police"></html:file>
+                            </div>
+
+                        </div>
+
+
+						<div class="form-row">
+							<div class="form-group">
+								<label for="pincode" style="font-size: 25px;">Username :</label>
+								<html:text name="RegForm" property="m_strUserName" maxlength="44"
+									style="font-size: 25px;" styleId="username"
+									title="Please fill the Username"></html:text>
+							</div>
+							<div class="form-group">
+								<label for="password" style="font-size: 25px;">Password
+									:</label>
+								<input type="password" name="m_strPassword" maxlength="44"
+									style="font-size: 25px;" id="password" 
+									title="Password should contain Special Character">
+							</div>
+
+						</div>
+
+
+						<div class="form-submit">
+                            <!--  <input type="button" value="Reset All"
+                                style="height: 80px; font-size: 25px; font-weight: bolder ; width: 200px; border-radius: 5%; background-color: darkgray; color: black;"
+                                class="submit" onclick="submitClear();"/>-->
+                            <input type="button" value="Submit Form" style="height: 80px; font-size: 25px; font-weight: bolder ; width: 200px; border-radius: 5%;background-color: #FF6801;"
+                                class="submit"  onclick="submitReg();" />
+                        </div>
+                        
+                        
+                        
+					
+
+				</html:form>
+				</div>
+			</div>
+		</div>
+	</div>
+	 <div class="footer">
+    <p class="font-italic text-center text-bottom" style="color: black; font-size: 30px">Designed by @Shubham Chaudhari & Developed by @Amit Avhad  </p>
+    </div>
+</body>
+</html>
