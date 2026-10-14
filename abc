@@ -1,1131 +1,267 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
-<%@ page import="java.sql.*" %>
-<%@ page import="java.util.*" %>
-<%@ page import="java.time.*" %>
-<%@ page import="java.time.format.TextStyle" %>
-<%@ page import="com.jdbc.DBUtilityAuto" %>
-<%
-    String __role = (session != null) ? (String) session.getAttribute("role") : null;
-    if (__role == null || __role.trim().isEmpty()) {
-        response.sendRedirect(request.getContextPath() + "/login.action");
-        return;
-    }
-%>
-<!DOCTYPE html>
-<html lang="en" data-theme="light">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Team Roster &mdash; EIS Portal</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+package com.action;
 
-<style>
-:root{
-  --gray-0:#FFFFFF; --gray-25:#FCFCFD; --gray-50:#F9FAFB; --gray-100:#F2F4F7;
-  --gray-200:#EAECF0; --gray-300:#D0D5DD; --gray-400:#98A2B3; --gray-500:#667085;
-  --gray-600:#475467; --gray-700:#344054; --gray-800:#1D2939; --gray-900:#101828;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-  --accent:#635BFF; --accent-hover:#5249E0; --accent-soft:#EEF0FF; --accent-line:#C7CBFF;
-  --success:#12B76A; --warning:#F79009; --danger:#F04438;
+import org.apache.struts2.ServletActionContext;
+import com.opensymphony.xwork2.ActionSupport;
+import com.opensymphony.xwork2.ModelDriven;
 
-  --m-bg:#FFE4CC; --m-fg:#8A2C00; --m-bd:#FFB380; --m-dot:#FF8C00;
-  --d-bg:#E5E8EC; --d-fg:#1F2937; --d-bd:#B8BFC9; --d-dot:#696969;
-  --a-bg:#FFF1B8; --a-fg:#7A4F00; --a-bd:#F5D45F; --a-dot:#DAA520;
-  --n-bg:#CCE4FF; --n-fg:#003D80; --n-bd:#80B8FF; --n-dot:#1E90FF;
-  --w-bg:#D6DCFF; --w-fg:#1E1E8A; --w-bd:#9BA5FF; --w-dot:#1E40AF;
-  --l-bg:#FFD6D6; --l-fg:#8A0F0F; --l-bd:#FF9E9E; --l-dot:#DC2626;
-  --f-bg:#FFD6EB; --f-fg:#8A0047; --f-bd:#FF9ECC; --f-dot:#EA580C;
-  --h-bg:#C8F0D6; --h-fg:#0F5A2D; --h-bd:#8ADCA8; --h-dot:#16A34A;
-  --x-bg:#EDEFF2; --x-fg:#667085; --x-bd:#D0D5DD; --x-dot:#98A2B3;
+import com.actionform.LoginForm;
+import com.jdbc.DBUtilityAuto;
+import com.jdbc.TrippleDes;
 
-  --bg-page:var(--gray-50); --bg-surface:var(--gray-0); --bg-subtle:var(--gray-25);
-  --border:var(--gray-200); --border-strong:var(--gray-300);
-  --text-primary:var(--gray-900); --text-secondary:var(--gray-600); --text-tertiary:var(--gray-500);
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 
-  --radius-sm:6px; --radius-md:8px; --radius-lg:12px;
+@SuppressWarnings("serial")
+public class LoginAction extends ActionSupport implements ModelDriven<LoginForm> {
 
-  --shadow-sm:0 1px 3px 0 rgba(16,24,40,.10);
-  --shadow-md:0 4px 8px -2px rgba(16,24,40,.10);
-  --shadow-lg:0 12px 16px -4px rgba(16,24,40,.10);
-  --shadow-xl:0 20px 24px -4px rgba(16,24,40,.15);
+    private LoginForm loginForm = new LoginForm();
 
-  --font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
-  --mono:'JetBrains Mono',ui-monospace,monospace;
-}
+    // JSON response ke liye
+    private Map<String, Object> jsonData = new HashMap<>();
 
-html[data-theme="dark"]{
-  --gray-0:#0B0E14; --gray-25:#10131A; --gray-50:#12161D; --gray-100:#171B23;
-  --gray-200:#22262F; --gray-300:#2E333C; --gray-400:#5A6270; --gray-500:#8A94A6;
-  --gray-600:#A6B0C2; --gray-700:#C4CCDA; --gray-800:#E1E6EF; --gray-900:#F5F7FA;
-
-  --accent:#8B83FF; --accent-hover:#A29AFF; --accent-soft:#1E1B4B; --accent-line:#3730A3;
-
-  --m-bg:#3A1D0A; --m-fg:#FDB022; --m-bd:#5C2C0F; --m-dot:#FB923C;
-  --d-bg:#1A1E26; --d-fg:#A6B0C2; --d-bd:#2E333C; --d-dot:#9CA3AF;
-  --a-bg:#3D2A05; --a-fg:#FDB022; --a-bd:#5C3F0F; --a-dot:#FBBF24;
-  --n-bg:#0A2540; --n-fg:#53B1FD; --n-bd:#0F3A66; --n-dot:#60A5FA;
-  --w-bg:#1E1B4B; --w-fg:#8B83FF; --w-bd:#3730A3; --w-dot:#818CF8;
-  --l-bg:#3A1211; --l-fg:#F97066; --l-bd:#5A1A18; --l-dot:#F87171;
-  --f-bg:#3D1030; --f-fg:#F670C7; --f-bd:#5E1A4A; --f-dot:#FB923C;
-  --h-bg:#052E1F; --h-fg:#32D583; --h-bd:#0A5133; --h-dot:#4ADE80;
-  --x-bg:#12161D; --x-fg:#5A6270; --x-bd:#22262F; --x-dot:#374151;
-
-  --bg-page:var(--gray-50); --bg-surface:var(--gray-25); --bg-subtle:var(--gray-0);
-  --border:var(--gray-200); --border-strong:var(--gray-300);
-  --text-primary:var(--gray-900); --text-secondary:var(--gray-600); --text-tertiary:var(--gray-500);
-
-  --shadow-sm:0 1px 3px 0 rgba(0,0,0,.5);
-  --shadow-md:0 4px 8px -2px rgba(0,0,0,.4);
-  --shadow-lg:0 12px 16px -4px rgba(0,0,0,.5);
-  --shadow-xl:0 20px 24px -4px rgba(0,0,0,.6);
-}
-
-*{margin:0;padding:0;box-sizing:border-box}
-html,body{height:100%}
-body{
-  font-family:var(--font); font-size:14px; line-height:1.5;
-  background:var(--bg-page); color:var(--text-primary);
-  -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
-  transition:background-color .2s ease, color .2s ease;
-  overflow-x:hidden;
-}
-a{color:inherit;text-decoration:none}
-button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit;}
-
-/* ============ APP BAR ============ */
-.appbar{
-  position:sticky; top:0; z-index:100;
-  background:var(--bg-surface);
-  border-bottom:1px solid var(--border);
-  height:56px;
-  display:flex; align-items:center; padding:0 20px; gap:14px;
-}
-.appbar-logo{
-  width:28px;height:28px;border-radius:7px;
-  background:linear-gradient(135deg,var(--accent), #7A5CFF);
-  display:grid;place-items:center;color:#fff;
-}
-.appbar-logo svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2.4;}
-.appbar-title{font-size:14px;font-weight:700;letter-spacing:-.2px;}
-.appbar-title .crumb{color:var(--text-tertiary);font-weight:500;margin-left:4px;}
-.appbar-spacer{flex:1;}
-.appbar-actions{display:flex;align-items:center;gap:4px;}
-
-.icon-btn{
-  width:34px;height:34px;display:grid;place-items:center;
-  border-radius:var(--radius-md); color:var(--text-secondary);
-  transition:all .15s ease;
-}
-.icon-btn:hover{background:var(--bg-subtle); color:var(--text-primary);}
-.icon-btn svg{
-  width:17px;height:17px; stroke:currentColor; fill:none; stroke-width:1.8;
-  stroke-linecap:round;stroke-linejoin:round;
-}
-.icon-btn .icon-sun{display:block;}
-.icon-btn .icon-moon{display:none;}
-html[data-theme="dark"] .icon-btn .icon-sun{display:none;}
-html[data-theme="dark"] .icon-btn .icon-moon{display:block;}
-
-.user-chip{
-  display:flex; align-items:center; gap:7px;
-  padding:4px 10px 4px 4px; border-radius:999px;
-  border:1px solid var(--border); transition:all .15s ease;
-  margin-left:4px;
-}
-.user-chip:hover{border-color:var(--border-strong); background:var(--bg-subtle);}
-.user-chip .avatar{
-  width:24px;height:24px;border-radius:50%;
-  background:linear-gradient(135deg,var(--accent),#7A5CFF);
-  color:#fff;display:grid;place-items:center;
-  font-size:10px;font-weight:700;
-}
-.user-chip .name{font-size:12px;font-weight:600;}
-
-/* ============ CONTEXT ROW ============ */
-.context-row{
-  background:var(--bg-surface); border-bottom:1px solid var(--border);
-  padding:14px 20px; display:flex; align-items:center;
-  justify-content:space-between; gap:16px; flex-wrap:wrap;
-}
-.context-left{display:flex; align-items:baseline; gap:16px; flex-wrap:wrap;}
-.context-title{font-size:17px; font-weight:700; letter-spacing:-.3px;}
-.context-title .accent{color:var(--accent);}
-.context-meta{
-  display:flex; align-items:center; gap:8px;
-  font-size:12px; color:var(--text-tertiary); font-weight:500;
-}
-.context-meta b{color:var(--text-primary); font-weight:600;}
-.context-meta .sep{width:3px;height:3px;border-radius:50%;background:var(--gray-300);}
-.context-right{display:flex; align-items:center; gap:8px;}
-
-.c-input{
-  font-family:var(--font); font-size:13px; font-weight:500;
-  color:var(--text-primary); background:var(--bg-surface);
-  border:1px solid var(--border-strong); border-radius:var(--radius-md);
-  padding:6px 10px; outline:none; transition:all .15s ease; height:34px;
-}
-.c-input:focus{
-  border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft);
-}
-
-.btn{
-  display:inline-flex; align-items:center; gap:6px;
-  padding:6px 14px; font-family:var(--font); font-size:13px; font-weight:600;
-  border-radius:var(--radius-md); border:1px solid transparent;
-  transition:all .15s ease; height:34px; white-space:nowrap;
-}
-.btn svg{
-  width:14px;height:14px; stroke:currentColor; fill:none; stroke-width:2;
-  stroke-linecap:round;stroke-linejoin:round;
-}
-.btn-primary{background:var(--accent); color:#fff;}
-.btn-primary:hover{background:var(--accent-hover);}
-
-/* ============ TOOLBAR ============ */
-.toolbar{
-  background:var(--bg-page); padding:12px 20px 10px;
-  display:flex; justify-content:space-between; align-items:center;
-  gap:12px; flex-wrap:wrap;
-}
-.toolbar-left{display:flex; align-items:center; gap:10px;}
-.search-input{position:relative; display:flex; align-items:center; width:280px;}
-.search-input svg{
-  position:absolute; left:11px; width:14px;height:14px;
-  stroke:var(--text-tertiary); fill:none; stroke-width:2; pointer-events:none;
-}
-.search-input input{
-  width:100%; font-family:var(--font); font-size:13px; font-weight:500;
-  background:var(--bg-surface); border:1px solid var(--border-strong);
-  border-radius:var(--radius-md); padding:7px 12px 7px 32px;
-  outline:none; color:var(--text-primary); transition:all .15s ease; height:34px;
-}
-.search-input input::placeholder{color:var(--text-tertiary);}
-.search-input input:focus{
-  border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft);
-}
-
-.stat-inline{
-  display:inline-flex; align-items:center; gap:6px;
-  padding:5px 10px; background:var(--bg-surface); border:1px solid var(--border);
-  border-radius:var(--radius-md); font-size:12px; font-weight:500;
-  color:var(--text-secondary); height:34px;
-}
-.stat-inline b{color:var(--text-primary); font-weight:700; font-variant-numeric:tabular-nums;}
-
-/* ============ LEGEND BAR ============ */
-.legend-bar{
-  background:var(--bg-surface); border-bottom:1px solid var(--border);
-  padding:10px 20px; display:flex; align-items:center; gap:8px;
-  overflow-x:auto; overflow-y:hidden; scrollbar-width:thin;
-}
-.legend-bar::-webkit-scrollbar{height:4px;}
-.legend-bar::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:2px;}
-
-.legend-label{
-  flex-shrink:0; font-size:10px; font-weight:700;
-  text-transform:uppercase; letter-spacing:.6px;
-  color:var(--text-tertiary); padding-right:8px;
-  border-right:1px solid var(--border); margin-right:4px; white-space:nowrap;
-}
-
-.legend-chip{
-  flex-shrink:0; display:inline-flex; align-items:center; gap:6px;
-  padding:5px 10px; border-radius:6px; font-size:11px; font-weight:700;
-  border:1px solid; white-space:nowrap;
-  font-variant-numeric:tabular-nums;
-}
-.legend-chip .swatch{width:8px;height:8px;border-radius:2px;flex-shrink:0;}
-
-.legend-chip.morning  {background:var(--m-bg);color:var(--m-fg);border-color:var(--m-bd);}
-.legend-chip.general  {background:var(--d-bg);color:var(--d-fg);border-color:var(--d-bd);}
-.legend-chip.afternoon{background:var(--a-bg);color:var(--a-fg);border-color:var(--a-bd);}
-.legend-chip.night    {background:var(--n-bg);color:var(--n-fg);border-color:var(--n-bd);}
-.legend-chip.weekoff  {background:var(--w-bg);color:var(--w-fg);border-color:var(--w-bd);}
-.legend-chip.leave    {background:var(--l-bg);color:var(--l-fg);border-color:var(--l-bd);}
-.legend-chip.flexi    {background:var(--f-bg);color:var(--f-fg);border-color:var(--f-bd);}
-.legend-chip.holiday  {background:var(--h-bg);color:var(--h-fg);border-color:var(--h-bd);}
-.legend-chip.na       {background:var(--x-bg);color:var(--x-fg);border-color:var(--x-bd);}
-
-/* ============ ROSTER GRID ============ */
-.grid-wrap{padding:16px 20px 90px; overflow-x:auto;}
-.roster-grid{
-  width:100%; min-width:1200px;
-  border-collapse:separate; border-spacing:0;
-  background:var(--bg-surface);
-  border:1px solid var(--border); border-radius:var(--radius-lg);
-  overflow:hidden; font-size:13px;
-}
-.roster-grid thead th{
-  position:sticky; top:0; z-index:10;
-  background:var(--bg-subtle); padding:8px 6px;
-  font-size:10px; font-weight:600; text-transform:uppercase;
-  letter-spacing:.4px; color:var(--text-tertiary);
-  border-bottom:1px solid var(--border);
-  text-align:center; white-space:nowrap;
-}
-.roster-grid thead th .day-num{
-  font-size:12px; font-weight:700; color:var(--text-primary);
-  font-variant-numeric:tabular-nums;
-}
-.roster-grid thead th .day-name{
-  display:block; font-size:9px; font-weight:600;
-  color:var(--text-tertiary); margin-top:1px;
-}
-.roster-grid thead th.is-weekend{background:#FEF6EE; color:#C4320A;}
-html[data-theme="dark"] .roster-grid thead th.is-weekend{background:#3A1D0A; color:#FDB022;}
-
-.roster-grid thead th.col-emp{
-  position:sticky; left:0; z-index:20; text-align:left; padding-left:16px;
-  min-width:200px; background:var(--bg-subtle);
-  box-shadow:1px 0 0 var(--border);
-}
-.roster-grid thead th.col-pos{
-  position:sticky; left:200px; z-index:20; text-align:left;
-  min-width:110px; background:var(--bg-subtle);
-  box-shadow:1px 0 0 var(--border);
-}
-.roster-grid thead th.col-sum{min-width:44px; font-variant-numeric:tabular-nums;}
-
-.roster-grid tbody td{
-  padding:0; border-bottom:1px solid var(--border);
-  vertical-align:middle; background:var(--bg-surface);
-}
-.roster-grid tbody tr:last-child td{border-bottom:none;}
-.roster-grid tbody tr:hover td{background:var(--bg-subtle);}
-.roster-grid tbody td.col-emp{
-  position:sticky; left:0; z-index:5;
-  padding:7px 14px 7px 16px; background:var(--bg-surface);
-  box-shadow:1px 0 0 var(--border);
-}
-.roster-grid tbody tr:hover td.col-emp{background:var(--bg-subtle);}
-.emp-row{display:flex; align-items:center; gap:9px;}
-.emp-avatar{
-  width:26px;height:26px;border-radius:50%;
-  background:var(--gray-200); color:var(--text-secondary);
-  display:grid;place-items:center;
-  font-size:10px; font-weight:700; flex-shrink:0;
-  border:1px solid var(--border);
-}
-.emp-name{
-  font-size:13px; font-weight:600; color:var(--text-primary);
-  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; line-height:1.2;
-}
-.emp-id{
-  font-size:10px; color:var(--text-tertiary);
-  font-family:var(--mono); margin-top:1px;
-}
-.roster-grid tbody td.col-pos{
-  position:sticky; left:200px; z-index:5;
-  padding:7px 10px; background:var(--bg-surface);
-  box-shadow:1px 0 0 var(--border);
-  font-size:12px; font-weight:500; color:var(--text-secondary);
-  white-space:nowrap;
-}
-.roster-grid tbody tr:hover td.col-pos{background:var(--bg-subtle);}
-
-/* ============ SHIFT CELL ============ */
-.shift-cell{
-  position:relative;
-  padding:3px !important;
-}
-.shift-btn{
-  display:flex; align-items:center; justify-content:center;
-  width:100%; height:30px;
-  border-radius:5px; font-size:10px; font-weight:800;
-  letter-spacing:.2px; border:1.5px solid;
-  font-variant-numeric:tabular-nums;
-  transition:all .12s ease;
-  cursor:pointer;
-  box-shadow:inset 0 -1px 0 rgba(0,0,0,.05);
-  user-select:none;
-}
-.shift-btn:hover{
-  transform:translateY(-1px);
-  box-shadow:var(--shadow-sm);
-}
-.shift-btn.morning  {background:var(--m-bg);color:var(--m-fg);border-color:var(--m-bd);}
-.shift-btn.general  {background:var(--d-bg);color:var(--d-fg);border-color:var(--d-bd);}
-.shift-btn.afternoon{background:var(--a-bg);color:var(--a-fg);border-color:var(--a-bd);}
-.shift-btn.night    {background:var(--n-bg);color:var(--n-fg);border-color:var(--n-bd);}
-.shift-btn.weekoff  {background:var(--w-bg);color:var(--w-fg);border-color:var(--w-bd);}
-.shift-btn.leave    {background:var(--l-bg);color:var(--l-fg);border-color:var(--l-bd);}
-.shift-btn.flexi    {background:var(--f-bg);color:var(--f-fg);border-color:var(--f-bd);}
-.shift-btn.holiday  {background:var(--h-bg);color:var(--h-fg);border-color:var(--h-bd);}
-.shift-btn.na       {background:var(--x-bg);color:var(--x-fg);border-color:var(--x-bd);}
-
-.shift-cell select.shift-hidden{
-  position:absolute;
-  opacity:0;
-  pointer-events:none;
-  width:1px;height:1px;
-  top:0;left:0;
-  border:none;
-  padding:0;
-}
-
-/* ============ SUMMARY ROWS ============ */
-.summary-row td{
-  background:var(--bg-subtle) !important;
-  padding:5px 6px !important;
-  font-size:11px; font-weight:700; color:var(--text-primary);
-  font-variant-numeric:tabular-nums;
-  border-top:1px solid var(--border); text-align:center;
-}
-.summary-row td.col-emp{
-  background:var(--bg-subtle) !important;
-  font-size:10px; font-weight:600;
-  text-transform:uppercase; letter-spacing:.4px;
-  color:var(--text-tertiary); text-align:left;
-  padding-left:16px !important;
-}
-.summary-row td.col-pos{background:var(--bg-subtle) !important;}
-.summary-row .pill{
-  display:inline-flex; align-items:center; justify-content:center;
-  min-width:22px; height:20px; padding:0 5px;
-  background:var(--bg-surface);
-  border:1px solid var(--border);
-  border-radius:4px;
-  font-size:10px; font-weight:700;
-  color:var(--text-primary);
-}
-
-/* ============ ACTION BAR ============ */
-.action-bar{
-  position:fixed; bottom:0; left:0; right:0; z-index:50;
-  background:var(--bg-surface); border-top:1px solid var(--border);
-  padding:10px 20px; display:flex;
-  justify-content:space-between; align-items:center;
-  gap:16px; box-shadow:0 -1px 3px rgba(16,24,40,.06);
-}
-.action-info{
-  display:flex; align-items:center; gap:10px;
-  font-size:12px; color:var(--text-tertiary);
-}
-.action-info .dot{
-  width:6px;height:6px;border-radius:50%;
-  background:var(--success);
-  box-shadow:0 0 0 2px rgba(18,183,106,.2);
-}
-.action-info b{color:var(--text-secondary); font-weight:600;}
-
-/* ============ EMPTY ============ */
-.empty{text-align:center; padding:80px 40px; color:var(--text-tertiary);}
-.empty svg{width:44px;height:44px;stroke:var(--text-tertiary);fill:none;stroke-width:1.5;margin-bottom:12px;opacity:.5;}
-.empty h3{font-size:14px;font-weight:600;color:var(--text-primary);margin-bottom:4px;}
-.empty p{font-size:12px;}
-
-/* ============================================================
-   CUSTOM DROPDOWN
-   ============================================================ */
-.dropdown-menu{
-  position:fixed;
-  z-index:9999;
-  background:var(--bg-surface);
-  border:1px solid var(--border-strong);
-  border-radius:var(--radius-lg);
-  box-shadow:var(--shadow-xl);
-  padding:8px;
-  width:400px;
-  max-width:calc(100vw - 20px);
-  display:none;
-  animation:ddPop .12s ease;
-}
-@keyframes ddPop{
-  from{opacity:0; transform:translateY(-4px);}
-  to{opacity:1; transform:translateY(0);}
-}
-.dropdown-menu.open{display:block;}
-
-.dd-header{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  padding:4px 6px 8px;
-  border-bottom:1px solid var(--border);
-  margin-bottom:6px;
-}
-.dd-header .dd-title{
-  font-size:10px;
-  font-weight:700;
-  text-transform:uppercase;
-  letter-spacing:.6px;
-  color:var(--text-tertiary);
-}
-.dd-header .dd-close{
-  width:22px; height:22px;
-  display:grid; place-items:center;
-  border-radius:5px;
-  color:var(--text-tertiary);
-  cursor:pointer;
-  transition:all .15s ease;
-}
-.dd-header .dd-close:hover{
-  background:var(--bg-subtle);
-  color:var(--text-primary);
-}
-.dd-header .dd-close svg{
-  width:12px;height:12px;
-  stroke:currentColor;fill:none;stroke-width:2.2;
-  stroke-linecap:round;
-}
-
-.dd-grid{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:4px;
-  max-height:340px;
-  overflow-y:auto;
-  padding-right:2px;
-  overscroll-behavior:contain;
-}
-.dd-grid::-webkit-scrollbar{width:5px;}
-.dd-grid::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:3px;}
-.dd-grid::-webkit-scrollbar-track{background:transparent;}
-
-.dd-item{
-  display:flex;
-  align-items:center;
-  gap:6px;
-  padding:7px 9px;
-  border-radius:var(--radius-sm);
-  font-family:var(--font);
-  font-size:11px;
-  font-weight:700;
-  cursor:pointer;
-  transition:all .1s ease;
-  border:1.5px solid transparent;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-}
-.dd-item:hover{
-  transform:translateX(2px);
-  box-shadow:var(--shadow-sm);
-}
-.dd-item.selected{
-  border-color:var(--accent);
-  box-shadow:0 0 0 2px var(--accent-soft);
-}
-
-.dd-dot{
-  width:8px;height:8px;border-radius:2px;flex-shrink:0;
-}
-
-/* Dropdown item colors — vivid */
-.dd-item.morning  {background:var(--m-bg);color:var(--m-fg);border-color:var(--m-bd);}
-.dd-item.morning .dd-dot{background:var(--m-dot);}
-.dd-item.general  {background:var(--d-bg);color:var(--d-fg);border-color:var(--d-bd);}
-.dd-item.general .dd-dot{background:var(--d-dot);}
-.dd-item.afternoon{background:var(--a-bg);color:var(--a-fg);border-color:var(--a-bd);}
-.dd-item.afternoon .dd-dot{background:var(--a-dot);}
-.dd-item.night    {background:var(--n-bg);color:var(--n-fg);border-color:var(--n-bd);}
-.dd-item.night .dd-dot{background:var(--n-dot);}
-.dd-item.weekoff  {background:var(--w-bg);color:var(--w-fg);border-color:var(--w-bd);}
-.dd-item.weekoff .dd-dot{background:var(--w-dot);}
-.dd-item.leave    {background:var(--l-bg);color:var(--l-fg);border-color:var(--l-bd);}
-.dd-item.leave .dd-dot{background:var(--l-dot);}
-.dd-item.flexi    {background:var(--f-bg);color:var(--f-fg);border-color:var(--f-bd);}
-.dd-item.flexi .dd-dot{background:var(--f-dot);}
-.dd-item.holiday  {background:var(--h-bg);color:var(--h-fg);border-color:var(--h-bd);}
-.dd-item.holiday .dd-dot{background:var(--h-dot);}
-.dd-item.na       {background:var(--x-bg);color:var(--x-fg);border-color:var(--x-bd);}
-.dd-item.na .dd-dot{background:var(--x-dot);}
-
-/* ============ RESPONSIVE ============ */
-@media (max-width:900px){
-  .appbar{padding:0 14px;}
-  .appbar-title .crumb{display:none;}
-  .context-row{padding:12px 14px;}
-  .context-title{font-size:15px;}
-  .toolbar{padding:10px 14px;}
-  .search-input{width:100%; max-width:100%;}
-  .legend-bar{padding:8px 14px;}
-  .grid-wrap{padding:12px 14px 90px;}
-  .action-bar{padding:10px 14px;}
-  .roster-grid thead th.col-emp{min-width:150px;padding-left:12px;}
-  .roster-grid thead th.col-pos{left:150px;min-width:80px;}
-  .roster-grid tbody td.col-emp{padding-left:12px;}
-  .roster-grid tbody td.col-pos{left:150px;}
-  .dropdown-menu{width:320px;}
-  .dd-grid{grid-template-columns:1fr;}
-}
-</style>
-</head>
-<body>
-
-<%
-    String monthYr = request.getParameter("myViewMonth");
-    String m_strroles = request.getParameter("m_strroles");
-    String username = request.getParameter("username");
-    if (m_strroles == null || m_strroles.trim().isEmpty()) m_strroles = (String) session.getAttribute("m_strrole");
-    if (username == null || username.trim().isEmpty()) username = (String) session.getAttribute("user");
-    if (m_strroles == null) m_strroles = "";
-    if (username == null) username = "";
-
-    int year = 0, month = 0, noOfDays = 0;
-    String selectedYear = null, selectedMonth = null, nameOfMonth = null, sort_MonthYear = null;
-    boolean showTable = false;
-
-    if (monthYr != null && !monthYr.trim().isEmpty()) {
-        String[] s = monthYr.split("-");
-        if (s.length >= 2) {
-            selectedYear = s[0]; selectedMonth = s[1];
-            try {
-                year = Integer.parseInt(selectedYear);
-                month = Integer.parseInt(selectedMonth);
-                showTable = true;
-                if (month==1||month==3||month==5||month==7||month==8||month==10||month==12) noOfDays = 31;
-                else if (month==4||month==6||month==9||month==11) noOfDays = 30;
-                else if (month==2) noOfDays = ((year % 400 == 0) || (year % 100 != 0) && (year % 4 == 0)) ? 29 : 28;
-                String[] mn = {"","January","February","March","April","May","June","July","August","September","October","November","December"};
-                String[] sn = {"","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
-                nameOfMonth = mn[month];
-                sort_MonthYear = sn[month] + "_" + selectedYear;
-            } catch (Exception e) { showTable = false; }
-        }
-    }
-    if (!showTable) {
-        YearMonth ym = YearMonth.now(ZoneId.of("Asia/Kolkata"));
-        year = ym.getYear(); month = ym.getMonthValue(); noOfDays = ym.lengthOfMonth();
-        selectedYear = String.valueOf(year);
-        selectedMonth = (month < 10 ? "0" : "") + month;
-        String[] mn = {"","January","February","March","April","May","June","July","August","September","October","November","December"};
-        String[] sn = {"","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
-        nameOfMonth = mn[month];
-        sort_MonthYear = sn[month] + "_" + selectedYear;
-        showTable = true;
+    @Override
+    public LoginForm getModel() {
+        return loginForm;
     }
 
-    List<Map<String,Object>> employees = new ArrayList<>();
-    Connection conn = null;
-    try {
-        conn = DBUtilityAuto.getReportDBConnection();
-        PreparedStatement ps = conn.prepareStatement("select * from rostertable where UPPER(TEAM)=UPPER(?) and UPPER(MONTHYEAR)=UPPER(?) order by id");
-        ps.setString(1, m_strroles);
-        ps.setString(2, sort_MonthYear);
-        ResultSet rs = ps.executeQuery();
-        while (rs.next()) {
-            Map<String,Object> emp = new HashMap<>();
-            emp.put("name", rs.getString("NAME"));
-            emp.put("adId", rs.getString("AD_ID"));
-            emp.put("position", rs.getString("POSITION"));
-            for (int d = 1; d <= noOfDays; d++) emp.put("day_" + d, rs.getString("DAY_" + d));
-            employees.add(emp);
-        }
-        rs.close(); ps.close();
-        if (employees.isEmpty()) {
-            PreparedStatement ps2 = conn.prepareStatement("select ad_id, FIRSTNAME || ' ' || LASTNAME as Fullname from eisupport_employee_master where TEAM = ? and isactive='Active'");
-            ps2.setString(1, m_strroles);
-            ResultSet rs2 = ps2.executeQuery();
-            while (rs2.next()) {
-                Map<String,Object> emp = new HashMap<>();
-                emp.put("name", rs2.getString("Fullname"));
-                emp.put("adId", rs2.getString("ad_id"));
-                emp.put("position", null);
-                for (int d = 1; d <= noOfDays; d++) emp.put("day_" + d, "Morning");
-                employees.add(emp);
+    public List<String> getRolelist() {
+        return loginForm.getRolelist();
+    }
+
+    public Map<String, Object> getJsonData() {
+        return jsonData;
+    }
+
+    // ==================== DEFAULT: LOAD LOGIN PAGE ====================
+    @Override
+    public String execute() throws Exception {
+        System.out.println(">>> LoginAction.execute() called");
+
+        HttpServletRequest request = ServletActionContext.getRequest();
+        HttpSession session = request.getSession(false);
+
+        // Logout handling — agar logout=true parameter hai toh session invalidate karo
+        String logout = request.getParameter("logout");
+        if ("true".equals(logout)) {
+            System.out.println(">>> Logout requested — invalidating session");
+            if (session != null) {
+                try { session.invalidate(); } catch (Exception e) {}
             }
-            rs2.close(); ps2.close();
+            // Fresh session create karo new rolelist ke liye
+            session = request.getSession(true);
         }
-    } catch (Exception e) { e.printStackTrace(); }
-    finally { if (conn != null) try { conn.close(); } catch (Exception e) {} }
 
-    int totalEmp = employees.size();
-    String userInitial = (username != null && username.length() > 0) ? username.substring(0,1).toUpperCase() : "U";
-%>
+        // Populate roles
+        this.getEISRole(loginForm);
+        List<String> roles = loginForm.getRolelist();
+        System.out.println("Roles Loaded : " + roles);
 
-<!-- ============ APP BAR ============ -->
-<header class="appbar">
-  <div class="appbar-logo">
-    <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
-  </div>
-  <div class="appbar-title">EIS Portal <span class="crumb">/ Team Roster</span></div>
-  <div class="appbar-spacer"></div>
-  <div class="appbar-actions">
-    <button class="icon-btn" onclick="toggleTheme()" title="Toggle theme">
-      <svg class="icon-sun" viewBox="0 0 24 24">
-        <circle cx="12" cy="12" r="4"/>
-        <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
-      </svg>
-      <svg class="icon-moon" viewBox="0 0 24 24">
-        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-      </svg>
-    </button>
-    <div class="user-chip">
-      <div class="avatar"><%= userInitial %></div>
-      <span class="name"><%= username %></span>
-    </div>
-  </div>
-</header>
+        // Request attribute me set karo (JSP me use hoga)
+        request.setAttribute("rolelist", roles);
 
-<!-- ============ CONTEXT ROW ============ -->
-<section class="context-row">
-  <div class="context-left">
-    <div class="context-title">
-      Team Roster &middot; <span class="accent"><%= nameOfMonth %> <%= selectedYear %></span>
-    </div>
-    <div class="context-meta">
-      <span><b><%= totalEmp %></b> employees</span>
-      <span class="sep"></span>
-      <span><b><%= noOfDays %></b> days</span>
-      <span class="sep"></span>
-      <span><%= m_strroles %></span>
-    </div>
-  </div>
+        // Session me bhi set karo (fallback ke liye)
+        if (session != null) {
+            session.setAttribute("rolelist", roles);
+        }
 
-  <form method="get" class="context-right">
-    <select name="month" class="c-input">
-      <% String[] mns = {"","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
-         for (int m = 1; m <= 12; m++) {
-             String val = String.format("%02d", m);
-             String sel = (m == month) ? "selected" : "";
-      %>
-      <option value="<%= val %>" <%= sel %>><%= mns[m] %></option>
-      <% } %>
-    </select>
-    <input type="number" name="year" class="c-input" min="2024" max="2100" value="<%= selectedYear %>" required style="width:80px;">
-    <input type="hidden" name="m_strroles" value="<%= m_strroles %>">
-    <input type="hidden" name="username" value="<%= username %>">
-    <button type="submit" class="btn btn-primary">
-      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      View
-    </button>
-  </form>
-</section>
-
-<!-- ============ TOOLBAR ============ -->
-<section class="toolbar">
-  <div class="toolbar-left">
-    <div class="search-input">
-      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input type="text" id="searchInput" placeholder="Search employees..." oninput="filterEmployees()">
-    </div>
-    <span class="stat-inline" id="searchInfo">Showing <b><%= totalEmp %></b> of <%= totalEmp %></span>
-  </div>
-</section>
-
-<!-- ============ LEGEND BAR ============ -->
-<section class="legend-bar">
-  <span class="legend-label">Legend</span>
-  <span class="legend-chip morning"><span class="swatch" style="background:var(--m-dot);"></span>M &middot; Morning</span>
-  <span class="legend-chip morning"><span class="swatch" style="background:var(--m-dot);"></span>WFH-M</span>
-  <span class="legend-chip morning"><span class="swatch" style="background:var(--m-dot);"></span>CC-M</span>
-  <span class="legend-chip general"><span class="swatch" style="background:var(--d-dot);"></span>D &middot; General</span>
-  <span class="legend-chip general"><span class="swatch" style="background:var(--d-dot);"></span>WFH-D</span>
-  <span class="legend-chip general"><span class="swatch" style="background:var(--d-dot);"></span>CC-D</span>
-  <span class="legend-chip afternoon"><span class="swatch" style="background:var(--a-dot);"></span>A &middot; Afternoon</span>
-  <span class="legend-chip afternoon"><span class="swatch" style="background:var(--a-dot);"></span>WFH-A</span>
-  <span class="legend-chip afternoon"><span class="swatch" style="background:var(--a-dot);"></span>CC-A</span>
-  <span class="legend-chip night"><span class="swatch" style="background:var(--n-dot);"></span>N &middot; Night</span>
-  <span class="legend-chip night"><span class="swatch" style="background:var(--n-dot);"></span>WFH-N</span>
-  <span class="legend-chip night"><span class="swatch" style="background:var(--n-dot);"></span>CC-N</span>
-  <span class="legend-chip weekoff"><span class="swatch" style="background:var(--w-dot);"></span>W &middot; Weekoff</span>
-  <span class="legend-chip weekoff"><span class="swatch" style="background:var(--w-dot);"></span>WA</span>
-  <span class="legend-chip leave"><span class="swatch" style="background:var(--l-dot);"></span>L &middot; Leave</span>
-  <span class="legend-chip leave"><span class="swatch" style="background:var(--l-dot);"></span>SL</span>
-  <span class="legend-chip leave"><span class="swatch" style="background:var(--l-dot);"></span>CL</span>
-  <span class="legend-chip leave"><span class="swatch" style="background:var(--l-dot);"></span>EL</span>
-  <span class="legend-chip flexi"><span class="swatch" style="background:var(--f-dot);"></span>FL</span>
-  <span class="legend-chip holiday"><span class="swatch" style="background:var(--h-dot);"></span>HL</span>
-  <span class="legend-chip na"><span class="swatch" style="background:var(--x-dot);"></span>NA</span>
-</section>
-
-<!-- ============ ROSTER GRID ============ -->
-<form id="rosterForm" method="post" action="<%=request.getContextPath()%>/RosterServlet">
-<input type="hidden" name="tableData" id="tableData">
-<input type="hidden" name="m_strroles" value="<%= m_strroles %>">
-<input type="hidden" name="username" value="<%= username %>">
-<input type="hidden" name="selectedMonth" value="<%= selectedMonth %>">
-<input type="hidden" name="selectedYear" value="<%= selectedYear %>">
-
-<div class="grid-wrap">
-<% if (totalEmp == 0) { %>
-  <div class="empty">
-    <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-    <h3>No employees found</h3>
-    <p>No active employees in team <b><%= m_strroles %></b>.</p>
-  </div>
-<% } else { %>
-
-<table class="roster-grid">
-  <thead>
-    <tr>
-      <th class="col-emp">Employee</th>
-      <th class="col-pos">Position</th>
-      <% for (int d = 1; d <= noOfDays; d++) {
-          LocalDate cd = LocalDate.of(year, month, d);
-          DayOfWeek dow = cd.getDayOfWeek();
-          boolean wknd = (dow == DayOfWeek.SATURDAY || dow == DayOfWeek.SUNDAY);
-      %>
-      <th class="<%= wknd ? "is-weekend" : "" %>">
-        <span class="day-num"><%= d %></span>
-        <span class="day-name"><%= dow.getDisplayName(TextStyle.SHORT, Locale.ENGLISH) %></span>
-      </th>
-      <% } %>
-      <th class="col-sum">WO</th>
-      <th class="col-sum">LV</th>
-    </tr>
-  </thead>
-  <tbody>
-    <% for (int i = 0; i < employees.size(); i++) {
-        Map<String,Object> emp = employees.get(i);
-        String name = (String) emp.get("name");
-        String pos = (String) emp.get("position");
-        String adId = (String) emp.get("adId");
-        String init = (name != null && name.length() > 0) ? name.substring(0,1).toUpperCase() : "?";
-    %>
-    <tr class="emp-row-tr" data-name="<%= name != null ? name.toLowerCase() : "" %>" data-pos="<%= pos != null ? pos.toLowerCase() : "" %>">
-      <td class="col-emp">
-        <div class="emp-row">
-          <div class="emp-avatar"><%= init %></div>
-          <div style="min-width:0;">
-            <div class="emp-name"><%= name %></div>
-            <div class="emp-id"><%= adId != null ? adId : "" %></div>
-            <input type="hidden" name="employeeName" value="<%= name %>">
-            <input type="hidden" name="adId" value="<%= adId %>">
-          </div>
-        </div>
-      </td>
-      <td class="col-pos">
-        <%= (pos != null && !pos.trim().isEmpty()) ? pos : "—" %>
-        <input type="hidden" name="position_<%= i %>" value="<%= pos != null ? pos : "" %>">
-      </td>
-      <%
-        int woCount = 0, lvCount = 0;
-        for (int d = 1; d <= noOfDays; d++) {
-          String shift = (String) emp.get("day_" + d);
-          if (shift == null || shift.trim().isEmpty()) shift = "Morning";
-          String lc = shift.toLowerCase();
-          String cls = "morning", label = "M";
-          if (lc.equals("morning"))                 {cls="morning";   label="M";}
-          else if (lc.equals("wfh-morning"))        {cls="morning";   label="WFH-M";}
-          else if (lc.equals("cc-morning"))         {cls="morning";   label="CC-M";}
-          else if (lc.equals("general")||lc.equals("genral")) {cls="general"; label="D";}
-          else if (lc.equals("wfh-general")||lc.equals("wfh-genral")) {cls="general"; label="WFH-D";}
-          else if (lc.equals("cc-general"))         {cls="general";   label="CC-D";}
-          else if (lc.equals("afternoon"))          {cls="afternoon"; label="A";}
-          else if (lc.equals("wfh-afternoon"))      {cls="afternoon"; label="WFH-A";}
-          else if (lc.equals("cc-afternoon"))       {cls="afternoon"; label="CC-A";}
-          else if (lc.equals("night"))              {cls="night";     label="N";}
-          else if (lc.equals("wfh-night"))          {cls="night";     label="WFH-N";}
-          else if (lc.equals("cc-night"))           {cls="night";     label="CC-N";}
-          else if (lc.equals("weekoff"))            {cls="weekoff";   label="W"; woCount++;}
-          else if (lc.equals("weekoffadjust"))      {cls="weekoff";   label="WA";}
-          else if (lc.equals("leave"))              {cls="leave";     label="L"; lvCount++;}
-          else if (lc.equals("sickleave"))          {cls="leave";     label="SL"; lvCount++;}
-          else if (lc.equals("casualleave"))        {cls="leave";     label="CL"; lvCount++;}
-          else if (lc.equals("earnedleave"))        {cls="leave";     label="EL"; lvCount++;}
-          else if (lc.equals("flexileave"))         {cls="flexi";     label="FL";}
-          else if (lc.equals("holidayleave"))       {cls="holiday";   label="HL";}
-          else if (lc.equals("na"))                 {cls="na";        label="—";}
-      %>
-      <td class="shift-cell" data-cell-id="<%= i %>_<%= d %>">
-        <div class="shift-btn <%= cls %>" onclick="openDropdown(event, <%= i %>, <%= d %>, '<%= cls %>', '<%= label %>')"><%= label %></div>
-        <select name="mnt_<%= i %>_<%= d %>" class="shift-hidden" id="sel_<%= i %>_<%= d %>">
-          <option value="Morning"       <%= lc.equals("morning")?"selected":"" %>>Morning</option>
-          <option value="WFH-Morning"   <%= lc.equals("wfh-morning")?"selected":"" %>>WFH-Morning</option>
-          <option value="CC-Morning"    <%= lc.equals("cc-morning")?"selected":"" %>>CC-Morning</option>
-          <option value="General"       <%= (lc.equals("general")||lc.equals("genral"))?"selected":"" %>>General</option>
-          <option value="WFH-General"   <%= (lc.equals("wfh-general")||lc.equals("wfh-genral"))?"selected":"" %>>WFH-General</option>
-          <option value="CC-General"    <%= lc.equals("cc-general")?"selected":"" %>>CC-General</option>
-          <option value="Afternoon"     <%= lc.equals("afternoon")?"selected":"" %>>Afternoon</option>
-          <option value="WFH-Afternoon" <%= lc.equals("wfh-afternoon")?"selected":"" %>>WFH-Afternoon</option>
-          <option value="CC-Afternoon"  <%= lc.equals("cc-afternoon")?"selected":"" %>>CC-Afternoon</option>
-          <option value="Night"         <%= lc.equals("night")?"selected":"" %>>Night</option>
-          <option value="WFH-Night"     <%= lc.equals("wfh-night")?"selected":"" %>>WFH-Night</option>
-          <option value="CC-Night"      <%= lc.equals("cc-night")?"selected":"" %>>CC-Night</option>
-          <option value="Weekoff"       <%= lc.equals("weekoff")?"selected":"" %>>Weekoff</option>
-          <option value="WeekoffAdjust" <%= lc.equals("weekoffadjust")?"selected":"" %>>WeekoffAdjust</option>
-          <option value="Leave"         <%= lc.equals("leave")?"selected":"" %>>Leave</option>
-          <option value="SickLeave"     <%= lc.equals("sickleave")?"selected":"" %>>SickLeave</option>
-          <option value="CasualLeave"   <%= lc.equals("casualleave")?"selected":"" %>>CasualLeave</option>
-          <option value="EarnedLeave"   <%= lc.equals("earnedleave")?"selected":"" %>>EarnedLeave</option>
-          <option value="FlexiLeave"    <%= lc.equals("flexileave")?"selected":"" %>>FlexiLeave</option>
-          <option value="HolidayLeave"  <%= lc.equals("holidayleave")?"selected":"" %>>HolidayLeave</option>
-          <option value="NA"            <%= lc.equals("na")?"selected":"" %>>NA</option>
-        </select>
-      </td>
-      <% } %>
-      <td style="text-align:center;font-weight:700;font-variant-numeric:tabular-nums;color:var(--w-fg);"><%= woCount %></td>
-      <td style="text-align:center;font-weight:700;font-variant-numeric:tabular-nums;color:var(--l-fg);"><%= lvCount %></td>
-    </tr>
-    <% } %>
-
-    <tr class="summary-row">
-      <td class="col-emp">Morning</td>
-      <td class="col-pos"></td>
-      <% for (int d = 1; d <= noOfDays; d++) {
-          int c = 0; for (Map<String,Object> e : employees) { String s = (String) e.get("day_" + d); if (s != null && s.toLowerCase().contains("morning")) c++; }
-      %>
-      <td><span class="pill"><%= c %></span></td>
-      <% } %>
-      <td colspan="2"></td>
-    </tr>
-    <tr class="summary-row">
-      <td class="col-emp">General</td>
-      <td class="col-pos"></td>
-      <% for (int d = 1; d <= noOfDays; d++) {
-          int c = 0; for (Map<String,Object> e : employees) { String s = (String) e.get("day_" + d); if (s != null && (s.toLowerCase().contains("general")||s.toLowerCase().contains("genral"))) c++; }
-      %>
-      <td><span class="pill"><%= c %></span></td>
-      <% } %>
-      <td colspan="2"></td>
-    </tr>
-    <tr class="summary-row">
-      <td class="col-emp">Afternoon</td>
-      <td class="col-pos"></td>
-      <% for (int d = 1; d <= noOfDays; d++) {
-          int c = 0; for (Map<String,Object> e : employees) { String s = (String) e.get("day_" + d); if (s != null && s.toLowerCase().contains("afternoon")) c++; }
-      %>
-      <td><span class="pill"><%= c %></span></td>
-      <% } %>
-      <td colspan="2"></td>
-    </tr>
-    <tr class="summary-row">
-      <td class="col-emp">Night</td>
-      <td class="col-pos"></td>
-      <% for (int d = 1; d <= noOfDays; d++) {
-          int c = 0; for (Map<String,Object> e : employees) { String s = (String) e.get("day_" + d); if (s != null && s.toLowerCase().contains("night")) c++; }
-      %>
-      <td><span class="pill"><%= c %></span></td>
-      <% } %>
-      <td colspan="2"></td>
-    </tr>
-  </tbody>
-</table>
-<% } %>
-</div>
-
-<!-- ============ ACTION BAR ============ -->
-<div class="action-bar">
-  <div class="action-info">
-    <span class="dot"></span>
-    <span>All changes saved</span>
-    <span>&middot;</span>
-    <span><b><%= m_strroles %></b> &middot; <%= nameOfMonth %> <%= selectedYear %></span>
-  </div>
-  <div>
-    <% boolean isFutureOrCurrent = (year > YearMonth.now().getYear() || (year == YearMonth.now().getYear() && month >= YearMonth.now().getMonthValue())); %>
-    <% if (isFutureOrCurrent) { %>
-      <button type="button" class="btn btn-primary" onclick="prepareData()" style="padding:8px 18px;">
-        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-        Save Roster
-      </button>
-    <% } else { %>
-      <span style="font-size:12px;color:var(--text-tertiary);font-weight:500;">Past month &middot; read only</span>
-    <% } %>
-  </div>
-</div>
-</form>
-
-<!-- ============ CUSTOM DROPDOWN ============ -->
-<div class="dropdown-menu" id="dropdownMenu">
-  <div class="dd-header">
-    <div class="dd-title">Select Shift</div>
-    <div class="dd-close" onclick="closeDropdown()">
-      <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-    </div>
-  </div>
-  <div class="dd-grid" id="ddGrid"></div>
-</div>
-
-<script>
-/* ============================================================
-   THEME
-   ============================================================ */
-(function(){
-  try {
-    var t = localStorage.getItem('eis-roster-theme') || 'light';
-    document.documentElement.setAttribute('data-theme', t);
-  } catch(e){}
-})();
-function toggleTheme() {
-  var cur = document.documentElement.getAttribute('data-theme') || 'light';
-  var next = cur === 'light' ? 'dark' : 'light';
-  document.documentElement.setAttribute('data-theme', next);
-  try { localStorage.setItem('eis-roster-theme', next); } catch(e){}
-}
-
-/* ============================================================
-   SEARCH
-   ============================================================ */
-function filterEmployees() {
-  var v = document.getElementById('searchInput').value.toLowerCase();
-  var rows = document.querySelectorAll('.emp-row-tr');
-  var vis = 0;
-  rows.forEach(function(r){
-    var n = r.getAttribute('data-name') || '';
-    var p = r.getAttribute('data-pos') || '';
-    if (n.includes(v) || p.includes(v)) { r.style.display = ''; vis++; }
-    else { r.style.display = 'none'; }
-  });
-  document.getElementById('searchInfo').innerHTML = 'Showing <b>' + vis + '</b> of ' + rows.length;
-}
-
-/* ============================================================
-   SHIFT OPTIONS
-   ============================================================ */
-var SHIFT_OPTIONS = [
-  { value:'Morning',       label:'M — Morning',        cls:'morning',   short:'M' },
-  { value:'WFH-Morning',   label:'WFH-M',              cls:'morning',   short:'WFH-M' },
-  { value:'CC-Morning',    label:'CC-M',               cls:'morning',   short:'CC-M' },
-  { value:'General',       label:'D — General',        cls:'general',   short:'D' },
-  { value:'WFH-General',   label:'WFH-D',              cls:'general',   short:'WFH-D' },
-  { value:'CC-General',    label:'CC-D',               cls:'general',   short:'CC-D' },
-  { value:'Afternoon',     label:'A — Afternoon',      cls:'afternoon', short:'A' },
-  { value:'WFH-Afternoon', label:'WFH-A',              cls:'afternoon', short:'WFH-A' },
-  { value:'CC-Afternoon',  label:'CC-A',               cls:'afternoon', short:'CC-A' },
-  { value:'Night',         label:'N — Night',          cls:'night',     short:'N' },
-  { value:'WFH-Night',     label:'WFH-N',              cls:'night',     short:'WFH-N' },
-  { value:'CC-Night',      label:'CC-N',               cls:'night',     short:'CC-N' },
-  { value:'Weekoff',       label:'W — Weekoff',        cls:'weekoff',   short:'W' },
-  { value:'WeekoffAdjust', label:'WA — Weekoff Adjust',cls:'weekoff',   short:'WA' },
-  { value:'Leave',         label:'L — Leave',          cls:'leave',     short:'L' },
-  { value:'SickLeave',     label:'SL — Sick Leave',    cls:'leave',     short:'SL' },
-  { value:'CasualLeave',   label:'CL — Casual Leave',  cls:'leave',     short:'CL' },
-  { value:'EarnedLeave',   label:'EL — Earned Leave',  cls:'leave',     short:'EL' },
-  { value:'FlexiLeave',    label:'FL — Flexi Leave',   cls:'flexi',     short:'FL' },
-  { value:'HolidayLeave',  label:'HL — Holiday',       cls:'holiday',   short:'HL' },
-  { value:'NA',            label:'NA — Not Assigned',  cls:'na',        short:'—' }
-];
-
-var activeRow = null, activeDay = null, activeBtnEl = null;
-
-/* ============================================================
-   OPEN DROPDOWN — anchored to badge
-   ============================================================ */
-function openDropdown(ev, rowIdx, dayIdx, currentCls, currentLabel) {
-  ev.stopPropagation();
-
-  activeRow = rowIdx;
-  activeDay = dayIdx;
-  activeBtnEl = ev.currentTarget;
-
-  var dd = document.getElementById('dropdownMenu');
-  var grid = document.getElementById('ddGrid');
-
-  var sel = document.getElementById('sel_' + rowIdx + '_' + dayIdx);
-  var currentValue = sel ? sel.value : 'Morning';
-
-  var html = '';
-  for (var k = 0; k < SHIFT_OPTIONS.length; k++) {
-    var o = SHIFT_OPTIONS[k];
-    var isSel = (o.value === currentValue) ? ' selected' : '';
-    html += '<div class="dd-item ' + o.cls + isSel + '"'
-         +  ' data-value="' + o.value + '"'
-         +  ' onclick="selectShift(event, ' + rowIdx + ', ' + dayIdx + ', \'' + o.value + '\', \'' + o.cls + '\', \'' + o.short + '\')">'
-         +  '<span class="dd-dot"></span>'
-         +  '<span>' + o.label + '</span>'
-         +  '</div>';
-  }
-  grid.innerHTML = html;
-
-  // Show to measure
-  dd.classList.add('open');
-
-  // Position
-  positionDropdown();
-
-  // Scroll to selected
-  setTimeout(function(){
-    var selItem = grid.querySelector('.dd-item.selected');
-    if (selItem) selItem.scrollIntoView({ block: 'nearest', behavior: 'instant' });
-  }, 10);
-}
-
-/* ============================================================
-   POSITION DROPDOWN relative to active button
-   ============================================================ */
-function positionDropdown() {
-  if (!activeBtnEl) return;
-  var dd = document.getElementById('dropdownMenu');
-  if (!dd.classList.contains('open')) return;
-
-  var rect = activeBtnEl.getBoundingClientRect();
-  var ddRect = dd.getBoundingClientRect();
-
-  var top = rect.bottom + 6;
-  var left = rect.left;
-
-  if (top + ddRect.height > window.innerHeight - 10) {
-    top = rect.top - ddRect.height - 6;
-    if (top < 10) top = 10;
-  }
-
-  if (left + ddRect.width > window.innerWidth - 10) {
-    left = window.innerWidth - ddRect.width - 10;
-  }
-  if (left < 10) left = 10;
-
-  dd.style.top = top + 'px';
-  dd.style.left = left + 'px';
-}
-
-function closeDropdown() {
-  document.getElementById('dropdownMenu').classList.remove('open');
-  activeRow = null;
-  activeDay = null;
-  activeBtnEl = null;
-}
-
-function selectShift(ev, rowIdx, dayIdx, value, cls, shortLabel) {
-  ev.stopPropagation();
-
-  var sel = document.getElementById('sel_' + rowIdx + '_' + dayIdx);
-  if (sel) sel.value = value;
-
-  var cell = document.querySelector('td.shift-cell[data-cell-id="' + rowIdx + '_' + dayIdx + '"]');
-  if (cell) {
-    var btn = cell.querySelector('.shift-btn');
-    if (btn) {
-      btn.className = 'shift-btn ' + cls;
-      btn.textContent = shortLabel;
+        return "success";
     }
-  }
 
-  closeDropdown();
+    // ==================== USER LOGIN (AJAX JSON) ====================
+    public String usersign() throws Exception {
+        System.out.println(">>> usersign() called");
+        HttpServletRequest request = ServletActionContext.getRequest();
+
+        String username = request.getParameter("m_strUserName");
+        String password = request.getParameter("m_struserPassword");
+        String role     = request.getParameter("m_strRole");
+
+        if (username == null || username.trim().isEmpty()
+                || password == null || password.trim().isEmpty()
+                || role == null || role.trim().isEmpty()) {
+            jsonData.put("status", "error");
+            jsonData.put("message", "Please fill all fields");
+            return "jsonerror";
+        }
+
+        boolean hasRole = this.checkRole(loginForm, request);
+
+        if (hasRole) {
+            HttpSession session = request.getSession();
+            session.setAttribute("role", role);
+            session.setAttribute("username", username);
+            session.setAttribute("fullname", username);
+
+            System.out.println(">>> User login success: " + username + " | role: " + role);
+
+            jsonData.put("status", "success");
+
+            // ---- ROLE-BASED REDIRECT ----
+            String ctx = request.getContextPath();
+            String redirectUrl;
+
+            if ("EIS Bank".equalsIgnoreCase(role)) {
+                // Banker → Bankheader.jsp
+                redirectUrl = ctx + "/jsp/Bankheader.jsp";
+            } else if ("Admin".equalsIgnoreCase(role)
+                    || "ModuleLead".equalsIgnoreCase(role)) {
+                // Admin / ModuleLead → header.jsp
+                redirectUrl = ctx + "/jsp/header.jsp";
+            } else {
+                // Baaki sab (Process Improvement, Service Desk, etc.) → userhomescreen
+                redirectUrl = ctx + "/userhomescreen.action";
+            }
+
+            System.out.println(">>> Redirect URL: " + redirectUrl);
+            jsonData.put("redirectUrl", redirectUrl);
+
+            return "jsonsuccess";
+        } else {
+            jsonData.put("status", "error");
+            jsonData.put("message", "Invalid username, password or role");
+            return "jsonerror";
+        }
+    }
+
+    // ==================== ADMIN LOGIN (AJAX JSON) ====================
+    public String adminsign() throws Exception {
+        System.out.println(">>> adminsign() called");
+        HttpServletRequest request = ServletActionContext.getRequest();
+
+        String adminUser = request.getParameter("m_stradminUserName");
+        String adminPass = request.getParameter("m_stradminPassword");
+
+        if (adminUser == null || adminUser.trim().isEmpty()
+                || adminPass == null || adminPass.trim().isEmpty()) {
+            jsonData.put("status", "error");
+            jsonData.put("message", "Please fill all fields");
+            return "jsonerror";
+        }
+
+        // ---------- Hardcoded Admin ----------
+        if ("Admin".equalsIgnoreCase(adminUser) && "admin".equals(adminPass)) {
+            HttpSession session = request.getSession();
+            session.setAttribute("role", "Admin");
+            session.setAttribute("username", adminUser);
+            session.setAttribute("fullname", adminUser);
+
+            System.out.println(">>> Admin login success: " + adminUser);
+
+            jsonData.put("status", "success");
+            jsonData.put("redirectUrl",
+                request.getContextPath() + "/jsp/header.jsp");
+            return "jsonsuccess";
+        }
+
+        // ---------- Module Lead check ----------
+        Connection con = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        String password = null;
+        try {
+            con = DBUtilityAuto.getReportDBConnection();
+            String query = "SELECT passwords FROM a_module_leads WHERE LOWER(username) = LOWER(?)";
+            ps = con.prepareStatement(query);
+            ps.setString(1, adminUser);
+            rs = ps.executeQuery();
+            if (rs.next()) password = rs.getString("passwords");
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (rs != null) try { rs.close(); } catch (Exception ignored) {}
+            if (ps != null) try { ps.close(); } catch (Exception ignored) {}
+            if (con != null) try { con.close(); } catch (Exception ignored) {}
+        }
+
+        if (password != null && password.equals(adminPass)) {
+            HttpSession session = request.getSession();
+            session.setAttribute("role", "ModuleLead");
+            session.setAttribute("username", adminUser);
+            session.setAttribute("fullname", adminUser);
+
+            System.out.println(">>> ModuleLead login success: " + adminUser);
+
+            jsonData.put("status", "success");
+            jsonData.put("redirectUrl",
+                request.getContextPath() + "/jsp/moduleHeader.jsp");
+            return "jsonsuccess";
+        }
+
+        // ---------- Fail ----------
+        jsonData.put("status", "error");
+        jsonData.put("message", "Invalid admin credentials");
+        return "jsonerror";
+    }
+
+    // For REST plugin
+    public String index() throws Exception {
+        return execute();
+    }
+
+    // ==================== HELPERS ====================
+    private boolean checkRole(LoginForm loginForm, HttpServletRequest request) throws SQLException {
+        Connection con = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        try {
+            TrippleDes td = new TrippleDes();
+            int count = 0;
+
+            String user = request.getParameter("m_strUserName");
+            String pass = td.encrypt(request.getParameter("m_struserPassword").trim());
+            String role = request.getParameter("m_strRole");
+
+            String query = "SELECT COUNT(1) FROM rolemst "
+                    + "WHERE username LIKE ? "
+                    + "AND password = ? "
+                    + "AND rolename = ?";
+
+            con = DBUtilityAuto.getReportDBConnection();
+            ps = con.prepareStatement(query);
+            ps.setString(1, "%" + user + "%");
+            ps.setString(2, pass);
+            ps.setString(3, role);
+            rs = ps.executeQuery();
+            if (rs.next()) count = rs.getInt(1);
+            return count > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        } finally {
+            if (rs != null) try { rs.close(); } catch (Exception ignored) {}
+            if (ps != null) try { ps.close(); } catch (Exception ignored) {}
+            if (con != null) try { con.close(); } catch (Exception ignored) {}
+        }
+    }
+
+    private void getEISRole(LoginForm loginForm) throws SQLException {
+        Connection con = null;
+        Statement stmt = null;
+        ResultSet rs = null;
+        try {
+            ArrayList<String> list = new ArrayList<>();
+            con = DBUtilityAuto.getReportDBConnection();
+            stmt = con.createStatement();
+            rs = stmt.executeQuery("SELECT rolename FROM rolemst");
+            while (rs.next()) list.add(rs.getString("rolename"));
+            loginForm.setRolelist(list);
+            System.out.println("Roles loaded: " + list);
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (rs != null) try { rs.close(); } catch (Exception ignored) {}
+            if (stmt != null) try { stmt.close(); } catch (Exception ignored) {}
+            if (con != null) try { con.close(); } catch (Exception ignored) {}
+        }
+    }
 }
-
-/* Close on outside click */
-document.addEventListener('click', function(e){
-  var dd = document.getElementById('dropdownMenu');
-  if (!dd.classList.contains('open')) return;
-  if (!dd.contains(e.target)) closeDropdown();
-});
-
-/* Close on Esc */
-document.addEventListener('keydown', function(e){
-  if (e.key === 'Escape') closeDropdown();
-});
-
-/* ============================================================
-   ON SCROLL — do NOT close, just reposition
-   ============================================================ */
-window.addEventListener('scroll', function(e){
-  var dd = document.getElementById('dropdownMenu');
-  if (!dd.classList.contains('open')) return;
-
-  // If scroll happens inside dropdown, ignore
-  if (dd.contains(e.target)) return;
-
-  // Reposition dropdown to follow badge
-  positionDropdown();
-}, true); // capture phase to catch all scrolls
-
-/* On resize — just close */
-window.addEventListener('resize', function(){
-  closeDropdown();
-});
-
-/* ============================================================
-   SUBMIT
-   ============================================================ */
-function prepareData() {
-  document.getElementById('rosterForm').submit();
-}
-</script>
-
-</body>
-</html>
