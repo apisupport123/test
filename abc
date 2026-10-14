@@ -1,699 +1,389 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Registration Complete · EIS Portal</title>
+package com.action;
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
 
-<style>
-/* ================================================================
-   RESET & TOKENS
-   ================================================================ */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+import org.apache.struts2.ActionSupport;
+import org.apache.struts2.ServletActionContext;
 
-:root {
-    --brand-1: #ff6a00;
-    --brand-2: #ff2d95;
-    --brand-3: #7c3aed;
-    --brand-4: #06b6d4;
-    --success: #10b981;
-    --success-dark: #059669;
+import jakarta.servlet.http.HttpServletRequest;
 
-    --text:       #0a0a0f;
-    --text-muted: #6b7280;
-    --bg-1:       #f5f3ff;
-    --white:      #ffffff;
+import com.actionform.RegistrationActionForm;
+import com.jdbc.DBUtilityAuto;
 
-    --glass-bg:     rgba(255,255,255,.55);
-    --glass-border: rgba(255,255,255,.75);
-    --glass-shadow: 0 8px 32px rgba(15,23,42,.08);
+@SuppressWarnings({ "serial", "deprecation" })
+public class EISRegistrationAction extends ActionSupport {
 
-    --ease-out:    cubic-bezier(.22,1,.36,1);
-    --ease-spring: cubic-bezier(.34,1.56,.64,1);
-}
+    // ============================================================
+    // Bound form bean
+    // ============================================================
+    private RegistrationActionForm registrationActionForm;
 
-[data-theme="dark"] {
-    --text:       #f1f5f9;
-    --text-muted: #94a3b8;
-    --bg-1:       #0a0a14;
-    --white:      #16161f;
-    --glass-bg:     rgba(22,22,31,.55);
-    --glass-border: rgba(255,255,255,.08);
-    --glass-shadow: 0 8px 32px rgba(0,0,0,.5);
-}
-
-html, body {
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    color: var(--text);
-    background: var(--bg-1);
-    min-height: 100vh;
-    overflow-x: hidden;
-    -webkit-font-smoothing: antialiased;
-    transition: background .4s var(--ease-out), color .4s var(--ease-out);
-}
-
-/* ================================================================
-   ANIMATED MESH BACKGROUND
-   ================================================================ */
-.mesh-bg {
-    position: fixed;
-    inset: 0;
-    z-index: -2;
-    overflow: hidden;
-    background: var(--bg-1);
-}
-.mesh-blob {
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(90px);
-    opacity: .55;
-    mix-blend-mode: multiply;
-    will-change: transform;
-}
-[data-theme="dark"] .mesh-blob {
-    mix-blend-mode: screen;
-    opacity: .45;
-}
-.mesh-blob.m1 {
-    width: 560px; height: 560px;
-    background: radial-gradient(circle, var(--success), transparent 65%);
-    top: -12%; left: -10%;
-    animation: meshMove 22s ease-in-out infinite;
-}
-.mesh-blob.m2 {
-    width: 620px; height: 620px;
-    background: radial-gradient(circle, var(--brand-1), transparent 65%);
-    top: 30%; right: -15%;
-    animation: meshMove 26s ease-in-out infinite reverse;
-}
-.mesh-blob.m3 {
-    width: 520px; height: 520px;
-    background: radial-gradient(circle, var(--brand-3), transparent 65%);
-    bottom: -12%; left: 25%;
-    animation: meshMove 30s ease-in-out infinite;
-    animation-delay: -8s;
-}
-.mesh-blob.m4 {
-    width: 480px; height: 480px;
-    background: radial-gradient(circle, var(--brand-4), transparent 65%);
-    top: 15%; left: 40%;
-    animation: meshMove 24s ease-in-out infinite reverse;
-    animation-delay: -12s;
-}
-@keyframes meshMove {
-    0%, 100% { transform: translate(0, 0) scale(1); }
-    33%      { transform: translate(80px, -60px) scale(1.15); }
-    66%      { transform: translate(-60px, 70px) scale(.9); }
-}
-
-/* ================================================================
-   LAYOUT
-   ================================================================ */
-.page {
-    min-height: 100vh;
-    display: grid;
-    place-items: center;
-    padding: 32px 20px;
-    position: relative;
-}
-
-.card {
-    background: var(--glass-bg);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    border: 1px solid var(--glass-border);
-    border-radius: 32px;
-    box-shadow: var(--glass-shadow);
-    padding: 56px 48px 48px;
-    max-width: 560px;
-    width: 100%;
-    text-align: center;
-    position: relative;
-    overflow: hidden;
-    animation: cardIn .8s var(--ease-spring) both;
-}
-@keyframes cardIn {
-    from { opacity: 0; transform: translateY(40px) scale(.9); }
-    to   { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-.card::before {
-    content: "";
-    position: absolute;
-    top: -50%; left: -50%;
-    width: 200%; height: 200%;
-    background: conic-gradient(from 0deg, transparent, rgba(16,185,129,.15), transparent 30%);
-    animation: cardRotate 8s linear infinite;
-    pointer-events: none;
-}
-@keyframes cardRotate {
-    to { transform: rotate(360deg); }
-}
-
-.card-inner {
-    position: relative;
-    z-index: 1;
-}
-
-/* ================================================================
-   SUCCESS BADGE (top pill)
-   ================================================================ */
-.badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 14px;
-    background: linear-gradient(135deg, rgba(16,185,129,.15), rgba(16,185,129,.05));
-    border: 1px solid rgba(16,185,129,.3);
-    border-radius: 100px;
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--success-dark);
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    margin-bottom: 24px;
-    animation: badgeIn .6s var(--ease-spring) .3s both;
-}
-@keyframes badgeIn {
-    from { opacity: 0; transform: translateY(-10px) scale(.85); }
-    to   { opacity: 1; transform: translateY(0) scale(1); }
-}
-.badge .dot {
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: var(--success);
-    box-shadow: 0 0 12px var(--success);
-    animation: dotPulse 1.8s ease-in-out infinite;
-}
-@keyframes dotPulse {
-    0%, 100% { transform: scale(1); opacity: 1; }
-    50%      { transform: scale(1.5); opacity: .6; }
-}
-
-/* ================================================================
-   ANIMATED SVG ILLUSTRATION
-   ================================================================ */
-.illustration {
-    width: 200px;
-    height: 200px;
-    margin: 0 auto 12px;
-    position: relative;
-    animation: floatY 4s ease-in-out infinite;
-}
-@keyframes floatY {
-    0%, 100% { transform: translateY(0); }
-    50%      { transform: translateY(-10px); }
-}
-
-/* SVG inner animations */
-.ring-spin {
-    transform-origin: 100px 100px;
-    animation: ringSpin 12s linear infinite;
-}
-@keyframes ringSpin {
-    to { transform: rotate(360deg); }
-}
-
-.check-draw {
-    stroke-dasharray: 120;
-    stroke-dashoffset: 120;
-    animation: checkDraw 1s var(--ease-out) .6s forwards;
-}
-@keyframes checkDraw {
-    to { stroke-dashoffset: 0; }
-}
-
-.circle-scale {
-    transform-origin: 100px 100px;
-    animation: circleScale .8s var(--ease-spring) .2s both;
-}
-@keyframes circleScale {
-    from { transform: scale(0); opacity: 0; }
-    to   { transform: scale(1); opacity: 1; }
-}
-
-.pulse-ring {
-    transform-origin: 100px 100px;
-    animation: pulseRing 2.4s ease-out infinite;
-}
-.pulse-ring.delay { animation-delay: 1.2s; }
-@keyframes pulseRing {
-    0%   { transform: scale(.8); opacity: .8; }
-    100% { transform: scale(1.6); opacity: 0; }
-}
-
-.sparkle {
-    transform-origin: center;
-    animation: sparkle 2s ease-in-out infinite;
-}
-.sparkle.s2 { animation-delay: .4s; }
-.sparkle.s3 { animation-delay: .8s; }
-.sparkle.s4 { animation-delay: 1.2s; }
-@keyframes sparkle {
-    0%, 100% { opacity: 0; transform: scale(.4); }
-    50%      { opacity: 1; transform: scale(1); }
-}
-
-/* ================================================================
-   TEXT
-   ================================================================ */
-.title {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: clamp(28px, 5vw, 40px);
-    font-weight: 700;
-    line-height: 1.1;
-    letter-spacing: -.03em;
-    margin-bottom: 12px;
-    background: linear-gradient(120deg, var(--success), var(--brand-1), var(--brand-3), var(--success));
-    background-size: 300% auto;
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    animation: gradientShift 6s linear infinite, titleIn .8s var(--ease-spring) .5s both;
-}
-@keyframes gradientShift {
-    to { background-position: 300% center; }
-}
-@keyframes titleIn {
-    from { opacity: 0; transform: translateY(16px); }
-    to   { opacity: 1; transform: translateY(0); }
-}
-
-.subtitle {
-    font-size: 15px;
-    color: var(--text-muted);
-    line-height: 1.6;
-    margin-bottom: 28px;
-    animation: titleIn .8s var(--ease-spring) .65s both;
-}
-
-/* ================================================================
-   INFO GRID (what happens next)
-   ================================================================ */
-.info-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-    margin-bottom: 32px;
-    animation: titleIn .8s var(--ease-spring) .8s both;
-}
-.info-item {
-    padding: 16px 12px;
-    background: rgba(255,255,255,.4);
-    border: 1px solid rgba(15,23,42,.06);
-    border-radius: 14px;
-    transition: all .3s var(--ease-spring);
-}
-[data-theme="dark"] .info-item {
-    background: rgba(255,255,255,.03);
-    border-color: rgba(255,255,255,.06);
-}
-.info-item:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 12px 28px rgba(15,23,42,.08);
-}
-.info-item i {
-    font-size: 18px;
-    color: var(--success);
-    margin-bottom: 8px;
-    display: block;
-}
-.info-item strong {
-    display: block;
-    font-size: 12.5px;
-    font-weight: 700;
-    margin-bottom: 3px;
-    color: var(--text);
-}
-.info-item span {
-    font-size: 11px;
-    color: var(--text-muted);
-    line-height: 1.4;
-}
-@media (max-width: 480px) {
-    .info-grid { grid-template-columns: 1fr; }
-}
-
-/* ================================================================
-   BUTTON
-   ================================================================ */
-.btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    padding: 16px 34px;
-    font-family: inherit;
-    font-size: 15px;
-    font-weight: 700;
-    border-radius: 14px;
-    border: none;
-    cursor: pointer;
-    transition: all .35s var(--ease-spring);
-    text-decoration: none;
-    letter-spacing: .01em;
-    position: relative;
-    overflow: hidden;
-    width: 100%;
-    background: linear-gradient(135deg, var(--success), var(--success-dark), var(--brand-1));
-    background-size: 200% auto;
-    color: #fff;
-    box-shadow: 0 15px 35px rgba(16,185,129,.4);
-    animation: titleIn .8s var(--ease-spring) .95s both;
-}
-.btn::before {
-    content: "";
-    position: absolute;
-    top: 50%; left: 50%;
-    width: 0; height: 0;
-    background: rgba(255,255,255,.3);
-    border-radius: 50%;
-    transform: translate(-50%, -50%);
-    transition: width .6s, height .6s;
-}
-.btn:hover::before {
-    width: 500px; height: 500px;
-}
-.btn:hover {
-    background-position: right center;
-    transform: translateY(-3px) scale(1.02);
-    box-shadow: 0 22px 50px rgba(16,185,129,.55);
-}
-.btn:active {
-    transform: translateY(-1px) scale(1);
-}
-.btn i {
-    transition: transform .3s var(--ease-spring);
-}
-.btn:hover i {
-    transform: translateX(-4px);
-}
-
-/* ================================================================
-   COUNTDOWN
-   ================================================================ */
-.countdown {
-    margin-top: 18px;
-    font-size: 12px;
-    color: var(--text-muted);
-    animation: titleIn .8s var(--ease-spring) 1.1s both;
-    font-family: 'JetBrains Mono', monospace;
-    letter-spacing: .5px;
-}
-.countdown span {
-    color: var(--success-dark);
-    font-weight: 700;
-    font-size: 13px;
-}
-
-/* ================================================================
-   CONFETTI
-   ================================================================ */
-.confetti {
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 1500;
-    overflow: hidden;
-}
-.confetti-piece {
-    position: absolute;
-    width: 10px;
-    height: 10px;
-    animation: confettiFall 3s linear forwards;
-}
-@keyframes confettiFall {
-    to {
-        transform: translateY(110vh) rotate(720deg);
-        opacity: 0;
+    public RegistrationActionForm getRegistrationActionForm() {
+        return registrationActionForm;
     }
-}
 
-/* ================================================================
-   THEME TOGGLE
-   ================================================================ */
-.theme-toggle {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    background: var(--glass-bg);
-    backdrop-filter: blur(20px);
-    border: 1px solid var(--glass-border);
-    box-shadow: var(--glass-shadow);
-    color: var(--text);
-    cursor: pointer;
-    display: grid;
-    place-items: center;
-    font-size: 16px;
-    transition: all .3s var(--ease-spring);
-    z-index: 100;
-}
-.theme-toggle:hover {
-    transform: scale(1.1) rotate(8deg);
-    color: var(--brand-1);
-}
-
-/* ================================================================
-   FOOTER
-   ================================================================ */
-.footer {
-    position: absolute;
-    bottom: 20px;
-    left: 0;
-    right: 0;
-    text-align: center;
-    font-size: 12px;
-    color: var(--text-muted);
-}
-.footer strong {
-    background: linear-gradient(120deg, var(--brand-1), var(--brand-3));
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    font-weight: 700;
-}
-
-/* ================================================================
-   REDUCED MOTION
-   ================================================================ */
-@media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after {
-        animation-duration: .01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: .01ms !important;
+    public void setRegistrationActionForm(RegistrationActionForm registrationActionForm) {
+        this.registrationActionForm = registrationActionForm;
     }
-}
-</style>
-</head>
-<body data-theme="light">
 
-<!-- ============================================================
-     BACKGROUND LAYERS
-     ============================================================ -->
-<div class="mesh-bg">
-    <div class="mesh-blob m1"></div>
-    <div class="mesh-blob m2"></div>
-    <div class="mesh-blob m3"></div>
-    <div class="mesh-blob m4"></div>
-</div>
+    // ============================================================
+    // Role list — EXPOSED ON ACTION for <s:select list="rolelist"/>
+    // ============================================================
+    private ArrayList<String> rolelist = new ArrayList<>();
 
-<!-- ============================================================
-     THEME TOGGLE
-     ============================================================ -->
-<button type="button" class="theme-toggle" id="themeToggle" title="Toggle theme">
-    <i class="fa-solid fa-sun" id="themeIcon">☀</i>
-</button>
+    public ArrayList<String> getRolelist() {
+        return rolelist;
+    }
 
-<!-- ============================================================
-     MAIN CARD
-     ============================================================ -->
-<div class="page">
-    <div class="card">
-        <div class="card-inner">
+    public void setRolelist(ArrayList<String> rolelist) {
+        this.rolelist = rolelist;
+    }
 
-            <!-- Success badge -->
-            <div class="badge">
-                <span class="dot"></span>
-                Registration Successful
-            </div>
+    // ============================================================
+    // m_strmsg MIRROR — so JSP <s:if test="m_strmsg == '...'"> works
+    // ============================================================
+    public String getM_strmsg() {
+        return (registrationActionForm != null) ? registrationActionForm.getM_strmsg() : null;
+    }
 
-            <!-- Animated SVG illustration -->
-            <div class="illustration">
-                <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                        <linearGradient id="gradCircle" x1="0" y1="0" x2="1" y2="1">
-                            <stop offset="0%" stop-color="#10b981"/>
-                            <stop offset="100%" stop-color="#059669"/>
-                        </linearGradient>
-                        <linearGradient id="gradCheck" x1="0" y1="0" x2="1" y2="1">
-                            <stop offset="0%" stop-color="#ffffff"/>
-                            <stop offset="100%" stop-color="#f0fdf4"/>
-                        </linearGradient>
-                    </defs>
-
-                    <!-- Pulsing outer rings -->
-                    <circle class="pulse-ring" cx="100" cy="100" r="70"
-                            fill="none" stroke="#10b981" stroke-width="2" opacity=".6"/>
-                    <circle class="pulse-ring delay" cx="100" cy="100" r="70"
-                            fill="none" stroke="#10b981" stroke-width="2" opacity=".6"/>
-
-                    <!-- Dashed spinning ring -->
-                    <circle class="ring-spin" cx="100" cy="100" r="82"
-                            fill="none" stroke="#ff6a00" stroke-width="1.5"
-                            stroke-dasharray="6 10" opacity=".5"/>
-
-                    <!-- Main circle -->
-                    <circle class="circle-scale" cx="100" cy="100" r="58"
-                            fill="url(#gradCircle)"
-                            filter="drop-shadow(0 15px 30px rgba(16,185,129,.4))"/>
-
-                    <!-- White checkmark -->
-                    <path class="check-draw"
-                          d="M 75 100 L 92 117 L 128 82"
-                          fill="none"
-                          stroke="url(#gradCheck)"
-                          stroke-width="9"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"/>
-
-                    <!-- Sparkles -->
-                    <g fill="#ff6a00">
-                        <circle class="sparkle" cx="40" cy="50" r="3"/>
-                        <circle class="sparkle s2" cx="165" cy="60" r="2.5" fill="#7c3aed"/>
-                        <circle class="sparkle s3" cx="45" cy="160" r="2.5" fill="#06b6d4"/>
-                        <circle class="sparkle s4" cx="170" cy="150" r="3" fill="#ff2d95"/>
-                    </g>
-                </svg>
-            </div>
-
-            <!-- Text -->
-            <h1 class="title">Registration Complete!</h1>
-            <p class="subtitle">
-                Your employee registration has been submitted successfully.
-                The details are now being processed by the EIS team.
-            </p>
-
-            <!-- Info grid -->
-            <div class="info-grid">
-                <div class="info-item">
-                    <i>📧</i>
-                    <strong>Confirmation</strong>
-                    <span>Mail will be sent shortly</span>
-                </div>
-                <div class="info-item">
-                    <i>⏱</i>
-                    <strong>Processing</strong>
-                    <span>Within 24 hours</span>
-                </div>
-                <div class="info-item">
-                    <i>🔐</i>
-                    <strong>Secure</strong>
-                    <span>Data encrypted</span>
-                </div>
-            </div>
-
-            <!-- Login form + button -->
-            <form action="Login.do" method="post" style="margin:0;">
-                <button type="submit" class="btn">
-                    <i class="fa-solid fa-arrow-left"></i>
-                    Go Back to Login Page
-                </button>
-            </form>
-
-            <!-- Countdown (optional auto-redirect) -->
-            <div class="countdown">
-                Auto redirect in <span id="countdownNum">15</span>s
-            </div>
-
-        </div>
-    </div>
-</div>
-
-<!-- ============================================================
-     CONFETTI HOST
-     ============================================================ -->
-<div class="confetti" id="confettiHost"></div>
-
-<!-- ============================================================
-     FONT AWESOME (already included in JSP, but standalone thanks.html needs it)
-     ============================================================ -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
-<!-- ============================================================
-     SCRIPTS
-     ============================================================ -->
-<script>
-(function () {
-    'use strict';
-
-    /* ---------- Confetti burst on load ---------- */
-    const confettiHost = document.getElementById('confettiHost');
-    function fireConfetti(count) {
-        const colors = ['#10b981','#059669','#ff6a00','#7c3aed','#06b6d4','#ff2d95','#f59e0b'];
-        for (let i = 0; i < count; i++) {
-            const p = document.createElement('div');
-            p.className = 'confetti-piece';
-            p.style.left = Math.random() * 100 + 'vw';
-            p.style.top  = '-20px';
-            p.style.background = colors[Math.floor(Math.random() * colors.length)];
-            p.style.transform = 'rotate(' + (Math.random() * 360) + 'deg)';
-            p.style.animationDelay = (Math.random() * 0.6) + 's';
-            p.style.animationDuration = (2.4 + Math.random() * 1.4) + 's';
-            if (Math.random() > 0.7) p.style.borderRadius = '50%';
-            confettiHost.appendChild(p);
-            setTimeout(() => p.remove(), 4000);
+    public void setM_strmsg(String m_strmsg) {
+        if (registrationActionForm != null) {
+            registrationActionForm.setM_strmsg(m_strmsg);
         }
     }
 
-    // Fire initial burst
-    setTimeout(() => fireConfetti(90), 200);
-    // Second smaller burst for drama
-    setTimeout(() => fireConfetti(50), 1000);
+    // ============================================================
+    // ACTION METHODS (no-arg, return String)
+    // ============================================================
 
-    /* ---------- Theme toggle ---------- */
-    const themeToggle = document.getElementById('themeToggle');
-    const themeIcon   = document.getElementById('themeIcon');
-    const saved = localStorage.getItem('eis-theme') || 'light';
-    document.body.dataset.theme = saved;
-    updateIcon(saved);
-
-    function updateIcon(theme) {
-        themeIcon.textContent = theme === 'dark' ? '🌙' : '☀';
+    @Override
+    public String execute() throws Exception {
+        return showregpage();
     }
 
-    themeToggle.addEventListener('click', () => {
-        const next = document.body.dataset.theme === 'dark' ? 'light' : 'dark';
-        document.body.dataset.theme = next;
-        localStorage.setItem('eis-theme', next);
-        updateIcon(next);
-    });
+    /**
+     * Shows the registration page with the role dropdown populated.
+     * URL: showregpage.action
+     */
+    public String showregpage() throws Exception {
+        RegistrationActionForm form = getOrCreateForm();
+        loadEISRole(form);
+        return "success";
+    }
 
-    /* ---------- Auto redirect countdown ---------- */
-    let seconds = 15;
-    const countdownEl = document.getElementById('countdownNum');
-    const tick = setInterval(() => {
-        seconds--;
-        if (countdownEl) countdownEl.textContent = seconds;
-        if (seconds <= 0) {
-            clearInterval(tick);
-            window.location.href = 'Login.do';
+    /**
+     * Handles insert submission and clear case.
+     * URL: saveRegistration.action
+     */
+    public String saveRegistration() throws Exception {
+        RegistrationActionForm form = getOrCreateForm();
+        loadEISRole(form);
+
+        HttpServletRequest request = ServletActionContext.getRequest();
+        String actionParam = request.getParameter("action");
+
+        // No action param → show empty form
+        if (actionParam == null) {
+            clearForm(form);
+            return "success";
         }
-    }, 1000);
 
-    /* ---------- Cancel countdown on manual click ---------- */
-    document.querySelector('form[action="Login.do"]').addEventListener('submit', () => {
-        clearInterval(tick);
-    });
+        // Anything other than insert → clear form
+        if (!"insert".equals(actionParam)) {
+            clearForm(form);
+            return "success";
+        }
 
-})();
-</script>
+        // ---------------- INSERT path ----------------
+        Connection con = null;
+        PreparedStatement psEmp = null;
+        PreparedStatement psRoster = null;
+        Statement checkSt = null;
+        ResultSet checkRs = null;
 
-</body>
-</html>
+        try {
+            con = DBUtilityAuto.getReportDBConnection();
+
+            // ---- Duplicate check ----
+            String countQuery = "select count(*) from eisupport_employee_master where EMPLOYEE_ID='"
+                    + request.getParameter("m_stremployee_id") + "'";
+            checkSt = con.createStatement();
+            checkRs = checkSt.executeQuery(countQuery);
+
+            int count = 0;
+            if (checkRs != null && checkRs.next()) {
+                count = checkRs.getInt(1);
+            }
+
+            if (count > 0) {
+                // ⚠️ DUPLICATE — set on BOTH form and action, do NOT clear
+                form.setM_strmsg("duplicate");
+                this.setM_strmsg("duplicate");
+                return "success";
+            }
+
+            // ---- Upload files ----
+            String photoPath  = "";
+            String bgcPath    = "";
+            String policePath = "";
+            String cvPath     = "";
+
+            String baseUpload = System.getProperty("catalina.base")
+                    + "/webapps/EISPortalVer2/EISEMPLOYEEDOCUMENT/";
+
+            if (form.getM_strthePhotofile() != null
+                    && form.getM_strthePhotofile().length() > 0
+                    && form.getM_strthePhotofileFileName() != null) {
+                photoPath = uploadFile(
+                        form.getM_strthePhotofileFileName(),
+                        form.getM_strthePhotofile(),
+                        baseUpload + "PHOTO/",
+                        form);
+            }
+            if (form.getM_strtheBgcfile() != null
+                    && form.getM_strtheBgcfile().length() > 0
+                    && form.getM_strtheBgcfileFileName() != null) {
+                bgcPath = uploadFile(
+                        form.getM_strtheBgcfileFileName(),
+                        form.getM_strtheBgcfile(),
+                        baseUpload + "BGC/",
+                        form);
+            }
+            if (form.getM_strthePoliceverificationfile() != null
+                    && form.getM_strthePoliceverificationfile().length() > 0
+                    && form.getM_strthePoliceverificationfileFileName() != null) {
+                policePath = uploadFile(
+                        form.getM_strthePoliceverificationfileFileName(),
+                        form.getM_strthePoliceverificationfile(),
+                        baseUpload + "Police/",
+                        form);
+            }
+            if (form.getM_strtheCvfile() != null
+                    && form.getM_strtheCvfile().length() > 0
+                    && form.getM_strtheCvfileFileName() != null) {
+                cvPath = uploadFile(
+                        form.getM_strtheCvfileFileName(),
+                        form.getM_strtheCvfile(),
+                        baseUpload + "CV/",
+                        form);
+            }
+
+            // ---- Insert into eisupport_employee_master ----
+            String sqlEmp =
+                    "INSERT INTO eisupport_employee_master ("
+                  + "EMPLOYEE_ID,AD_ID,ASSET_ID,EDU_QUALIFICATION,TCS_JOINING_DATE,CONTACTNUMBER,"
+                  + "EMERGENCY_CONTACTNUMBER,TEAM,TCS_MAILID,STATE,CITY,LOCAL_ADDRESS,GENDER,DOB,FIRSTNAME,"
+                  + "MIDDLENAME,LASTNAME,VPN_HOSTNAME,LAPTOP_HOSTNAME,REMOTETYPE,VPN_VDI_MACADDRESS,"
+                  + "VPN_VDI_IPADDRESS,CV_DOCUMENT_PATH,BGC_DOCUMENT_PATH,PHOTO_PATH,POLICE_VERIFICATION_PATH,"
+                  + "USERNAME,PASSWORD,HID,SBI_MAILID) "
+                  + "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+
+            psEmp = con.prepareStatement(sqlEmp);
+            bindInsertParams(psEmp, request, cvPath, bgcPath, photoPath, policePath);
+            psEmp.addBatch();
+            psEmp.executeBatch();
+
+            // ---- Insert into roster_employee_details ----
+            String sqlRoster =
+                    "INSERT INTO roster_employee_details ("
+                  + "EMPLOYEE_ID,AD_ID,ASSET_ID,EDU_QUALIFICATION,TCS_JOINING_DATE,CONTACTNUMBER,"
+                  + "EMERGENCY_CONTACTNUMBER,TEAM,TCS_MAILID,STATE,CITY,LOCAL_ADDRESS,GENDER,DOB,FIRSTNAME,"
+                  + "MIDDLENAME,LASTNAME,VPN_HOSTNAME,LAPTOP_HOSTNAME,REMOTETYPE,VPN_VDI_MACADDRESS,"
+                  + "VPN_VDI_IPADDRESS,CV_DOCUMENT_PATH,BGC_DOCUMENT_PATH,PHOTO_PATH,POLICE_VERIFICATION_PATH,"
+                  + "USERNAME,PASSWORD,HID,SBI_MAILID) "
+                  + "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+
+            psRoster = con.prepareStatement(sqlRoster);
+            bindInsertParams(psRoster, request, cvPath, bgcPath, photoPath, policePath);
+            psRoster.addBatch();
+            psRoster.executeBatch();
+
+            System.out.println("Updated in Roster Employee Table");
+
+            clearForm(form);
+            return "thanks";
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            // ⚠️ ERROR — set on BOTH form and action, do NOT clear
+            form.setM_strmsg("error");
+            this.setM_strmsg("error");
+            return "success";
+        } finally {
+            closeQuietly(checkRs, checkSt, psEmp, psRoster, con);
+        }
+    }
+
+    // ============================================================
+    // PRIVATE HELPERS
+    // ============================================================
+
+    private RegistrationActionForm getOrCreateForm() {
+        if (registrationActionForm == null) {
+            registrationActionForm = new RegistrationActionForm();
+        }
+        return registrationActionForm;
+    }
+
+    private void bindInsertParams(PreparedStatement ps,
+                                  HttpServletRequest request,
+                                  String cvPath,
+                                  String bgcPath,
+                                  String photoPath,
+                                  String policePath) throws SQLException {
+        ps.setObject(1,  request.getParameter("m_stremployee_id"));
+        ps.setObject(2,  request.getParameter("m_strad_id"));
+        ps.setObject(3,  request.getParameter("m_strasset_id"));
+        ps.setObject(4,  request.getParameter("m_streduqualification"));
+        ps.setObject(5,  request.getParameter("m_strtcsjoiningdate"));
+        ps.setObject(6,  request.getParameter("m_strcontactno"));
+        ps.setObject(7,  request.getParameter("m_stremergencycontactno"));
+        ps.setObject(8,  request.getParameter("m_strRole"));
+        ps.setObject(9,  request.getParameter("m_strtcsmailid"));
+        ps.setObject(10, request.getParameter("m_strstate"));
+        ps.setObject(11, request.getParameter("m_strcity"));
+        ps.setObject(12, request.getParameter("m_strlocaladdress"));
+        ps.setObject(13, request.getParameter("m_strgender"));
+        ps.setObject(14, request.getParameter("m_strdob"));
+        ps.setObject(15, request.getParameter("m_strfirstName"));
+        ps.setObject(16, request.getParameter("m_strmiddleName"));
+        ps.setObject(17, request.getParameter("m_strlastName"));
+        ps.setObject(18, request.getParameter("m_strvpnhostname"));
+        ps.setObject(19, request.getParameter("m_strlaptophostname"));
+        ps.setObject(20, request.getParameter("m_strremotetype"));
+        ps.setObject(21, request.getParameter("m_strvpnmacaddress"));
+        ps.setObject(22, request.getParameter("m_strvpnipaddress"));
+        ps.setObject(23, cvPath);
+        ps.setObject(24, bgcPath);
+        ps.setObject(25, photoPath);
+        ps.setObject(26, policePath);
+        ps.setObject(27, request.getParameter("m_strUserName"));
+        ps.setObject(28, request.getParameter("m_strPassword"));
+        ps.setObject(29, request.getParameter("m_strhid"));
+        ps.setObject(30, request.getParameter("m_strsbimailid"));
+    }
+
+    private void clearForm(RegistrationActionForm l_obj) {
+        try {
+            l_obj.setM_strthePhotofile(null);
+            l_obj.setM_strtheBgcfile(null);
+            l_obj.setM_strthePoliceverificationfile(null);
+            l_obj.setM_strtheCvfile(null);
+
+            l_obj.setM_strUserName("");
+            l_obj.setM_strPassword("");
+            l_obj.setM_stremployee_id("");
+            l_obj.setM_strad_id("");
+            l_obj.setM_strasset_id("");
+            l_obj.setM_streduqualification("Select Education Qualification");
+            l_obj.setM_strtcsmailid("");
+            l_obj.setM_strsbimailid("");
+            l_obj.setM_strhid("");
+            l_obj.setM_strstate("Select State");
+            l_obj.setM_strRole("Select Role");
+            l_obj.setM_strcity("");
+            l_obj.setM_strlocaladdress("");
+            l_obj.setM_strvpnhostname("");
+            l_obj.setM_strlaptophostname("");
+            l_obj.setM_strremotetype("NONE");
+            l_obj.setM_strvpnmacaddress("");
+            l_obj.setM_strvpnipaddress("");
+            l_obj.setM_strfirstName("");
+            l_obj.setM_strlastName("");
+            l_obj.setM_strmiddleName("");
+            l_obj.setM_strmsg("");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static String uploadFile(String originalName,
+                                     File uploadedFile,
+                                     String directoryPath,
+                                     RegistrationActionForm l_obj) {
+        String newFileName = "";
+        InputStream in = null;
+        OutputStream out = null;
+
+        try {
+            if (originalName == null || originalName.indexOf('.') < 0) {
+                return "";
+            }
+
+            String base = originalName.substring(0, originalName.indexOf('.'));
+            String ext  = originalName.substring(originalName.indexOf('.'));
+            newFileName = Math.random() + "_" + base + ext;
+
+            File dir = new File(directoryPath);
+            if (!dir.isDirectory()) {
+                dir.mkdirs();
+            }
+
+            in = new FileInputStream(uploadedFile);
+            out = new FileOutputStream(directoryPath + newFileName);
+
+            byte[] buffer = new byte[8192];
+            int len;
+            while ((len = in.read(buffer)) != -1) {
+                out.write(buffer, 0, len);
+            }
+        } catch (Exception e) {
+            l_obj.setM_strmsg("Error");
+            e.printStackTrace();
+        } finally {
+            try { if (in  != null) in.close();  } catch (Exception ignore) {}
+            try { if (out != null) out.close(); } catch (Exception ignore) {}
+        }
+
+        return newFileName;
+    }
+
+    private void loadEISRole(RegistrationActionForm l_obj) {
+        Connection con = null;
+        Statement st = null;
+        ResultSet rs = null;
+        try {
+            con = DBUtilityAuto.getReportDBConnection();
+
+            ArrayList<String> list = new ArrayList<>();
+            list.add("Select Role");
+
+            st = con.createStatement();
+            rs = st.executeQuery("select rolename from rolemst");
+
+            while (rs.next()) {
+                list.add(rs.getString("rolename"));
+            }
+
+            l_obj.setRolelist(list);
+            this.setRolelist(list);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            closeQuietly(rs, st, null, null, con);
+        }
+    }
+
+    private static void closeQuietly(ResultSet rs,
+                                     Statement st,
+                                     PreparedStatement ps1,
+                                     PreparedStatement ps2,
+                                     Connection con) {
+        try { if (rs  != null) rs.close();  } catch (Exception ignore) {}
+        try { if (st  != null) st.close();  } catch (Exception ignore) {}
+        try { if (ps1 != null) ps1.close(); } catch (Exception ignore) {}
+        try { if (ps2 != null) ps2.close(); } catch (Exception ignore) {}
+        try { if (con != null) con.close(); } catch (Exception ignore) {}
+    }
+}
