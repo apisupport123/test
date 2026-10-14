@@ -1,450 +1,428 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE struts PUBLIC "-//Apache Software Foundation//DTD Struts Configuration 6.0//EN" "../dtd/struts-6.0.dtd"> 
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 7.0//EN"
+    "https://struts.apache.org/dtds/struts-7.0.dtd">
 <struts>
-      
-    <!-- Enable dynamic method invocation (DMI) -->
-    <constant name="struts.enable.DynamicMethodInvocation" value="true"/>
+
+    <!-- ============================================================
+         GLOBAL CONSTANTS (Struts 7 safe defaults)
+         ============================================================ -->
+
+    <!-- DMI off (security best practice in Struts 7) -->
+    <constant name="struts.enable.DynamicMethodInvocation" value="false"/>
+
+    <!-- devMode: production me false rakho, debug me true -->
     <constant name="struts.devMode" value="false"/>
 
-    <!-- JSON plugin constants -->
+    <!-- Action extension: .action and extensionless URLs -->
+    <constant name="struts.action.extension" value="action,,"/>
+
+    <!-- File upload max size: 20 MB -->
+    <constant name="struts.multipart.maxSize" value="20971520"/>
+
+    <!-- JSON plugin -->
     <constant name="struts.json.contentType" value="application/json"/>
 
-    <package name="default" namespace="/" extends="struts-default,json-default" strict-method-invocation="true">
+    <!-- Optional: i18n encoding -->
+    <constant name="struts.i18n.encoding" value="UTF-8"/>
 
-        <!-- Whitelist allowed methods globally -->
-        <global-allowed-methods>execute,usersign,adminsign,showeisissue,showregpage,displayServices</global-allowed-methods>
-   
-             
-      <action name="test">
-                    
-         <result>/debug.jsp</result>
-                
-      </action>
-             
-      <action name="login" class="com.action.LoginAction" method="execute">
-                    
-         <result name="success">/jsp/Eislogin.jsp</result>
-                    
-         <result name="successadmin">/jsp/header.jsp</result>
-                    
-         <result name="successmodule">/jsp/moduleHeader.jsp</result>
-                    
-         <result name="successbanker">/jsp/Bankheader.jsp</result>
-                    
-         <result name="successuser" type="redirectAction">userhomescreen</result>
+    <!-- ============================================================
+         DEFAULT PACKAGE
+         ============================================================ -->
+    <package name="default"
+             namespace="/"
+             extends="struts-default,json-default"
+             strict-method-invocation="true">
 
-         <!-- ================= JSON RESULTS (AJAX) ================= -->
-         <result name="jsonsuccess" type="json">
-            <param name="root">jsonData</param>
-            <param name="contentType">application/json</param>
-            <param name="ignoreHierarchy">false</param>
-            <param name="excludeNullProperties">true</param>
-         </result>
+        <!-- Global whitelist: ALL action methods must be listed here
+             when strict-method-invocation="true" -->
+        <global-allowed-methods>
+            execute,
+            usersign,
+            adminsign,
+            showeisissue,
+            showregpage,
+            saveRegistration,
+            displayServices
+        </global-allowed-methods>
 
-         <result name="jsonerror" type="json">
-            <param name="root">jsonData</param>
-            <param name="contentType">application/json</param>
-            <param name="ignoreHierarchy">false</param>
-            <param name="excludeNullProperties">true</param>
-         </result>
-         <!-- ======================================================= -->
-                
-      </action>
-      
-	 <action name="logout" class="com.action.LogoutAction" method="execute">
-                    
-         <result name="success" type="redirect">login.action</result>
-                
-      </action>
-             
-      <action name="userhomescreen" class="com.action.UserHomeScreenAction">
-                    
-         <result name="success">/jsp/UserHomeScreen.jsp</result>
-                    
-         <result name="session">/Sessionexpired.html</result>
-                
-      </action>
-             
-      <action name="eissop" class="com.action.SOPMasterAction">
-                    
-         <result name="success">/jsp/SopMaster.jsp</result>
-                
-      </action>
-      
-       <action name="role" class="com.action.RoleMasterAction">
-                    
-         <result name="success">/jsp/RoleMaster.jsp</result>
-                
-      </action> 
-             
-     <action name="rolesetting" class="com.action.RoleSettingMasterAction">
-                    
-         <result name="success">/jsp/RoleSettingMaster.jsp</result>
-                
-      </action>  
-             
-      <action name="showkpi" class="com.action.showkpi">
-                    
-         <result name="success">/jsp/KPI.jsp</result>
-                    
-         <result name="session">/Sessionexpired.html</result>
-                
-      </action>
-             
-      <action name="expmonitoring" class="com.action.EXPMonitorPortalAction">
-                    
-         <result name="success">/jsp/EXPMonitoringPortal.jsp</result>
-                
-      </action>
-             
-      <action name="sysmonitoring" class="com.action.SYSMonitorPortalAction">
-                    
-         <result name="success">/jsp/SYSMonitoringPortal.jsp</result>
-                
-      </action>
-             
-      <action name="top20service" class="com.action.Top20ServiceAction">
-                    
-         <result name="success">/jsp/Top20Service.jsp</result>
-                    
-         <result name="session">/Sessionexpired.html</result>
-                
-      </action>
-             
-      <action name="top20nongen5service" class="com.action.Top20NonGen5ServiceAction">
-                    
-         <result name="success">/jsp/Top20NonGen5Service.jsp</result>
-                    
-         <result name="session">/Sessionexpired.html</result>
-                
-      </action>
-             
-      <action name="TEST_Multithreding" class="com.action.TEST_Multithreding">
-                    
-         <result name="success">/jsp/Multithreding.jsp</result>
-                    
-         <result name="session">/Sessionexpired.html</result>
-                
-      </action>
-             
-      <action name="EpayVan" class="com.action.Epay_VANAction">
-                    
-         <result name="success">/jsp/EpayVan.jsp</result>
-                    
-         <result name="session">/Sessionexpired.html</result>
-                
-      </action>
-             
-      <action name="adharvault" class="com.action.AdharvaultAction">
-                    
-         <result name="success">/jsp/AdharVault.jsp</result>
-                    
-         <result name="session">/Sessionexpired.html</result>
-                
-      </action>
-             
-      <action name="HundreadPercentageFailureservices" class="com.action.HundreadPercentageFailureservicesAction">
-                    
-         <result name="success">/jsp/hundreadpercentagefailure.jsp</result>
-                    
-         <result name="session">/Sessionexpired.html</result>
-                
-      </action>
-             
-      <action name="eisappissue" class="com.action.EISAPPIssueAction" method="execute">
-                    
-         <result name="success">/jsp/EISAPPIssue.jsp</result>
-                
-      </action>
-             
-      <action name="eisusersop" class="com.action.UserSOPMasterAction">
-                    
-         <result name="success">/jsp/UserSopMaster.jsp</result>
-                    
-         <result name="successBank">/jsp/BankSopMaster.jsp</result>
-                    
-         <result name="session">/Sessionexpired.html</result>
-                
-      </action>
-             
-      <action name="showTop20Failureservices" class="com.action.ShowTop20failureServicesAction">
-                    
-         <result name="success">/jsp/showTop20failureservice.jsp</result>
-                
-      </action>
-             
-      <action name="showFailureServicesWise" class="com.action.ShowfailureServicesWiseAction">
-                    
-         <result name="success">/jsp/ShowfailureServiceWise.jsp</result>
-                
-      </action>
-             
-      <action name="showservices" class="com.action.ShowfailureServicesAction">
-                    
-         <result name="success">/jsp/showfailureservice.jsp</result>
-                
-      </action>
-             
-      <action name="monitoringwithdatetime" class="com.action.EXPMonitorPortalWithDateTimeAction">
-                    
-         <result name="success">/jsp/EXPMonitoringPortalwithDatetime.jsp</result>
-                
-      </action>
-             
-      <action name="dpginconsistancy" class="com.action.DpgInconsistancyAction">
-                    
-         <result name="success">/jsp/DpgInconsistancy.jsp</result>
-                    
-         <result name="session">/Sessionexpired.html</result>
-                
-      </action>
-             
-      <action name="yono" class="com.action.YonoDasboardAction">
-                    
-         <result name="success">/jsp/YonoDashboard.jsp</result>
-                    
-         <result name="session">/Sessionexpired.html</result>
-                
-      </action>
-             
-      <action name="apiwisenohitsonserver" class="com.action.ApiwisenohitsonserverAction">
-                    
-         <result name="success">/jsp/Apiwisenohitsserver.jsp</result>
-                    
-         <result name="session">/Sessionexpired.html</result>
-                
-      </action>
-             
-      <action name="apiwisehundreadpercfailonserver" class="com.action.ApiwisehundreadpercfailonserverAction">
-                    
-         <result name="success">/jsp/Apiwisehundreadpercfailonserver.jsp</result>
-                    
-         <result name="session">/Sessionexpired.html</result>
-                
-      </action>
-             
-      <action name="showErrorCodeWiseFailureservices" class="com.action.ShowErrorCodeWiseFailureServicesAction">
-                    
-         <result name="success">/jsp/showErrorCodewisefailureservice.jsp</result>
-                
-      </action>
-             
-      <action name="showNonGen5ErrorCodeWiseFailureservices" class="com.action.ShowNonGen5ErrorCodeWiseFailureServicesAction">
-                    
-         <result name="success">/jsp/showNonGen5ErrorCodeWiseFailureservices.jsp</result>
-                
-      </action>
-             
-      <action name="monitoringstatus" class="com.action.MonitoringStatusAction">
-                    
-         <result name="success">/jsp/MonitoringStatus.jsp</result>
-                    
-         <result name="session">/Sessionexpired.html</result>
-                
-      </action>
-             
-      <action name="autoRefreshApiwisehundreadpercfailonserver" class="com.action.AutoRefreshApiwisehundreadpercfailonserverAction">
-                    
-         <result name="success">/jsp/AutoRefreshApiwisehundreadpercfailonserver.jsp</result>
-                
-      </action>
-             
-      <action name="autoRefreshApiwisehundreadpercfailonNonGen5server" class="com.action.AutoRefreshApiwisehundreadpercfailonNonGen5serverAction">
-                    
-         <result name="success">/jsp/AutoRefreshApiwisehundreadpercfailonNonGen5server.jsp</result>
-                
-      </action>
-             
-      <action name="autoRefreshApiwisenohitsserver" class="com.action.AutoRefreshApiwisenohitsserverAction">
-                    
-         <result name="success">/jsp/AutoRefreshApiwisenohitsserver.jsp</result>
-                
-      </action>
-             
-      <action name="multipleservicewisetdbdperc" class="com.action.MultipleServiceWiseTDBDPercAction">
-                    
-         <result name="success">/jsp/MultipleServiceWiseTDBDPer.jsp</result>
-                    
-         <result name="session">/Sessionexpired.html</result>
-                
-      </action>
-             
-       <action name="deploymentsheet" class="com.action.DeploymentsheetAction">
-                    
-         <result name="success">/jsp/Deploymentsheet.jsp</result>
-                    
-         <result name="session">/Sessionexpired.html</result>
-                
-      </action> 
-             
-      <action name="viewdeploymentsheet" class="com.action.ViewDeploymentsheetAction">
-                    
-         <result name="success">/jsp/ViewDeploymentsheet.jsp</result>
-                    
-         <result name="successbanker">/jsp/ViewDeploymentsheetBanker.jsp</result>
-                    
-         <result name="session">/Sessionexpired.html</result>
-                
-      </action>
-             
-      <action name="EisRegistration" class="com.action.EISRegistrationAction">
-                    
-         <result name="success">/jsp/EISRegistration.jsp</result>
-                    
-         <result name="thanks">/Thanks.html</result>
-                    
-         <result name="session">/Sessionexpired.html</result>
-                
-      </action>
-      
-      <action  name="ViewEisRegistrationDetails" class="com.action.ViewEISRegistrationDetailsAction">
-			<result name="success" >/jsp/ViewEISRegistrationDetails.jsp</result>
-			<result name="session" >/Sessionexpired.html</result>
-		</action>
-         
-   </package>
+        <!-- ========================================================
+             TEST / DEBUG
+             ======================================================== -->
+        <action name="test">
+            <result>/debug.jsp</result>
+        </action>
+
+        <!-- ========================================================
+             LOGIN
+             ======================================================== -->
+        <action name="login" class="com.action.LoginAction" method="execute">
+            <result name="success">/jsp/Eislogin.jsp</result>
+            <result name="successadmin">/jsp/header.jsp</result>
+            <result name="successmodule">/jsp/moduleHeader.jsp</result>
+            <result name="successbanker">/jsp/Bankheader.jsp</result>
+            <result name="successuser" type="redirectAction">userhomescreen</result>
+
+            <!-- JSON results for AJAX -->
+            <result name="jsonsuccess" type="json">
+                <param name="root">jsonData</param>
+                <param name="contentType">application/json</param>
+                <param name="ignoreHierarchy">false</param>
+                <param name="excludeNullProperties">true</param>
+            </result>
+            <result name="jsonerror" type="json">
+                <param name="root">jsonData</param>
+                <param name="contentType">application/json</param>
+                <param name="ignoreHierarchy">false</param>
+                <param name="excludeNullProperties">true</param>
+            </result>
+        </action>
+
+        <action name="logout" class="com.action.LogoutAction" method="execute">
+            <result name="success" type="redirect">login.action</result>
+        </action>
+
+        <!-- ========================================================
+             HOME / DASHBOARDS
+             ======================================================== -->
+        <action name="userhomescreen" class="com.action.UserHomeScreenAction">
+            <result name="success">/jsp/UserHomeScreen.jsp</result>
+            <result name="session">/Sessionexpired.html</result>
+        </action>
+
+        <!-- ========================================================
+             MASTER SCREENS
+             ======================================================== -->
+        <action name="eissop" class="com.action.SOPMasterAction">
+            <result name="success">/jsp/SopMaster.jsp</result>
+        </action>
+
+        <action name="role" class="com.action.RoleMasterAction">
+            <result name="success">/jsp/RoleMaster.jsp</result>
+        </action>
+
+        <action name="rolesetting" class="com.action.RoleSettingMasterAction">
+            <result name="success">/jsp/RoleSettingMaster.jsp</result>
+        </action>
+
+        <action name="showkpi" class="com.action.showkpi">
+            <result name="success">/jsp/KPI.jsp</result>
+            <result name="session">/Sessionexpired.html</result>
+        </action>
+
+        <action name="expmonitoring" class="com.action.EXPMonitorPortalAction">
+            <result name="success">/jsp/EXPMonitoringPortal.jsp</result>
+        </action>
+
+        <action name="sysmonitoring" class="com.action.SYSMonitorPortalAction">
+            <result name="success">/jsp/SYSMonitoringPortal.jsp</result>
+        </action>
+
+        <action name="top20service" class="com.action.Top20ServiceAction">
+            <result name="success">/jsp/Top20Service.jsp</result>
+            <result name="session">/Sessionexpired.html</result>
+        </action>
+
+        <action name="top20nongen5service" class="com.action.Top20NonGen5ServiceAction">
+            <result name="success">/jsp/Top20NonGen5Service.jsp</result>
+            <result name="session">/Sessionexpired.html</result>
+        </action>
+
+        <action name="TEST_Multithreding" class="com.action.TEST_Multithreding">
+            <result name="success">/jsp/Multithreding.jsp</result>
+            <result name="session">/Sessionexpired.html</result>
+        </action>
+
+        <action name="EpayVan" class="com.action.Epay_VANAction">
+            <result name="success">/jsp/EpayVan.jsp</result>
+            <result name="session">/Sessionexpired.html</result>
+        </action>
+
+        <action name="adharvault" class="com.action.AdharvaultAction">
+            <result name="success">/jsp/AdharVault.jsp</result>
+            <result name="session">/Sessionexpired.html</result>
+        </action>
+
+        <action name="HundreadPercentageFailureservices"
+                class="com.action.HundreadPercentageFailureservicesAction">
+            <result name="success">/jsp/hundreadpercentagefailure.jsp</result>
+            <result name="session">/Sessionexpired.html</result>
+        </action>
+
+        <action name="eisappissue" class="com.action.EISAPPIssueAction" method="execute">
+            <result name="success">/jsp/EISAPPIssue.jsp</result>
+        </action>
+
+        <action name="eisusersop" class="com.action.UserSOPMasterAction">
+            <result name="success">/jsp/UserSopMaster.jsp</result>
+            <result name="successBank">/jsp/BankSopMaster.jsp</result>
+            <result name="session">/Sessionexpired.html</result>
+        </action>
+
+        <action name="showTop20Failureservices"
+                class="com.action.ShowTop20failureServicesAction">
+            <result name="success">/jsp/showTop20failureservice.jsp</result>
+        </action>
+
+        <action name="showFailureServicesWise"
+                class="com.action.ShowfailureServicesWiseAction">
+            <result name="success">/jsp/ShowfailureServiceWise.jsp</result>
+        </action>
+
+        <action name="showservices" class="com.action.ShowfailureServicesAction">
+            <result name="success">/jsp/showfailureservice.jsp</result>
+        </action>
+
+        <action name="monitoringwithdatetime"
+                class="com.action.EXPMonitorPortalWithDateTimeAction">
+            <result name="success">/jsp/EXPMonitoringPortalwithDatetime.jsp</result>
+        </action>
+
+        <action name="dpginconsistancy" class="com.action.DpgInconsistancyAction">
+            <result name="success">/jsp/DpgInconsistancy.jsp</result>
+            <result name="session">/Sessionexpired.html</result>
+        </action>
+
+        <action name="yono" class="com.action.YonoDasboardAction">
+            <result name="success">/jsp/YonoDashboard.jsp</result>
+            <result name="session">/Sessionexpired.html</result>
+        </action>
+
+        <action name="apiwisenohitsonserver"
+                class="com.action.ApiwisenohitsonserverAction">
+            <result name="success">/jsp/Apiwisenohitsserver.jsp</result>
+            <result name="session">/Sessionexpired.html</result>
+        </action>
+
+        <action name="apiwisehundreadpercfailonserver"
+                class="com.action.ApiwisehundreadpercfailonserverAction">
+            <result name="success">/jsp/Apiwisehundreadpercfailonserver.jsp</result>
+            <result name="session">/Sessionexpired.html</result>
+        </action>
+
+        <action name="showErrorCodeWiseFailureservices"
+                class="com.action.ShowErrorCodeWiseFailureServicesAction">
+            <result name="success">/jsp/showErrorCodewisefailureservice.jsp</result>
+        </action>
+
+        <action name="showNonGen5ErrorCodeWiseFailureservices"
+                class="com.action.ShowNonGen5ErrorCodeWiseFailureServicesAction">
+            <result name="success">/jsp/showNonGen5ErrorCodeWiseFailureservices.jsp</result>
+        </action>
+
+        <action name="monitoringstatus" class="com.action.MonitoringStatusAction">
+            <result name="success">/jsp/MonitoringStatus.jsp</result>
+            <result name="session">/Sessionexpired.html</result>
+        </action>
+
+        <action name="autoRefreshApiwisehundreadpercfailonserver"
+                class="com.action.AutoRefreshApiwisehundreadpercfailonserverAction">
+            <result name="success">/jsp/AutoRefreshApiwisehundreadpercfailonserver.jsp</result>
+        </action>
+
+        <action name="autoRefreshApiwisehundreadpercfailonNonGen5server"
+                class="com.action.AutoRefreshApiwisehundreadpercfailonNonGen5serverAction">
+            <result name="success">/jsp/AutoRefreshApiwisehundreadpercfailonNonGen5server.jsp</result>
+        </action>
+
+        <action name="autoRefreshApiwisenohitsserver"
+                class="com.action.AutoRefreshApiwisenohitsserverAction">
+            <result name="success">/jsp/AutoRefreshApiwisenohitsserver.jsp</result>
+        </action>
+
+        <action name="multipleservicewisetdbdperc"
+                class="com.action.MultipleServiceWiseTDBDPercAction">
+            <result name="success">/jsp/MultipleServiceWiseTDBDPer.jsp</result>
+            <result name="session">/Sessionexpired.html</result>
+        </action>
+
+        <action name="deploymentsheet" class="com.action.DeploymentsheetAction">
+            <result name="success">/jsp/Deploymentsheet.jsp</result>
+            <result name="session">/Sessionexpired.html</result>
+        </action>
+
+        <action name="viewdeploymentsheet" class="com.action.ViewDeploymentsheetAction">
+            <result name="success">/jsp/ViewDeploymentsheet.jsp</result>
+            <result name="successbanker">/jsp/ViewDeploymentsheetBanker.jsp</result>
+            <result name="session">/Sessionexpired.html</result>
+        </action>
+
+        <!-- ========================================================
+             EIS REGISTRATION (main fix)
+             ======================================================== -->
+
+        <!-- Show registration page (fixes NoSuchMethodException) -->
+        <action name="showregpage"
+                class="com.action.EISRegistrationAction"
+                method="showregpage">
+            <result name="success">/jsp/EISRegistration.jsp</result>
+            <result name="input">/jsp/EISRegistration.jsp</result>
+            <result name="session">/Sessionexpired.html</result>
+        </action>
+
+        <!-- Save registration (form submit) -->
+        <action name="saveRegistration"
+                class="com.action.EISRegistrationAction"
+                method="saveRegistration">
+            <result name="success">/jsp/EISRegistration.jsp</result>
+            <result name="thanks">/Thanks.html</result>
+            <result name="input">/jsp/EISRegistration.jsp</result>
+            <result name="session">/Sessionexpired.html</result>
+        </action>
+
+        <!-- Legacy name kept for backward compatibility -->
+        <action name="EisRegistration" class="com.action.EISRegistrationAction">
+            <result name="success">/jsp/EISRegistration.jsp</result>
+            <result name="thanks">/Thanks.html</result>
+            <result name="session">/Sessionexpired.html</result>
+        </action>
+
+        <action name="ViewEisRegistrationDetails"
+                class="com.action.ViewEISRegistrationDetailsAction">
+            <result name="success">/jsp/ViewEISRegistrationDetails.jsp</result>
+            <result name="session">/Sessionexpired.html</result>
+        </action>
+
+    </package>
 </struts>
 
 
 
--------------------------------------------------------------------------------------
-
+----------------------------------------------------------------
 
 <?xml version="1.0" encoding="UTF-8"?>
-<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
-         xmlns="https://jakarta.ee/xml/ns/jakartaee" 
-         xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/web-app_5_0.xsd" 
-         version="5.0">
-         
-  <display-name>EISPortal</display-name>
-  
-  <!-- ============================================================
-       ✅ SESSION CONFIG — 12 HOURS (720 minutes)
-       User ko baar baar login nahi karna padega
-       ============================================================ -->
-  <session-config>
-    <session-timeout>720</session-timeout>
-    <cookie-config>
-      <http-only>true</http-only>
-      <secure>false</secure>
-    </cookie-config>
-    <tracking-mode>COOKIE</tracking-mode>
-  </session-config>
-  
-  <!-- ============================================================
-       STRUTS2 FILTER
-       ============================================================ -->
-  <filter>
-    <filter-name>struts2</filter-name>
-    <filter-class>org.apache.struts2.dispatcher.filter.StrutsPrepareAndExecuteFilter</filter-class>
-  </filter>
-  <filter-mapping>
-    <filter-name>struts2</filter-name>
-    <url-pattern>*.do</url-pattern>
-  </filter-mapping>
-  <filter-mapping>
-    <filter-name>struts2</filter-name>
-    <url-pattern>*.action</url-pattern>
-  </filter-mapping>
-  
-  <!-- ============================================================
-       CORS FILTER
-       ============================================================ -->
-  <filter>
-    <filter-name>CORSFilter</filter-name>
-    <filter-class>com.action.CORSFilter</filter-class>
-  </filter>
-  <filter-mapping>
-    <filter-name>CORSFilter</filter-name>
-    <url-pattern>/*</url-pattern>
-  </filter-mapping>
-  
-  <!-- ============================================================
-       LOGIN CONFIG (LDAP)
-       ============================================================ -->
-  <login-config>
-    <auth-method>BASIC</auth-method>
-    <realm-name>LDAP Realm</realm-name>
-  </login-config>
-  
-  <!-- ============================================================
-       SERVLET: TestServlet (debug.jsp)
-       ============================================================ -->
-  <servlet>
-    <servlet-name>TestServlet</servlet-name>
-    <jsp-file>/debug.jsp</jsp-file>
-  </servlet>
-  <servlet-mapping>
-    <servlet-name>TestServlet</servlet-name>
-    <url-pattern>/test</url-pattern>
-  </servlet-mapping>
-  
-  <!-- ============================================================
-       WELCOME FILE LIST
-       ============================================================ -->
-  <welcome-file-list>
-    <welcome-file>index.html</welcome-file>
-    <welcome-file>index.htm</welcome-file>
-    <welcome-file>index.jsp</welcome-file>
-    <welcome-file>default.html</welcome-file>
-    <welcome-file>default.htm</welcome-file>
-    <welcome-file>default.jsp</welcome-file>
-  </welcome-file-list>
-  
-  <!-- ============================================================
-       SERVLET: DocumentDownloadServlet
-       ============================================================ -->
-  <servlet>
-    <description></description>
-    <display-name>DocumentDownloadServlet</display-name>
-    <servlet-name>DocumentDownloadServlet</servlet-name>
-    <servlet-class>com.action.DocumentDownloadServlet</servlet-class>
-  </servlet>
-  <servlet-mapping>
-    <servlet-name>DocumentDownloadServlet</servlet-name>
-    <url-pattern>/DocumentDownloadServlet</url-pattern>
-  </servlet-mapping>
-  
-  <!-- ============================================================
-       SERVLET: ViewDeploymentSheetActionServ
-       ============================================================ -->
-  <servlet>
-    <description></description>
-    <display-name>ViewDeploymentSheetActionServ</display-name>
-    <servlet-name>ViewDeploymentSheetActionServ</servlet-name>
-    <servlet-class>com.action.ViewDeploymentSheetActionServ</servlet-class>
-  </servlet>
-  <servlet-mapping>
-    <servlet-name>ViewDeploymentSheetActionServ</servlet-name>
-    <url-pattern>/ViewDeploymentSheetActionServ</url-pattern>
-  </servlet-mapping>
-  
-  <!-- ============================================================
-       SERVLET: DeploymentSheetServlet
-       ============================================================ -->
-  <servlet>
-    <description></description>
-    <display-name>DeploymentSheetServlet</display-name>
-    <servlet-name>DeploymentSheetServlet</servlet-name>
-    <servlet-class>com.action.DeploymentSheetServlet</servlet-class>
-  </servlet>
-  <servlet-mapping>
-    <servlet-name>DeploymentSheetServlet</servlet-name>
-    <url-pattern>/DeploymentSheetServlet</url-pattern>
-  </servlet-mapping>
-  
-  <!-- ============================================================
-       SERVLET: UpdateMonthlyRosterAction
-       ============================================================ -->
-  <servlet>
-    <description></description>
-    <display-name>UpdateMonthlyRosterAction</display-name>
-    <servlet-name>UpdateMonthlyRosterAction</servlet-name>
-    <servlet-class>com.action.UpdateMonthlyRosterAction</servlet-class>
-  </servlet>
-  <servlet-mapping>
-    <servlet-name>UpdateMonthlyRosterAction</servlet-name>
-    <url-pattern>/UpdateMonthlyRosterAction</url-pattern>
-  </servlet-mapping>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="https://jakarta.ee/xml/ns/jakartaee"
+         xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee
+                             https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd"
+         version="6.0">
+
+    <display-name>EISPortal</display-name>
+
+    <!-- ============================================================
+         SESSION CONFIG — 12 HOURS (720 minutes)
+         ============================================================ -->
+    <session-config>
+        <session-timeout>720</session-timeout>
+        <cookie-config>
+            <http-only>true</http-only>
+            <secure>false</secure>  <!-- production HTTPS: true -->
+        </cookie-config>
+        <tracking-mode>COOKIE</tracking-mode>
+    </session-config>
+
+    <!-- ============================================================
+         STRUTS 2 FILTER
+         ============================================================ -->
+    <filter>
+        <filter-name>struts2</filter-name>
+        <filter-class>
+            org.apache.struts2.dispatcher.filter.StrutsPrepareAndExecuteFilter
+        </filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>struts2</filter-name>
+        <url-pattern>*.action</url-pattern>
+        <dispatcher>REQUEST</dispatcher>
+        <dispatcher>FORWARD</dispatcher>
+    </filter-mapping>
+    <filter-mapping>
+        <filter-name>struts2</filter-name>
+        <url-pattern>*.do</url-pattern>
+        <dispatcher>REQUEST</dispatcher>
+        <dispatcher>FORWARD</dispatcher>
+    </filter-mapping>
+
+    <!-- ============================================================
+         CORS FILTER
+         ============================================================ -->
+    <filter>
+        <filter-name>CORSFilter</filter-name>
+        <filter-class>com.action.CORSFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>CORSFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
+    <!-- ============================================================
+         SERVLET: TestServlet (debug.jsp)
+         ============================================================ -->
+    <servlet>
+        <servlet-name>TestServlet</servlet-name>
+        <jsp-file>/debug.jsp</jsp-file>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>TestServlet</servlet-name>
+        <url-pattern>/test</url-pattern>
+    </servlet-mapping>
+
+    <!-- ============================================================
+         WELCOME FILE LIST
+         ============================================================ -->
+    <welcome-file-list>
+        <welcome-file>index.html</welcome-file>
+        <welcome-file>index.htm</welcome-file>
+        <welcome-file>index.jsp</welcome-file>
+        <welcome-file>default.html</welcome-file>
+        <welcome-file>default.htm</welcome-file>
+        <welcome-file>default.jsp</welcome-file>
+    </welcome-file-list>
+
+    <!-- ============================================================
+         SERVLET: DocumentDownloadServlet
+         ============================================================ -->
+    <servlet>
+        <description></description>
+        <display-name>DocumentDownloadServlet</display-name>
+        <servlet-name>DocumentDownloadServlet</servlet-name>
+        <servlet-class>com.action.DocumentDownloadServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>DocumentDownloadServlet</servlet-name>
+        <url-pattern>/DocumentDownloadServlet</url-pattern>
+    </servlet-mapping>
+
+    <!-- ============================================================
+         SERVLET: ViewDeploymentSheetActionServ
+         ============================================================ -->
+    <servlet>
+        <description></description>
+        <display-name>ViewDeploymentSheetActionServ</display-name>
+        <servlet-name>ViewDeploymentSheetActionServ</servlet-name>
+        <servlet-class>com.action.ViewDeploymentSheetActionServ</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ViewDeploymentSheetActionServ</servlet-name>
+        <url-pattern>/ViewDeploymentSheetActionServ</url-pattern>
+    </servlet-mapping>
+
+    <!-- ============================================================
+         SERVLET: DeploymentSheetServlet
+         ============================================================ -->
+    <servlet>
+        <description></description>
+        <display-name>DeploymentSheetServlet</display-name>
+        <servlet-name>DeploymentSheetServlet</servlet-name>
+        <servlet-class>com.action.DeploymentSheetServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>DeploymentSheetServlet</servlet-name>
+        <url-pattern>/DeploymentSheetServlet</url-pattern>
+    </servlet-mapping>
+
+    <!-- ============================================================
+         SERVLET: UpdateMonthlyRosterAction
+         ============================================================ -->
+    <servlet>
+        <description></description>
+        <display-name>UpdateMonthlyRosterAction</display-name>
+        <servlet-name>UpdateMonthlyRosterAction</servlet-name>
+        <servlet-class>com.action.UpdateMonthlyRosterAction</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>UpdateMonthlyRosterAction</servlet-name>
+        <url-pattern>/UpdateMonthlyRosterAction</url-pattern>
+    </servlet-mapping>
 
 </web-app>
