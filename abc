@@ -1,39 +1,323 @@
-14:32:29.934 [http-nio-8085-exec-8] ERROR org.apache.struts2.dispatcher.DefaultDispatcherErrorHandler - Exception occurred during processing request: com.action.EISRegistrationAction.showregpage()
-java.lang.NoSuchMethodException: com.action.EISRegistrationAction.showregpage()
-	at java.base/java.lang.Class.getMethod(Class.java:2395) ~[?:?]
-	at org.apache.struts2.interceptor.httpmethod.HttpMethodInterceptor.intercept(HttpMethodInterceptor.java:87) ~[struts2-core-7.0.3.jar:7.0.3]
-	at org.apache.struts2.DefaultActionInvocation.executeConditional(DefaultActionInvocation.java:311) ~[struts2-core-7.0.3.jar:7.0.3]
-	at org.apache.struts2.DefaultActionInvocation.invoke(DefaultActionInvocation.java:265) ~[struts2-core-7.0.3.jar:7.0.3]
-	at org.apache.struts2.interceptor.ServletConfigInterceptor.intercept(ServletConfigInterceptor.java:156) ~[struts2-core-7.0.3.jar:7.0.3]
-	at org.apache.struts2.DefaultActionInvocation.executeConditional(DefaultActionInvocation.java:311) ~[struts2-core-7.0.3.jar:7.0.3]
-	at org.apache.struts2.DefaultActionInvocation.invoke(DefaultActionInvocation.java:265) ~[struts2-core-7.0.3.jar:7.0.3]
-	at org.apache.struts2.interceptor.AliasInterceptor.intercept(AliasInterceptor.java:228) ~[struts2-core-7.0.3.jar:7.0.3]
-	at org.apache.struts2.DefaultActionInvocation.executeConditional(DefaultActionInvocation.java:311) ~[struts2-core-7.0.3.jar:7.0.3]
-	at org.apache.struts2.DefaultActionInvocation.invoke(DefaultActionInvocation.java:265) ~[struts2-core-7.0.3.jar:7.0.3]
-	at org.apache.struts2.interceptor.ExceptionMappingInterceptor.intercept(ExceptionMappingInterceptor.java:205) ~[struts2-core-7.0.3.jar:7.0.3]
-	at org.apache.struts2.DefaultActionInvocation.executeConditional(DefaultActionInvocation.java:311) ~[struts2-core-7.0.3.jar:7.0.3]
-	at org.apache.struts2.DefaultActionInvocation.invoke(DefaultActionInvocation.java:265) ~[struts2-core-7.0.3.jar:7.0.3]
-	at org.apache.struts2.factory.StrutsActionProxy.execute(StrutsActionProxy.java:51) ~[struts2-core-7.0.3.jar:7.0.3]
-	at org.apache.struts2.dispatcher.Dispatcher.serviceAction(Dispatcher.java:721) ~[struts2-core-7.0.3.jar:7.0.3]
-	at org.apache.struts2.dispatcher.ExecuteOperations.executeAction(ExecuteOperations.java:79) ~[struts2-core-7.0.3.jar:7.0.3]
-	at org.apache.struts2.dispatcher.filter.StrutsPrepareAndExecuteFilter.handleRequest(StrutsPrepareAndExecuteFilter.java:154) ~[struts2-core-7.0.3.jar:7.0.3]
-	at org.apache.struts2.dispatcher.filter.StrutsPrepareAndExecuteFilter.tryHandleRequest(StrutsPrepareAndExecuteFilter.java:137) ~[struts2-core-7.0.3.jar:7.0.3]
-	at org.apache.struts2.dispatcher.filter.StrutsPrepareAndExecuteFilter.doFilter(StrutsPrepareAndExecuteFilter.java:125) ~[struts2-core-7.0.3.jar:7.0.3]
-	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[catalina.jar:11.0.13]
-	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:165) ~[catalina.jar:11.0.13]
-	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:77) ~[catalina.jar:11.0.13]
-	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:482) ~[catalina.jar:11.0.13]
-	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:113) ~[catalina.jar:11.0.13]
-	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:83) ~[catalina.jar:11.0.13]
-	at org.apache.catalina.valves.AbstractAccessLogValve.invoke(AbstractAccessLogValve.java:654) ~[catalina.jar:11.0.13]
-	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:72) ~[catalina.jar:11.0.13]
-	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:341) ~[catalina.jar:11.0.13]
-	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:397) ~[tomcat-coyote.jar:11.0.13]
-	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63) ~[tomcat-coyote.jar:11.0.13]
-	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:903) ~[tomcat-coyote.jar:11.0.13]
-	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1778) ~[tomcat-coyote.jar:11.0.13]
-	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52) ~[tomcat-coyote.jar:11.0.13]
-	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:946) ~[tomcat-util.jar:11.0.13]
-	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:480) ~[tomcat-util.jar:11.0.13]
-	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:57) ~[tomcat-util.jar:11.0.13]
-	at java.base/java.lang.Thread.run(Thread.java:1583) [?:?]
+package com.action;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+
+import org.apache.struts2.ActionSupport;
+import org.apache.struts2.action.Action;
+import org.apache.struts2.dispatcher.mapper.ActionMapping;
+
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import com.actionform.RegistrationActionForm;
+import com.jdbc.DBUtilityAuto;
+
+@SuppressWarnings({ "serial", "deprecation" })
+public class EISRegistrationAction extends ActionSupport {
+	public String execute(ActionMapping mapping, Action form, HttpServletRequest request, HttpServletResponse response) throws Exception {
+		RegistrationActionForm l_obj = (RegistrationActionForm) form;
+		this.getEISRole(l_obj);
+
+		if (request.getParameter("action") != null) {
+			System.out.println("Registration");
+			if (request.getParameter("action").equals("insert")) {
+				Connection l_objreportdbcon = null;
+				ResultSet l_bjres = null;
+				Statement l_bjst = null;
+				int count = 0;
+				l_objreportdbcon = DBUtilityAuto.getReportDBConnection(); // DB Connection for ReportDB Database
+
+				String l_strQuery = "select count(*) from eisupport_employee_master where EMPLOYEE_ID='"
+						+ request.getParameter("m_stremployee_id") + "' ";
+				System.out.println("Count:" + l_strQuery);
+				l_bjst = l_objreportdbcon.createStatement();
+				l_bjres = l_bjst.executeQuery(l_strQuery);
+				if (l_bjres != null) {
+					while (l_bjres.next()) {
+						count = l_bjres.getInt("count(*)");
+					}
+				}
+				if (count == 0) {
+					String m_strPhotoFilePath = "", m_strBGCFilePath = "", m_strPoliceFilePath = "",
+							m_strCVFilePath = "";
+					if (l_obj.getM_strthePhotofile() != null && l_obj.getM_strthePhotofile().length() > 0) {
+						String filePath = System.getProperty("catalina.base") + "/webapps/EISPortal/EISEMPLOYEEDOCUMENT/PHOTO/";
+						System.out.println("filePath:" + filePath);
+						m_strPhotoFilePath = uploadFile(request, l_obj.getM_strthePhotofile(), l_obj, filePath);
+						System.out.println("fileName:" + m_strPhotoFilePath);
+
+					}
+					if (l_obj.getM_strtheBgcfile() != null && l_obj.getM_strtheBgcfile().length() > 0) {
+						String filePath = System.getProperty("catalina.base") + "/webapps/EISPortal/EISEMPLOYEEDOCUMENT/BGC/";
+						System.out.println("filePath:" + filePath);
+						m_strBGCFilePath = uploadFile(request, l_obj.getM_strtheBgcfile(), l_obj, filePath);
+						System.out.println("fileName:" + m_strBGCFilePath);
+
+					}
+					if (l_obj.getM_strthePoliceverificationfile() != null
+							&& l_obj.getM_strthePoliceverificationfile().length() > 0) {
+						String filePath = System.getProperty("catalina.base") + "/webapps/EISPortal/EISEMPLOYEEDOCUMENT/Police/";
+						System.out.println("filePath:" + filePath);
+						m_strPoliceFilePath = uploadFile(request, l_obj.getM_strthePoliceverificationfile(), l_obj,
+								filePath);
+						System.out.println("fileName:" + m_strPoliceFilePath);
+
+					}
+					if (l_obj.getM_strtheCvfile() != null && l_obj.getM_strtheCvfile().length() > 0) {
+						String filePath = System.getProperty("catalina.base") + "/webapps/EISPortal/EISEMPLOYEEDOCUMENT/CV/";
+						System.out.println("filePath:" + filePath);
+						m_strCVFilePath = uploadFile(request, l_obj.getM_strtheCvfile(), l_obj, filePath);
+						System.out.println("fileName:" + m_strCVFilePath);
+
+					}
+					PreparedStatement preparedStatement = null, preparedStatement1 = null;
+
+					try {
+						if (request.getParameter("m_stremployee_id") != null) {
+							String SQL_INSERT = "INSERT INTO eisupport_employee_master ("
+									+ "EMPLOYEE_ID,AD_ID,ASSET_ID," + "EDU_QUALIFICATION"
+									+ ",TCS_JOINING_DATE,CONTACTNUMBER," + "EMERGENCY_CONTACTNUMBER,TEAM,TCS_MAILID"
+									+ ",STATE,CITY,LOCAL_ADDRESS" + ",GENDER,DOB,FIRSTNAME"
+									+ ",MIDDLENAME,LASTNAME,VPN_HOSTNAME"
+									+ ",LAPTOP_HOSTNAME,REMOTETYPE,VPN_VDI_MACADDRESS"
+									+ ",VPN_VDI_IPADDRESS,CV_DOCUMENT_PATH,BGC_DOCUMENT_PATH"
+									+ ",PHOTO_PATH,POLICE_VERIFICATION_PATH,USERNAME,PASSWORD,HID,SBI_MAILID" + ") VALUES (?,?,?,?,?,?"
+									+ ",?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?" + ")";
+							preparedStatement = l_objreportdbcon.prepareStatement(SQL_INSERT);
+
+							preparedStatement.setObject(1, request.getParameter("m_stremployee_id"));
+							preparedStatement.setObject(2, request.getParameter("m_strad_id"));
+							preparedStatement.setObject(3, request.getParameter("m_strasset_id"));
+							System.out.println(request.getParameter("m_streduqualification"));
+							preparedStatement.setObject(4, request.getParameter("m_streduqualification"));
+							preparedStatement.setObject(5, request.getParameter("m_strtcsjoiningdate"));
+							preparedStatement.setObject(6, request.getParameter("m_strcontactno"));
+							preparedStatement.setObject(7, request.getParameter("m_stremergencycontactno"));
+							preparedStatement.setObject(8, request.getParameter("m_strRole"));
+							preparedStatement.setObject(9, request.getParameter("m_strtcsmailid"));
+							preparedStatement.setObject(10, request.getParameter("m_strstate"));
+							preparedStatement.setObject(11, request.getParameter("m_strcity"));
+							preparedStatement.setObject(12, request.getParameter("m_strlocaladdress"));
+							preparedStatement.setObject(13, request.getParameter("m_strgender"));
+							preparedStatement.setObject(14, request.getParameter("m_strdob"));
+							preparedStatement.setObject(15, request.getParameter("m_strfirstName"));
+							preparedStatement.setObject(16, request.getParameter("m_strmiddleName"));
+							preparedStatement.setObject(17, request.getParameter("m_strlastName"));
+							preparedStatement.setObject(18, request.getParameter("m_strvpnhostname"));
+							preparedStatement.setObject(19, request.getParameter("m_strlaptophostname"));
+							preparedStatement.setObject(20, request.getParameter("m_strremotetype"));
+							preparedStatement.setObject(21, request.getParameter("m_strvpnmacaddress"));
+							preparedStatement.setObject(22, request.getParameter("m_strvpnipaddress"));
+							preparedStatement.setObject(23, m_strCVFilePath);
+							preparedStatement.setObject(24, m_strBGCFilePath);
+							preparedStatement.setObject(25, m_strPhotoFilePath);
+							preparedStatement.setObject(26, m_strPoliceFilePath);
+							preparedStatement.setObject(27, request.getParameter("m_strUserName"));
+							preparedStatement.setObject(28, request.getParameter("m_strPassword"));
+							preparedStatement.setObject(29, request.getParameter("m_strhid"));
+							System.out.println(request.getParameter("m_strhid"));
+							preparedStatement.setObject(30, request.getParameter("m_strsbimailid"));
+							System.out.println(request.getParameter("m_strsbimailid"));
+//				System.out.println(preparedStatement.toString());
+
+							preparedStatement.addBatch();
+							preparedStatement.executeBatch();
+							
+							String SQL_INSERTRoster = "INSERT INTO roster_employee_details ("
+									+ "EMPLOYEE_ID,AD_ID,ASSET_ID," + "EDU_QUALIFICATION"
+									+ ",TCS_JOINING_DATE,CONTACTNUMBER," + "EMERGENCY_CONTACTNUMBER,TEAM,TCS_MAILID"
+									+ ",STATE,CITY,LOCAL_ADDRESS" + ",GENDER,DOB,FIRSTNAME"
+									+ ",MIDDLENAME,LASTNAME,VPN_HOSTNAME"
+									+ ",LAPTOP_HOSTNAME,REMOTETYPE,VPN_VDI_MACADDRESS"
+									+ ",VPN_VDI_IPADDRESS,CV_DOCUMENT_PATH,BGC_DOCUMENT_PATH"
+									+ ",PHOTO_PATH,POLICE_VERIFICATION_PATH,USERNAME,PASSWORD,HID,SBI_MAILID" + ") VALUES (?,?,?,?,?,?"
+									+ ",?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?" + ")";
+							preparedStatement1 = l_objreportdbcon.prepareStatement(SQL_INSERTRoster);
+
+							preparedStatement1.setObject(1, request.getParameter("m_stremployee_id"));
+							preparedStatement1.setObject(2, request.getParameter("m_strad_id"));
+							preparedStatement1.setObject(3, request.getParameter("m_strasset_id"));
+							System.out.println(request.getParameter("m_streduqualification"));
+							preparedStatement1.setObject(4, request.getParameter("m_streduqualification"));
+							preparedStatement1.setObject(5, request.getParameter("m_strtcsjoiningdate"));
+							preparedStatement1.setObject(6, request.getParameter("m_strcontactno"));
+							preparedStatement1.setObject(7, request.getParameter("m_stremergencycontactno"));
+							preparedStatement1.setObject(8, request.getParameter("m_strRole"));
+							preparedStatement1.setObject(9, request.getParameter("m_strtcsmailid"));
+							preparedStatement1.setObject(10, request.getParameter("m_strstate"));
+							preparedStatement1.setObject(11, request.getParameter("m_strcity"));
+							preparedStatement1.setObject(12, request.getParameter("m_strlocaladdress"));
+							preparedStatement1.setObject(13, request.getParameter("m_strgender"));
+							preparedStatement1.setObject(14, request.getParameter("m_strdob"));
+							preparedStatement1.setObject(15, request.getParameter("m_strfirstName"));
+							preparedStatement1.setObject(16, request.getParameter("m_strmiddleName"));
+							preparedStatement1.setObject(17, request.getParameter("m_strlastName"));
+							preparedStatement1.setObject(18, request.getParameter("m_strvpnhostname"));
+							preparedStatement1.setObject(19, request.getParameter("m_strlaptophostname"));
+							preparedStatement1.setObject(20, request.getParameter("m_strremotetype"));
+							preparedStatement1.setObject(21, request.getParameter("m_strvpnmacaddress"));
+							preparedStatement1.setObject(22, request.getParameter("m_strvpnipaddress"));
+							preparedStatement1.setObject(23, m_strCVFilePath);
+							preparedStatement1.setObject(24, m_strBGCFilePath);
+							preparedStatement1.setObject(25, m_strPhotoFilePath);
+							preparedStatement1.setObject(26, m_strPoliceFilePath);
+							preparedStatement1.setObject(27, request.getParameter("m_strUserName"));
+							preparedStatement1.setObject(28, request.getParameter("m_strPassword"));
+							preparedStatement1.setObject(29, request.getParameter("m_strhid"));
+							System.out.println(request.getParameter("m_strhid"));
+							preparedStatement1.setObject(30, request.getParameter("m_strsbimailid"));
+							System.out.println(request.getParameter("m_strsbimailid"));
+//				System.out.println(preparedStatement.toString());
+
+							preparedStatement1.addBatch();
+							preparedStatement1.executeBatch();
+							System.out.println("Updated in Roster Employee Table");
+						}
+						this.clear(l_obj);
+						System.out.println("Redirect");
+						return "thanks";
+					} catch (Exception e) {
+						e.printStackTrace();
+						l_obj.setM_strmsg("error");
+					} finally {
+						if (preparedStatement != null) {
+							preparedStatement.close();
+						}
+						if (preparedStatement1 != null) {
+							preparedStatement1.close();
+						}
+						if (l_objreportdbcon != null) {
+							l_objreportdbcon.close();
+						}
+					}
+				} else {
+					l_obj.setM_strmsg("duplicate");
+				}
+			} else {
+
+				this.clear(l_obj);
+
+			}
+		}
+		return "success";
+	}
+
+	private void clear(RegistrationActionForm l_obj) {
+		try {
+			l_obj.setM_strthePhotofile(null);
+			l_obj.setM_strtheBgcfile(null);
+			l_obj.setM_strthePoliceverificationfile(null);
+			l_obj.setM_strUserName("");
+			l_obj.setM_strPassword("");
+			l_obj.setM_stremployee_id("");
+			l_obj.setM_strad_id("");
+			l_obj.setM_strasset_id("");
+			l_obj.setM_streduqualification("Select Education Qualification");
+			l_obj.setM_strtcsmailid("");
+			l_obj.setM_strsbimailid("");
+			l_obj.setM_strhid("");
+			l_obj.setM_strstate("Select State");
+			l_obj.setM_strRole("Select Role");
+			l_obj.setM_strcity("");
+			l_obj.setM_strlocaladdress("");
+
+			l_obj.setM_strvpnhostname("");
+			l_obj.setM_strlaptophostname("");
+			l_obj.setM_strremotetype("NONE");
+			l_obj.setM_strvpnmacaddress("");
+			l_obj.setM_strvpnipaddress("");
+			l_obj.setM_strvpnmacaddress("");
+
+			l_obj.setM_strfirstName("");
+			l_obj.setM_strlastName("");
+			l_obj.setM_strmiddleName("");
+
+			l_obj.setM_strmsg("");
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+	}
+
+	public static String uploadFile(HttpServletRequest request, File ff, RegistrationActionForm l_obj,
+			String filePath) {
+
+		String newPhotoName = "";
+
+		try {
+
+			InputStream stream = ((ServletRequest) ff).getInputStream();
+			String oldPhotoName = ff.getName();
+
+			newPhotoName = Math.random() + "_" + oldPhotoName.substring(0, oldPhotoName.indexOf("."))
+					+ oldPhotoName.substring(oldPhotoName.indexOf("."), oldPhotoName.length());
+			System.out.print("New File Name:" + newPhotoName);
+			String newFullNewPath = filePath;
+
+			File f = new File(newFullNewPath);
+			if (!f.isDirectory()) {
+
+				f.mkdirs();
+
+			}
+
+			OutputStream bos = new FileOutputStream(newFullNewPath + newPhotoName);
+			int len = 0;
+			byte[] buffer = new byte[8192];
+			while ((len = stream.read(buffer, 0, 8192)) != -1) {
+				bos.write(buffer, 0, len);
+			}
+			bos.close();
+			stream.close();
+
+		} catch (Exception e) {
+			l_obj.setM_strmsg("Error");
+			e.printStackTrace();
+		}
+		return newPhotoName;
+	}
+
+	private void getEISRole(RegistrationActionForm l_obj) throws SQLException {
+		Connection con = DBUtilityAuto.getReportDBConnection();
+		Statement l_objstatement = null;
+		ResultSet l_bjres = null;
+		try {
+			ArrayList<String> list = new ArrayList<String>();
+			list.add(0, "Select Role");
+			String query = "select rolename from rolemst";
+			// System.out.print("New:" + query);
+			l_objstatement = con.createStatement();
+			l_bjres = l_objstatement.executeQuery(query);
+			if (l_bjres != null) {
+				while (l_bjres.next()) {
+					list.add(l_bjres.getString("rolename"));
+				}
+			}
+
+			l_obj.setRolelist(list);
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			if (l_bjres != null) {
+				l_bjres.close();
+			}
+			if (l_objstatement != null) {
+				l_objstatement.close();
+			}
+			if (con != null) {
+				con.close();
+
+			}
+		}
+
+	}
+}
