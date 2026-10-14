@@ -1,428 +1,450 @@
-package com.actionform;
-
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.apache.struts2.ActionSupport;
-
-@SuppressWarnings("serial")
-public class RegistrationActionForm extends ActionSupport {
-
-    // ---- Role / messages ----
-    private String m_strRole;
-    private String m_strmsg;
-
-    // Role dropdown (kept as ArrayList<?> for compatibility with your existing code;
-    // ideally change to ArrayList<String> — see note at bottom).
-    private ArrayList<?> rolelist = new ArrayList<Object>();
-
-    // ---- File uploads: Struts 2/7 requires 3 fields per file ----
-    private File   m_strthePhotofile;
-    private String m_strthePhotofileFileName;
-    private String m_strthePhotofileContentType;
-
-    private File   m_strtheBgcfile;
-    private String m_strtheBgcfileFileName;
-    private String m_strtheBgcfileContentType;
-
-    private File   m_strthePoliceverificationfile;
-    private String m_strthePoliceverificationfileFileName;
-    private String m_strthePoliceverificationfileContentType;
-
-    private File   m_strtheCvfile;
-    private String m_strtheCvfileFileName;
-    private String m_strtheCvfileContentType;
-
-    // ---- User credentials ----
-    private String m_strUserName;
-    private String m_strPassword;
-
-    // ---- Employee identity ----
-    private String m_stremployee_id;
-    private String m_strad_id;
-    private String m_strasset_id;
-    private String m_streduqualification;
-
-    // ---- Joining / contact (used by your action's INSERT) ----
-    private String m_strtcsjoiningdate;
-    private String m_strcontactno;
-    private String m_stremergencycontactno;
-
-    // ---- Contact / address ----
-    private String m_strtcsmailid;
-    private String m_strsbimailid;
-    private String m_strstate;
-    private String m_strcity;
-    private String m_strlocaladdress;
-
-    // ---- Personal ----
-    private String m_strgender;
-    private String m_strdob;
-    private String m_strfirstName;
-    private String m_strmiddleName;
-    private String m_strlastName;
-    private String m_strisActive;
-
-    // ---- VPN / laptop ----
-    private String m_strvpnhostname;
-    private String m_strlaptophostname;
-    private String m_strremotetype;
-    private String m_strvpnmacaddress;
-    private String m_strvpnipaddress;
-
-    // ---- Extra ----
-    private String m_strhid;
-
-    // ---- View data ----
-    private List<?> m_lstViewEmployeeRegistrationdetail = new ArrayList<Object>();
-
-    // =====================================================================
-    // Getters / Setters
-    // =====================================================================
-
-    public List<?> getM_lstViewEmployeeRegistrationdetail() {
-        return m_lstViewEmployeeRegistrationdetail;
-    }
-
-    public void setM_lstViewEmployeeRegistrationdetail(List<?> m_lstViewEmployeeRegistrationdetail) {
-        this.m_lstViewEmployeeRegistrationdetail = m_lstViewEmployeeRegistrationdetail;
-    }
-
-    public String getM_strfirstName() {
-        return m_strfirstName;
-    }
-
-    public void setM_strfirstName(String m_strfirstName) {
-        this.m_strfirstName = m_strfirstName;
-    }
-
-    public String getM_strlastName() {
-        return m_strlastName;
-    }
-
-    public void setM_strlastName(String m_strlastName) {
-        this.m_strlastName = m_strlastName;
-    }
-
-    public String getM_strmiddleName() {
-        return m_strmiddleName;
-    }
-
-    public void setM_strmiddleName(String m_strmiddleName) {
-        this.m_strmiddleName = m_strmiddleName;
-    }
-
-    // FIXED: was public String setM_strisActive() — setters must return void
-    public String getM_strisActive() {
-        return m_strisActive;
-    }
-
-    public void setM_strisActive(String m_strisActive) {
-        this.m_strisActive = m_strisActive;
-    }
-
-    public String getM_strvpnhostname() {
-        return m_strvpnhostname;
-    }
-
-    public void setM_strvpnhostname(String m_strvpnhostname) {
-        this.m_strvpnhostname = m_strvpnhostname;
-    }
-
-    public String getM_strlaptophostname() {
-        return m_strlaptophostname;
-    }
-
-    public void setM_strlaptophostname(String m_strlaptophostname) {
-        this.m_strlaptophostname = m_strlaptophostname;
-    }
-
-    public String getM_strremotetype() {
-        return m_strremotetype;
-    }
-
-    public void setM_strremotetype(String m_strremotetype) {
-        this.m_strremotetype = m_strremotetype;
-    }
-
-    public String getM_strvpnmacaddress() {
-        return m_strvpnmacaddress;
-    }
-
-    public void setM_strvpnmacaddress(String m_strvpnmacaddress) {
-        this.m_strvpnmacaddress = m_strvpnmacaddress;
-    }
-
-    public String getM_strvpnipaddress() {
-        return m_strvpnipaddress;
-    }
-
-    public void setM_strvpnipaddress(String m_strvpnipaddress) {
-        this.m_strvpnipaddress = m_strvpnipaddress;
-    }
-
-    public String getM_strtcsmailid() {
-        return m_strtcsmailid;
-    }
-
-    public void setM_strtcsmailid(String m_strtcsmailid) {
-        this.m_strtcsmailid = m_strtcsmailid;
-    }
-
-    public String getM_strstate() {
-        return m_strstate;
-    }
-
-    public void setM_strstate(String m_strstate) {
-        this.m_strstate = m_strstate;
-    }
-
-    public String getM_strcity() {
-        return m_strcity;
-    }
-
-    public void setM_strcity(String m_strcity) {
-        this.m_strcity = m_strcity;
-    }
-
-    public String getM_strlocaladdress() {
-        return m_strlocaladdress;
-    }
-
-    public void setM_strlocaladdress(String m_strlocaladdress) {
-        this.m_strlocaladdress = m_strlocaladdress;
-    }
-
-    public String getM_streduqualification() {
-        return m_streduqualification;
-    }
-
-    public void setM_streduqualification(String m_streduqualification) {
-        this.m_streduqualification = m_streduqualification;
-    }
-
-    public String getM_stremployee_id() {
-        return m_stremployee_id;
-    }
-
-    public void setM_stremployee_id(String m_stremployee_id) {
-        this.m_stremployee_id = m_stremployee_id;
-    }
-
-    public String getM_strad_id() {
-        return m_strad_id;
-    }
-
-    public void setM_strad_id(String m_strad_id) {
-        this.m_strad_id = m_strad_id;
-    }
-
-    public String getM_strasset_id() {
-        return m_strasset_id;
-    }
-
-    public void setM_strasset_id(String m_strasset_id) {
-        this.m_strasset_id = m_strasset_id;
-    }
-
-    public String getM_strUserName() {
-        return m_strUserName;
-    }
-
-    public void setM_strUserName(String m_strUserName) {
-        this.m_strUserName = m_strUserName;
-    }
-
-    public String getM_strPassword() {
-        return m_strPassword;
-    }
-
-    public void setM_strPassword(String m_strPassword) {
-        this.m_strPassword = m_strPassword;
-    }
-
-    public String getM_strmsg() {
-        return m_strmsg;
-    }
-
-    public void setM_strmsg(String m_strmsg) {
-        this.m_strmsg = m_strmsg;
-    }
-
-    public String getM_strRole() {
-        return m_strRole;
-    }
-
-    public void setM_strRole(String m_strRole) {
-        this.m_strRole = m_strRole;
-    }
-
-    public ArrayList<?> getRolelist() {
-        return rolelist;
-    }
-
-    public void setRolelist(ArrayList<?> rolelist) {
-        this.rolelist = rolelist;
-    }
-
-    // ---- Extra fields used by the action's INSERT ----
-
-    public String getM_strtcsjoiningdate() {
-        return m_strtcsjoiningdate;
-    }
-
-    public void setM_strtcsjoiningdate(String m_strtcsjoiningdate) {
-        this.m_strtcsjoiningdate = m_strtcsjoiningdate;
-    }
-
-    public String getM_strcontactno() {
-        return m_strcontactno;
-    }
-
-    public void setM_strcontactno(String m_strcontactno) {
-        this.m_strcontactno = m_strcontactno;
-    }
-
-    public String getM_stremergencycontactno() {
-        return m_stremergencycontactno;
-    }
-
-    public void setM_stremergencycontactno(String m_stremergencycontactno) {
-        this.m_stremergencycontactno = m_stremergencycontactno;
-    }
-
-    public String getM_strgender() {
-        return m_strgender;
-    }
-
-    public void setM_strgender(String m_strgender) {
-        this.m_strgender = m_strgender;
-    }
-
-    public String getM_strdob() {
-        return m_strdob;
-    }
-
-    public void setM_strdob(String m_strdob) {
-        this.m_strdob = m_strdob;
-    }
-
-    // =====================================================================
-    // File upload getters / setters (3 fields per file)
-    // =====================================================================
-
-    public File getM_strthePhotofile() {
-        return m_strthePhotofile;
-    }
-
-    public void setM_strthePhotofile(File m_strthePhotofile) {
-        this.m_strthePhotofile = m_strthePhotofile;
-    }
-
-    public String getM_strthePhotofileFileName() {
-        return m_strthePhotofileFileName;
-    }
-
-    public void setM_strthePhotofileFileName(String m_strthePhotofileFileName) {
-        this.m_strthePhotofileFileName = m_strthePhotofileFileName;
-    }
-
-    public String getM_strthePhotofileContentType() {
-        return m_strthePhotofileContentType;
-    }
-
-    public void setM_strthePhotofileContentType(String m_strthePhotofileContentType) {
-        this.m_strthePhotofileContentType = m_strthePhotofileContentType;
-    }
-
-    public File getM_strtheBgcfile() {
-        return m_strtheBgcfile;
-    }
-
-    public void setM_strtheBgcfile(File m_strtheBgcfile) {
-        this.m_strtheBgcfile = m_strtheBgcfile;
-    }
-
-    public String getM_strtheBgcfileFileName() {
-        return m_strtheBgcfileFileName;
-    }
-
-    public void setM_strtheBgcfileFileName(String m_strtheBgcfileFileName) {
-        this.m_strtheBgcfileFileName = m_strtheBgcfileFileName;
-    }
-
-    public String getM_strtheBgcfileContentType() {
-        return m_strtheBgcfileContentType;
-    }
-
-    public void setM_strtheBgcfileContentType(String m_strtheBgcfileContentType) {
-        this.m_strtheBgcfileContentType = m_strtheBgcfileContentType;
-    }
-
-    public File getM_strthePoliceverificationfile() {
-        return m_strthePoliceverificationfile;
-    }
-
-    public void setM_strthePoliceverificationfile(File m_strthePoliceverificationfile) {
-        this.m_strthePoliceverificationfile = m_strthePoliceverificationfile;
-    }
-
-    public String getM_strthePoliceverificationfileFileName() {
-        return m_strthePoliceverificationfileFileName;
-    }
-
-    public void setM_strthePoliceverificationfileFileName(String m_strthePoliceverificationfileFileName) {
-        this.m_strthePoliceverificationfileFileName = m_strthePoliceverificationfileFileName;
-    }
-
-    public String getM_strthePoliceverificationfileContentType() {
-        return m_strthePoliceverificationfileContentType;
-    }
-
-    public void setM_strthePoliceverificationfileContentType(String m_strthePoliceverificationfileContentType) {
-        this.m_strthePoliceverificationfileContentType = m_strthePoliceverificationfileContentType;
-    }
-
-    public File getM_strtheCvfile() {
-        return m_strtheCvfile;
-    }
-
-    public void setM_strtheCvfile(File m_strtheCvfile) {
-        this.m_strtheCvfile = m_strtheCvfile;
-    }
-
-    public String getM_strtheCvfileFileName() {
-        return m_strtheCvfileFileName;
-    }
-
-    public void setM_strtheCvfileFileName(String m_strtheCvfileFileName) {
-        this.m_strtheCvfileFileName = m_strtheCvfileFileName;
-    }
-
-    public String getM_strtheCvfileContentType() {
-        return m_strtheCvfileContentType;
-    }
-
-    public void setM_strtheCvfileContentType(String m_strtheCvfileContentType) {
-        this.m_strtheCvfileContentType = m_strtheCvfileContentType;
-    }
-
-    // ---- Extra ----
-
-    public String getM_strhid() {
-        return m_strhid;
-    }
-
-    public void setM_strhid(String m_strhid) {
-        this.m_strhid = m_strhid;
-    }
-
-    public String getM_strsbimailid() {
-        return m_strsbimailid;
-    }
-
-    public void setM_strsbimailid(String m_strsbimailid) {
-        this.m_strsbimailid = m_strsbimailid;
-    }
-}
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE struts PUBLIC "-//Apache Software Foundation//DTD Struts Configuration 6.0//EN" "../dtd/struts-6.0.dtd"> 
+<struts>
+      
+    <!-- Enable dynamic method invocation (DMI) -->
+    <constant name="struts.enable.DynamicMethodInvocation" value="true"/>
+    <constant name="struts.devMode" value="false"/>
+
+    <!-- JSON plugin constants -->
+    <constant name="struts.json.contentType" value="application/json"/>
+
+    <package name="default" namespace="/" extends="struts-default,json-default" strict-method-invocation="true">
+
+        <!-- Whitelist allowed methods globally -->
+        <global-allowed-methods>execute,usersign,adminsign,showeisissue,showregpage,displayServices</global-allowed-methods>
+   
+             
+      <action name="test">
+                    
+         <result>/debug.jsp</result>
+                
+      </action>
+             
+      <action name="login" class="com.action.LoginAction" method="execute">
+                    
+         <result name="success">/jsp/Eislogin.jsp</result>
+                    
+         <result name="successadmin">/jsp/header.jsp</result>
+                    
+         <result name="successmodule">/jsp/moduleHeader.jsp</result>
+                    
+         <result name="successbanker">/jsp/Bankheader.jsp</result>
+                    
+         <result name="successuser" type="redirectAction">userhomescreen</result>
+
+         <!-- ================= JSON RESULTS (AJAX) ================= -->
+         <result name="jsonsuccess" type="json">
+            <param name="root">jsonData</param>
+            <param name="contentType">application/json</param>
+            <param name="ignoreHierarchy">false</param>
+            <param name="excludeNullProperties">true</param>
+         </result>
+
+         <result name="jsonerror" type="json">
+            <param name="root">jsonData</param>
+            <param name="contentType">application/json</param>
+            <param name="ignoreHierarchy">false</param>
+            <param name="excludeNullProperties">true</param>
+         </result>
+         <!-- ======================================================= -->
+                
+      </action>
+      
+	 <action name="logout" class="com.action.LogoutAction" method="execute">
+                    
+         <result name="success" type="redirect">login.action</result>
+                
+      </action>
+             
+      <action name="userhomescreen" class="com.action.UserHomeScreenAction">
+                    
+         <result name="success">/jsp/UserHomeScreen.jsp</result>
+                    
+         <result name="session">/Sessionexpired.html</result>
+                
+      </action>
+             
+      <action name="eissop" class="com.action.SOPMasterAction">
+                    
+         <result name="success">/jsp/SopMaster.jsp</result>
+                
+      </action>
+      
+       <action name="role" class="com.action.RoleMasterAction">
+                    
+         <result name="success">/jsp/RoleMaster.jsp</result>
+                
+      </action> 
+             
+     <action name="rolesetting" class="com.action.RoleSettingMasterAction">
+                    
+         <result name="success">/jsp/RoleSettingMaster.jsp</result>
+                
+      </action>  
+             
+      <action name="showkpi" class="com.action.showkpi">
+                    
+         <result name="success">/jsp/KPI.jsp</result>
+                    
+         <result name="session">/Sessionexpired.html</result>
+                
+      </action>
+             
+      <action name="expmonitoring" class="com.action.EXPMonitorPortalAction">
+                    
+         <result name="success">/jsp/EXPMonitoringPortal.jsp</result>
+                
+      </action>
+             
+      <action name="sysmonitoring" class="com.action.SYSMonitorPortalAction">
+                    
+         <result name="success">/jsp/SYSMonitoringPortal.jsp</result>
+                
+      </action>
+             
+      <action name="top20service" class="com.action.Top20ServiceAction">
+                    
+         <result name="success">/jsp/Top20Service.jsp</result>
+                    
+         <result name="session">/Sessionexpired.html</result>
+                
+      </action>
+             
+      <action name="top20nongen5service" class="com.action.Top20NonGen5ServiceAction">
+                    
+         <result name="success">/jsp/Top20NonGen5Service.jsp</result>
+                    
+         <result name="session">/Sessionexpired.html</result>
+                
+      </action>
+             
+      <action name="TEST_Multithreding" class="com.action.TEST_Multithreding">
+                    
+         <result name="success">/jsp/Multithreding.jsp</result>
+                    
+         <result name="session">/Sessionexpired.html</result>
+                
+      </action>
+             
+      <action name="EpayVan" class="com.action.Epay_VANAction">
+                    
+         <result name="success">/jsp/EpayVan.jsp</result>
+                    
+         <result name="session">/Sessionexpired.html</result>
+                
+      </action>
+             
+      <action name="adharvault" class="com.action.AdharvaultAction">
+                    
+         <result name="success">/jsp/AdharVault.jsp</result>
+                    
+         <result name="session">/Sessionexpired.html</result>
+                
+      </action>
+             
+      <action name="HundreadPercentageFailureservices" class="com.action.HundreadPercentageFailureservicesAction">
+                    
+         <result name="success">/jsp/hundreadpercentagefailure.jsp</result>
+                    
+         <result name="session">/Sessionexpired.html</result>
+                
+      </action>
+             
+      <action name="eisappissue" class="com.action.EISAPPIssueAction" method="execute">
+                    
+         <result name="success">/jsp/EISAPPIssue.jsp</result>
+                
+      </action>
+             
+      <action name="eisusersop" class="com.action.UserSOPMasterAction">
+                    
+         <result name="success">/jsp/UserSopMaster.jsp</result>
+                    
+         <result name="successBank">/jsp/BankSopMaster.jsp</result>
+                    
+         <result name="session">/Sessionexpired.html</result>
+                
+      </action>
+             
+      <action name="showTop20Failureservices" class="com.action.ShowTop20failureServicesAction">
+                    
+         <result name="success">/jsp/showTop20failureservice.jsp</result>
+                
+      </action>
+             
+      <action name="showFailureServicesWise" class="com.action.ShowfailureServicesWiseAction">
+                    
+         <result name="success">/jsp/ShowfailureServiceWise.jsp</result>
+                
+      </action>
+             
+      <action name="showservices" class="com.action.ShowfailureServicesAction">
+                    
+         <result name="success">/jsp/showfailureservice.jsp</result>
+                
+      </action>
+             
+      <action name="monitoringwithdatetime" class="com.action.EXPMonitorPortalWithDateTimeAction">
+                    
+         <result name="success">/jsp/EXPMonitoringPortalwithDatetime.jsp</result>
+                
+      </action>
+             
+      <action name="dpginconsistancy" class="com.action.DpgInconsistancyAction">
+                    
+         <result name="success">/jsp/DpgInconsistancy.jsp</result>
+                    
+         <result name="session">/Sessionexpired.html</result>
+                
+      </action>
+             
+      <action name="yono" class="com.action.YonoDasboardAction">
+                    
+         <result name="success">/jsp/YonoDashboard.jsp</result>
+                    
+         <result name="session">/Sessionexpired.html</result>
+                
+      </action>
+             
+      <action name="apiwisenohitsonserver" class="com.action.ApiwisenohitsonserverAction">
+                    
+         <result name="success">/jsp/Apiwisenohitsserver.jsp</result>
+                    
+         <result name="session">/Sessionexpired.html</result>
+                
+      </action>
+             
+      <action name="apiwisehundreadpercfailonserver" class="com.action.ApiwisehundreadpercfailonserverAction">
+                    
+         <result name="success">/jsp/Apiwisehundreadpercfailonserver.jsp</result>
+                    
+         <result name="session">/Sessionexpired.html</result>
+                
+      </action>
+             
+      <action name="showErrorCodeWiseFailureservices" class="com.action.ShowErrorCodeWiseFailureServicesAction">
+                    
+         <result name="success">/jsp/showErrorCodewisefailureservice.jsp</result>
+                
+      </action>
+             
+      <action name="showNonGen5ErrorCodeWiseFailureservices" class="com.action.ShowNonGen5ErrorCodeWiseFailureServicesAction">
+                    
+         <result name="success">/jsp/showNonGen5ErrorCodeWiseFailureservices.jsp</result>
+                
+      </action>
+             
+      <action name="monitoringstatus" class="com.action.MonitoringStatusAction">
+                    
+         <result name="success">/jsp/MonitoringStatus.jsp</result>
+                    
+         <result name="session">/Sessionexpired.html</result>
+                
+      </action>
+             
+      <action name="autoRefreshApiwisehundreadpercfailonserver" class="com.action.AutoRefreshApiwisehundreadpercfailonserverAction">
+                    
+         <result name="success">/jsp/AutoRefreshApiwisehundreadpercfailonserver.jsp</result>
+                
+      </action>
+             
+      <action name="autoRefreshApiwisehundreadpercfailonNonGen5server" class="com.action.AutoRefreshApiwisehundreadpercfailonNonGen5serverAction">
+                    
+         <result name="success">/jsp/AutoRefreshApiwisehundreadpercfailonNonGen5server.jsp</result>
+                
+      </action>
+             
+      <action name="autoRefreshApiwisenohitsserver" class="com.action.AutoRefreshApiwisenohitsserverAction">
+                    
+         <result name="success">/jsp/AutoRefreshApiwisenohitsserver.jsp</result>
+                
+      </action>
+             
+      <action name="multipleservicewisetdbdperc" class="com.action.MultipleServiceWiseTDBDPercAction">
+                    
+         <result name="success">/jsp/MultipleServiceWiseTDBDPer.jsp</result>
+                    
+         <result name="session">/Sessionexpired.html</result>
+                
+      </action>
+             
+       <action name="deploymentsheet" class="com.action.DeploymentsheetAction">
+                    
+         <result name="success">/jsp/Deploymentsheet.jsp</result>
+                    
+         <result name="session">/Sessionexpired.html</result>
+                
+      </action> 
+             
+      <action name="viewdeploymentsheet" class="com.action.ViewDeploymentsheetAction">
+                    
+         <result name="success">/jsp/ViewDeploymentsheet.jsp</result>
+                    
+         <result name="successbanker">/jsp/ViewDeploymentsheetBanker.jsp</result>
+                    
+         <result name="session">/Sessionexpired.html</result>
+                
+      </action>
+             
+      <action name="EisRegistration" class="com.action.EISRegistrationAction">
+                    
+         <result name="success">/jsp/EISRegistration.jsp</result>
+                    
+         <result name="thanks">/Thanks.html</result>
+                    
+         <result name="session">/Sessionexpired.html</result>
+                
+      </action>
+      
+      <action  name="ViewEisRegistrationDetails" class="com.action.ViewEISRegistrationDetailsAction">
+			<result name="success" >/jsp/ViewEISRegistrationDetails.jsp</result>
+			<result name="session" >/Sessionexpired.html</result>
+		</action>
+         
+   </package>
+</struts>
+
+
+
+-------------------------------------------------------------------------------------
+
+
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+         xmlns="https://jakarta.ee/xml/ns/jakartaee" 
+         xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/web-app_5_0.xsd" 
+         version="5.0">
+         
+  <display-name>EISPortal</display-name>
+  
+  <!-- ============================================================
+       ✅ SESSION CONFIG — 12 HOURS (720 minutes)
+       User ko baar baar login nahi karna padega
+       ============================================================ -->
+  <session-config>
+    <session-timeout>720</session-timeout>
+    <cookie-config>
+      <http-only>true</http-only>
+      <secure>false</secure>
+    </cookie-config>
+    <tracking-mode>COOKIE</tracking-mode>
+  </session-config>
+  
+  <!-- ============================================================
+       STRUTS2 FILTER
+       ============================================================ -->
+  <filter>
+    <filter-name>struts2</filter-name>
+    <filter-class>org.apache.struts2.dispatcher.filter.StrutsPrepareAndExecuteFilter</filter-class>
+  </filter>
+  <filter-mapping>
+    <filter-name>struts2</filter-name>
+    <url-pattern>*.do</url-pattern>
+  </filter-mapping>
+  <filter-mapping>
+    <filter-name>struts2</filter-name>
+    <url-pattern>*.action</url-pattern>
+  </filter-mapping>
+  
+  <!-- ============================================================
+       CORS FILTER
+       ============================================================ -->
+  <filter>
+    <filter-name>CORSFilter</filter-name>
+    <filter-class>com.action.CORSFilter</filter-class>
+  </filter>
+  <filter-mapping>
+    <filter-name>CORSFilter</filter-name>
+    <url-pattern>/*</url-pattern>
+  </filter-mapping>
+  
+  <!-- ============================================================
+       LOGIN CONFIG (LDAP)
+       ============================================================ -->
+  <login-config>
+    <auth-method>BASIC</auth-method>
+    <realm-name>LDAP Realm</realm-name>
+  </login-config>
+  
+  <!-- ============================================================
+       SERVLET: TestServlet (debug.jsp)
+       ============================================================ -->
+  <servlet>
+    <servlet-name>TestServlet</servlet-name>
+    <jsp-file>/debug.jsp</jsp-file>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>TestServlet</servlet-name>
+    <url-pattern>/test</url-pattern>
+  </servlet-mapping>
+  
+  <!-- ============================================================
+       WELCOME FILE LIST
+       ============================================================ -->
+  <welcome-file-list>
+    <welcome-file>index.html</welcome-file>
+    <welcome-file>index.htm</welcome-file>
+    <welcome-file>index.jsp</welcome-file>
+    <welcome-file>default.html</welcome-file>
+    <welcome-file>default.htm</welcome-file>
+    <welcome-file>default.jsp</welcome-file>
+  </welcome-file-list>
+  
+  <!-- ============================================================
+       SERVLET: DocumentDownloadServlet
+       ============================================================ -->
+  <servlet>
+    <description></description>
+    <display-name>DocumentDownloadServlet</display-name>
+    <servlet-name>DocumentDownloadServlet</servlet-name>
+    <servlet-class>com.action.DocumentDownloadServlet</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>DocumentDownloadServlet</servlet-name>
+    <url-pattern>/DocumentDownloadServlet</url-pattern>
+  </servlet-mapping>
+  
+  <!-- ============================================================
+       SERVLET: ViewDeploymentSheetActionServ
+       ============================================================ -->
+  <servlet>
+    <description></description>
+    <display-name>ViewDeploymentSheetActionServ</display-name>
+    <servlet-name>ViewDeploymentSheetActionServ</servlet-name>
+    <servlet-class>com.action.ViewDeploymentSheetActionServ</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>ViewDeploymentSheetActionServ</servlet-name>
+    <url-pattern>/ViewDeploymentSheetActionServ</url-pattern>
+  </servlet-mapping>
+  
+  <!-- ============================================================
+       SERVLET: DeploymentSheetServlet
+       ============================================================ -->
+  <servlet>
+    <description></description>
+    <display-name>DeploymentSheetServlet</display-name>
+    <servlet-name>DeploymentSheetServlet</servlet-name>
+    <servlet-class>com.action.DeploymentSheetServlet</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>DeploymentSheetServlet</servlet-name>
+    <url-pattern>/DeploymentSheetServlet</url-pattern>
+  </servlet-mapping>
+  
+  <!-- ============================================================
+       SERVLET: UpdateMonthlyRosterAction
+       ============================================================ -->
+  <servlet>
+    <description></description>
+    <display-name>UpdateMonthlyRosterAction</display-name>
+    <servlet-name>UpdateMonthlyRosterAction</servlet-name>
+    <servlet-class>com.action.UpdateMonthlyRosterAction</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>UpdateMonthlyRosterAction</servlet-name>
+    <url-pattern>/UpdateMonthlyRosterAction</url-pattern>
+  </servlet-mapping>
+
+</web-app>
