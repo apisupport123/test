@@ -1,321 +1,285 @@
-package com.action;
+package com.actionform;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.struts2.ActionSupport;
-import org.apache.struts2.ServletActionContext;
-import org.apache.struts2.action.Action;
-import org.apache.struts2.dispatcher.mapper.ActionMapping;
 
-import jakarta.servlet.http.HttpServletRequest;
 
-import com.actionform.RegistrationActionForm;
-import com.jdbc.DBUtilityAuto;
+@SuppressWarnings("serial")
+public class RegistrationActionForm extends ActionSupport{
+	private String m_strRole;
+	private String m_strmsg;
+	
+	ArrayList<?> rolelist=new ArrayList<Object>();
+	
+	private File m_strthePhotofile;
+	private File m_strtheBgcfile;
+	private File m_strthePoliceverificationfile;
+	private File m_strtheCvfile;
+	
+	private String m_strUserName;
+	private String m_strPassword;
+	private String m_stremployee_id;
+	private String m_strad_id;
+	private String m_strasset_id;
+	private String m_streduqualification;
+	private String m_strtcsmailid;
+	private String m_strstate;
+	private String m_strcity;
+	private String m_strlocaladdress;
+	
+	private String m_strvpnhostname;
+	private String m_strlaptophostname;
+	private String m_strremotetype;
+	private String m_strvpnmacaddress;
+	private String m_strvpnipaddress;
+	
+	private String m_strfirstName;
+	private String m_strlastName;
+	private String m_strmiddleName;
+	private String m_strisActive;
+	private String m_strhid;
+	private String m_strsbimailid;
+	
+	List<?> m_lstViewEmployeeRegistrationdetail = new ArrayList<Object>();
+	
+	public List<?> getM_lstViewEmployeeRegistrationdetail() {
+		return m_lstViewEmployeeRegistrationdetail;
+	}
 
-@SuppressWarnings({ "serial", "deprecation" })
-public class EISRegistrationAction extends ActionSupport {
+	public void setM_lstViewEmployeeRegistrationdetail(List<?> m_lstViewEmployeeRegistrationdetail) {
+		this.m_lstViewEmployeeRegistrationdetail = m_lstViewEmployeeRegistrationdetail;
+	}
 
-    /** Form bean bound by the framework (setter used by Struts / Spring). */
-    private RegistrationActionForm registrationActionForm;
+	public String getM_strfirstName() {
+		return m_strfirstName;
+	}
 
-    public RegistrationActionForm getRegistrationActionForm() {
-        return registrationActionForm;
-    }
+	public void setM_strfirstName(String m_strfirstName) {
+		this.m_strfirstName = m_strfirstName;
+	}
 
-    public void setRegistrationActionForm(RegistrationActionForm registrationActionForm) {
-        this.registrationActionForm = registrationActionForm;
-    }
+	public String getM_strlastName() {
+		return m_strlastName;
+	}
 
-    // ---------------------------------------------------------------------
-    // Action methods (no-arg, return String) — required by Struts 7
-    // ---------------------------------------------------------------------
+	public void setM_strlastName(String m_strlastName) {
+		this.m_strlastName = m_strlastName;
+	}
 
-    /**
-     * Default entry point (e.g. /EISRegistrationAction.action).
-     * Currently just loads the role list and shows the form.
-     */
-    @Override
-    public String execute() throws Exception {
-        return showregpage();
-    }
+	public String getM_strmiddleName() {
+		return m_strmiddleName;
+	}
 
-    /**
-     * Shows the registration page. Loads the role dropdown.
-     */
-    public String showregpage() throws Exception {
-        RegistrationActionForm form = getOrCreateForm();
-        loadEISRole(form);
-        return "success";
-    }
+	public void setM_strmiddleName(String m_strmiddleName) {
+		this.m_strmiddleName = m_strmiddleName;
+	}
+	
+	public String setM_strisActive() {
+		return m_strisActive;
+	}
 
-    /**
-     * Handles the insert / clear logic. Called when action=insert is submitted.
-     */
-    public String saveRegistration() throws Exception {
-        RegistrationActionForm form = getOrCreateForm();
-        loadEISRole(form);
+	public void setM_strisActive(String m_strisActive) {
+		this.m_strisActive = m_strisActive;
+	}
 
-        HttpServletRequest request = ServletActionContext.getRequest();
-        String actionParam = request.getParameter("action");
+	public String getM_strvpnhostname() {
+		return m_strvpnhostname;
+	}
 
-        if (actionParam == null) {
-            clearForm(form);
-            return "success";
-        }
+	public void setM_strvpnhostname(String m_strvpnhostname) {
+		this.m_strvpnhostname = m_strvpnhostname;
+	}
 
-        if (!"insert".equals(actionParam)) {
-            clearForm(form);
-            return "success";
-        }
+	public String getM_strlaptophostname() {
+		return m_strlaptophostname;
+	}
 
-        // ---- INSERT path ----
-        Connection con = null;
-        PreparedStatement psEmp = null;
-        PreparedStatement psRoster = null;
-        Statement checkSt = null;
-        ResultSet checkRs = null;
+	public void setM_strlaptophostname(String m_strlaptophostname) {
+		this.m_strlaptophostname = m_strlaptophostname;
+	}
 
-        try {
-            con = DBUtilityAuto.getReportDBConnection();
+	public String getM_strremotetype() {
+		return m_strremotetype;
+	}
 
-            // Duplicate check
-            String countQuery = "select count(*) from eisupport_employee_master where EMPLOYEE_ID='"
-                    + request.getParameter("m_stremployee_id") + "'";
-            checkSt = con.createStatement();
-            checkRs = checkSt.executeQuery(countQuery);
-            int count = 0;
-            if (checkRs != null && checkRs.next()) {
-                count = checkRs.getInt(1);
-            }
+	public void setM_strremotetype(String m_strremotetype) {
+		this.m_strremotetype = m_strremotetype;
+	}
 
-            if (count > 0) {
-                form.setM_strmsg("duplicate");
-                return "success";
-            }
+	public String getM_strvpnmacaddress() {
+		return m_strvpnmacaddress;
+	}
 
-            // ---- Upload files (Struts 2/7 file-upload fields) ----
-            String photoPath = "", bgcPath = "", policePath = "", cvPath = "";
-            String baseUpload = System.getProperty("catalina.base")
-                    + "/webapps/EISPortal/EISEMPLOYEEDOCUMENT/";
+	public void setM_strvpnmacaddress(String m_strvpnmacaddress) {
+		this.m_strvpnmacaddress = m_strvpnmacaddress;
+	}
 
-            if (form.getM_strthePhotofile() != null && form.getM_strthePhotofile().length() > 0) {
-                photoPath = uploadFile(form.getM_strthePhotofileFileName(),
-                        form.getM_strthePhotofile(), baseUpload + "PHOTO/", form);
-            }
-            if (form.getM_strtheBgcfile() != null && form.getM_strtheBgcfile().length() > 0) {
-                bgcPath = uploadFile(form.getM_strtheBgcfileFileName(),
-                        form.getM_strtheBgcfile(), baseUpload + "BGC/", form);
-            }
-            if (form.getM_strthePoliceverificationfile() != null
-                    && form.getM_strthePoliceverificationfile().length() > 0) {
-                policePath = uploadFile(form.getM_strthePoliceverificationfileFileName(),
-                        form.getM_strthePoliceverificationfile(), baseUpload + "Police/", form);
-            }
-            if (form.getM_strtheCvfile() != null && form.getM_strtheCvfile().length() > 0) {
-                cvPath = uploadFile(form.getM_strtheCvfileFileName(),
-                        form.getM_strtheCvfile(), baseUpload + "CV/", form);
-            }
+	public String getM_strvpnipaddress() {
+		return m_strvpnipaddress;
+	}
 
-            // ---- Insert into eisupport_employee_master ----
-            String sqlInsert =
-                    "INSERT INTO eisupport_employee_master ("
-                  + "EMPLOYEE_ID,AD_ID,ASSET_ID,EDU_QUALIFICATION,TCS_JOINING_DATE,CONTACTNUMBER,"
-                  + "EMERGENCY_CONTACTNUMBER,TEAM,TCS_MAILID,STATE,CITY,LOCAL_ADDRESS,GENDER,DOB,FIRSTNAME,"
-                  + "MIDDLENAME,LASTNAME,VPN_HOSTNAME,LAPTOP_HOSTNAME,REMOTETYPE,VPN_VDI_MACADDRESS,"
-                  + "VPN_VDI_IPADDRESS,CV_DOCUMENT_PATH,BGC_DOCUMENT_PATH,PHOTO_PATH,POLICE_VERIFICATION_PATH,"
-                  + "USERNAME,PASSWORD,HID,SBI_MAILID) "
-                  + "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+	public void setM_strvpnipaddress(String m_strvpnipaddress) {
+		this.m_strvpnipaddress = m_strvpnipaddress;
+	}
 
-            psEmp = con.prepareStatement(sqlInsert);
-            bindInsertParams(psEmp, request, cvPath, bgcPath, photoPath, policePath);
-            psEmp.addBatch();
-            psEmp.executeBatch();
+	public String getM_strtcsmailid() {
+		return m_strtcsmailid;
+	}
 
-            // ---- Insert into roster_employee_details ----
-            String sqlRoster =
-                    "INSERT INTO roster_employee_details ("
-                  + "EMPLOYEE_ID,AD_ID,ASSET_ID,EDU_QUALIFICATION,TCS_JOINING_DATE,CONTACTNUMBER,"
-                  + "EMERGENCY_CONTACTNUMBER,TEAM,TCS_MAILID,STATE,CITY,LOCAL_ADDRESS,GENDER,DOB,FIRSTNAME,"
-                  + "MIDDLENAME,LASTNAME,VPN_HOSTNAME,LAPTOP_HOSTNAME,REMOTETYPE,VPN_VDI_MACADDRESS,"
-                  + "VPN_VDI_IPADDRESS,CV_DOCUMENT_PATH,BGC_DOCUMENT_PATH,PHOTO_PATH,POLICE_VERIFICATION_PATH,"
-                  + "USERNAME,PASSWORD,HID,SBI_MAILID) "
-                  + "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+	public void setM_strtcsmailid(String m_strtcsmailid) {
+		this.m_strtcsmailid = m_strtcsmailid;
+	}
 
-            psRoster = con.prepareStatement(sqlRoster);
-            bindInsertParams(psRoster, request, cvPath, bgcPath, photoPath, policePath);
-            psRoster.addBatch();
-            psRoster.executeBatch();
+	public String getM_strstate() {
+		return m_strstate;
+	}
 
-            System.out.println("Updated in Roster Employee Table");
+	public void setM_strstate(String m_strstate) {
+		this.m_strstate = m_strstate;
+	}
 
-            clearForm(form);
-            return "thanks";
+	public String getM_strcity() {
+		return m_strcity;
+	}
 
-        } catch (Exception e) {
-            e.printStackTrace();
-            form.setM_strmsg("error");
-            return "success";
-        } finally {
-            closeQuietly(checkRs, checkSt, psEmp, psRoster, con);
-        }
-    }
+	public void setM_strcity(String m_strcity) {
+		this.m_strcity = m_strcity;
+	}
 
-    // ---------------------------------------------------------------------
-    // Helpers
-    // ---------------------------------------------------------------------
+	public String getM_strlocaladdress() {
+		return m_strlocaladdress;
+	}
 
-    private RegistrationActionForm getOrCreateForm() {
-        if (registrationActionForm == null) {
-            registrationActionForm = new RegistrationActionForm();
-        }
-        return registrationActionForm;
-    }
+	public void setM_strlocaladdress(String m_strlocaladdress) {
+		this.m_strlocaladdress = m_strlocaladdress;
+	}
 
-    private void bindInsertParams(PreparedStatement ps, HttpServletRequest request,
-                                  String cvPath, String bgcPath, String photoPath, String policePath)
-            throws SQLException {
-        ps.setObject(1,  request.getParameter("m_stremployee_id"));
-        ps.setObject(2,  request.getParameter("m_strad_id"));
-        ps.setObject(3,  request.getParameter("m_strasset_id"));
-        ps.setObject(4,  request.getParameter("m_streduqualification"));
-        ps.setObject(5,  request.getParameter("m_strtcsjoiningdate"));
-        ps.setObject(6,  request.getParameter("m_strcontactno"));
-        ps.setObject(7,  request.getParameter("m_stremergencycontactno"));
-        ps.setObject(8,  request.getParameter("m_strRole"));
-        ps.setObject(9,  request.getParameter("m_strtcsmailid"));
-        ps.setObject(10, request.getParameter("m_strstate"));
-        ps.setObject(11, request.getParameter("m_strcity"));
-        ps.setObject(12, request.getParameter("m_strlocaladdress"));
-        ps.setObject(13, request.getParameter("m_strgender"));
-        ps.setObject(14, request.getParameter("m_strdob"));
-        ps.setObject(15, request.getParameter("m_strfirstName"));
-        ps.setObject(16, request.getParameter("m_strmiddleName"));
-        ps.setObject(17, request.getParameter("m_strlastName"));
-        ps.setObject(18, request.getParameter("m_strvpnhostname"));
-        ps.setObject(19, request.getParameter("m_strlaptophostname"));
-        ps.setObject(20, request.getParameter("m_strremotetype"));
-        ps.setObject(21, request.getParameter("m_strvpnmacaddress"));
-        ps.setObject(22, request.getParameter("m_strvpnipaddress"));
-        ps.setObject(23, cvPath);
-        ps.setObject(24, bgcPath);
-        ps.setObject(25, photoPath);
-        ps.setObject(26, policePath);
-        ps.setObject(27, request.getParameter("m_strUserName"));
-        ps.setObject(28, request.getParameter("m_strPassword"));
-        ps.setObject(29, request.getParameter("m_strhid"));
-        ps.setObject(30, request.getParameter("m_strsbimailid"));
-    }
+	public String getM_streduqualification() {
+		return m_streduqualification;
+	}
 
-    private void clearForm(RegistrationActionForm l_obj) {
-        try {
-            l_obj.setM_strthePhotofile(null);
-            l_obj.setM_strtheBgcfile(null);
-            l_obj.setM_strthePoliceverificationfile(null);
-            l_obj.setM_strtheCvfile(null);
-            l_obj.setM_strUserName("");
-            l_obj.setM_strPassword("");
-            l_obj.setM_stremployee_id("");
-            l_obj.setM_strad_id("");
-            l_obj.setM_strasset_id("");
-            l_obj.setM_streduqualification("Select Education Qualification");
-            l_obj.setM_strtcsmailid("");
-            l_obj.setM_strsbimailid("");
-            l_obj.setM_strhid("");
-            l_obj.setM_strstate("Select State");
-            l_obj.setM_strRole("Select Role");
-            l_obj.setM_strcity("");
-            l_obj.setM_strlocaladdress("");
-            l_obj.setM_strvpnhostname("");
-            l_obj.setM_strlaptophostname("");
-            l_obj.setM_strremotetype("NONE");
-            l_obj.setM_strvpnmacaddress("");
-            l_obj.setM_strvpnipaddress("");
-            l_obj.setM_strfirstName("");
-            l_obj.setM_strlastName("");
-            l_obj.setM_strmiddleName("");
-            l_obj.setM_strmsg("");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
+	public void setM_streduqualification(String m_streduqualification) {
+		this.m_streduqualification = m_streduqualification;
+	}
 
-    /**
-     * Saves the uploaded file to disk and returns the generated file name.
-     */
-    private static String uploadFile(String originalName, File uploadedFile,
-                                     String directoryPath, RegistrationActionForm l_obj) {
-        String newFileName = "";
-        InputStream in = null;
-        OutputStream out = null;
-        try {
-            if (originalName == null || originalName.indexOf('.') < 0) {
-                return "";
-            }
-            String base = originalName.substring(0, originalName.indexOf('.'));
-            String ext  = originalName.substring(originalName.indexOf('.'));
-            newFileName = Math.random() + "_" + base + ext;
+	public String getM_stremployee_id() {
+		return m_stremployee_id;
+	}
 
-            File dir = new File(directoryPath);
-            if (!dir.isDirectory()) {
-                dir.mkdirs();
-            }
+	public void setM_stremployee_id(String m_stremployee_id) {
+		this.m_stremployee_id = m_stremployee_id;
+	}
 
-            in = new FileInputStream(uploadedFile);
-            out = new FileOutputStream(directoryPath + newFileName);
+	public String getM_strad_id() {
+		return m_strad_id;
+	}
 
-            byte[] buffer = new byte[8192];
-            int len;
-            while ((len = in.read(buffer)) != -1) {
-                out.write(buffer, 0, len);
-            }
-        } catch (Exception e) {
-            l_obj.setM_strmsg("Error");
-            e.printStackTrace();
-        } finally {
-            try { if (in  != null) in.close();  } catch (Exception ignore) {}
-            try { if (out != null) out.close(); } catch (Exception ignore) {}
-        }
-        return newFileName;
-    }
+	public void setM_strad_id(String m_strad_id) {
+		this.m_strad_id = m_strad_id;
+	}
 
-    private void loadEISRole(RegistrationActionForm l_obj) {
-        Connection con = null;
-        Statement st = null;
-        ResultSet rs = null;
-        try {
-            con = DBUtilityAuto.getReportDBConnection();
-            ArrayList<String> list = new ArrayList<>();
-            list.add(0, "Select Role");
-            st = con.createStatement();
-            rs = st.executeQuery("select rolename from rolemst");
-            while (rs.next()) {
-                list.add(rs.getString("rolename"));
-            }
-            l_obj.setRolelist(list);
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            closeQuietly(rs, st, null, null, con);
-        }
-    }
+	public String getM_strasset_id() {
+		return m_strasset_id;
+	}
 
-    private static void closeQuietly(ResultSet rs, Statement st,
-                                     PreparedStatement ps1, PreparedStatement ps2,
-                                     Connection con) {
-        try { if (rs  != null) rs.close();  } catch (Exception ignore) {}
-        try { if (st  != null) st.close();  } catch (Exception ignore) {}
-        try { if (ps1 != null) ps1.close(); } catch (Exception ignore) {}
-        try { if (ps2 != null) ps2.close(); } catch (Exception ignore) {}
-        try { if (con != null) con.close(); } catch (Exception ignore) {}
-    }
+	public void setM_strasset_id(String m_strasset_id) {
+		this.m_strasset_id = m_strasset_id;
+	}
+
+	public String getM_strUserName() {
+		return m_strUserName;
+	}
+
+	public void setM_strUserName(String m_strUserName) {
+		this.m_strUserName = m_strUserName;
+	}
+
+	public String getM_strPassword() {
+		return m_strPassword;
+	}
+
+	public void setM_strPassword(String m_strPassword) {
+		this.m_strPassword = m_strPassword;
+	}
+
+	public String getM_strmsg() {
+		return m_strmsg;
+	}
+
+	public void setM_strmsg(String m_strmsg) {
+		this.m_strmsg = m_strmsg;
+	}
+
+
+
+	public String getM_strRole() {
+		return m_strRole;
+	}
+
+	public void setM_strRole(String m_strRole) {
+		this.m_strRole = m_strRole;
+	}
+
+	public ArrayList<?> getRolelist() {
+		return rolelist;
+	}
+
+	public void setRolelist(ArrayList<?> rolelist) {
+		
+
+		this.rolelist = rolelist;
+	}
+
+	public File getM_strthePhotofile() {
+		return m_strthePhotofile;
+	}
+
+	public void setM_strthePhotofile(File m_strthePhotofile) {
+		this.m_strthePhotofile = m_strthePhotofile;
+	}
+
+	public File getM_strtheBgcfile() {
+		return m_strtheBgcfile;
+	}
+
+	public void setM_strtheBgcfile(File m_strtheBgcfile) {
+		this.m_strtheBgcfile = m_strtheBgcfile;
+	}
+
+	public File getM_strthePoliceverificationfile() {
+		return m_strthePoliceverificationfile;
+	}
+
+	public void setM_strthePoliceverificationfile(File m_strthePoliceverificationfile) {
+		this.m_strthePoliceverificationfile = m_strthePoliceverificationfile;
+	}
+
+	public File getM_strtheCvfile() {
+		return m_strtheCvfile;
+	}
+
+	public void setM_strtheCvfile(File m_strtheCvfile) {
+		this.m_strtheCvfile = m_strtheCvfile;
+	}
+
+	public String getM_strhid() {
+		return m_strhid;
+	}
+
+	public void setM_strhid(String m_strhid) {
+		this.m_strhid = m_strhid;
+	}
+
+	public String getM_strsbimailid() {
+		return m_strsbimailid;
+	}
+
+	public void setM_strsbimailid(String m_strsbimailid) {
+		this.m_strsbimailid = m_strsbimailid;
+	}
+	
+
 }
