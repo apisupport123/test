@@ -6,280 +6,423 @@ import java.util.List;
 
 import org.apache.struts2.ActionSupport;
 
-
 @SuppressWarnings("serial")
-public class RegistrationActionForm extends ActionSupport{
-	private String m_strRole;
-	private String m_strmsg;
-	
-	ArrayList<?> rolelist=new ArrayList<Object>();
-	
-	private File m_strthePhotofile;
-	private File m_strtheBgcfile;
-	private File m_strthePoliceverificationfile;
-	private File m_strtheCvfile;
-	
-	private String m_strUserName;
-	private String m_strPassword;
-	private String m_stremployee_id;
-	private String m_strad_id;
-	private String m_strasset_id;
-	private String m_streduqualification;
-	private String m_strtcsmailid;
-	private String m_strstate;
-	private String m_strcity;
-	private String m_strlocaladdress;
-	
-	private String m_strvpnhostname;
-	private String m_strlaptophostname;
-	private String m_strremotetype;
-	private String m_strvpnmacaddress;
-	private String m_strvpnipaddress;
-	
-	private String m_strfirstName;
-	private String m_strlastName;
-	private String m_strmiddleName;
-	private String m_strisActive;
-	private String m_strhid;
-	private String m_strsbimailid;
-	
-	List<?> m_lstViewEmployeeRegistrationdetail = new ArrayList<Object>();
-	
-	public List<?> getM_lstViewEmployeeRegistrationdetail() {
-		return m_lstViewEmployeeRegistrationdetail;
-	}
+public class RegistrationActionForm extends ActionSupport {
 
-	public void setM_lstViewEmployeeRegistrationdetail(List<?> m_lstViewEmployeeRegistrationdetail) {
-		this.m_lstViewEmployeeRegistrationdetail = m_lstViewEmployeeRegistrationdetail;
-	}
+    // ---- Role / messages ----
+    private String m_strRole;
+    private String m_strmsg;
 
-	public String getM_strfirstName() {
-		return m_strfirstName;
-	}
+    // Role dropdown (kept as ArrayList<?> for compatibility with your existing code;
+    // ideally change to ArrayList<String> — see note at bottom).
+    private ArrayList<?> rolelist = new ArrayList<Object>();
 
-	public void setM_strfirstName(String m_strfirstName) {
-		this.m_strfirstName = m_strfirstName;
-	}
+    // ---- File uploads: Struts 2/7 requires 3 fields per file ----
+    private File   m_strthePhotofile;
+    private String m_strthePhotofileFileName;
+    private String m_strthePhotofileContentType;
 
-	public String getM_strlastName() {
-		return m_strlastName;
-	}
+    private File   m_strtheBgcfile;
+    private String m_strtheBgcfileFileName;
+    private String m_strtheBgcfileContentType;
 
-	public void setM_strlastName(String m_strlastName) {
-		this.m_strlastName = m_strlastName;
-	}
+    private File   m_strthePoliceverificationfile;
+    private String m_strthePoliceverificationfileFileName;
+    private String m_strthePoliceverificationfileContentType;
 
-	public String getM_strmiddleName() {
-		return m_strmiddleName;
-	}
+    private File   m_strtheCvfile;
+    private String m_strtheCvfileFileName;
+    private String m_strtheCvfileContentType;
 
-	public void setM_strmiddleName(String m_strmiddleName) {
-		this.m_strmiddleName = m_strmiddleName;
-	}
-	
-	public String setM_strisActive() {
-		return m_strisActive;
-	}
+    // ---- User credentials ----
+    private String m_strUserName;
+    private String m_strPassword;
 
-	public void setM_strisActive(String m_strisActive) {
-		this.m_strisActive = m_strisActive;
-	}
+    // ---- Employee identity ----
+    private String m_stremployee_id;
+    private String m_strad_id;
+    private String m_strasset_id;
+    private String m_streduqualification;
 
-	public String getM_strvpnhostname() {
-		return m_strvpnhostname;
-	}
+    // ---- Joining / contact (used by your action's INSERT) ----
+    private String m_strtcsjoiningdate;
+    private String m_strcontactno;
+    private String m_stremergencycontactno;
 
-	public void setM_strvpnhostname(String m_strvpnhostname) {
-		this.m_strvpnhostname = m_strvpnhostname;
-	}
+    // ---- Contact / address ----
+    private String m_strtcsmailid;
+    private String m_strsbimailid;
+    private String m_strstate;
+    private String m_strcity;
+    private String m_strlocaladdress;
 
-	public String getM_strlaptophostname() {
-		return m_strlaptophostname;
-	}
+    // ---- Personal ----
+    private String m_strgender;
+    private String m_strdob;
+    private String m_strfirstName;
+    private String m_strmiddleName;
+    private String m_strlastName;
+    private String m_strisActive;
 
-	public void setM_strlaptophostname(String m_strlaptophostname) {
-		this.m_strlaptophostname = m_strlaptophostname;
-	}
+    // ---- VPN / laptop ----
+    private String m_strvpnhostname;
+    private String m_strlaptophostname;
+    private String m_strremotetype;
+    private String m_strvpnmacaddress;
+    private String m_strvpnipaddress;
 
-	public String getM_strremotetype() {
-		return m_strremotetype;
-	}
+    // ---- Extra ----
+    private String m_strhid;
 
-	public void setM_strremotetype(String m_strremotetype) {
-		this.m_strremotetype = m_strremotetype;
-	}
+    // ---- View data ----
+    private List<?> m_lstViewEmployeeRegistrationdetail = new ArrayList<Object>();
 
-	public String getM_strvpnmacaddress() {
-		return m_strvpnmacaddress;
-	}
+    // =====================================================================
+    // Getters / Setters
+    // =====================================================================
 
-	public void setM_strvpnmacaddress(String m_strvpnmacaddress) {
-		this.m_strvpnmacaddress = m_strvpnmacaddress;
-	}
+    public List<?> getM_lstViewEmployeeRegistrationdetail() {
+        return m_lstViewEmployeeRegistrationdetail;
+    }
 
-	public String getM_strvpnipaddress() {
-		return m_strvpnipaddress;
-	}
+    public void setM_lstViewEmployeeRegistrationdetail(List<?> m_lstViewEmployeeRegistrationdetail) {
+        this.m_lstViewEmployeeRegistrationdetail = m_lstViewEmployeeRegistrationdetail;
+    }
 
-	public void setM_strvpnipaddress(String m_strvpnipaddress) {
-		this.m_strvpnipaddress = m_strvpnipaddress;
-	}
+    public String getM_strfirstName() {
+        return m_strfirstName;
+    }
 
-	public String getM_strtcsmailid() {
-		return m_strtcsmailid;
-	}
+    public void setM_strfirstName(String m_strfirstName) {
+        this.m_strfirstName = m_strfirstName;
+    }
 
-	public void setM_strtcsmailid(String m_strtcsmailid) {
-		this.m_strtcsmailid = m_strtcsmailid;
-	}
+    public String getM_strlastName() {
+        return m_strlastName;
+    }
 
-	public String getM_strstate() {
-		return m_strstate;
-	}
+    public void setM_strlastName(String m_strlastName) {
+        this.m_strlastName = m_strlastName;
+    }
 
-	public void setM_strstate(String m_strstate) {
-		this.m_strstate = m_strstate;
-	}
+    public String getM_strmiddleName() {
+        return m_strmiddleName;
+    }
 
-	public String getM_strcity() {
-		return m_strcity;
-	}
+    public void setM_strmiddleName(String m_strmiddleName) {
+        this.m_strmiddleName = m_strmiddleName;
+    }
 
-	public void setM_strcity(String m_strcity) {
-		this.m_strcity = m_strcity;
-	}
+    // FIXED: was public String setM_strisActive() — setters must return void
+    public String getM_strisActive() {
+        return m_strisActive;
+    }
 
-	public String getM_strlocaladdress() {
-		return m_strlocaladdress;
-	}
+    public void setM_strisActive(String m_strisActive) {
+        this.m_strisActive = m_strisActive;
+    }
 
-	public void setM_strlocaladdress(String m_strlocaladdress) {
-		this.m_strlocaladdress = m_strlocaladdress;
-	}
+    public String getM_strvpnhostname() {
+        return m_strvpnhostname;
+    }
 
-	public String getM_streduqualification() {
-		return m_streduqualification;
-	}
+    public void setM_strvpnhostname(String m_strvpnhostname) {
+        this.m_strvpnhostname = m_strvpnhostname;
+    }
 
-	public void setM_streduqualification(String m_streduqualification) {
-		this.m_streduqualification = m_streduqualification;
-	}
+    public String getM_strlaptophostname() {
+        return m_strlaptophostname;
+    }
 
-	public String getM_stremployee_id() {
-		return m_stremployee_id;
-	}
+    public void setM_strlaptophostname(String m_strlaptophostname) {
+        this.m_strlaptophostname = m_strlaptophostname;
+    }
 
-	public void setM_stremployee_id(String m_stremployee_id) {
-		this.m_stremployee_id = m_stremployee_id;
-	}
+    public String getM_strremotetype() {
+        return m_strremotetype;
+    }
 
-	public String getM_strad_id() {
-		return m_strad_id;
-	}
+    public void setM_strremotetype(String m_strremotetype) {
+        this.m_strremotetype = m_strremotetype;
+    }
 
-	public void setM_strad_id(String m_strad_id) {
-		this.m_strad_id = m_strad_id;
-	}
+    public String getM_strvpnmacaddress() {
+        return m_strvpnmacaddress;
+    }
 
-	public String getM_strasset_id() {
-		return m_strasset_id;
-	}
+    public void setM_strvpnmacaddress(String m_strvpnmacaddress) {
+        this.m_strvpnmacaddress = m_strvpnmacaddress;
+    }
 
-	public void setM_strasset_id(String m_strasset_id) {
-		this.m_strasset_id = m_strasset_id;
-	}
+    public String getM_strvpnipaddress() {
+        return m_strvpnipaddress;
+    }
 
-	public String getM_strUserName() {
-		return m_strUserName;
-	}
+    public void setM_strvpnipaddress(String m_strvpnipaddress) {
+        this.m_strvpnipaddress = m_strvpnipaddress;
+    }
 
-	public void setM_strUserName(String m_strUserName) {
-		this.m_strUserName = m_strUserName;
-	}
+    public String getM_strtcsmailid() {
+        return m_strtcsmailid;
+    }
 
-	public String getM_strPassword() {
-		return m_strPassword;
-	}
+    public void setM_strtcsmailid(String m_strtcsmailid) {
+        this.m_strtcsmailid = m_strtcsmailid;
+    }
 
-	public void setM_strPassword(String m_strPassword) {
-		this.m_strPassword = m_strPassword;
-	}
+    public String getM_strstate() {
+        return m_strstate;
+    }
 
-	public String getM_strmsg() {
-		return m_strmsg;
-	}
+    public void setM_strstate(String m_strstate) {
+        this.m_strstate = m_strstate;
+    }
 
-	public void setM_strmsg(String m_strmsg) {
-		this.m_strmsg = m_strmsg;
-	}
+    public String getM_strcity() {
+        return m_strcity;
+    }
 
+    public void setM_strcity(String m_strcity) {
+        this.m_strcity = m_strcity;
+    }
 
+    public String getM_strlocaladdress() {
+        return m_strlocaladdress;
+    }
 
-	public String getM_strRole() {
-		return m_strRole;
-	}
+    public void setM_strlocaladdress(String m_strlocaladdress) {
+        this.m_strlocaladdress = m_strlocaladdress;
+    }
 
-	public void setM_strRole(String m_strRole) {
-		this.m_strRole = m_strRole;
-	}
+    public String getM_streduqualification() {
+        return m_streduqualification;
+    }
 
-	public ArrayList<?> getRolelist() {
-		return rolelist;
-	}
+    public void setM_streduqualification(String m_streduqualification) {
+        this.m_streduqualification = m_streduqualification;
+    }
 
-	public void setRolelist(ArrayList<?> rolelist) {
-		
+    public String getM_stremployee_id() {
+        return m_stremployee_id;
+    }
 
-		this.rolelist = rolelist;
-	}
+    public void setM_stremployee_id(String m_stremployee_id) {
+        this.m_stremployee_id = m_stremployee_id;
+    }
 
-	public File getM_strthePhotofile() {
-		return m_strthePhotofile;
-	}
+    public String getM_strad_id() {
+        return m_strad_id;
+    }
 
-	public void setM_strthePhotofile(File m_strthePhotofile) {
-		this.m_strthePhotofile = m_strthePhotofile;
-	}
+    public void setM_strad_id(String m_strad_id) {
+        this.m_strad_id = m_strad_id;
+    }
 
-	public File getM_strtheBgcfile() {
-		return m_strtheBgcfile;
-	}
+    public String getM_strasset_id() {
+        return m_strasset_id;
+    }
 
-	public void setM_strtheBgcfile(File m_strtheBgcfile) {
-		this.m_strtheBgcfile = m_strtheBgcfile;
-	}
+    public void setM_strasset_id(String m_strasset_id) {
+        this.m_strasset_id = m_strasset_id;
+    }
 
-	public File getM_strthePoliceverificationfile() {
-		return m_strthePoliceverificationfile;
-	}
+    public String getM_strUserName() {
+        return m_strUserName;
+    }
 
-	public void setM_strthePoliceverificationfile(File m_strthePoliceverificationfile) {
-		this.m_strthePoliceverificationfile = m_strthePoliceverificationfile;
-	}
+    public void setM_strUserName(String m_strUserName) {
+        this.m_strUserName = m_strUserName;
+    }
 
-	public File getM_strtheCvfile() {
-		return m_strtheCvfile;
-	}
+    public String getM_strPassword() {
+        return m_strPassword;
+    }
 
-	public void setM_strtheCvfile(File m_strtheCvfile) {
-		this.m_strtheCvfile = m_strtheCvfile;
-	}
+    public void setM_strPassword(String m_strPassword) {
+        this.m_strPassword = m_strPassword;
+    }
 
-	public String getM_strhid() {
-		return m_strhid;
-	}
+    public String getM_strmsg() {
+        return m_strmsg;
+    }
 
-	public void setM_strhid(String m_strhid) {
-		this.m_strhid = m_strhid;
-	}
+    public void setM_strmsg(String m_strmsg) {
+        this.m_strmsg = m_strmsg;
+    }
 
-	public String getM_strsbimailid() {
-		return m_strsbimailid;
-	}
+    public String getM_strRole() {
+        return m_strRole;
+    }
 
-	public void setM_strsbimailid(String m_strsbimailid) {
-		this.m_strsbimailid = m_strsbimailid;
-	}
-	
+    public void setM_strRole(String m_strRole) {
+        this.m_strRole = m_strRole;
+    }
 
+    public ArrayList<?> getRolelist() {
+        return rolelist;
+    }
+
+    public void setRolelist(ArrayList<?> rolelist) {
+        this.rolelist = rolelist;
+    }
+
+    // ---- Extra fields used by the action's INSERT ----
+
+    public String getM_strtcsjoiningdate() {
+        return m_strtcsjoiningdate;
+    }
+
+    public void setM_strtcsjoiningdate(String m_strtcsjoiningdate) {
+        this.m_strtcsjoiningdate = m_strtcsjoiningdate;
+    }
+
+    public String getM_strcontactno() {
+        return m_strcontactno;
+    }
+
+    public void setM_strcontactno(String m_strcontactno) {
+        this.m_strcontactno = m_strcontactno;
+    }
+
+    public String getM_stremergencycontactno() {
+        return m_stremergencycontactno;
+    }
+
+    public void setM_stremergencycontactno(String m_stremergencycontactno) {
+        this.m_stremergencycontactno = m_stremergencycontactno;
+    }
+
+    public String getM_strgender() {
+        return m_strgender;
+    }
+
+    public void setM_strgender(String m_strgender) {
+        this.m_strgender = m_strgender;
+    }
+
+    public String getM_strdob() {
+        return m_strdob;
+    }
+
+    public void setM_strdob(String m_strdob) {
+        this.m_strdob = m_strdob;
+    }
+
+    // =====================================================================
+    // File upload getters / setters (3 fields per file)
+    // =====================================================================
+
+    public File getM_strthePhotofile() {
+        return m_strthePhotofile;
+    }
+
+    public void setM_strthePhotofile(File m_strthePhotofile) {
+        this.m_strthePhotofile = m_strthePhotofile;
+    }
+
+    public String getM_strthePhotofileFileName() {
+        return m_strthePhotofileFileName;
+    }
+
+    public void setM_strthePhotofileFileName(String m_strthePhotofileFileName) {
+        this.m_strthePhotofileFileName = m_strthePhotofileFileName;
+    }
+
+    public String getM_strthePhotofileContentType() {
+        return m_strthePhotofileContentType;
+    }
+
+    public void setM_strthePhotofileContentType(String m_strthePhotofileContentType) {
+        this.m_strthePhotofileContentType = m_strthePhotofileContentType;
+    }
+
+    public File getM_strtheBgcfile() {
+        return m_strtheBgcfile;
+    }
+
+    public void setM_strtheBgcfile(File m_strtheBgcfile) {
+        this.m_strtheBgcfile = m_strtheBgcfile;
+    }
+
+    public String getM_strtheBgcfileFileName() {
+        return m_strtheBgcfileFileName;
+    }
+
+    public void setM_strtheBgcfileFileName(String m_strtheBgcfileFileName) {
+        this.m_strtheBgcfileFileName = m_strtheBgcfileFileName;
+    }
+
+    public String getM_strtheBgcfileContentType() {
+        return m_strtheBgcfileContentType;
+    }
+
+    public void setM_strtheBgcfileContentType(String m_strtheBgcfileContentType) {
+        this.m_strtheBgcfileContentType = m_strtheBgcfileContentType;
+    }
+
+    public File getM_strthePoliceverificationfile() {
+        return m_strthePoliceverificationfile;
+    }
+
+    public void setM_strthePoliceverificationfile(File m_strthePoliceverificationfile) {
+        this.m_strthePoliceverificationfile = m_strthePoliceverificationfile;
+    }
+
+    public String getM_strthePoliceverificationfileFileName() {
+        return m_strthePoliceverificationfileFileName;
+    }
+
+    public void setM_strthePoliceverificationfileFileName(String m_strthePoliceverificationfileFileName) {
+        this.m_strthePoliceverificationfileFileName = m_strthePoliceverificationfileFileName;
+    }
+
+    public String getM_strthePoliceverificationfileContentType() {
+        return m_strthePoliceverificationfileContentType;
+    }
+
+    public void setM_strthePoliceverificationfileContentType(String m_strthePoliceverificationfileContentType) {
+        this.m_strthePoliceverificationfileContentType = m_strthePoliceverificationfileContentType;
+    }
+
+    public File getM_strtheCvfile() {
+        return m_strtheCvfile;
+    }
+
+    public void setM_strtheCvfile(File m_strtheCvfile) {
+        this.m_strtheCvfile = m_strtheCvfile;
+    }
+
+    public String getM_strtheCvfileFileName() {
+        return m_strtheCvfileFileName;
+    }
+
+    public void setM_strtheCvfileFileName(String m_strtheCvfileFileName) {
+        this.m_strtheCvfileFileName = m_strtheCvfileFileName;
+    }
+
+    public String getM_strtheCvfileContentType() {
+        return m_strtheCvfileContentType;
+    }
+
+    public void setM_strtheCvfileContentType(String m_strtheCvfileContentType) {
+        this.m_strtheCvfileContentType = m_strtheCvfileContentType;
+    }
+
+    // ---- Extra ----
+
+    public String getM_strhid() {
+        return m_strhid;
+    }
+
+    public void setM_strhid(String m_strhid) {
+        this.m_strhid = m_strhid;
+    }
+
+    public String getM_strsbimailid() {
+        return m_strsbimailid;
+    }
+
+    public void setM_strsbimailid(String m_strsbimailid) {
+        this.m_strsbimailid = m_strsbimailid;
+    }
 }
