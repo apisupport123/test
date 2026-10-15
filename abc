@@ -1,804 +1,115 @@
-ViewEISRegistrationDetailsActionNew.java
-
-package com.action;
-
-import jakarta.servlet.RequestDispatcher;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-
-import java.io.IOException;
-import java.sql.Blob;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.List;
-
-import com.actionform.RegistrationActionForm;
-import com.jdbc.DBUtilityAuto;
-import com.beans.EmployeeDetailsBean;
-
-@WebServlet("/ViewEISRegistrationDetailsActionNew")
-public class ViewEISRegistrationDetailsActionNew extends HttpServlet {
-
-    private static final long serialVersionUID = 1L;
-
-    public ViewEISRegistrationDetailsActionNew() {
-        super();
-    }
-
-    @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        processRequest(request, response);
-    }
-
-    @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        processRequest(request, response);
-    }
-
-    protected void processRequest(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-
-        System.out.println("========== ViewEISRegistrationDetailsActionNew ==========");
-
-        RegistrationActionForm regForm = new RegistrationActionForm();
-        regForm.setM_strmsg("");
-
-        String action = request.getParameter("action");
-        String empId  = request.getParameter("empid");
-
-        System.out.println("[DEBUG] action=" + action + " empId=" + empId);
-
-        if ("delete".equals(action) && empId != null && !empId.trim().isEmpty()) {
-            try {
-                deleteEmployeeDetails(empId, regForm);
-            } catch (SQLException e) {
-                e.printStackTrace();
-                regForm.setM_strmsg("error");
-            }
-        }
-
-        try {
-            viewEmployeedetailsdata(regForm);
-        } catch (SQLException e) {
-            e.printStackTrace();
-            regForm.setM_strmsg("error");
-        }
-
-        request.setAttribute("RegForm", regForm);
-
-        RequestDispatcher dispatcher = request.getRequestDispatcher(
-                "/jsp/ViewEISRegistrationDetailsNew.jsp");
-        dispatcher.forward(request, response);
-    }
-
-    private void deleteEmployeeDetails(String empId, RegistrationActionForm regForm)
-            throws SQLException {
-
-        Connection conn = null;
-        PreparedStatement deleteEmpPs = null;
-        PreparedStatement deleteRosterPs = null;
-
-        try {
-            conn = DBUtilityAuto.getReportDBConnection();
-
-            deleteEmpPs = conn.prepareStatement(
-                    "DELETE FROM eisupport_employee_master WHERE EMPLOYEE_ID = ?");
-            deleteEmpPs.setString(1, empId);
-            int rowsEmp = deleteEmpPs.executeUpdate();
-
-            deleteRosterPs = conn.prepareStatement(
-                    "DELETE FROM roster_employee_details WHERE EMPLOYEE_ID = ?");
-            deleteRosterPs.setString(1, empId);
-            int rowsRoster = deleteRosterPs.executeUpdate();
-
-            System.out.println("[DELETE] master=" + rowsEmp + " roster=" + rowsRoster);
-
-            if (rowsEmp > 0) {
-                regForm.setM_strmsg("delete");
-            } else {
-                regForm.setM_strmsg("error");
-            }
-
-        } catch (Exception e) {
-            regForm.setM_strmsg("error");
-            e.printStackTrace();
-        } finally {
-            try { if (deleteEmpPs    != null) deleteEmpPs.close();    } catch (Exception ignore) {}
-            try { if (deleteRosterPs != null) deleteRosterPs.close(); } catch (Exception ignore) {}
-            try { if (conn           != null) conn.close();           } catch (Exception ignore) {}
-        }
-    }
-
-    private void viewEmployeedetailsdata(RegistrationActionForm regForm) throws SQLException {
-
-        Connection conn = null;
-        Statement stmt = null;
-        ResultSet rs = null;
-
-        try {
-            conn = DBUtilityAuto.getReportDBConnection();
-            stmt = conn.createStatement();
-
-            String query = "SELECT * FROM eisupport_employee_master ORDER BY EMPLOYEE_ID";
-            rs = stmt.executeQuery(query);
-
-            List<EmployeeDetailsBean> employeeList = new ArrayList<>();
-
-            while (rs.next()) {
-                EmployeeDetailsBean employee = new EmployeeDetailsBean();
-
-                employee.setM_strEmployee_ID(getString(rs, "EMPLOYEE_ID"));
-                employee.setM_strAD_ID(getString(rs, "AD_ID"));
-                employee.setM_strHID(getString(rs, "HID"));
-                employee.setM_strAsset_ID(getString(rs, "ASSET_ID"));
-                employee.setM_strEducation_Qualification(getString(rs, "EDU_QUALIFICATION"));
-                employee.setM_strTCS_Joining_Date(getString(rs, "TCS_JOINING_DATE"));
-                employee.setM_strEmployee_contact_Number(getString(rs, "CONTACTNUMBER"));
-                employee.setM_strEmergency_contact_Number(getString(rs, "EMERGENCY_CONTACTNUMBER"));
-                employee.setM_strTeam(getString(rs, "TEAM"));
-                employee.setM_strTCS_mail_ID(getString(rs, "TCS_MAILID"));
-                employee.setM_strSBI_mail_ID(getString(rs, "SBI_MAILID"));
-                employee.setM_strState(getString(rs, "STATE"));
-                employee.setM_strCity(getString(rs, "CITY"));
-                employee.setM_strLocal_Address(getString(rs, "LOCAL_ADDRESS"));
-                employee.setM_strGender(getString(rs, "GENDER"));
-                employee.setM_strDate_Of_Birth(getString(rs, "DOB"));
-                employee.setM_strFirst_Name(getString(rs, "FIRSTNAME"));
-                employee.setM_strMiddle_Name(getString(rs, "MIDDLENAME"));
-                employee.setM_strLast_Name(getString(rs, "LASTNAME"));
-                employee.setM_strVPN_Hostname(getString(rs, "VPN_HOSTNAME"));
-                employee.setM_strLaptop_Hostname(getString(rs, "LAPTOP_HOSTNAME"));
-                employee.setM_strRemote_Type(getString(rs, "REMOTETYPE"));
-                employee.setM_strVPN_VDI_MAC_Address(getString(rs, "VPN_VDI_MACADDRESS"));
-                employee.setM_strVPN_VDI_IP_Address(getString(rs, "VPN_VDI_IPADDRESS"));
-
-                // ⭐ BLOB columns → "Uploaded" if data present
-                employee.setM_strBGC_Documents_Path(getBlobStatus(rs, "BGC_DOCUMENT_PATH"));
-                employee.setM_strPhoto_Path(getBlobStatus(rs, "PHOTO_PATH"));
-                employee.setM_strPolice_Verification_Path(getBlobStatus(rs, "POLICE_VERIFICATION_PATH"));
-                employee.setM_strCV_Document(getBlobStatus(rs, "CV_DOCUMENT_PATH"));
-
-                employee.setM_strUserName(getString(rs, "USERNAME"));
-                employee.setM_strPassword(getString(rs, "PASSWORD"));
-                employee.setM_strISACTIVE(getString(rs, "ISACTIVE"));
-
-                employeeList.add(employee);
-            }
-
-            regForm.setM_lstViewEmployeeRegistrationdetail(employeeList);
-            System.out.println("[LOAD] Total " + employeeList.size() + " employee records loaded.");
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            regForm.setM_strmsg("error");
-        } finally {
-            try { if (rs   != null) rs.close();   } catch (Exception ignore) {}
-            try { if (stmt != null) stmt.close(); } catch (Exception ignore) {}
-            try { if (conn != null) conn.close(); } catch (Exception ignore) {}
-        }
-    }
-
-    private String getString(ResultSet rs, String columnName) {
-        try {
-            String v = rs.getString(columnName);
-            return v != null ? v : "";
-        } catch (SQLException e) {
-            return "";
-        }
-    }
-
-    /**
-     * For BLOB columns: returns "Uploaded" if data present, "" otherwise.
-     */
-    private String getBlobStatus(ResultSet rs, String columnName) {
-        try {
-            Blob blob = rs.getBlob(columnName);
-            if (blob == null) return "";
-
-            long length = blob.length();
-            blob.free();
-            return length > 0 ? "Uploaded" : "";
-        } catch (Exception e) {
-            System.out.println("[WARN] BLOB read failed for " + columnName + ": " + e.getMessage());
-            return "";
-        }
-    }
-}
-
-
-
--------------------------------------------------------------------------------
-
-
-DocumentDownloadServlet.java
-
-
-package com.action;
-
-import jakarta.servlet.ServletException;
-import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.net.URLConnection;
-import java.sql.Blob;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-
-import com.jdbc.DBUtilityAuto;
-
-@WebServlet("/DocumentDownloadServlet")
-public class DocumentDownloadServlet extends HttpServlet {
-
-    private static final long serialVersionUID = 1L;
-
-    @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-
-        String empId   = request.getParameter("empid");
-        String docType = request.getParameter("type");
-
-        System.out.println("[DOC-DOWNLOAD] empid=" + empId + " type=" + docType);
-
-        if (empId == null || empId.trim().isEmpty()
-                || docType == null || docType.trim().isEmpty()) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Missing parameters");
-            return;
-        }
-
-        Connection conn = null;
-        PreparedStatement stmt = null;
-        ResultSet rs = null;
-
-        try {
-            conn = DBUtilityAuto.getReportDBConnection();
-
-            String columnName;
-            String baseFileName;
-
-            switch (docType.toUpperCase()) {
-                case "BGC":    columnName = "BGC_DOCUMENT_PATH";        baseFileName = "bgc";    break;
-                case "PHOTO":  columnName = "PHOTO_PATH";               baseFileName = "photo";  break;
-                case "POLICE": columnName = "POLICE_VERIFICATION_PATH"; baseFileName = "police"; break;
-                case "CV":     columnName = "CV_DOCUMENT_PATH";         baseFileName = "cv";     break;
-                default:
-                    response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid docType");
-                    return;
-            }
-
-            String sql = "SELECT " + columnName
-                       + " FROM eisupport_employee_master WHERE EMPLOYEE_ID = ?";
-            stmt = conn.prepareStatement(sql);
-            stmt.setString(1, empId);
-            rs = stmt.executeQuery();
-
-            if (!rs.next()) {
-                System.out.println("[DOC-DOWNLOAD] Employee not found: " + empId);
-                response.sendError(HttpServletResponse.SC_NOT_FOUND, "Employee not found");
-                return;
-            }
-
-            // ---- Read BLOB from Oracle ----
-            Blob blob = rs.getBlob(1);
-
-            if (blob == null) {
-                System.out.println("[DOC-DOWNLOAD] BLOB is NULL for " + docType);
-                response.sendError(HttpServletResponse.SC_NOT_FOUND, "No document uploaded");
-                return;
-            }
-
-            long length = blob.length();
-            System.out.println("[DOC-DOWNLOAD] BLOB size = " + length + " bytes");
-
-            if (length == 0) {
-                System.out.println("[DOC-DOWNLOAD] BLOB is EMPTY for " + docType);
-                response.sendError(HttpServletResponse.SC_NOT_FOUND, "Empty document");
-                return;
-            }
-
-            // Oracle-safe read
-            byte[] data = blob.getBytes(1, (int) length);
-
-            // ---- Detect MIME ----
-            String mimeType = URLConnection.guessContentTypeFromStream(
-                    new ByteArrayInputStream(data));
-
-            if (mimeType == null) {
-                mimeType = detectFromMagicBytes(data);
-            }
-            if (mimeType == null) {
-                if ("PHOTO".equals(docType)) {
-                    mimeType = "image/jpeg";
-                } else {
-                    mimeType = "application/pdf";
-                }
-            }
-
-            System.out.println("[DOC-DOWNLOAD] MIME: " + mimeType);
-
-            // ---- Serve ----
-            String ext = getExtensionFromMimeType(mimeType);
-            String filename = baseFileName + "_" + empId + ext;
-
-            response.setContentType(mimeType);
-            response.setContentLength(data.length);
-
-            boolean inline = mimeType.startsWith("image/")
-                          || mimeType.equals("application/pdf");
-            String disposition = (inline ? "inline" : "attachment")
-                               + "; filename=\"" + filename + "\"";
-            response.setHeader("Content-Disposition", disposition);
-            response.setHeader("Cache-Control", "private, max-age=3600");
-
-            OutputStream os = response.getOutputStream();
-            os.write(data);
-            os.flush();
-
-            System.out.println("[DOC-DOWNLOAD] Served " + filename
-                               + " (" + data.length + " bytes)");
-
-        } catch (Exception e) {
-            System.out.println("[DOC-DOWNLOAD] EXCEPTION: " + e.getClass().getName()
-                               + " - " + e.getMessage());
-            e.printStackTrace();
-            if (!response.isCommitted()) {
-                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-                                   "Error retrieving document");
-            }
-        } finally {
-            try { if (rs   != null) rs.close();   } catch (Exception ignore) {}
-            try { if (stmt != null) stmt.close(); } catch (Exception ignore) {}
-            try { if (conn != null) conn.close(); } catch (Exception ignore) {}
-        }
-    }
-
-    @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        doGet(request, response);
-    }
-
-    private String detectFromMagicBytes(byte[] d) {
-        if (d == null || d.length < 4) return null;
-        if (d[0] == 0x25 && d[1] == 0x50 && d[2] == 0x44 && d[3] == 0x46) return "application/pdf";
-        if ((d[0] & 0xFF) == 0xFF && (d[1] & 0xFF) == 0xD8 && (d[2] & 0xFF) == 0xFF) return "image/jpeg";
-        if ((d[0] & 0xFF) == 0x89 && d[1] == 0x50 && d[2] == 0x4E && d[3] == 0x47) return "image/png";
-        if (d[0] == 0x47 && d[1] == 0x49 && d[2] == 0x46) return "image/gif";
-        if (d[0] == 0x50 && d[1] == 0x4B) return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-        if ((d[0] & 0xFF) == 0xD0 && (d[1] & 0xFF) == 0xCF) return "application/msword";
-        return null;
-    }
-
-    private String getExtensionFromMimeType(String mimeType) {
-        switch (mimeType) {
-            case "image/png":       return ".png";
-            case "image/jpeg":      return ".jpg";
-            case "image/gif":       return ".gif";
-            case "application/pdf": return ".pdf";
-            case "application/msword": return ".doc";
-            case "application/vnd.openxmlformats-officedocument.wordprocessingml.document": return ".docx";
-            default:                return "";
-        }
-    }
-}
-
-
-
---------------------------------------------------------------
-
-EISRegistrationAction.java
-
-
-package com.action;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.ArrayList;
-
-import org.apache.struts2.ActionSupport;
-import org.apache.struts2.ServletActionContext;
-
-import jakarta.servlet.http.HttpServletRequest;
-
-import com.actionform.RegistrationActionForm;
-import com.jdbc.DBUtilityAuto;
-
-@SuppressWarnings({ "serial", "deprecation" })
-public class EISRegistrationAction extends ActionSupport {
-
-    // ============================================================
-    // Bound form bean
-    // ============================================================
-    private RegistrationActionForm registrationActionForm;
-
-    public RegistrationActionForm getRegistrationActionForm() {
-        return registrationActionForm;
-    }
-
-    public void setRegistrationActionForm(RegistrationActionForm registrationActionForm) {
-        this.registrationActionForm = registrationActionForm;
-    }
-
-    // ============================================================
-    // Role list — for <s:select list="rolelist"/>
-    // ============================================================
-    private ArrayList<String> rolelist = new ArrayList<>();
-
-    public ArrayList<String> getRolelist() { return rolelist; }
-    public void setRolelist(ArrayList<String> rolelist) { this.rolelist = rolelist; }
-
-    // ============================================================
-    // m_strmsg MIRROR — for JSP <s:if test="m_strmsg == '...'">
-    // ============================================================
-    public String getM_strmsg() {
-        return (registrationActionForm != null) ? registrationActionForm.getM_strmsg() : null;
-    }
-    public void setM_strmsg(String m_strmsg) {
-        if (registrationActionForm != null) registrationActionForm.setM_strmsg(m_strmsg);
-    }
-
-    // ============================================================
-    // ACTION METHODS
-    // ============================================================
-
-    @Override
-    public String execute() throws Exception {
-        return showregpage();
-    }
-
-    public String showregpage() throws Exception {
-        RegistrationActionForm form = getOrCreateForm();
-        loadEISRole(form);
-        return "success";
-    }
-
-    /**
-     * Handles insert submission. Files are read as bytes and stored as BLOB.
-     */
-    public String saveRegistration() throws Exception {
-
-        System.out.println("========== saveRegistration START ==========");
-
-        RegistrationActionForm form = getOrCreateForm();
-        loadEISRole(form);
-
-        HttpServletRequest request = ServletActionContext.getRequest();
-        String actionParam = request.getParameter("action");
-
-        System.out.println("[DEBUG] actionParam = " + actionParam);
-
-        if (actionParam == null) {
-            clearForm(form);
-            return "success";
-        }
-        if (!"insert".equals(actionParam)) {
-            clearForm(form);
-            return "success";
-        }
-
-        Connection con = null;
-        PreparedStatement psEmp = null;
-        PreparedStatement psRoster = null;
-        Statement checkSt = null;
-        ResultSet checkRs = null;
-
-        try {
-            con = DBUtilityAuto.getReportDBConnection();
-            System.out.println("[DEBUG] DB Connected OK");
-
-            // ---- Duplicate check ----
-            String empId = request.getParameter("m_stremployee_id");
-            String countQuery = "select count(*) from eisupport_employee_master where EMPLOYEE_ID='"
-                    + empId + "'";
-            checkSt = con.createStatement();
-            checkRs = checkSt.executeQuery(countQuery);
-
-            int count = 0;
-            if (checkRs != null && checkRs.next()) {
-                count = checkRs.getInt(1);
-            }
-            System.out.println("[DEBUG] Duplicate count = " + count);
-
-            if (count > 0) {
-                form.setM_strmsg("duplicate");
-                this.setM_strmsg("duplicate");
-                return "success";
-            }
-
-            // ============================================================
-            // ⭐ READ FILES AS BYTES → TO BE STORED AS BLOB
-            // ============================================================
-            byte[] photoBytes  = null;
-            byte[] bgcBytes    = null;
-            byte[] policeBytes = null;
-            byte[] cvBytes     = null;
-
-            // --- PHOTO ---
-            File photoFile = form.getM_strthePhotofile();
-            String photoName = form.getM_strthePhotofileFileName();
-            System.out.println("[UPLOAD] PHOTO file=" + photoFile + " name=" + photoName);
-            if (photoFile != null && photoName != null && !photoName.trim().isEmpty()) {
-                photoBytes = readFileBytes(photoFile);
-                if (photoBytes != null)
-                    System.out.println("[UPLOAD] PHOTO read " + photoBytes.length + " bytes");
-            }
-
-            // --- BGC ---
-            File bgcFile = form.getM_strtheBgcfile();
-            String bgcName = form.getM_strtheBgcfileFileName();
-            System.out.println("[UPLOAD] BGC file=" + bgcFile + " name=" + bgcName);
-            if (bgcFile != null && bgcName != null && !bgcName.trim().isEmpty()) {
-                bgcBytes = readFileBytes(bgcFile);
-                if (bgcBytes != null)
-                    System.out.println("[UPLOAD] BGC read " + bgcBytes.length + " bytes");
-            }
-
-            // --- POLICE ---
-            File policeFile = form.getM_strthePoliceverificationfile();
-            String policeName = form.getM_strthePoliceverificationfileFileName();
-            System.out.println("[UPLOAD] POLICE file=" + policeFile + " name=" + policeName);
-            if (policeFile != null && policeName != null && !policeName.trim().isEmpty()) {
-                policeBytes = readFileBytes(policeFile);
-                if (policeBytes != null)
-                    System.out.println("[UPLOAD] POLICE read " + policeBytes.length + " bytes");
-            }
-
-            // --- CV ---
-            File cvFile = form.getM_strtheCvfile();
-            String cvName = form.getM_strtheCvfileFileName();
-            System.out.println("[UPLOAD] CV file=" + cvFile + " name=" + cvName);
-            if (cvFile != null && cvName != null && !cvName.trim().isEmpty()) {
-                cvBytes = readFileBytes(cvFile);
-                if (cvBytes != null)
-                    System.out.println("[UPLOAD] CV read " + cvBytes.length + " bytes");
-            }
-
-            // ============================================================
-            // INSERT — eisupport_employee_master
-            // ============================================================
-            String sqlEmp =
-                    "INSERT INTO eisupport_employee_master ("
-                  + "EMPLOYEE_ID,AD_ID,ASSET_ID,EDU_QUALIFICATION,TCS_JOINING_DATE,CONTACTNUMBER,"
-                  + "EMERGENCY_CONTACTNUMBER,TEAM,TCS_MAILID,STATE,CITY,LOCAL_ADDRESS,GENDER,DOB,FIRSTNAME,"
-                  + "MIDDLENAME,LASTNAME,VPN_HOSTNAME,LAPTOP_HOSTNAME,REMOTETYPE,VPN_VDI_MACADDRESS,"
-                  + "VPN_VDI_IPADDRESS,CV_DOCUMENT_PATH,BGC_DOCUMENT_PATH,PHOTO_PATH,POLICE_VERIFICATION_PATH,"
-                  + "USERNAME,PASSWORD,HID,SBI_MAILID) "
-                  + "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
-
-            psEmp = con.prepareStatement(sqlEmp);
-            bindInsertParams(psEmp, request, cvBytes, bgcBytes, photoBytes, policeBytes);
-            psEmp.executeUpdate();
-            System.out.println("[DEBUG] Inserted into eisupport_employee_master");
-
-            // ============================================================
-            // INSERT — roster_employee_details
-            // ============================================================
-            String sqlRoster =
-                    "INSERT INTO roster_employee_details ("
-                  + "EMPLOYEE_ID,AD_ID,ASSET_ID,EDU_QUALIFICATION,TCS_JOINING_DATE,CONTACTNUMBER,"
-                  + "EMERGENCY_CONTACTNUMBER,TEAM,TCS_MAILID,STATE,CITY,LOCAL_ADDRESS,GENDER,DOB,FIRSTNAME,"
-                  + "MIDDLENAME,LASTNAME,VPN_HOSTNAME,LAPTOP_HOSTNAME,REMOTETYPE,VPN_VDI_MACADDRESS,"
-                  + "VPN_VDI_IPADDRESS,CV_DOCUMENT_PATH,BGC_DOCUMENT_PATH,PHOTO_PATH,POLICE_VERIFICATION_PATH,"
-                  + "USERNAME,PASSWORD,HID,SBI_MAILID) "
-                  + "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
-
-            psRoster = con.prepareStatement(sqlRoster);
-            bindInsertParams(psRoster, request, cvBytes, bgcBytes, photoBytes, policeBytes);
-            psRoster.executeUpdate();
-            System.out.println("[DEBUG] Inserted into roster_employee_details");
-
-            clearForm(form);
-            System.out.println("========== saveRegistration SUCCESS ==========");
-            return "thanks";
-
-        } catch (Exception e) {
-            System.out.println("========== saveRegistration FAILED ==========");
-            System.out.println("[ERROR] " + e.getClass().getName() + ": " + e.getMessage());
-            e.printStackTrace();
-            form.setM_strmsg("error");
-            this.setM_strmsg("error");
-            return "success";
-        } finally {
-            closeQuietly(checkRs, checkSt, psEmp, psRoster, con);
-        }
-    }
-
-    // ============================================================
-    // PRIVATE HELPERS
-    // ============================================================
-
-    private RegistrationActionForm getOrCreateForm() {
-        if (registrationActionForm == null) {
-            registrationActionForm = new RegistrationActionForm();
-        }
-        return registrationActionForm;
-    }
-
-    /**
-     * Reads a File into a byte[] — used for BLOB storage.
-     */
-    private byte[] readFileBytes(File file) {
-        if (file == null || !file.exists()) {
-            System.out.println("[READ] File does not exist: " + file);
-            return null;
-        }
-        try (FileInputStream fis = new FileInputStream(file)) {
-            long size = file.length();
-            System.out.println("[READ] File size = " + size);
-            if (size <= 0 || size > Integer.MAX_VALUE) {
-                System.out.println("[READ] Invalid size");
-                return null;
-            }
-            byte[] data = new byte[(int) size];
-            int read = 0;
-            while (read < data.length) {
-                int n = fis.read(data, read, data.length - read);
-                if (n < 0) break;
-                read += n;
-            }
-            return data;
-        } catch (IOException e) {
-            System.out.println("[READ] ERROR: " + e.getMessage());
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    /**
-     * Binds 30 parameters — BLOBs via setBytes(), nulls via setNull().
-     */
-    private void bindInsertParams(PreparedStatement ps,
-                                  HttpServletRequest request,
-                                  byte[] cvBytes,
-                                  byte[] bgcBytes,
-                                  byte[] photoBytes,
-                                  byte[] policeBytes) throws SQLException {
-
-        ps.setObject(1,  request.getParameter("m_stremployee_id"));
-        ps.setObject(2,  request.getParameter("m_strad_id"));
-        ps.setObject(3,  request.getParameter("m_strasset_id"));
-        ps.setObject(4,  request.getParameter("m_streduqualification"));
-        ps.setObject(5,  request.getParameter("m_strtcsjoiningdate"));
-        ps.setObject(6,  request.getParameter("m_strcontactno"));
-        ps.setObject(7,  request.getParameter("m_stremergencycontactno"));
-        ps.setObject(8,  request.getParameter("m_strRole"));
-        ps.setObject(9,  request.getParameter("m_strtcsmailid"));
-        ps.setObject(10, request.getParameter("m_strstate"));
-        ps.setObject(11, request.getParameter("m_strcity"));
-        ps.setObject(12, request.getParameter("m_strlocaladdress"));
-        ps.setObject(13, request.getParameter("m_strgender"));
-        ps.setObject(14, request.getParameter("m_strdob"));
-        ps.setObject(15, request.getParameter("m_strfirstName"));
-        ps.setObject(16, request.getParameter("m_strmiddleName"));
-        ps.setObject(17, request.getParameter("m_strlastName"));
-        ps.setObject(18, request.getParameter("m_strvpnhostname"));
-        ps.setObject(19, request.getParameter("m_strlaptophostname"));
-        ps.setObject(20, request.getParameter("m_strremotetype"));
-        ps.setObject(21, request.getParameter("m_strvpnmacaddress"));
-        ps.setObject(22, request.getParameter("m_strvpnipaddress"));
-
-        // ⭐ BLOB columns
-        if (cvBytes != null && cvBytes.length > 0) {
-            ps.setBytes(23, cvBytes);
-        } else {
-            ps.setNull(23, java.sql.Types.BLOB);
-        }
-
-        if (bgcBytes != null && bgcBytes.length > 0) {
-            ps.setBytes(24, bgcBytes);
-        } else {
-            ps.setNull(24, java.sql.Types.BLOB);
-        }
-
-        if (photoBytes != null && photoBytes.length > 0) {
-            ps.setBytes(25, photoBytes);
-        } else {
-            ps.setNull(25, java.sql.Types.BLOB);
-        }
-
-        if (policeBytes != null && policeBytes.length > 0) {
-            ps.setBytes(26, policeBytes);
-        } else {
-            ps.setNull(26, java.sql.Types.BLOB);
-        }
-
-        ps.setObject(27, request.getParameter("m_strUserName"));
-        ps.setObject(28, request.getParameter("m_strPassword"));
-        ps.setObject(29, request.getParameter("m_strhid"));
-        ps.setObject(30, request.getParameter("m_strsbimailid"));
-    }
-
-    private void clearForm(RegistrationActionForm l_obj) {
-        try {
-            l_obj.setM_strthePhotofile(null);
-            l_obj.setM_strtheBgcfile(null);
-            l_obj.setM_strthePoliceverificationfile(null);
-            l_obj.setM_strtheCvfile(null);
-
-            l_obj.setM_strUserName("");
-            l_obj.setM_strPassword("");
-            l_obj.setM_stremployee_id("");
-            l_obj.setM_strad_id("");
-            l_obj.setM_strasset_id("");
-            l_obj.setM_streduqualification("Select Education Qualification");
-            l_obj.setM_strtcsmailid("");
-            l_obj.setM_strsbimailid("");
-            l_obj.setM_strhid("");
-            l_obj.setM_strstate("Select State");
-            l_obj.setM_strRole("Select Role");
-            l_obj.setM_strcity("");
-            l_obj.setM_strlocaladdress("");
-            l_obj.setM_strvpnhostname("");
-            l_obj.setM_strlaptophostname("");
-            l_obj.setM_strremotetype("NONE");
-            l_obj.setM_strvpnmacaddress("");
-            l_obj.setM_strvpnipaddress("");
-            l_obj.setM_strfirstName("");
-            l_obj.setM_strlastName("");
-            l_obj.setM_strmiddleName("");
-            l_obj.setM_strmsg("");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void loadEISRole(RegistrationActionForm l_obj) {
-        Connection con = null;
-        Statement st = null;
-        ResultSet rs = null;
-        try {
-            con = DBUtilityAuto.getReportDBConnection();
-
-            ArrayList<String> list = new ArrayList<>();
-            list.add("Select Role");
-
-            st = con.createStatement();
-            rs = st.executeQuery("select rolename from rolemst");
-
-            while (rs.next()) {
-                list.add(rs.getString("rolename"));
-            }
-
-            l_obj.setRolelist(list);
-            this.setRolelist(list);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            closeQuietly(rs, st, null, null, con);
-        }
-    }
-
-    private static void closeQuietly(ResultSet rs,
-                                     Statement st,
-                                     PreparedStatement ps1,
-                                     PreparedStatement ps2,
-                                     Connection con) {
-        try { if (rs  != null) rs.close();  } catch (Exception ignore) {}
-        try { if (st  != null) st.close();  } catch (Exception ignore) {}
-        try { if (ps1 != null) ps1.close(); } catch (Exception ignore) {}
-        try { if (ps2 != null) ps2.close(); } catch (Exception ignore) {}
-        try { if (con != null) con.close(); } catch (Exception ignore) {}
-    }
-}
+Oct 15, 2026 1:13:53 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Server version name:   Apache Tomcat/11.0.13
+Oct 15, 2026 1:13:53 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Server built:          Oct 10 2025 13:57:31 UTC
+Oct 15, 2026 1:13:53 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Server version number: 11.0.13.0
+Oct 15, 2026 1:13:53 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: OS Name:               Windows 11
+Oct 15, 2026 1:13:53 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: OS Version:            10.0
+Oct 15, 2026 1:13:53 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Architecture:          amd64
+Oct 15, 2026 1:13:53 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Java Home:             D:\Jakarta EISPortal\eclipse\plugins\org.eclipse.justj.openjdk.hotspot.jre.full.win32.x86_64_21.0.8.v20250724-1412\jre
+Oct 15, 2026 1:13:53 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: JVM Version:           21.0.8+9-LTS
+Oct 15, 2026 1:13:53 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: JVM Vendor:            Eclipse Adoptium
+Oct 15, 2026 1:13:53 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: CATALINA_BASE:         D:\Jakarta EISPortal\.metadata\.plugins\org.eclipse.wst.server.core\tmp0
+Oct 15, 2026 1:13:53 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: CATALINA_HOME:         D:\apache-tomcat-11.0.13
+Oct 15, 2026 1:13:53 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Command line argument: -Dcatalina.base=D:\Jakarta EISPortal\.metadata\.plugins\org.eclipse.wst.server.core\tmp0
+Oct 15, 2026 1:13:53 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Command line argument: -Dcatalina.home=D:\apache-tomcat-11.0.13
+Oct 15, 2026 1:13:53 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Command line argument: -Dwtp.deploy=D:\Jakarta EISPortal\.metadata\.plugins\org.eclipse.wst.server.core\tmp0\wtpwebapps
+Oct 15, 2026 1:13:53 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Command line argument: -Djava.library.path=D:\apache-tomcat-11.0.13\bin
+Oct 15, 2026 1:13:53 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Command line argument: --enable-native-access=ALL-UNNAMED
+Oct 15, 2026 1:13:53 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Command line argument: --add-opens=java.base/java.lang=ALL-UNNAMED
+Oct 15, 2026 1:13:53 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Command line argument: --add-opens=java.base/java.io=ALL-UNNAMED
+Oct 15, 2026 1:13:53 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Command line argument: --add-opens=java.base/java.util=ALL-UNNAMED
+Oct 15, 2026 1:13:53 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Command line argument: --add-opens=java.base/java.util.concurrent=ALL-UNNAMED
+Oct 15, 2026 1:13:53 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Command line argument: --add-opens=java.rmi/sun.rmi.transport=ALL-UNNAMED
+Oct 15, 2026 1:13:53 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Command line argument: -Dfile.encoding=UTF-8
+Oct 15, 2026 1:13:53 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Command line argument: -Dstdout.encoding=UTF-8
+Oct 15, 2026 1:13:53 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Command line argument: -Dstderr.encoding=UTF-8
+Oct 15, 2026 1:13:53 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Command line argument: -XX:+ShowCodeDetailsInExceptionMessages
+Oct 15, 2026 1:13:53 PM org.apache.catalina.core.AprLifecycleListener lifecycleEvent
+INFO: Loaded Apache Tomcat Native library [2.0.9] using APR version [1.7.6].
+Oct 15, 2026 1:13:53 PM org.apache.catalina.core.AprLifecycleListener initializeSSL
+INFO: OpenSSL successfully initialized [OpenSSL 3.5.0 8 Apr 2025]
+Oct 15, 2026 1:13:53 PM org.apache.coyote.AbstractProtocol init
+INFO: Initializing ProtocolHandler ["http-nio-8085"]
+Oct 15, 2026 1:13:53 PM org.apache.catalina.startup.Catalina load
+INFO: Server initialization in [803] milliseconds
+Oct 15, 2026 1:13:53 PM org.apache.catalina.core.StandardService startInternal
+INFO: Starting service [Catalina]
+Oct 15, 2026 1:13:53 PM org.apache.catalina.core.StandardEngine startInternal
+INFO: Starting Servlet engine: [Apache Tomcat/11.0.13]
+Oct 15, 2026 1:13:59 PM org.apache.jasper.servlet.TldScanner scanJars
+INFO: At least one JAR was scanned for TLDs yet contained no TLDs. Enable debug logging for this logger for a complete list of JARs that were scanned but no TLDs were found in them. Skipping unneeded JARs during scanning can improve startup time and JSP compilation time.
+Oct 15, 2026 1:14:03 PM org.apache.coyote.AbstractProtocol start
+INFO: Starting ProtocolHandler ["http-nio-8085"]
+Oct 15, 2026 1:14:03 PM org.apache.catalina.startup.Catalina start
+INFO: Server startup in [9644] milliseconds
+SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+>>> LoginAction.execute() called
+[DBConfig] Config file found: D:\AppConfig\db.properties
+[DBConfig] Config loaded successfully from: D:\AppConfig\db.properties
+Connected to PRIMARY DB 1
+Flag Status: PR, Location: HI
+getReportDBConnection - flagStatus: PR
+Connecting to Report PR Database
+Report PR Connected
+Roles loaded: [Incident Management, Event Management, EIS Bank, Service Reporting Management, Manager, Problem Management, Service Desk, Process Improvement, Team Lead, EIS Infra, EIS Development, test]
+Roles Loaded : [Incident Management, Event Management, EIS Bank, Service Reporting Management, Manager, Problem Management, Service Desk, Process Improvement, Team Lead, EIS Infra, EIS Development, test]
+Connected to PRIMARY DB 1
+Flag Status: PR, Location: HI
+getReportDBConnection - flagStatus: PR
+Connecting to Report PR Database
+Report PR Connected
+========== saveRegistration START ==========
+Connected to PRIMARY DB 1
+Flag Status: PR, Location: HI
+getReportDBConnection - flagStatus: PR
+Connecting to Report PR Database
+Report PR Connected
+[DEBUG] actionParam = insert
+Connected to PRIMARY DB 1
+Flag Status: PR, Location: HI
+getReportDBConnection - flagStatus: PR
+Connecting to Report PR Database
+Report PR Connected
+[DEBUG] DB Connected OK
+[DEBUG] Duplicate count = 0
+[UPLOAD] PHOTO file=null name=null
+[UPLOAD] BGC file=null name=null
+[UPLOAD] POLICE file=null name=null
+[UPLOAD] CV file=null name=null
+[DEBUG] Inserted into eisupport_employee_master
+[DEBUG] Inserted into roster_employee_details
+========== saveRegistration SUCCESS ==========
+>>> LoginAction.execute() called
+Connected to PRIMARY DB 1
+Flag Status: PR, Location: HI
+getReportDBConnection - flagStatus: PR
+Connecting to Report PR Database
+Report PR Connected
+Roles loaded: [Incident Management, Event Management, EIS Bank, Service Reporting Management, Manager, Problem Management, Service Desk, Process Improvement, Team Lead, EIS Infra, EIS Development, test]
+Roles Loaded : [Incident Management, Event Management, EIS Bank, Service Reporting Management, Manager, Problem Management, Service Desk, Process Improvement, Team Lead, EIS Infra, EIS Development, test]
