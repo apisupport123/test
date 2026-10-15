@@ -21,7 +21,6 @@
 
     String ctx = request.getContextPath();
 
-    // Count active employees
     int activeCount = 0;
     for (EmployeeDetailsBean e : employeeList) {
         String s = e.getM_strISACTIVE();
@@ -34,852 +33,1018 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EIS Employee Registry</title>
+<title>Employee Registry · EIS Portal</title>
 
 <style>
 /* ================================================================
-   NEO-BRUTALISM RESET
+   RESET & TOKENS — Enterprise palette
    ================================================================ */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-    --black:   #000000;
-    --white:   #FFFFFF;
-    --yellow:  #FFD93D;
-    --pink:    #FF6B9D;
-    --cyan:    #4ECDC4;
-    --lime:    #C4F82A;
-    --orange:  #FF8C42;
-    --purple:  #A78BFA;
-    --red:     #FF5757;
-    --green:   #22C55E;
-    --bg:      #FDF6E3;
-    --border:  3px solid var(--black);
-    --shadow-sm: 4px 4px 0 var(--black);
-    --shadow:    6px 6px 0 var(--black);
-    --shadow-lg: 10px 10px 0 var(--black);
+    /* Brand */
+    --brand-50:  #eef2ff;
+    --brand-100: #e0e7ff;
+    --brand-200: #c7d2fe;
+    --brand-500: #6366f1;
+    --brand-600: #4f46e5;
+    --brand-700: #4338ca;
+
+    /* Neutrals */
+    --bg:        #f8fafc;
+    --surface:   #ffffff;
+    --surface-2: #f1f5f9;
+    --surface-3: #e2e8f0;
+    --border:    #e2e8f0;
+    --border-2:  #cbd5e1;
+
+    /* Text */
+    --text:      #0f172a;
+    --text-2:    #334155;
+    --text-3:    #64748b;
+    --text-4:    #94a3b8;
+
+    /* Status */
+    --green:     #10b981;
+    --green-bg:  #d1fae5;
+    --green-text:#065f46;
+    --red:       #ef4444;
+    --red-bg:    #fee2e2;
+    --red-text:  #991b1b;
+    --amber:     #f59e0b;
+    --amber-bg:  #fef3c7;
+    --amber-text:#92400e;
+    --blue:      #3b82f6;
+    --blue-bg:   #dbeafe;
+    --blue-text: #1e40af;
+
+    /* Radius */
+    --r-sm: 6px;
+    --r:    10px;
+    --r-lg: 14px;
+
+    /* Shadows — subtle, professional */
+    --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
+    --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+    --shadow:    0 4px 12px rgba(15, 23, 42, 0.06), 0 2px 4px rgba(15, 23, 42, 0.04);
+    --shadow-md: 0 12px 24px rgba(15, 23, 42, 0.08), 0 4px 8px rgba(15, 23, 42, 0.04);
 
     --font: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
             "Helvetica Neue", Arial, sans-serif;
-    --mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    --mono: ui-monospace, "SF Mono", Consolas, "Liberation Mono", monospace;
 }
 
 html, body {
     font-family: var(--font);
-    color: var(--black);
+    color: var(--text);
     background: var(--bg);
     min-height: 100vh;
-    overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
-}
-
-/* Subtle grid background */
-body {
-    background-image:
-        linear-gradient(rgba(0,0,0,.04) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0,0,0,.04) 1px, transparent 1px);
-    background-size: 40px 40px;
+    font-feature-settings: "cv11", "ss01";
 }
 
 /* ================================================================
-   PAGE WRAP
+   TOP NAV BAR
+   ================================================================ */
+.topnav {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: var(--shadow-xs);
+}
+.nav-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.nav-logo {
+    width: 36px; height: 36px;
+    border-radius: 9px;
+    background: linear-gradient(135deg, var(--brand-500), var(--brand-700));
+    display: grid; place-items: center;
+    color: #fff;
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: -0.5px;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.35);
+}
+.nav-title {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: -0.2px;
+    color: var(--text);
+}
+.nav-subtitle {
+    font-size: 12px;
+    color: var(--text-3);
+    margin-top: 1px;
+}
+.nav-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+/* ================================================================
+   BUTTONS
+   ================================================================ */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 9px 16px;
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 600;
+    letter-spacing: -0.1px;
+    border-radius: var(--r-sm);
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-decoration: none;
+    white-space: nowrap;
+    line-height: 1;
+    height: 38px;
+}
+.btn:focus-visible {
+    outline: 2px solid var(--brand-500);
+    outline-offset: 2px;
+}
+
+.btn-primary {
+    background: var(--brand-600);
+    color: #fff;
+    box-shadow: 0 1px 2px rgba(79, 70, 229, 0.3);
+}
+.btn-primary:hover {
+    background: var(--brand-700);
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.35);
+}
+
+.btn-secondary {
+    background: var(--surface);
+    color: var(--text-2);
+    border-color: var(--border);
+    box-shadow: var(--shadow-xs);
+}
+.btn-secondary:hover {
+    background: var(--surface-2);
+    color: var(--text);
+    border-color: var(--border-2);
+}
+
+.btn-ghost {
+    background: transparent;
+    color: var(--text-2);
+}
+.btn-ghost:hover {
+    background: var(--surface-2);
+    color: var(--text);
+}
+
+.btn-danger {
+    background: var(--surface);
+    color: var(--red);
+    border-color: var(--border);
+    box-shadow: var(--shadow-xs);
+}
+.btn-danger:hover {
+    background: var(--red-bg);
+    border-color: var(--red);
+    color: var(--red-text);
+}
+
+.btn-sm {
+    height: 32px;
+    padding: 6px 12px;
+    font-size: 12.5px;
+}
+
+.btn-icon {
+    width: 34px;
+    height: 34px;
+    padding: 0;
+}
+
+/* ================================================================
+   PAGE LAYOUT
    ================================================================ */
 .page {
-    max-width: 1600px;
+    max-width: 1440px;
     margin: 0 auto;
-    padding: 24px 20px 60px;
+    padding: 32px 24px 60px;
 }
 
 /* ================================================================
-   HERO HEADER — BIG and BOLD
+   PAGE HEADER
    ================================================================ */
-.hero {
-    background: var(--yellow);
-    border: var(--border);
-    box-shadow: var(--shadow-lg);
-    padding: 32px 36px;
+.page-header {
     margin-bottom: 24px;
-    position: relative;
-    overflow: hidden;
-    transform: rotate(-0.4deg);
-}
-.hero::before {
-    content: "";
-    position: absolute;
-    top: -20px; right: -20px;
-    width: 180px; height: 180px;
-    background: var(--pink);
-    border: var(--border);
-    border-radius: 50%;
-    transform: rotate(15deg);
-}
-.hero::after {
-    content: "";
-    position: absolute;
-    bottom: -30px; right: 60px;
-    width: 120px; height: 120px;
-    background: var(--cyan);
-    border: var(--border);
-    transform: rotate(45deg);
-}
-.hero-content {
-    position: relative;
-    z-index: 1;
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    gap: 24px;
+    align-items: flex-end;
+    gap: 20px;
     flex-wrap: wrap;
 }
-.hero h1 {
-    font-size: clamp(32px, 5vw, 56px);
-    font-weight: 900;
-    line-height: 1;
-    letter-spacing: -3px;
-    text-transform: uppercase;
-    color: var(--black);
-    text-shadow: 3px 3px 0 var(--white);
-}
-.hero h1 .accent {
-    background: var(--black);
-    color: var(--yellow);
-    padding: 0 12px;
-    display: inline-block;
-    transform: rotate(-1.5deg);
-    box-shadow: 4px 4px 0 var(--pink);
-}
-.hero-sub {
-    font-size: 14px;
+.page-header h1 {
+    font-size: 26px;
     font-weight: 700;
-    margin-top: 14px;
-    color: var(--black);
-    opacity: .75;
-    letter-spacing: 1px;
-    text-transform: uppercase;
+    letter-spacing: -0.6px;
+    color: var(--text);
+    line-height: 1.2;
 }
-
-/* Hero sticker */
-.hero-sticker {
-    background: var(--black);
-    color: var(--lime);
-    padding: 16px 24px;
-    font-weight: 900;
-    font-size: 13px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    transform: rotate(3deg);
-    box-shadow: 6px 6px 0 var(--pink);
-    border: 2px solid var(--black);
-    white-space: nowrap;
+.page-header p {
+    font-size: 14px;
+    color: var(--text-3);
+    margin-top: 6px;
+    letter-spacing: -0.1px;
 }
-.hero-sticker .blink {
-    animation: blink 1s steps(2, start) infinite;
-}
-@keyframes blink {
-    0%, 100% { opacity: 1; }
-    50%      { opacity: 0; }
+.page-header-actions {
+    display: flex;
+    gap: 8px;
 }
 
 /* ================================================================
-   STAT CARDS ROW
+   STATS ROW — clean KPI cards
    ================================================================ */
-.stats-row {
+.stats {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 16px;
     margin-bottom: 24px;
 }
-.stat-card {
-    border: var(--border);
-    box-shadow: var(--shadow);
-    padding: 20px 22px;
+.stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 18px 20px;
+    box-shadow: var(--shadow-xs);
+    transition: all 0.15s ease;
     display: flex;
     align-items: center;
-    gap: 16px;
-    transition: all .15s ease;
-    cursor: pointer;
-    position: relative;
+    gap: 14px;
 }
-.stat-card:hover {
-    transform: translate(-3px, -3px);
-    box-shadow: var(--shadow-lg);
+.stat:hover {
+    box-shadow: var(--shadow);
+    border-color: var(--border-2);
 }
-.stat-card:active {
-    transform: translate(2px, 2px);
-    box-shadow: 2px 2px 0 var(--black);
-}
-.stat-card.yellow { background: var(--yellow); }
-.stat-card.pink   { background: var(--pink); }
-.stat-card.cyan   { background: var(--cyan); }
-.stat-card.lime   { background: var(--lime); }
-
 .stat-icon {
-    width: 52px; height: 52px;
-    border: var(--border);
-    background: var(--white);
-    display: grid; place-items: center;
-    font-size: 26px;
-    box-shadow: 3px 3px 0 var(--black);
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    font-size: 18px;
     flex-shrink: 0;
 }
-.stat-info .label {
-    font-size: 11px;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    opacity: .7;
+.stat-icon.indigo { background: var(--brand-50); color: var(--brand-600); }
+.stat-icon.green  { background: var(--green-bg); color: var(--green-text); }
+.stat-icon.red    { background: var(--red-bg);   color: var(--red-text); }
+.stat-icon.blue   { background: var(--blue-bg);  color: var(--blue-text); }
+
+.stat-body { flex: 1; min-width: 0; }
+.stat-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-3);
+    letter-spacing: 0.1px;
     margin-bottom: 2px;
 }
-.stat-info .value {
-    font-size: 32px;
-    font-weight: 900;
-    line-height: 1;
-    letter-spacing: -1.5px;
+.stat-value {
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.6px;
+    color: var(--text);
+    line-height: 1.1;
 }
 
 /* ================================================================
-   TOOLBAR
+   ALERT BANNERS
    ================================================================ */
-.toolbar {
+.alert {
+    border-radius: var(--r);
+    padding: 14px 18px;
+    margin-bottom: 20px;
     display: flex;
+    align-items: center;
     gap: 12px;
-    flex-wrap: wrap;
-    margin-bottom: 24px;
-    align-items: center;
-}
-.search-box {
-    flex: 1;
-    min-width: 240px;
-    position: relative;
-}
-.search-box input {
-    width: 100%;
-    padding: 14px 16px 14px 48px;
-    font-size: 15px;
-    font-weight: 600;
-    border: var(--border);
-    background: var(--white);
-    box-shadow: var(--shadow-sm);
-    outline: none;
-    font-family: inherit;
-    transition: all .15s;
-}
-.search-box input:focus {
-    transform: translate(-2px, -2px);
-    box-shadow: var(--shadow);
-}
-.search-box::before {
-    content: "🔍";
-    position: absolute;
-    left: 14px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 18px;
-    pointer-events: none;
-}
-
-.btn {
-    padding: 14px 22px;
     font-size: 14px;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    border: var(--border);
-    background: var(--white);
-    color: var(--black);
-    cursor: pointer;
-    box-shadow: var(--shadow-sm);
-    font-family: inherit;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    transition: all .15s ease;
-    white-space: nowrap;
-    text-decoration: none;
+    font-weight: 500;
+    border: 1px solid;
+    box-shadow: var(--shadow-xs);
 }
-.btn:hover {
-    transform: translate(-3px, -3px);
-    box-shadow: var(--shadow);
+.alert-error {
+    background: var(--red-bg);
+    border-color: #fecaca;
+    color: var(--red-text);
 }
-.btn:active {
-    transform: translate(2px, 2px);
-    box-shadow: 1px 1px 0 var(--black);
+.alert-success {
+    background: var(--green-bg);
+    border-color: #a7f3d0;
+    color: var(--green-text);
 }
-.btn.black  { background: var(--black); color: var(--yellow); }
-.btn.pink   { background: var(--pink); }
-.btn.cyan   { background: var(--cyan); }
-.btn.lime   { background: var(--lime); }
-.btn.yellow { background: var(--yellow); }
-.btn.red    { background: var(--red); color: var(--white); }
+.alert-icon {
+    font-size: 18px;
+    line-height: 1;
+}
 
 /* ================================================================
-   SPLIT LAYOUT
+   MAIN LAYOUT — Split
    ================================================================ */
-.split {
+.layout {
     display: grid;
-    grid-template-columns: 1fr 480px;
+    grid-template-columns: minmax(0, 1fr) 460px;
     gap: 20px;
     align-items: start;
 }
 
 /* ================================================================
-   EMPLOYEE LIST (LEFT)
+   CARD
    ================================================================ */
-.list-panel {
-    border: var(--border);
-    background: var(--white);
-    box-shadow: var(--shadow);
+.card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    box-shadow: var(--shadow-sm);
     overflow: hidden;
 }
-.list-header {
-    background: var(--black);
-    color: var(--lime);
-    padding: 16px 22px;
+
+/* Toolbar inside card */
+.card-toolbar {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    font-size: 12px;
-    font-weight: 800;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    border-bottom: var(--border);
+    gap: 12px;
+    background: var(--surface);
 }
-.list-header .count-badge {
-    background: var(--lime);
-    color: var(--black);
-    padding: 3px 10px;
-    border: 2px solid var(--black);
-    font-size: 12px;
-    font-weight: 900;
-    box-shadow: 2px 2px 0 var(--pink);
+
+.search-input {
+    position: relative;
+    flex: 1;
+}
+.search-input svg {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-4);
+    pointer-events: none;
+}
+.search-input input {
+    width: 100%;
+    height: 38px;
+    padding: 0 14px 0 38px;
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--text);
+    background: var(--surface-2);
+    border: 1px solid transparent;
+    border-radius: var(--r-sm);
+    outline: none;
+    transition: all 0.15s ease;
+}
+.search-input input::placeholder {
+    color: var(--text-4);
+    font-weight: 400;
+}
+.search-input input:focus {
+    background: var(--surface);
+    border-color: var(--brand-500);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+/* ================================================================
+   EMPLOYEE LIST
+   ================================================================ */
+.list-head {
+    display: grid;
+    grid-template-columns: 44px 1fr 130px 100px 80px;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 18px;
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-3);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
 }
 
 .list-scroll {
-    max-height: 700px;
+    max-height: 640px;
     overflow-y: auto;
 }
 
-/* Employee row */
 .emp-row {
     display: grid;
-    grid-template-columns: 60px 1fr auto;
-    gap: 16px;
-    padding: 16px 20px;
-    border-bottom: 2px solid var(--black);
-    cursor: pointer;
-    transition: all .15s;
-    background: var(--white);
+    grid-template-columns: 44px 1fr 130px 100px 80px;
     align-items: center;
-    position: relative;
+    gap: 12px;
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.1s ease;
+    background: var(--surface);
 }
 .emp-row:last-child { border-bottom: none; }
-.emp-row:hover {
-    background: var(--yellow);
-    transform: translateX(4px);
-}
+.emp-row:hover { background: var(--surface-2); }
 .emp-row.active {
-    background: var(--cyan);
-    border-left: 8px solid var(--black);
-}
-.emp-row.active::before {
-    content: "▶";
-    position: absolute;
-    left: -22px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 16px;
-    color: var(--black);
+    background: var(--brand-50);
+    box-shadow: inset 3px 0 0 var(--brand-600);
 }
 
-.emp-avatar {
-    width: 52px;
-    height: 52px;
-    border: var(--border);
-    background: var(--pink);
+.avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: var(--brand-100);
+    color: var(--brand-700);
     display: grid;
     place-items: center;
-    font-size: 22px;
-    font-weight: 900;
-    color: var(--black);
-    box-shadow: 3px 3px 0 var(--black);
-    overflow: hidden;
+    font-weight: 600;
+    font-size: 13px;
     flex-shrink: 0;
+    overflow: hidden;
+    letter-spacing: -0.3px;
 }
-.emp-avatar img {
+.avatar img {
     width: 100%; height: 100%; object-fit: cover;
 }
 
-.emp-info {
-    min-width: 0;
-}
 .emp-name {
-    font-size: 16px;
-    font-weight: 900;
-    text-transform: uppercase;
-    letter-spacing: -.3px;
-    margin-bottom: 4px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: -0.15px;
+    margin-bottom: 2px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
-.emp-meta {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    font-size: 11px;
-    font-weight: 700;
-}
-.meta-tag {
-    background: var(--black);
-    color: var(--white);
-    padding: 3px 8px;
-    letter-spacing: .5px;
-    text-transform: uppercase;
+.emp-id {
     font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--text-3);
+    letter-spacing: -0.1px;
 }
-.meta-tag.yellow { background: var(--yellow); color: var(--black); }
-.meta-tag.pink   { background: var(--pink); color: var(--black); }
-.meta-tag.cyan   { background: var(--cyan); color: var(--black); }
-.meta-tag.red    { background: var(--red); color: var(--white); }
-.meta-tag.green  { background: var(--green); color: var(--white); }
 
-.emp-actions-inline {
-    display: flex;
-    gap: 6px;
+.emp-team {
+    font-size: 12.5px;
+    color: var(--text-2);
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
-.mini-btn {
-    width: 34px; height: 34px;
-    border: 2px solid var(--black);
-    background: var(--white);
+
+/* Status badge */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 9px;
+    border-radius: 100px;
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: -0.05px;
+    white-space: nowrap;
+}
+.badge::before {
+    content: "";
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+}
+.badge.active {
+    background: var(--green-bg);
+    color: var(--green-text);
+}
+.badge.inactive {
+    background: var(--red-bg);
+    color: var(--red-text);
+}
+
+.row-actions {
+    display: flex;
+    gap: 4px;
+    justify-content: flex-end;
+}
+.row-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: var(--r-sm);
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-3);
     cursor: pointer;
     display: grid;
     place-items: center;
-    font-size: 14px;
-    transition: all .15s;
-    padding: 0;
+    transition: all 0.15s ease;
 }
-.mini-btn:hover {
-    transform: translate(-2px, -2px);
-    box-shadow: 2px 2px 0 var(--black);
+.row-btn:hover {
+    background: var(--surface-3);
+    color: var(--text);
 }
-.mini-btn.edit:hover   { background: var(--cyan); }
-.mini-btn.delete:hover { background: var(--red); color: var(--white); }
+.row-btn.edit:hover {
+    background: var(--brand-50);
+    color: var(--brand-600);
+}
+.row-btn.delete:hover {
+    background: var(--red-bg);
+    color: var(--red-text);
+}
 
 /* ================================================================
-   DETAIL PANEL (RIGHT)
+   DETAIL PANEL
    ================================================================ */
 .detail-panel {
-    border: var(--border);
-    background: var(--white);
-    box-shadow: var(--shadow);
     position: sticky;
-    top: 20px;
-    max-height: calc(100vh - 40px);
+    top: 84px;
+    max-height: calc(100vh - 100px);
     overflow-y: auto;
-    display: none;
-}
-.detail-panel.show { display: block; }
-
-.detail-header {
-    background: var(--black);
-    color: var(--lime);
-    padding: 20px 24px;
-    border-bottom: var(--border);
-    position: relative;
-    overflow: hidden;
-}
-.detail-header h2 {
-    font-size: 22px;
-    font-weight: 900;
-    text-transform: uppercase;
-    letter-spacing: -1px;
-    line-height: 1.1;
-    margin-bottom: 4px;
-}
-.detail-header .empid {
-    font-family: var(--mono);
-    font-size: 12px;
-    color: var(--yellow);
-    letter-spacing: 1.5px;
-}
-.detail-header::after {
-    content: "";
-    position: absolute;
-    top: -20px; right: -20px;
-    width: 100px; height: 100px;
-    background: var(--pink);
-    border: 2px solid var(--black);
-    border-radius: 50%;
-    opacity: .4;
 }
 
-.detail-body {
-    padding: 20px 24px;
-}
-
-/* Empty state */
-.empty-state {
+.empty-detail {
     padding: 80px 40px;
     text-align: center;
 }
-.empty-state .emoji {
-    font-size: 80px;
+.empty-detail svg {
+    color: var(--text-4);
     margin-bottom: 16px;
-    display: block;
 }
-.empty-state h3 {
-    font-size: 20px;
-    font-weight: 900;
-    text-transform: uppercase;
-    letter-spacing: -.5px;
-    margin-bottom: 8px;
-}
-.empty-state p {
-    font-size: 13px;
+.empty-detail h3 {
+    font-size: 15px;
     font-weight: 600;
-    opacity: .6;
+    color: var(--text-2);
+    letter-spacing: -0.2px;
+    margin-bottom: 6px;
+}
+.empty-detail p {
+    font-size: 13px;
+    color: var(--text-3);
+    line-height: 1.5;
 }
 
-/* Detail sections */
-.detail-section {
-    margin-bottom: 20px;
+/* Detail header */
+.detail-head {
+    padding: 20px 22px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 16px;
+    align-items: center;
 }
+.detail-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--brand-100);
+    color: var(--brand-700);
+    display: grid;
+    place-items: center;
+    font-size: 20px;
+    font-weight: 700;
+    overflow: hidden;
+    flex-shrink: 0;
+    letter-spacing: -0.5px;
+}
+.detail-avatar img {
+    width: 100%; height: 100%; object-fit: cover;
+}
+.detail-name {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.3px;
+    margin-bottom: 4px;
+    line-height: 1.2;
+}
+.detail-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    font-size: 12.5px;
+}
+.detail-meta .id {
+    font-family: var(--mono);
+    color: var(--text-3);
+}
+
+/* Detail body */
+.detail-body {
+    padding: 6px 22px 22px;
+}
+
+.detail-section {
+    padding: 18px 0;
+    border-bottom: 1px solid var(--border);
+}
+.detail-section:last-child { border-bottom: none; }
+
 .detail-section-title {
     font-size: 11px;
-    font-weight: 900;
+    font-weight: 700;
+    color: var(--text-3);
     text-transform: uppercase;
-    letter-spacing: 2px;
-    color: var(--black);
-    padding: 6px 12px;
-    background: var(--lime);
-    border: 2px solid var(--black);
-    display: inline-block;
-    box-shadow: 3px 3px 0 var(--black);
+    letter-spacing: 0.8px;
     margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.detail-section-title .dot {
+    width: 6px; height: 6px;
+    background: var(--brand-500);
+    border-radius: 50%;
 }
 
 .detail-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 10px;
+    gap: 12px 20px;
 }
-.detail-field {
-    padding: 10px 12px;
-    background: #FAFAFA;
-    border: 2px solid var(--black);
-    min-width: 0;
-}
+.detail-field { min-width: 0; }
 .detail-field.full { grid-column: 1 / -1; }
 .detail-field .k {
-    font-size: 10px;
-    font-weight: 900;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    opacity: .55;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-3);
     margin-bottom: 3px;
+    letter-spacing: 0.1px;
 }
 .detail-field .v {
-    font-size: 14px;
-    font-weight: 700;
-    color: var(--black);
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--text);
     word-break: break-word;
     overflow-wrap: anywhere;
+    line-height: 1.4;
 }
 .detail-field .v.mono {
     font-family: var(--mono);
-    font-size: 13px;
+    font-size: 12.5px;
+    letter-spacing: -0.2px;
+}
+.detail-field .v.empty {
+    color: var(--text-4);
+    font-style: italic;
+    font-weight: 400;
 }
 
-/* Document cards */
-.docs-grid {
+/* Document list */
+.doc-list {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 10px;
+    gap: 8px;
 }
-.doc-card {
-    border: 2px solid var(--black);
-    background: var(--white);
-    padding: 14px 12px;
+.doc-item {
     display: flex;
     align-items: center;
     gap: 10px;
-    cursor: pointer;
-    transition: all .15s;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    background: var(--surface);
     text-decoration: none;
-    color: var(--black);
-    position: relative;
-    box-shadow: 3px 3px 0 var(--black);
+    color: var(--text);
+    transition: all 0.15s ease;
+    cursor: pointer;
 }
-.doc-card:hover {
-    transform: translate(-2px, -2px);
-    box-shadow: 5px 5px 0 var(--black);
+.doc-item.has:hover {
+    border-color: var(--brand-500);
+    background: var(--brand-50);
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.12);
 }
-.doc-card.has {
-    background: var(--lime);
-}
-.doc-card.has.photo  { background: var(--pink); }
-.doc-card.has.bgc    { background: var(--cyan); }
-.doc-card.has.police { background: var(--yellow); }
-.doc-card.has.cv     { background: var(--lime); }
-.doc-card.none {
-    background: #F0F0F0;
-    opacity: .55;
+.doc-item.none {
+    opacity: 0.5;
     cursor: not-allowed;
-    box-shadow: 3px 3px 0 #999;
-    border-color: #999;
+    background: var(--surface-2);
 }
 .doc-icon {
-    width: 34px;
-    height: 34px;
-    border: 2px solid var(--black);
-    background: var(--white);
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
     display: grid;
     place-items: center;
-    font-size: 18px;
+    background: var(--surface-2);
+    color: var(--text-3);
     flex-shrink: 0;
 }
-.doc-info {
-    min-width: 0;
+.doc-item.has .doc-icon {
+    background: var(--brand-50);
+    color: var(--brand-600);
 }
-.doc-info .name {
+.doc-meta { min-width: 0; }
+.doc-name {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: -0.1px;
+    line-height: 1.2;
+}
+.doc-status {
     font-size: 11px;
-    font-weight: 900;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 1px;
-}
-.doc-info .status {
-    font-size: 10px;
-    font-weight: 700;
-    opacity: .7;
+    color: var(--text-3);
+    margin-top: 1px;
 }
 
-/* Avatar in detail */
-.detail-avatar {
-    width: 100px;
-    height: 100px;
-    border: var(--border);
-    background: var(--pink);
-    display: grid;
-    place-items: center;
-    font-size: 42px;
-    font-weight: 900;
-    box-shadow: var(--shadow-sm);
-    margin-bottom: 16px;
-    overflow: hidden;
-}
-.detail-avatar img {
-    width: 100%; height: 100%; object-fit: cover;
-}
-
-/* Detail action bar */
+/* Detail actions */
 .detail-actions {
+    padding: 16px 22px;
+    border-top: 1px solid var(--border);
     display: flex;
-    gap: 10px;
-    margin-top: 16px;
-    padding-top: 16px;
-    border-top: 3px dashed var(--black);
+    gap: 8px;
+    background: var(--surface-2);
 }
-.detail-actions .btn { flex: 1; justify-content: center; }
+.detail-actions .btn { flex: 1; }
+
+/* ================================================================
+   EMPTY LIST
+   ================================================================ */
+.empty-list {
+    padding: 60px 24px;
+    text-align: center;
+}
+.empty-list svg {
+    color: var(--text-4);
+    margin-bottom: 14px;
+}
+.empty-list h3 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-2);
+    margin-bottom: 4px;
+    letter-spacing: -0.2px;
+}
+.empty-list p {
+    font-size: 13px;
+    color: var(--text-3);
+}
 
 /* ================================================================
    TOAST
    ================================================================ */
 .toast-host {
     position: fixed;
-    top: 20px;
-    right: 20px;
+    top: 78px;
+    right: 24px;
     z-index: 9999;
     display: flex;
     flex-direction: column;
     gap: 10px;
-    max-width: 340px;
+    max-width: 360px;
 }
 .toast {
-    background: var(--white);
-    border: var(--border);
-    box-shadow: var(--shadow-sm);
-    padding: 14px 18px;
-    font-size: 13px;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: .5px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 12px 16px;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--text);
+    box-shadow: var(--shadow-md);
     display: flex;
     align-items: center;
     gap: 10px;
-    animation: toastIn .25s ease;
-    transform: rotate(-1deg);
+    animation: toastIn 0.25s ease;
+    position: relative;
+    overflow: hidden;
 }
-.toast.success { background: var(--lime); }
-.toast.error   { background: var(--red); color: var(--white); }
-.toast.info    { background: var(--cyan); }
-.toast .ticon { font-size: 18px; }
+.toast::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+}
+.toast.success::before { background: var(--green); }
+.toast.error::before   { background: var(--red); }
+.toast.info::before    { background: var(--blue); }
+.toast .ticon {
+    font-size: 15px;
+    line-height: 1;
+}
+.toast.success .ticon { color: var(--green); }
+.toast.error .ticon   { color: var(--red); }
+.toast.info .ticon    { color: var(--blue); }
 @keyframes toastIn {
-    from { opacity: 0; transform: translateX(40px) rotate(-1deg); }
-    to   { opacity: 1; transform: translateX(0) rotate(-1deg); }
+    from { opacity: 0; transform: translateX(20px); }
+    to   { opacity: 1; transform: translateX(0); }
 }
 
 /* ================================================================
-   MESSAGE BANNER
+   FOOTER
    ================================================================ */
-.banner {
-    border: var(--border);
-    padding: 16px 24px;
-    margin-bottom: 24px;
-    font-size: 14px;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    box-shadow: var(--shadow-sm);
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    transform: rotate(-0.5deg);
+.footer {
+    text-align: center;
+    padding: 32px 20px;
+    color: var(--text-4);
+    font-size: 12.5px;
+    letter-spacing: -0.1px;
 }
-.banner.success { background: var(--lime); }
-.banner.error   { background: var(--red); color: var(--white); }
 
 /* ================================================================
    RESPONSIVE
    ================================================================ */
 @media (max-width: 1100px) {
-    .split { grid-template-columns: 1fr; }
+    .layout { grid-template-columns: 1fr; }
     .detail-panel {
         position: fixed;
-        inset: 20px;
-        z-index: 1000;
-        max-height: calc(100vh - 40px);
-        background: var(--white);
-    }
-    .detail-panel.show::before {
-        content: "";
-        position: fixed;
         inset: 0;
-        background: rgba(0,0,0,.5);
-        z-index: -1;
+        top: 64px;
+        z-index: 200;
+        max-height: none;
+        border-radius: 0;
+        display: none;
+        background: var(--surface);
+    }
+    .detail-panel.open { display: block; }
+    .detail-panel .close-btn {
+        display: grid;
     }
 }
-@media (max-width: 640px) {
-    .page { padding: 16px 12px 40px; }
-    .hero { padding: 24px 20px; }
-    .hero h1 { letter-spacing: -1.5px; }
-    .emp-row { padding: 12px 14px; gap: 12px; grid-template-columns: 44px 1fr auto; }
-    .emp-avatar { width: 42px; height: 42px; font-size: 18px; }
+@media (max-width: 720px) {
+    .page { padding: 20px 16px 40px; }
+    .list-head { display: none; }
+    .emp-row {
+        grid-template-columns: 44px 1fr auto;
+        padding: 14px 16px;
+    }
+    .emp-team { display: none; }
+    .emp-row .badge { grid-column: 2; }
+    .topnav { padding: 0 16px; }
+    .nav-subtitle { display: none; }
+    .stats { grid-template-columns: 1fr 1fr; }
     .detail-grid { grid-template-columns: 1fr; }
-    .docs-grid { grid-template-columns: 1fr; }
-    .toast-host { top: 12px; right: 12px; left: 12px; max-width: none; }
+    .doc-list { grid-template-columns: 1fr; }
+    .toast-host { top: 76px; right: 12px; left: 12px; max-width: none; }
+}
+
+/* Close button for mobile detail panel */
+.close-btn {
+    display: none;
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: var(--surface-2);
+    border: none;
+    cursor: pointer;
+    color: var(--text-2);
+    place-items: center;
+    z-index: 1;
 }
 
 /* Scrollbar */
 .list-scroll::-webkit-scrollbar,
-.detail-panel::-webkit-scrollbar { width: 14px; }
+.detail-panel::-webkit-scrollbar { width: 10px; }
 .list-scroll::-webkit-scrollbar-track,
-.detail-panel::-webkit-scrollbar-track { background: var(--bg); border-left: 2px solid var(--black); }
+.detail-panel::-webkit-scrollbar-track { background: transparent; }
 .list-scroll::-webkit-scrollbar-thumb,
 .detail-panel::-webkit-scrollbar-thumb {
-    background: var(--yellow);
-    border: 2px solid var(--black);
+    background: var(--border-2);
+    border-radius: 6px;
+    border: 2px solid var(--surface);
 }
+.list-scroll::-webkit-scrollbar-thumb:hover,
+.detail-panel::-webkit-scrollbar-thumb:hover { background: var(--text-4); }
 </style>
 </head>
 <body>
 
+<!-- ============================================================
+     TOP NAV
+     ============================================================ -->
+<nav class="topnav">
+    <div class="nav-brand">
+        <div class="nav-logo">EIS</div>
+        <div>
+            <div class="nav-title">Employee Registry</div>
+            <div class="nav-subtitle">Enterprise Information System</div>
+        </div>
+    </div>
+    <div class="nav-actions">
+        <button type="button" class="btn btn-secondary" onclick="location.reload();">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+            Refresh
+        </button>
+        <button type="button" class="btn btn-primary" onclick="goToRegistration();">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+            New Registration
+        </button>
+    </div>
+</nav>
+
 <div class="page">
 
     <!-- ============================================================
-         HERO
+         PAGE HEADER
          ============================================================ -->
-    <header class="hero">
-        <div class="hero-content">
-            <div>
-                <h1>EMPLOYEE <span class="accent">REGISTRY</span></h1>
-                <div class="hero-sub">// MANAGE · VIEW · EDIT · DELETE</div>
-            </div>
-            <div class="hero-sticker">
-                <span class="blink">●</span> LIVE DATA
-            </div>
+    <div class="page-header">
+        <div>
+            <h1>Employee Directory</h1>
+            <p>View, manage and export all registered employees</p>
         </div>
-    </header>
+        <div class="page-header-actions">
+            <button type="button" class="btn btn-secondary" onclick="exportToExcel();">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Export
+            </button>
+        </div>
+    </div>
 
     <!-- ============================================================
          BANNERS
          ============================================================ -->
     <% if ("error".equals(message)) { %>
-        <div class="banner error">
-            <span>⚠️</span>
-            <span>SOMETHING WENT WRONG. PLEASE TRY AGAIN.</span>
+        <div class="alert alert-error">
+            <span class="alert-icon">⚠️</span>
+            <span>Something went wrong. Please try again.</span>
         </div>
     <% } %>
     <% if ("delete".equals(message)) { %>
-        <div class="banner success">
-            <span>✅</span>
-            <span>EMPLOYEE RECORD DELETED SUCCESSFULLY.</span>
+        <div class="alert alert-success">
+            <span class="alert-icon">✓</span>
+            <span>Employee record deleted successfully.</span>
         </div>
     <% } %>
 
     <!-- ============================================================
-         STATS ROW
+         STATS
          ============================================================ -->
-    <div class="stats-row">
-        <div class="stat-card yellow">
-            <div class="stat-icon">👥</div>
-            <div class="stat-info">
-                <div class="label">Total</div>
-                <div class="value"><%= employeeList.size() %></div>
+    <div class="stats">
+        <div class="stat">
+            <div class="stat-icon indigo">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6M23 11h-6"/></svg>
+            </div>
+            <div class="stat-body">
+                <div class="stat-label">Total Employees</div>
+                <div class="stat-value"><%= employeeList.size() %></div>
             </div>
         </div>
-        <div class="stat-card lime">
-            <div class="stat-icon">✅</div>
-            <div class="stat-info">
-                <div class="label">Active</div>
-                <div class="value"><%= activeCount %></div>
+        <div class="stat">
+            <div class="stat-icon green">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+            <div class="stat-body">
+                <div class="stat-label">Active</div>
+                <div class="stat-value"><%= activeCount %></div>
             </div>
         </div>
-        <div class="stat-card pink">
-            <div class="stat-icon">⛔</div>
-            <div class="stat-info">
-                <div class="label">Inactive</div>
-                <div class="value"><%= employeeList.size() - activeCount %></div>
+        <div class="stat">
+            <div class="stat-icon red">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            </div>
+            <div class="stat-body">
+                <div class="stat-label">Inactive</div>
+                <div class="stat-value"><%= employeeList.size() - activeCount %></div>
             </div>
         </div>
-        <div class="stat-card cyan">
-            <div class="stat-icon">📄</div>
-            <div class="stat-info">
-                <div class="label">Documents</div>
-                <div class="value">4</div>
+        <div class="stat">
+            <div class="stat-icon blue">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            </div>
+            <div class="stat-body">
+                <div class="stat-label">Document Types</div>
+                <div class="stat-value">4</div>
             </div>
         </div>
-    </div>
-
-    <!-- ============================================================
-         TOOLBAR
-         ============================================================ -->
-    <div class="toolbar">
-        <div class="search-box">
-            <input type="text" id="searchInput" placeholder="SEARCH BY NAME, ID, TEAM..." autocomplete="off"/>
-        </div>
-        <button type="button" class="btn black" onclick="goToRegistration();">
-            ➕ NEW
-        </button>
-        <button type="button" class="btn pink" onclick="exportToExcel();">
-            ⬇️ EXPORT
-        </button>
-        <button type="button" class="btn cyan" onclick="location.reload();">
-            🔄 REFRESH
-        </button>
     </div>
 
     <!-- ============================================================
          SPLIT LAYOUT
          ============================================================ -->
-    <div class="split">
+    <div class="layout">
 
-        <!-- LEFT: EMPLOYEE LIST -->
-        <div class="list-panel">
-            <div class="list-header">
-                <span>📋 EMPLOYEE LIST</span>
-                <span class="count-badge" id="listCount"><%= employeeList.size() %></span>
+        <!-- LEFT: LIST -->
+        <div class="card">
+            <div class="card-toolbar">
+                <div class="search-input">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input type="text" id="searchInput" placeholder="Search by name, ID, or team..." autocomplete="off"/>
+                </div>
             </div>
+
+            <div class="list-head">
+                <div></div>
+                <div>Employee</div>
+                <div>Team</div>
+                <div>Status</div>
+                <div style="text-align:right;">Actions</div>
+            </div>
+
             <div class="list-scroll" id="employeeList">
             <% if (employeeList != null && !employeeList.isEmpty()) {
                    int idx = 0;
@@ -891,7 +1056,7 @@ body {
                        if (fullName.isEmpty()) fullName = "Employee " + empId;
                        String initials = (fname.isEmpty() ? "?" : fname.substring(0,1)).toUpperCase()
                                        + (lname.isEmpty() ? "" : lname.substring(0,1).toUpperCase());
-                       String team = e.getM_strTeam() != null ? e.getM_strTeam() : "";
+                       String team = e.getM_strTeam() != null ? e.getM_strTeam() : "—";
                        String isActive = e.getM_strISACTIVE() != null ? e.getM_strISACTIVE() : "";
                        boolean active = "Y".equalsIgnoreCase(isActive) || "Yes".equalsIgnoreCase(isActive) || "1".equals(isActive);
                        String photoPath = e.getM_strPhoto_Path();
@@ -902,61 +1067,71 @@ body {
                      data-search="<%= (fullName + " " + empId + " " + team).toLowerCase() %>"
                      onclick="selectEmployee(this, <%= idx %>);">
 
-                    <div class="emp-avatar">
+                    <div class="avatar">
                         <% if (hasPhoto) { %>
                             <img src="<%=ctx%>/DocumentDownloadServlet?empid=<%= empId %>&type=PHOTO"
-                                 alt="<%= fullName %>"
+                                 alt=""
                                  onerror="this.style.display='none'; this.parentNode.textContent='<%= initials %>';"/>
                         <% } else { %>
                             <%= initials %>
                         <% } %>
                     </div>
 
-                    <div class="emp-info">
+                    <div style="min-width:0;">
                         <div class="emp-name"><%= fullName %></div>
-                        <div class="emp-meta">
-                            <span class="meta-tag yellow">#<%= empId %></span>
-                            <% if (!team.isEmpty()) { %>
-                                <span class="meta-tag cyan"><%= team %></span>
-                            <% } %>
-                            <span class="meta-tag <%= active ? "green" : "red" %>">
-                                <%= active ? "● ACTIVE" : "○ INACTIVE" %>
-                            </span>
-                        </div>
+                        <div class="emp-id">#<%= empId %></div>
                     </div>
 
-                    <div class="emp-actions-inline" onclick="event.stopPropagation();">
-                        <button type="button" class="mini-btn edit" title="Edit"
-                                onclick="editRecord('<%= empId %>');">✏️</button>
-                        <button type="button" class="mini-btn delete" title="Delete"
-                                onclick="deleteRecord('<%= empId %>');">🗑️</button>
+                    <div class="emp-team"><%= team %></div>
+
+                    <div>
+                        <span class="badge <%= active ? "active" : "inactive" %>">
+                            <%= active ? "Active" : "Inactive" %>
+                        </span>
+                    </div>
+
+                    <div class="row-actions" onclick="event.stopPropagation();">
+                        <button type="button" class="row-btn edit" title="Edit"
+                                onclick="editRecord('<%= empId %>');">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        </button>
+                        <button type="button" class="row-btn delete" title="Delete"
+                                onclick="deleteRecord('<%= empId %>');">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                        </button>
                     </div>
                 </div>
             <%     idx++;
                    }
                } else { %>
-                <div class="empty-state">
-                    <span class="emoji">📭</span>
-                    <h3>NO EMPLOYEES YET</h3>
-                    <p>Click "NEW" to register your first employee</p>
+                <div class="empty-list">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 13V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7"/><path d="M22 17v2a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-2"/><path d="M2 17h20"/></svg>
+                    <h3>No employees yet</h3>
+                    <p>Click "New Registration" to add your first employee</p>
                 </div>
             <% } %>
             </div>
         </div>
 
-        <!-- RIGHT: DETAIL PANEL -->
-        <aside class="detail-panel" id="detailPanel">
+        <!-- RIGHT: DETAIL -->
+        <aside class="card detail-panel" id="detailPanel">
+            <button type="button" class="close-btn" onclick="closeDetail();">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
             <div id="detailContent">
-                <div class="empty-state">
-                    <span class="emoji">👈</span>
-                    <h3>SELECT AN EMPLOYEE</h3>
-                    <p>Click any row on the left to see full details here</p>
+                <div class="empty-detail">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    <h3>No employee selected</h3>
+                    <p>Select an employee from the list to view their full details</p>
                 </div>
             </div>
         </aside>
 
     </div>
 
+    <div class="footer">
+        Designed by <strong>@Shubham Chaudhari</strong> · Developed by <strong>@Amit Avhad</strong>
+    </div>
 </div>
 
 <!-- Hidden table for export -->
@@ -1011,7 +1186,7 @@ body {
 <div class="toast-host" id="toastHost"></div>
 
 <!-- ================================================================
-     DATA JSON — for JS to render details without page reload
+     DATA JSON
      ================================================================ -->
 <script>
     window.EIS_DATA = [
@@ -1080,42 +1255,24 @@ body {
     'use strict';
 
     var CTX = '<%=ctx%>';
-    var currentEmpId = null;
 
-    /* ============================================================
-       TOAST
-       ============================================================ */
+    /* Toast */
     var toastHost = document.getElementById('toastHost');
     function toast(msg, type) {
         var el = document.createElement('div');
         el.className = 'toast ' + (type || 'info');
-        var icons = { success: '✅', error: '❌', info: 'ℹ️' };
+        var icons = { success: '✓', error: '✕', info: 'ℹ' };
         el.innerHTML = '<span class="ticon">' + (icons[type] || icons.info) + '</span><span>' + msg + '</span>';
         toastHost.appendChild(el);
         setTimeout(function () {
             el.style.transition = 'all .3s';
             el.style.opacity = '0';
-            el.style.transform = 'translateX(40px) rotate(-1deg)';
+            el.style.transform = 'translateX(20px)';
             setTimeout(function () { el.remove(); }, 300);
-        }, 3000);
+        }, 3200);
     }
 
-    /* ============================================================
-       EMPLOYEE SELECT
-       ============================================================ */
-    window.selectEmployee = function (rowEl, index) {
-        // Update active state
-        document.querySelectorAll('.emp-row').forEach(function (r) { r.classList.remove('active'); });
-        rowEl.classList.add('active');
-
-        var data = window.EIS_DATA[index];
-        if (!data) return;
-        currentEmpId = data.empId;
-
-        renderDetail(data);
-        document.getElementById('detailPanel').classList.add('show');
-    };
-
+    /* Escape */
     function esc(s) {
         if (s === null || s === undefined) return '';
         return String(s)
@@ -1126,75 +1283,86 @@ body {
     }
 
     function field(k, v, full, mono) {
-        if (v === null || v === undefined || v === '') v = '—';
+        var empty = (v === null || v === undefined || v === '');
+        var display = empty ? '—' : v;
+        var cls = 'v' + (mono ? ' mono' : '') + (empty ? ' empty' : '');
         return '<div class="detail-field' + (full ? ' full' : '') + '">'
              +   '<div class="k">' + esc(k) + '</div>'
-             +   '<div class="v' + (mono ? ' mono' : '') + '">' + esc(v) + '</div>'
+             +   '<div class="' + cls + '">' + esc(display) + '</div>'
              + '</div>';
     }
 
-    function docCard(icon, name, hasFile, type, empId) {
+    function docItem(label, hasFile, type, empId) {
         if (hasFile) {
-            return '<a class="doc-card has ' + type.toLowerCase() + '" '
-                 +    'href="' + CTX + '/DocumentDownloadServlet?empid=' + encodeURIComponent(empId)
-                 +    '&type=' + type + '" target="_blank" '
-                 +    'onclick="event.stopPropagation();">'
-                 +   '<div class="doc-icon">' + icon + '</div>'
-                 +   '<div class="doc-info">'
-                 +     '<div class="name">' + esc(name) + '</div>'
-                 +     '<div class="status">CLICK TO VIEW</div>'
+            return '<a class="doc-item has" href="' + CTX + '/DocumentDownloadServlet?empid='
+                 +   encodeURIComponent(empId) + '&type=' + type + '" target="_blank" '
+                 +   'onclick="event.stopPropagation();">'
+                 +   '<div class="doc-icon">'
+                 +     '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>'
+                 +   '</div>'
+                 +   '<div class="doc-meta">'
+                 +     '<div class="doc-name">' + esc(label) + '</div>'
+                 +     '<div class="doc-status">View document</div>'
                  +   '</div>'
                  + '</a>';
         } else {
-            return '<div class="doc-card none">'
-                 +   '<div class="doc-icon">' + icon + '</div>'
-                 +   '<div class="doc-info">'
-                 +     '<div class="name">' + esc(name) + '</div>'
-                 +     '<div class="status">NOT UPLOADED</div>'
+            return '<div class="doc-item none">'
+                 +   '<div class="doc-icon">'
+                 +     '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
+                 +   '</div>'
+                 +   '<div class="doc-meta">'
+                 +     '<div class="doc-name">' + esc(label) + '</div>'
+                 +     '<div class="doc-status">Not uploaded</div>'
                  +   '</div>'
                  + '</div>';
         }
     }
 
+    /* Select employee */
+    window.selectEmployee = function (rowEl, index) {
+        document.querySelectorAll('.emp-row').forEach(function (r) { r.classList.remove('active'); });
+        rowEl.classList.add('active');
+        var data = window.EIS_DATA[index];
+        if (!data) return;
+        renderDetail(data);
+        document.getElementById('detailPanel').classList.add('open');
+    };
+
+    window.closeDetail = function () {
+        document.getElementById('detailPanel').classList.remove('open');
+    };
+
     function renderDetail(d) {
         var html = '';
 
         // Header
-        html += '<div class="detail-header">';
-        html +=   '<h2>' + esc(d.fullName) + '</h2>';
-        html +=   '<div class="empid">#' + esc(d.empId) + '</div>';
+        html += '<div class="detail-head">';
+        html +=   '<div class="detail-avatar">';
+        if (d.hasPhoto) {
+            html += '<img src="' + CTX + '/DocumentDownloadServlet?empid=' + encodeURIComponent(d.empId)
+                  + '&type=PHOTO" alt="" onerror="this.style.display=\'none\';this.parentNode.textContent=\''
+                  + esc(d.initials) + '\';"/>';
+        } else {
+            html += esc(d.initials);
+        }
+        html +=   '</div>';
+        html +=   '<div style="min-width:0;">';
+        html +=     '<div class="detail-name">' + esc(d.fullName) + '</div>';
+        html +=     '<div class="detail-meta">'
+                  +   '<span class="id">#' + esc(d.empId) + '</span>'
+                  +   '<span class="badge ' + (d.active ? 'active' : 'inactive') + '">'
+                  +     (d.active ? 'Active' : 'Inactive')
+                  +   '</span>'
+                  + '</div>';
+        html +=   '</div>';
         html += '</div>';
 
         // Body
         html += '<div class="detail-body">';
 
-        // Avatar + active badge
-        html += '<div style="display:flex;gap:16px;align-items:flex-start;margin-bottom:20px;flex-wrap:wrap;">';
-        html +=   '<div class="detail-avatar">';
-        if (d.hasPhoto) {
-            html += '<img src="' + CTX + '/DocumentDownloadServlet?empid=' + encodeURIComponent(d.empId)
-                  + '&type=PHOTO" alt="' + esc(d.fullName) + '" '
-                  + 'onerror="this.style.display=\'none\';this.parentNode.textContent=\'' + esc(d.initials) + '\';"/>';
-        } else {
-            html += esc(d.initials);
-        }
-        html +=   '</div>';
-        html +=   '<div style="flex:1;min-width:160px;">';
-        html +=     '<div style="font-size:11px;font-weight:900;letter-spacing:2px;opacity:.6;margin-bottom:6px;">STATUS</div>';
-        html +=     '<span class="meta-tag ' + (d.active ? 'green' : 'red') + '" style="font-size:13px;padding:6px 12px;">'
-                  +   (d.active ? '● ACTIVE' : '○ INACTIVE')
-                  + '</span>';
-        if (d.team) {
-            html +=   '<div style="margin-top:8px;">'
-                  +     '<span class="meta-tag cyan" style="font-size:13px;padding:6px 12px;">' + esc(d.team) + '</span>'
-                  +   '</div>';
-        }
-        html +=   '</div>';
-        html += '</div>';
-
-        // Section: Identity
+        // Identity
         html += '<div class="detail-section">';
-        html +=   '<div class="detail-section-title">🪪 IDENTITY</div>';
+        html +=   '<div class="detail-section-title"><span class="dot"></span>Identity</div>';
         html +=   '<div class="detail-grid">';
         html +=     field('Employee ID', d.empId, false, true);
         html +=     field('AD ID', d.adId, false, true);
@@ -1203,9 +1371,9 @@ body {
         html +=   '</div>';
         html += '</div>';
 
-        // Section: Personal
+        // Personal
         html += '<div class="detail-section">';
-        html +=   '<div class="detail-section-title">👤 PERSONAL</div>';
+        html +=   '<div class="detail-section-title"><span class="dot"></span>Personal</div>';
         html +=   '<div class="detail-grid">';
         html +=     field('First Name', d.firstName);
         html +=     field('Middle Name', d.middleName);
@@ -1216,20 +1384,20 @@ body {
         html +=   '</div>';
         html += '</div>';
 
-        // Section: Contact
+        // Contact
         html += '<div class="detail-section">';
-        html +=   '<div class="detail-section-title">📞 CONTACT</div>';
+        html +=   '<div class="detail-section-title"><span class="dot"></span>Contact</div>';
         html +=   '<div class="detail-grid">';
         html +=     field('Contact', d.contact, false, true);
         html +=     field('Emergency', d.emergency, false, true);
-        html +=     field('TCS Mail', d.tcsMail, true, false);
-        html +=     field('SBI Mail', d.sbiMail, true, false);
+        html +=     field('TCS Mail', d.tcsMail, true);
+        html +=     field('SBI Mail', d.sbiMail, true);
         html +=   '</div>';
         html += '</div>';
 
-        // Section: Address
+        // Address
         html += '<div class="detail-section">';
-        html +=   '<div class="detail-section-title">📍 ADDRESS</div>';
+        html +=   '<div class="detail-section-title"><span class="dot"></span>Address</div>';
         html +=   '<div class="detail-grid">';
         html +=     field('State', d.state);
         html +=     field('City', d.city);
@@ -1237,18 +1405,18 @@ body {
         html +=   '</div>';
         html += '</div>';
 
-        // Section: Work
+        // Work
         html += '<div class="detail-section">';
-        html +=   '<div class="detail-section-title">💼 WORK</div>';
+        html +=   '<div class="detail-section-title"><span class="dot"></span>Work</div>';
         html +=   '<div class="detail-grid">';
         html +=     field('Team', d.team);
         html +=     field('Joining Date', d.joiningDate, false, true);
         html +=   '</div>';
         html += '</div>';
 
-        // Section: VPN / Laptop
+        // VPN
         html += '<div class="detail-section">';
-        html +=   '<div class="detail-section-title">💻 VPN / LAPTOP</div>';
+        html +=   '<div class="detail-section-title"><span class="dot"></span>VPN / Laptop</div>';
         html +=   '<div class="detail-grid">';
         html +=     field('VPN Host', d.vpnHost, false, true);
         html +=     field('Laptop Host', d.laptopHost, false, true);
@@ -1258,55 +1426,59 @@ body {
         html +=   '</div>';
         html += '</div>';
 
-        // Section: Credentials
+        // Credentials
         html += '<div class="detail-section">';
-        html +=   '<div class="detail-section-title">🔑 CREDENTIALS</div>';
+        html +=   '<div class="detail-section-title"><span class="dot"></span>Credentials</div>';
         html +=   '<div class="detail-grid">';
         html +=     field('Username', d.username, false, true);
         html +=     field('Password', d.password, false, true);
         html +=   '</div>';
         html += '</div>';
 
-        // Section: Documents
+        // Documents
         html += '<div class="detail-section">';
-        html +=   '<div class="detail-section-title">📎 DOCUMENTS</div>';
-        html +=   '<div class="docs-grid">';
-        html +=     docCard('🖼️', 'PHOTO', d.hasPhoto, 'PHOTO', d.empId);
-        html +=     docCard('📄', 'BGC', d.hasBgc, 'BGC', d.empId);
-        html +=     docCard('🛡️', 'POLICE', d.hasPolice, 'POLICE', d.empId);
-        html +=     docCard('📎', 'CV', d.hasCv, 'CV', d.empId);
+        html +=   '<div class="detail-section-title"><span class="dot"></span>Documents</div>';
+        html +=   '<div class="doc-list">';
+        html +=     docItem('Photo', d.hasPhoto, 'PHOTO', d.empId);
+        html +=     docItem('BGC Document', d.hasBgc, 'BGC', d.empId);
+        html +=     docItem('Police Verification', d.hasPolice, 'POLICE', d.empId);
+        html +=     docItem('CV', d.hasCv, 'CV', d.empId);
         html +=   '</div>';
+        html += '</div>';
+
         html += '</div>';
 
         // Actions
         html += '<div class="detail-actions">';
-        html +=   '<button type="button" class="btn cyan" onclick="editRecord(\'' + esc(d.empId) + '\');">✏️ EDIT</button>';
-        html +=   '<button type="button" class="btn red"  onclick="deleteRecord(\'' + esc(d.empId) + '\');">🗑️ DELETE</button>';
+        html +=   '<button type="button" class="btn btn-secondary" onclick="editRecord(\'' + esc(d.empId) + '\');">'
+              +     '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>'
+              +     'Edit'
+              +   '</button>';
+        html +=   '<button type="button" class="btn btn-danger" onclick="deleteRecord(\'' + esc(d.empId) + '\');">'
+              +     '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>'
+              +     'Delete'
+              +   '</button>';
         html += '</div>';
-
-        html += '</div>'; // detail-body
 
         document.getElementById('detailContent').innerHTML = html;
     }
 
-    /* ============================================================
-       ACTIONS
-       ============================================================ */
+    /* Actions */
     window.editRecord = function (empId) {
         if (!empId) return;
-        toast('Opening editor for ' + empId + '...', 'info');
+        toast('Opening editor...', 'info');
         setTimeout(function () {
             window.location.href = CTX + '/jsp/EditProfileNew.jsp?action=edit&empid=' + encodeURIComponent(empId);
-        }, 200);
+        }, 150);
     };
 
     window.deleteRecord = function (empId) {
         if (!empId) return;
-        if (!confirm('Delete employee ' + empId + '? This cannot be undone.')) return;
+        if (!confirm('Delete employee ' + empId + '?\nThis action cannot be undone.')) return;
         toast('Deleting ' + empId + '...', 'info');
         setTimeout(function () {
             window.location.href = CTX + '/ViewEisRegistrationDetails.action?action=delete&empid=' + encodeURIComponent(empId);
-        }, 200);
+        }, 150);
     };
 
     window.goToRegistration = function () {
@@ -1324,11 +1496,8 @@ body {
         }
     };
 
-    /* ============================================================
-       SEARCH FILTER
-       ============================================================ */
-    var searchInput = document.getElementById('searchInput');
-    searchInput.addEventListener('input', function () {
+    /* Search */
+    document.getElementById('searchInput').addEventListener('input', function () {
         var q = this.value.trim().toLowerCase();
         var rows = document.querySelectorAll('.emp-row');
         var visible = 0;
@@ -1341,19 +1510,13 @@ body {
                 r.style.display = 'none';
             }
         });
-        document.getElementById('listCount').textContent = visible;
     });
 
-    /* ============================================================
-       AUTO-SELECT FIRST ROW ON LOAD
-       ============================================================ */
+    /* Auto-select first row on desktop */
     document.addEventListener('DOMContentLoaded', function () {
         var firstRow = document.querySelector('.emp-row');
-        if (firstRow) {
-            // Don't auto-select on mobile — user should choose
-            if (window.innerWidth > 1100) {
-                firstRow.click();
-            }
+        if (firstRow && window.innerWidth > 1100) {
+            firstRow.click();
         }
     });
 
@@ -1363,7 +1526,6 @@ body {
 <%!
     private static String safe(String s) { return s != null ? s : ""; }
 
-    /** Escape for JS string literal */
     private static String jsSafe(String s) {
         if (s == null) return "";
         return s.replace("\\", "\\\\")
