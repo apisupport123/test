@@ -1,1 +1,138 @@
-https://10.191.171.12:5443/EISPortal/EISEMPLOYEEDOCUMENT/BGC/[BLOB%2063043B]
+package com.action;
+
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URLConnection;
+import java.sql.Blob;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Statement;
+
+import com.jdbc.DBUtilityAuto;
+
+@WebServlet("/MigrateBlobsToDisk")
+public class MigrateBlobsToDisk extends HttpServlet {
+
+    private static final long serialVersionUID = 1L;
+    private static final String UPLOAD_BASE =
+            "/webapps/EISPortalVer2/EISEMPLOYEEDOCUMENT/";
+
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        response.setContentType("text/plain");
+        StringBuilder log = new StringBuilder();
+
+        Connection conn = null;
+        Statement st = null;
+        ResultSet rs = null;
+        PreparedStatement ps = null;
+
+        try {
+            conn = DBUtilityAuto.getReportDBConnection();
+            st = conn.createStatement();
+            rs = st.executeQuery(
+                "SELECT EMPLOYEE_ID, BGC_DOCUMENT_PATH, PHOTO_PATH, "
+              + "POLICE_VERIFICATION_PATH, CV_DOCUMENT_PATH "
+              + "FROM eisupport_employee_master");
+
+            ps = conn.prepareStatement(
+                "UPDATE eisupport_employee_master SET "
+              + "BGC_DOCUMENT_PATH = ?, PHOTO_PATH = ?, "
+              + "POLICE_VERIFICATION_PATH = ?, CV_DOCUMENT_PATH = ? "
+              + "WHERE EMPLOYEE_ID = ?");
+
+            String basePath = System.getProperty("catalina.base") + UPLOAD_BASE;
+            int rowNum = 0;
+
+            while (rs.next()) {
+                rowNum++;
+                String empId = rs.getString("EMPLOYEE_ID");
+                log.append("\n--- Row ").append(rowNum).append(" empId=").append(empId).append("\n");
+
+                String bgc    = migrateColumn(rs, "BGC_DOCUMENT_PATH", "BGC", empId, basePath, log);
+                String photo  = migrateColumn(rs, "PHOTO_PATH", "PHOTO", empId, basePath, log);
+                String police = migrateColumn(rs, "POLICE_VERIFICATION_PATH", "Police", empId, basePath, log);
+                String cv     = migrateColumn(rs, "CV_DOCUMENT_PATH", "CV", empId, basePath, log);
+
+                ps.setString(1, bgc);
+                ps.setString(2, photo);
+                ps.setString(3, police);
+                ps.setString(4, cv);
+                ps.setString(5, empId);
+                ps.executeUpdate();
+                log.append("  → DB updated\n");
+            }
+
+            log.append("\n\n=== MIGRATION COMPLETE ===\n");
+            log.append("Total rows: ").append(rowNum).append("\n");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            log.append("\n\nERROR: ").append(e.getMessage()).append("\n");
+        } finally {
+            try { if (rs   != null) rs.close();   } catch (Exception ignore) {}
+            try { if (st   != null) st.close();   } catch (Exception ignore) {}
+            try { if (ps   != null) ps.close();   } catch (Exception ignore) {}
+            try { if (conn != null) conn.close(); } catch (Exception ignore) {}
+        }
+
+        response.getWriter().write(log.toString());
+    }
+
+    private String migrateColumn(ResultSet rs, String columnName, String folder,
+                                  String empId, String basePath, StringBuilder log) {
+        try {
+            Blob blob = rs.getBlob(columnName);
+            if (blob == null || blob.length() == 0) {
+                log.append("  ").append(columnName).append(": empty\n");
+                return "";
+            }
+
+            byte[] data = blob.getBytes(1, (int) blob.length());
+
+            // Detect MIME
+            String mime = URLConnection.guessContentTypeFromStream(
+                    new java.io.ByteArrayInputStream(data));
+            String ext = extFromMime(mime);
+
+            String filename = empId + "_" + folder + "_" + System.currentTimeMillis() + ext;
+            File dir = new File(basePath + folder);
+            if (!dir.exists()) dir.mkdirs();
+
+            File out = new File(dir, filename);
+            try (FileOutputStream fos = new FileOutputStream(out)) {
+                fos.write(data);
+            }
+
+            log.append("  ").append(columnName).append(": ")
+               .append(data.length).append(" bytes → ").append(filename).append("\n");
+
+            return filename;
+        } catch (Exception e) {
+            log.append("  ").append(columnName).append(": ERROR ").append(e.getMessage()).append("\n");
+            return "";
+        }
+    }
+
+    private String extFromMime(String mime) {
+        if (mime == null) return "";
+        if (mime.startsWith("image/jpeg")) return ".jpg";
+        if (mime.startsWith("image/png"))  return ".png";
+        if (mime.startsWith("image/gif"))  return ".gif";
+        if (mime.equals("application/pdf")) return ".pdf";
+        if (mime.contains("wordprocessingml")) return ".docx";
+        if (mime.equals("application/msword")) return ".doc";
+        return "";
+    }
+}
