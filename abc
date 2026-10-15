@@ -85,50 +85,41 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Edit Profile · EIS Portal</title>
+<title>Edit Profile · EIS Live</title>
 
 <style>
 /* ============================================================
-   RESET & TOKENS
+   RESET
    ============================================================ */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-    --bg: #0b0714;
-    --surface: rgba(255, 255, 255, .04);
-    --surface-2: rgba(255, 255, 255, .07);
-    --surface-3: rgba(255, 255, 255, .10);
-    --border: rgba(255, 255, 255, .09);
-    --border-hi: rgba(255, 255, 255, .18);
+    --bg: #05060d;
+    --surface: rgba(255, 255, 255, .03);
+    --surface-2: rgba(255, 255, 255, .06);
+    --border: rgba(255, 255, 255, .08);
+    --border-hi: rgba(255, 255, 255, .16);
+    --text: #f8fafc;
+    --text-2: #cbd5e1;
+    --text-3: #94a3b8;
+    --text-4: #475569;
 
-    --text: #f5f3ff;
-    --text-2: #c4b5fd;
-    --text-3: #8b8ba7;
-    --text-4: #575779;
-
-    --pink:    #ec4899;
-    --purple:  #a855f7;
-    --violet:  #8b5cf6;
-    --blue:    #3b82f6;
-    --cyan:    #06b6d4;
-    --teal:    #14b8a6;
-    --green:   #10b981;
-    --lime:    #84cc16;
-    --amber:   #f59e0b;
-    --orange:  #f97316;
-    --red:     #ef4444;
+    --p1: #ff0080;
+    --p2: #7928ca;
+    --p3: #00d4ff;
+    --p4: #00ff88;
+    --p5: #ffcc00;
+    --p6: #ff5500;
 
     --radius-sm: 12px;
-    --radius:    20px;
-    --radius-lg: 28px;
-    --radius-xl: 36px;
+    --radius:    18px;
+    --radius-lg: 26px;
 
-    --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
-    --font-mono: ui-monospace, "SF Mono", Consolas, monospace;
+    --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
 }
 
 html, body {
-    font-family: var(--font-sans);
+    font-family: var(--font);
     background: var(--bg);
     color: var(--text);
     min-height: 100vh;
@@ -139,99 +130,136 @@ html, body {
 }
 
 /* ============================================================
-   MORPHING BLOB BACKGROUND
+   LIVE BACKGROUND — WAVES + PARTICLES + AURORA
    ============================================================ */
-.blob-bg {
+.live-bg {
     position: fixed;
     inset: 0;
-    z-index: -2;
+    z-index: -3;
+    background: radial-gradient(ellipse at top, #0f0420 0%, #05060d 60%);
     overflow: hidden;
-    background: var(--bg);
-}
-.blob {
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(80px);
-    opacity: .5;
-    animation: morph 20s ease-in-out infinite;
-    will-change: transform, border-radius;
-}
-.blob-1 {
-    width: 550px; height: 550px;
-    background: linear-gradient(135deg, var(--pink), var(--purple));
-    top: -15%; left: -10%;
-}
-.blob-2 {
-    width: 600px; height: 600px;
-    background: linear-gradient(135deg, var(--cyan), var(--blue));
-    top: 20%; right: -15%;
-    animation-delay: -7s;
-}
-.blob-3 {
-    width: 500px; height: 500px;
-    background: linear-gradient(135deg, var(--teal), var(--green));
-    bottom: -20%; left: 25%;
-    animation-delay: -14s;
-}
-.blob-4 {
-    width: 450px; height: 450px;
-    background: linear-gradient(135deg, var(--amber), var(--orange));
-    top: 50%; left: 40%;
-    animation-delay: -3s;
-    opacity: .35;
-}
-@keyframes morph {
-    0%, 100% { transform: translate(0, 0) scale(1); border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
-    33%      { transform: translate(80px, -60px) scale(1.15); border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%; }
-    66%      { transform: translate(-60px, 70px) scale(.9); border-radius: 50% 50% 40% 60% / 40% 50% 50% 60%; }
 }
 
-/* Subtle noise */
-.blob-bg::after {
-    content: "";
+/* Aurora layers */
+.aurora {
+    position: absolute;
+    inset: -50%;
+    filter: blur(80px);
+    opacity: .55;
+    animation: auroraMove 20s ease-in-out infinite;
+}
+.aurora-1 { background: radial-gradient(circle at 30% 30%, var(--p1), transparent 45%); animation-delay: 0s; }
+.aurora-2 { background: radial-gradient(circle at 70% 40%, var(--p2), transparent 45%); animation-delay: -5s; }
+.aurora-3 { background: radial-gradient(circle at 50% 80%, var(--p3), transparent 45%); animation-delay: -10s; }
+.aurora-4 { background: radial-gradient(circle at 20% 70%, var(--p4), transparent 45%); animation-delay: -15s; }
+@keyframes auroraMove {
+    0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+    33%      { transform: translate(15%, -10%) rotate(30deg) scale(1.15); }
+    66%      { transform: translate(-10%, 15%) rotate(-20deg) scale(.9); }
+}
+
+/* SVG Wave overlay */
+.wave-layer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 200%;
+    height: 300px;
+    opacity: .35;
+    animation: waveMove 25s linear infinite;
+}
+.wave-layer.w2 { animation-duration: 35s; animation-direction: reverse; opacity: .2; bottom: -50px; }
+@keyframes waveMove {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+}
+
+/* Particles */
+.particles {
     position: absolute;
     inset: 0;
-    background-image: url("data:image/svg+xml;utf8,<svg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='.5'/></svg>");
-    opacity: .04;
     pointer-events: none;
+}
+.particle {
+    position: absolute;
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: #fff;
+    opacity: 0;
+    animation: particleFloat linear infinite;
+    box-shadow: 0 0 8px currentColor;
+}
+@keyframes particleFloat {
+    0% {
+        opacity: 0;
+        transform: translateY(100vh) translateX(0) scale(0);
+    }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% {
+        opacity: 0;
+        transform: translateY(-10vh) translateX(80px) scale(1);
+    }
 }
 
 /* ============================================================
    TOP NAV
    ============================================================ */
-.topnav {
+.navbar {
     position: sticky;
-    top: 16px;
+    top: 0;
     z-index: 100;
+    padding: 16px 24px 12px;
+}
+.nav-inner {
     max-width: 1480px;
-    margin: 16px auto 0;
-    padding: 0 20px;
-}
-.topnav-inner {
-    background: rgba(20, 15, 40, .65);
-    backdrop-filter: blur(24px) saturate(180%);
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 12px 20px;
+    margin: 0 auto;
     display: flex;
-    align-items: center;
     justify-content: space-between;
-    gap: 16px;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, .4);
+    align-items: center;
+    gap: 20px;
+    padding: 14px 24px;
+    background: rgba(15, 10, 35, .6);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    position: relative;
+    overflow: hidden;
 }
-.brand { display: flex; align-items: center; gap: 14px; }
+/* Animated rainbow border */
+.nav-inner::before {
+    content: "";
+    position: absolute;
+    inset: -2px;
+    border-radius: 100px;
+    padding: 1px;
+    background: conic-gradient(from 0deg,
+        var(--p1), var(--p5), var(--p4), var(--p3), var(--p2), var(--p1));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    animation: rotateBorder 6s linear infinite;
+    z-index: -1;
+    opacity: .7;
+}
+@keyframes rotateBorder {
+    to { transform: rotate(360deg); }
+}
+
+.nav-brand { display: flex; align-items: center; gap: 12px; }
 .brand-logo {
-    width: 42px; height: 42px;
-    border-radius: 14px;
-    background: linear-gradient(135deg, var(--pink), var(--purple), var(--violet));
-    display: grid; place-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--p1), var(--p2));
+    display: grid;
+    place-items: center;
+    font-weight: 900;
+    font-size: 14px;
     color: #fff;
-    font-weight: 800;
-    font-size: 15px;
     letter-spacing: -.5px;
-    box-shadow: 0 8px 24px rgba(168, 85, 247, .5),
-                inset 0 1px 0 rgba(255, 255, 255, .3);
     position: relative;
     overflow: hidden;
 }
@@ -239,63 +267,68 @@ html, body {
     content: "";
     position: absolute;
     inset: 0;
-    background: linear-gradient(120deg, transparent, rgba(255, 255, 255, .35), transparent);
-    animation: shine 3s ease-in-out infinite;
+    background: linear-gradient(120deg, transparent, rgba(255,255,255,.5), transparent);
     transform: translateX(-100%);
+    animation: shine 2.5s ease-in-out infinite;
 }
 @keyframes shine {
-    0%, 100% { transform: translateX(-100%); }
-    50%      { transform: translateX(100%); }
+    to { transform: translateX(100%); }
 }
-.brand-text .title {
-    font-size: 15px;
-    font-weight: 700;
-    background: linear-gradient(135deg, #fff, var(--text-2));
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-.brand-text .sub {
-    font-size: 11px;
-    color: var(--text-3);
-    margin-top: 1px;
-}
-.nav-right { display: flex; align-items: center; gap: 10px; }
 
-/* Buttons */
-.btn-pill {
+.brand-title { font-size: 15px; font-weight: 700; letter-spacing: -.02em; }
+.brand-sub { font-size: 11px; color: var(--text-3); }
+
+.nav-status {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 12px;
+    color: var(--text-2);
+}
+.live-dot {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    padding: 10px 18px;
+    gap: 6px;
+    padding: 5px 12px;
     border-radius: 100px;
+    background: rgba(0, 255, 136, .08);
+    border: 1px solid rgba(0, 255, 136, .25);
+    color: #00ff88;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+.live-dot::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #00ff88;
+    box-shadow: 0 0 12px #00ff88;
+    animation: livePulse 1.5s ease-in-out infinite;
+}
+@keyframes livePulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: .4; transform: scale(.7); }
+}
+
+.nav-btn {
+    padding: 9px 18px;
+    border-radius: 100px;
+    background: rgba(255, 255, 255, .06);
     border: 1px solid var(--border-hi);
-    background: var(--surface-2);
     color: var(--text);
-    font-family: inherit;
-    font-size: 13.5px;
+    font-size: 13px;
     font-weight: 600;
-    cursor: pointer;
     text-decoration: none;
     transition: all .3s cubic-bezier(.34, 1.56, .64, 1);
     white-space: nowrap;
-    letter-spacing: -.01em;
 }
-.btn-pill:hover {
-    background: var(--surface-3);
-    transform: translateY(-2px);
-    border-color: rgba(255, 255, 255, .3);
-    box-shadow: 0 12px 30px rgba(0, 0, 0, .3);
-}
-.btn-pill.primary {
-    background: linear-gradient(135deg, var(--pink), var(--purple));
-    border-color: transparent;
-    box-shadow: 0 8px 24px rgba(168, 85, 247, .4),
-                inset 0 1px 0 rgba(255, 255, 255, .3);
-}
-.btn-pill.primary:hover {
-    box-shadow: 0 14px 40px rgba(168, 85, 247, .6),
-                inset 0 1px 0 rgba(255, 255, 255, .4);
+.nav-btn:hover {
+    background: rgba(255, 255, 255, .12);
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 10px 30px rgba(255, 0, 128, .3);
 }
 
 /* ============================================================
@@ -304,132 +337,208 @@ html, body {
 .page {
     max-width: 1480px;
     margin: 0 auto;
-    padding: 32px 20px 100px;
+    padding: 20px 24px 100px;
+    position: relative;
+    z-index: 1;
 }
 
-.page-header {
+/* Hero */
+.hero {
+    margin-bottom: 32px;
     display: flex;
     justify-content: space-between;
     align-items: flex-end;
-    gap: 24px;
-    margin-bottom: 28px;
+    gap: 20px;
     flex-wrap: wrap;
 }
-.page-header h1 {
-    font-size: 42px;
-    font-weight: 800;
+.hero-title {
+    font-size: clamp(32px, 4vw, 48px);
+    font-weight: 900;
     letter-spacing: -.04em;
     line-height: 1.05;
-    background: linear-gradient(135deg, #fff 20%, var(--text-2) 70%, var(--pink));
+    margin-bottom: 10px;
+    background: linear-gradient(120deg, #fff, var(--p1), var(--p3), #fff);
+    background-size: 300% auto;
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
-    margin-bottom: 8px;
+    animation: gradientShift 5s linear infinite;
 }
-.page-header .subtitle {
+@keyframes gradientShift {
+    to { background-position: 300% center; }
+}
+.hero-sub {
     font-size: 15px;
     color: var(--text-3);
-    letter-spacing: -.01em;
+    max-width: 600px;
 }
-.chips {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-}
-.chip {
+.hero-badges { display: flex; gap: 10px; flex-wrap: wrap; }
+
+.badge-live {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 8px 14px;
+    padding: 8px 16px;
     border-radius: 100px;
+    background: rgba(255, 255, 255, .05);
+    border: 1px solid var(--border-hi);
     font-size: 12.5px;
     font-weight: 600;
-    background: var(--surface-2);
-    border: 1px solid var(--border);
     color: var(--text-2);
-    letter-spacing: -.01em;
     backdrop-filter: blur(12px);
+    position: relative;
+    overflow: hidden;
 }
-.chip .dot {
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: var(--green);
-    box-shadow: 0 0 12px var(--green);
-    animation: pulse 2s ease-in-out infinite;
+.badge-live::before {
+    content: "";
+    position: absolute;
+    inset: -50%;
+    background: conic-gradient(from 0deg, transparent, var(--p1), transparent 30%);
+    animation: rotateBorder 4s linear infinite;
+    z-index: -1;
+    opacity: .5;
 }
-.chip.active {
-    background: rgba(16, 185, 129, .15);
-    border-color: rgba(16, 185, 129, .3);
-    color: #6ee7b7;
-}
-.chip.inactive {
-    background: rgba(239, 68, 68, .15);
-    border-color: rgba(239, 68, 68, .3);
-    color: #fca5a5;
-}
-@keyframes pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50%      { opacity: .5; transform: scale(.85); }
-}
+.badge-live .kv { color: var(--text); font-weight: 800; }
+.badge-live.active { color: #00ff88; border-color: rgba(0, 255, 136, .3); }
 
 /* ============================================================
-   BENTO GRID LAYOUT
+   LAYOUT
    ============================================================ */
-.bento {
+.layout {
     display: grid;
     grid-template-columns: 340px 1fr;
-    gap: 20px;
+    gap: 24px;
     align-items: start;
 }
+.sidebar { display: flex; flex-direction: column; gap: 20px; position: sticky; top: 100px; }
+.main-col { display: grid; gap: 24px; }
 
 /* ============================================================
-   LEFT SIDEBAR — PROFILE CARD
+   CARD BASE — with animation on hover, glowing border
    ============================================================ */
-.sidebar-col {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    position: sticky;
-    top: 96px;
-}
-
-/* Profile Card — glass + gradient */
-.profile-card {
-    background: linear-gradient(155deg,
-        rgba(255, 255, 255, .08),
-        rgba(255, 255, 255, .03));
+.card {
+    position: relative;
+    background: rgba(15, 10, 35, .55);
     backdrop-filter: blur(24px) saturate(180%);
     -webkit-backdrop-filter: blur(24px) saturate(180%);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
-    padding: 32px 24px;
-    text-align: center;
-    position: relative;
+    padding: 28px;
+    transition: all .4s cubic-bezier(.22, 1, .36, 1);
     overflow: hidden;
-    transition: transform .4s cubic-bezier(.22, 1, .36, 1);
-    will-change: transform;
+    opacity: 0;
+    transform: translateY(20px);
+    animation: cardIn .6s cubic-bezier(.22, 1, .36, 1) forwards;
 }
-.profile-card::before {
+.card:nth-child(1) { animation-delay: .1s; }
+.card:nth-child(2) { animation-delay: .15s; }
+.card:nth-child(3) { animation-delay: .2s; }
+.card:nth-child(4) { animation-delay: .25s; }
+.card:nth-child(5) { animation-delay: .3s; }
+.card:nth-child(6) { animation-delay: .35s; }
+@keyframes cardIn {
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Animated glow border on hover */
+.card::before {
     content: "";
     position: absolute;
-    top: -50%; right: -50%;
-    width: 200%; height: 200%;
+    inset: 0;
+    border-radius: var(--radius-lg);
+    padding: 1px;
     background: conic-gradient(from 0deg,
-        transparent,
-        rgba(236, 72, 153, .3),
-        rgba(168, 85, 247, .3),
-        transparent);
-    animation: rotateGlow 8s linear infinite;
-    z-index: -1;
+        transparent, var(--glow, var(--p1)), transparent 30%);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0;
+    transition: opacity .3s ease;
+    animation: rotateBorder 4s linear infinite;
+    pointer-events: none;
 }
-@keyframes rotateGlow {
+.card:hover::before { opacity: 1; }
+
+.card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 25px 50px rgba(0, 0, 0, .6), 0 0 40px rgba(255, 0, 128, .1);
+    border-color: transparent;
+}
+
+/* Card header */
+.card-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+}
+.card-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    display: grid;
+    place-items: center;
+    font-size: 22px;
+    flex-shrink: 0;
+    position: relative;
+    transition: transform .3s cubic-bezier(.34, 1.56, .64, 1);
+}
+.card:hover .card-icon {
+    transform: rotate(-10deg) scale(1.1);
+}
+
+/* Icon animations */
+.icon-float { animation: iconFloat 3s ease-in-out infinite; }
+@keyframes iconFloat {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-4px); }
+}
+.icon-pulse { animation: iconPulse 2s ease-in-out infinite; }
+@keyframes iconPulse {
+    0%, 100% { transform: scale(1); }
+    50%      { transform: scale(1.08); }
+}
+.icon-spin-slow { animation: iconSpin 8s linear infinite; }
+@keyframes iconSpin {
     to { transform: rotate(360deg); }
 }
 
-/* Animated Avatar Ring */
+.card-title {
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: -.03em;
+    margin-bottom: 3px;
+    color: var(--text);
+}
+.card-sub {
+    font-size: 12.5px;
+    color: var(--text-3);
+}
+.card-num {
+    margin-left: auto;
+    font-family: ui-monospace, monospace;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 100px;
+    background: rgba(255, 255, 255, .06);
+    color: var(--text-3);
+    border: 1px solid var(--border);
+}
+
+/* ============================================================
+   PROFILE CARD
+   ============================================================ */
+.profile-card {
+    text-align: center;
+    --glow: var(--p1);
+}
 .avatar-wrap {
     position: relative;
-    width: 140px; height: 140px;
+    width: 150px;
+    height: 150px;
     margin: 0 auto 20px;
     display: grid;
     place-items: center;
@@ -439,397 +548,243 @@ html, body {
     inset: 0;
     border-radius: 50%;
     background: conic-gradient(from 0deg,
-        var(--pink),
-        var(--purple),
-        var(--violet),
-        var(--blue),
-        var(--cyan),
-        var(--pink));
-    animation: rotateRing 4s linear infinite;
-    z-index: 0;
+        var(--p1), var(--p5), var(--p4), var(--p3), var(--p2), var(--p1));
+    animation: rotateBorder 4s linear infinite;
 }
 .avatar-ring-2 {
     position: absolute;
-    inset: -8px;
+    inset: -10px;
     border-radius: 50%;
     background: conic-gradient(from 180deg,
-        var(--amber),
-        var(--orange),
-        var(--red),
-        var(--pink),
-        var(--amber));
-    animation: rotateRing 6s linear infinite reverse;
-    z-index: -1;
-    opacity: .6;
+        var(--p3), var(--p2), var(--p1), var(--p3));
+    animation: rotateBorder 7s linear infinite reverse;
+    opacity: .5;
+    filter: blur(8px);
 }
 .avatar-ring-3 {
     position: absolute;
-    inset: -16px;
+    inset: -20px;
     border-radius: 50%;
-    background: conic-gradient(from 90deg,
-        var(--cyan),
-        var(--blue),
-        var(--purple),
-        var(--cyan));
-    animation: rotateRing 8s linear infinite;
-    z-index: -2;
+    background: radial-gradient(circle, var(--p1), transparent 70%);
+    animation: avatarPulse 3s ease-in-out infinite;
     opacity: .4;
-    filter: blur(12px);
+    filter: blur(20px);
 }
-@keyframes rotateRing {
-    to { transform: rotate(360deg); }
+@keyframes avatarPulse {
+    0%, 100% { transform: scale(1); opacity: .4; }
+    50%      { transform: scale(1.2); opacity: .15; }
 }
 .avatar-img {
     position: relative;
-    width: 128px; height: 128px;
+    width: 138px;
+    height: 138px;
     border-radius: 50%;
     object-fit: cover;
-    background: var(--bg);
     border: 4px solid var(--bg);
     z-index: 1;
     display: block;
 }
 .avatar-overlay {
     position: absolute;
-    inset: 4px;
+    inset: 6px;
     border-radius: 50%;
-    background: rgba(0, 0, 0, .7);
-    backdrop-filter: blur(4px);
+    background: rgba(0, 0, 0, .75);
+    backdrop-filter: blur(8px);
     color: #fff;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 6px;
+    gap: 4px;
     opacity: 0;
     cursor: pointer;
-    transition: opacity .3s ease;
+    transition: opacity .3s;
     z-index: 2;
     font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
+    font-weight: 700;
     letter-spacing: 1px;
+    text-transform: uppercase;
 }
-.avatar-overlay .icon { font-size: 26px; }
+.avatar-overlay .icon { font-size: 28px; }
 .avatar-wrap:hover .avatar-overlay { opacity: 1; }
 
 .profile-name {
     font-size: 22px;
     font-weight: 800;
     letter-spacing: -.03em;
-    color: var(--text);
     margin-bottom: 6px;
-    line-height: 1.2;
+    background: linear-gradient(135deg, #fff, var(--p3));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 .profile-role {
-    font-size: 13.5px;
+    font-size: 13px;
     color: var(--text-3);
     margin-bottom: 16px;
-    letter-spacing: -.01em;
+}
+.profile-role .team-chip {
+    display: inline-block;
+    padding: 3px 10px;
+    background: rgba(255, 255, 255, .06);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    font-size: 11.5px;
+    color: var(--text-2);
+    margin: 0 3px;
 }
 
-.profile-quick {
+/* Live counters */
+.counters {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr 1fr;
     gap: 10px;
-    margin-top: 20px;
     padding-top: 20px;
     border-top: 1px solid var(--border);
+    margin-top: 20px;
 }
-.quick-item {
-    text-align: left;
-    padding: 10px 12px;
-    background: var(--surface);
+.counter {
+    padding: 12px;
+    background: rgba(255, 255, 255, .03);
     border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    transition: all .2s ease;
+    border-radius: 12px;
+    text-align: left;
+    transition: all .3s ease;
 }
-.quick-item:hover {
-    background: var(--surface-2);
-    border-color: var(--border-hi);
+.counter:hover {
+    background: rgba(255, 255, 255, .06);
     transform: translateY(-2px);
 }
-.quick-item .label {
+.counter-label {
     font-size: 10px;
-    font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 1px;
+    font-weight: 700;
     color: var(--text-4);
     margin-bottom: 4px;
 }
-.quick-item .value {
-    font-size: 13px;
-    font-weight: 700;
+.counter-value {
+    font-size: 14px;
+    font-weight: 800;
     color: var(--text);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-/* Documents Panel */
-.docs-panel {
-    background: linear-gradient(155deg,
-        rgba(255, 255, 255, .06),
-        rgba(255, 255, 255, .02));
-    backdrop-filter: blur(24px) saturate(180%);
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    padding: 22px;
-    position: relative;
-    overflow: hidden;
-}
-.docs-panel-head {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 16px;
-}
-.docs-panel-head .title {
-    font-size: 13px;
-    font-weight: 700;
-    letter-spacing: -.01em;
-    color: var(--text);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-.docs-panel-head .title::before {
-    content: "";
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--pink), var(--purple));
-    box-shadow: 0 0 12px rgba(168, 85, 247, .7);
-}
-.docs-panel-head .count {
-    font-size: 11px;
-    font-weight: 700;
-    padding: 3px 10px;
-    border-radius: 100px;
-    background: rgba(168, 85, 247, .15);
-    border: 1px solid rgba(168, 85, 247, .3);
-    color: #d8b4fe;
-}
-
-.doc-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    margin-bottom: 8px;
-    background: var(--surface);
-    transition: all .25s cubic-bezier(.34, 1.56, .64, 1);
-    cursor: pointer;
-    position: relative;
-    overflow: hidden;
-}
-.doc-row:hover {
-    transform: translateX(4px);
-    border-color: var(--border-hi);
-    background: var(--surface-2);
-}
-.doc-row.uploaded {
-    border-color: rgba(16, 185, 129, .3);
-    background: linear-gradient(135deg,
-        rgba(16, 185, 129, .08),
-        rgba(6, 182, 212, .04));
-}
-.doc-row.uploaded::before {
-    content: "";
-    position: absolute;
-    left: 0; top: 0; bottom: 0;
-    width: 3px;
-    background: linear-gradient(180deg, var(--teal), var(--green));
-    box-shadow: 0 0 12px var(--teal);
-}
-.doc-icon {
-    width: 36px; height: 36px;
-    border-radius: 10px;
-    display: grid; place-items: center;
-    background: var(--surface-3);
-    font-size: 16px;
-    flex-shrink: 0;
-    transition: all .25s ease;
-}
-.doc-row.uploaded .doc-icon {
-    background: linear-gradient(135deg, var(--teal), var(--green));
-    color: #fff;
-    box-shadow: 0 4px 14px rgba(16, 185, 129, .4);
-}
-.doc-info { flex: 1; min-width: 0; }
-.doc-info .name {
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--text);
-    margin-bottom: 2px;
-    letter-spacing: -.01em;
-}
-.doc-info .status {
-    font-size: 11px;
-    color: var(--text-3);
-    font-weight: 500;
-}
-.doc-row.uploaded .doc-info .status { color: #6ee7b7; }
-.doc-view {
-    width: 32px; height: 32px;
-    border-radius: 8px;
-    border: none;
-    background: var(--surface-3);
-    color: var(--text-2);
-    cursor: pointer;
-    display: grid; place-items: center;
-    font-size: 14px;
-    transition: all .2s ease;
-    flex-shrink: 0;
-}
-.doc-view:hover {
-    background: linear-gradient(135deg, var(--pink), var(--purple));
-    color: #fff;
-    transform: scale(1.1) rotate(-8deg);
-}
-
 /* ============================================================
-   RIGHT — BENTO CARDS
+   DOCUMENTS
    ============================================================ */
-.bento-col {
-    display: grid;
-    grid-template-columns: repeat(12, 1fr);
-    gap: 20px;
-}
-
-.bento-card {
-    grid-column: span 12;
-    background: linear-gradient(155deg,
-        rgba(255, 255, 255, .07),
-        rgba(255, 255, 255, .02));
-    backdrop-filter: blur(24px) saturate(180%);
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    padding: 28px;
-    position: relative;
-    overflow: hidden;
-    transition: all .4s cubic-bezier(.22, 1, .36, 1);
-    will-change: transform;
-    opacity: 0;
-    transform: translateY(24px);
-    animation: bentoIn .6s cubic-bezier(.22, 1, .36, 1) forwards;
-}
-.bento-card:nth-child(1) { animation-delay: .05s; }
-.bento-card:nth-child(2) { animation-delay: .10s; }
-.bento-card:nth-child(3) { animation-delay: .15s; }
-.bento-card:nth-child(4) { animation-delay: .20s; }
-.bento-card:nth-child(5) { animation-delay: .25s; }
-.bento-card:nth-child(6) { animation-delay: .30s; }
-.bento-card:nth-child(7) { animation-delay: .35s; }
-
-@keyframes bentoIn {
-    to { opacity: 1; transform: translateY(0); }
-}
-
-/* Card top gradient accent bar */
-.bento-card::before {
-    content: "";
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 3px;
-    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-    opacity: .9;
-}
-.bento-card.c-pink::before    { background: linear-gradient(90deg, var(--pink), var(--purple)); }
-.bento-card.c-purple::before  { background: linear-gradient(90deg, var(--purple), var(--violet)); }
-.bento-card.c-cyan::before    { background: linear-gradient(90deg, var(--cyan), var(--blue)); }
-.bento-card.c-green::before   { background: linear-gradient(90deg, var(--green), var(--teal)); }
-.bento-card.c-amber::before   { background: linear-gradient(90deg, var(--amber), var(--orange)); }
-.bento-card.c-red::before     { background: linear-gradient(90deg, var(--red), var(--pink)); }
-.bento-card.c-violet::before  { background: linear-gradient(90deg, var(--violet), var(--purple)); }
-
-.bento-card:hover {
-    transform: translateY(-6px) scale(1.005);
-    border-color: var(--border-hi);
-    box-shadow: 0 30px 60px rgba(0, 0, 0, .5);
-}
-
-/* Card header */
-.card-head {
+.doc-item {
     display: flex;
     align-items: center;
     gap: 14px;
-    margin-bottom: 22px;
-}
-.card-icon {
-    width: 48px; height: 48px;
+    padding: 14px;
+    background: rgba(255, 255, 255, .03);
+    border: 1px solid var(--border);
     border-radius: 14px;
-    display: grid; place-items: center;
-    font-size: 22px;
-    flex-shrink: 0;
+    margin-bottom: 10px;
+    transition: all .35s cubic-bezier(.34, 1.56, .64, 1);
+    cursor: pointer;
     position: relative;
     overflow: hidden;
-    transition: transform .3s cubic-bezier(.34, 1.56, .64, 1);
 }
-.card-icon::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: inherit;
-    filter: blur(20px);
-    opacity: .5;
-    z-index: -1;
+.doc-item:hover {
+    transform: translateX(6px);
+    background: rgba(255, 255, 255, .06);
+    border-color: var(--border-hi);
 }
-.bento-card:hover .card-icon {
-    transform: scale(1.1) rotate(-6deg);
+.doc-item.uploaded {
+    background: linear-gradient(135deg, rgba(0, 255, 136, .05), rgba(0, 212, 255, .03));
+    border-color: rgba(0, 255, 136, .25);
 }
-.card-icon.i-pink   { background: linear-gradient(135deg, var(--pink), var(--purple)); box-shadow: 0 8px 24px rgba(236, 72, 153, .35); }
-.card-icon.i-cyan   { background: linear-gradient(135deg, var(--cyan), var(--blue)); box-shadow: 0 8px 24px rgba(6, 182, 212, .35); }
-.card-icon.i-green  { background: linear-gradient(135deg, var(--green), var(--teal)); box-shadow: 0 8px 24px rgba(16, 185, 129, .35); }
-.card-icon.i-amber  { background: linear-gradient(135deg, var(--amber), var(--orange)); box-shadow: 0 8px 24px rgba(245, 158, 11, .35); }
-.card-icon.i-purple { background: linear-gradient(135deg, var(--purple), var(--violet)); box-shadow: 0 8px 24px rgba(168, 85, 247, .35); }
-.card-icon.i-red    { background: linear-gradient(135deg, var(--red), var(--pink)); box-shadow: 0 8px 24px rgba(239, 68, 68, .35); }
-
-.card-title-block { flex: 1; min-width: 0; }
-.card-title {
-    font-size: 17px;
+.doc-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    font-size: 20px;
+    background: rgba(255, 255, 255, .05);
+    flex-shrink: 0;
+    transition: all .3s ease;
+}
+.doc-item.uploaded .doc-icon {
+    background: linear-gradient(135deg, #00ff88, #00d4ff);
+    box-shadow: 0 6px 20px rgba(0, 255, 136, .4);
+}
+.doc-item:hover .doc-icon {
+    transform: rotate(-10deg) scale(1.1);
+}
+.doc-info { flex: 1; min-width: 0; }
+.doc-name {
+    font-size: 13.5px;
     font-weight: 700;
     color: var(--text);
-    letter-spacing: -.02em;
     margin-bottom: 2px;
 }
-.card-sub {
-    font-size: 12px;
+.doc-status {
+    font-size: 11px;
+    font-weight: 600;
     color: var(--text-3);
-    letter-spacing: -.01em;
+}
+.doc-item.uploaded .doc-status { color: #00ff88; }
+.doc-view {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    border: none;
+    background: rgba(255, 255, 255, .06);
+    color: var(--text-2);
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    font-size: 15px;
+    transition: all .3s cubic-bezier(.34, 1.56, .64, 1);
+}
+.doc-view:hover {
+    background: linear-gradient(135deg, var(--p1), var(--p2));
+    color: #fff;
+    transform: scale(1.15) rotate(-8deg);
+    box-shadow: 0 8px 24px rgba(255, 0, 128, .4);
 }
 
-/* Fields grid */
-.fields-grid {
+/* ============================================================
+   FIELDS
+   ============================================================ */
+.fields {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 16px;
+    gap: 18px;
 }
-.fields-grid .span-2 { grid-column: span 2; }
-@media (max-width: 700px) {
-    .fields-grid .span-2 { grid-column: span 1; }
-}
+.fields .span-2 { grid-column: span 2; }
+@media (max-width: 700px) { .fields .span-2 { grid-column: span 1; } }
 
 .field {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
     position: relative;
 }
 .field-label {
-    font-size: 11.5px;
-    font-weight: 600;
-    color: var(--text-3);
-    letter-spacing: .01em;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-2);
+    letter-spacing: .02em;
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
     padding-left: 2px;
 }
-.field-label .req { color: var(--red); font-size: 14px; }
+.field-label .dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--p3);
+    box-shadow: 0 0 8px var(--p3);
+    animation: livePulse 2s ease-in-out infinite;
+}
+.field-label .req { color: var(--p1); font-size: 14px; }
 
 .field-input,
 .field-select,
@@ -840,206 +795,209 @@ html, body {
     font-size: 14px;
     font-weight: 500;
     color: var(--text);
-    background: rgba(255, 255, 255, .04);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
+    background: rgba(0, 0, 0, .3);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
     outline: none;
-    transition: all .25s cubic-bezier(.22, 1, .36, 1);
-    letter-spacing: -.01em;
+    transition: all .3s cubic-bezier(.22, 1, .36, 1);
+    position: relative;
 }
 .field-input:hover:not(:focus):not(:read-only),
-.field-select:hover:not(:focus),
-.field-textarea:hover:not(:focus) {
-    background: rgba(255, 255, 255, .06);
+.field-select:hover:not(:focus) {
+    background: rgba(0, 0, 0, .4);
     border-color: var(--border-hi);
 }
 .field-input:focus,
 .field-select:focus,
 .field-textarea:focus {
-    background: rgba(255, 255, 255, .08);
-    border-color: rgba(236, 72, 153, .5);
-    box-shadow: 0 0 0 4px rgba(236, 72, 153, .15),
-                0 8px 24px rgba(0, 0, 0, .3);
-    transform: translateY(-1px);
+    background: rgba(0, 0, 0, .5);
+    border-color: var(--p1);
+    box-shadow: 0 0 0 4px rgba(255, 0, 128, .15),
+                0 0 30px rgba(255, 0, 128, .25);
+    transform: translateY(-2px);
 }
 .field-input:read-only {
     color: var(--text-3);
-    cursor: not-allowed;
-    background: rgba(255, 255, 255, .02);
+    background: rgba(0, 0, 0, .15);
     border-style: dashed;
+    cursor: not-allowed;
 }
 .field-select {
     appearance: none;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23c4b5fd' stroke-width='2.5'><polyline points='6 9 12 15 18 9'/></svg>");
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23cbd5e1' stroke-width='2.5'><polyline points='6 9 12 15 18 9'/></svg>");
     background-repeat: no-repeat;
     background-position: right 14px center;
     background-size: 16px;
-    padding-right: 42px;
+    padding-right: 44px;
     cursor: pointer;
 }
-.field-select option {
-    background: #1a1526;
-    color: var(--text);
-}
-.field-textarea {
-    resize: vertical;
-    min-height: 90px;
-    line-height: 1.5;
-}
+.field-select option { background: #0a0b14; color: var(--text); }
+.field-textarea { resize: vertical; min-height: 90px; }
 
-/* File upload — glass drop zone */
+/* File drop — animated */
 .file-drop {
     display: flex;
     align-items: center;
     gap: 14px;
-    padding: 16px;
-    background: rgba(255, 255, 255, .03);
+    padding: 14px 16px;
+    background: rgba(0, 0, 0, .25);
     border: 1.5px dashed var(--border-hi);
-    border-radius: var(--radius-sm);
+    border-radius: 14px;
     cursor: pointer;
-    transition: all .3s cubic-bezier(.22, 1, .36, 1);
+    transition: all .35s cubic-bezier(.22, 1, .36, 1);
     position: relative;
     overflow: hidden;
 }
+.file-drop::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(120deg, transparent, rgba(255, 0, 128, .15), transparent);
+    transform: translateX(-100%);
+    transition: transform .6s ease;
+}
+.file-drop:hover::after { transform: translateX(100%); }
 .file-drop:hover {
-    border-color: rgba(236, 72, 153, .5);
-    background: linear-gradient(135deg,
-        rgba(236, 72, 153, .08),
-        rgba(168, 85, 247, .05));
+    border-color: var(--p1);
+    background: rgba(255, 0, 128, .05);
     transform: translateY(-2px);
 }
 .file-drop.has-file {
     border-style: solid;
-    border-color: rgba(16, 185, 129, .5);
-    background: linear-gradient(135deg,
-        rgba(16, 185, 129, .1),
-        rgba(6, 182, 212, .06));
-}
-.file-drop::before {
-    content: "⬆";
-    width: 40px; height: 40px;
-    border-radius: 12px;
-    display: grid; place-items: center;
-    background: linear-gradient(135deg, var(--pink), var(--purple));
-    color: #fff;
-    font-size: 18px;
-    font-weight: 700;
-    flex-shrink: 0;
-    transition: transform .3s cubic-bezier(.34, 1.56, .64, 1);
-    box-shadow: 0 4px 14px rgba(236, 72, 153, .35);
-}
-.file-drop:hover::before {
-    transform: scale(1.1) rotate(-8deg);
-}
-.file-drop.has-file::before {
-    content: "✓";
-    background: linear-gradient(135deg, var(--green), var(--teal));
-    box-shadow: 0 4px 14px rgba(16, 185, 129, .4);
+    border-color: #00ff88;
+    background: rgba(0, 255, 136, .05);
 }
 .file-drop input[type="file"] { display: none; }
-
-.file-drop-text {
-    flex: 1;
-    min-width: 0;
+.file-drop-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--p1), var(--p2));
+    color: #fff;
+    display: grid;
+    place-items: center;
+    font-size: 20px;
+    flex-shrink: 0;
+    transition: all .3s cubic-bezier(.34, 1.56, .64, 1);
+    box-shadow: 0 6px 20px rgba(255, 0, 128, .4);
 }
-.file-drop-name {
-    font-size: 13px;
-    font-weight: 600;
+.file-drop:hover .file-drop-icon {
+    transform: scale(1.1) rotate(-10deg);
+}
+.file-drop.has-file .file-drop-icon {
+    background: linear-gradient(135deg, #00ff88, #00d4ff);
+    box-shadow: 0 6px 20px rgba(0, 255, 136, .4);
+}
+.file-text { flex: 1; min-width: 0; }
+.file-name {
+    font-size: 13.5px;
+    font-weight: 700;
     color: var(--text);
     margin-bottom: 2px;
-    letter-spacing: -.01em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
-.file-drop-hint {
-    font-size: 11.5px;
-    color: var(--text-3);
-    letter-spacing: -.01em;
-}
-.file-drop.has-file .file-drop-name { color: #6ee7b7; }
+.file-hint { font-size: 11.5px; color: var(--text-3); }
+.file-drop.has-file .file-name { color: #00ff88; }
 
 /* ============================================================
-   ACTION BAR
+   ACTION BAR — with pulsing button
    ============================================================ */
 .action-bar {
-    grid-column: span 12;
+    position: sticky;
+    bottom: 20px;
+    z-index: 50;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-    padding: 20px 24px;
-    background: linear-gradient(155deg,
-        rgba(255, 255, 255, .08),
-        rgba(255, 255, 255, .03));
+    padding: 18px 24px;
+    background: rgba(15, 10, 35, .85);
     backdrop-filter: blur(24px) saturate(180%);
     -webkit-backdrop-filter: blur(24px) saturate(180%);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    box-shadow: 0 20px 50px rgba(0, 0, 0, .4);
-    position: sticky;
-    bottom: 20px;
-    z-index: 10;
+    border: 1px solid var(--border-hi);
+    border-radius: 100px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, .6);
     opacity: 0;
-    animation: bentoIn .6s cubic-bezier(.22, 1, .36, 1) .4s forwards;
+    animation: cardIn .6s cubic-bezier(.22, 1, .36, 1) .4s forwards;
+    position: relative;
+    overflow: hidden;
+}
+.action-bar::before {
+    content: "";
+    position: absolute;
+    inset: -2px;
+    border-radius: 100px;
+    padding: 1px;
+    background: conic-gradient(from 0deg,
+        var(--p1), var(--p5), var(--p4), var(--p3), var(--p2), var(--p1));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    animation: rotateBorder 5s linear infinite;
+    opacity: .6;
+    z-index: -1;
 }
 .action-hint {
-    font-size: 13px;
-    color: var(--text-3);
     display: flex;
     align-items: center;
     gap: 10px;
-    letter-spacing: -.01em;
+    font-size: 13px;
+    color: var(--text-3);
+    font-weight: 500;
 }
 .action-hint .dot {
-    width: 8px; height: 8px;
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
-    background: var(--amber);
-    box-shadow: 0 0 12px var(--amber);
-    animation: pulse 2s ease-in-out infinite;
+    background: var(--p5);
+    box-shadow: 0 0 12px var(--p5);
+    animation: livePulse 1.5s ease-in-out infinite;
 }
 
-.btn-action {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    padding: 14px 26px;
+.btn {
+    padding: 12px 24px;
     border-radius: 100px;
     border: 1px solid var(--border-hi);
-    background: var(--surface-2);
+    background: rgba(255, 255, 255, .05);
     color: var(--text);
-    font-family: inherit;
-    font-size: 14.5px;
+    font-size: 14px;
     font-weight: 700;
-    letter-spacing: -.02em;
     cursor: pointer;
     text-decoration: none;
     transition: all .3s cubic-bezier(.34, 1.56, .64, 1);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
     white-space: nowrap;
     position: relative;
     overflow: hidden;
 }
-.btn-action:hover {
-    background: var(--surface-3);
-    transform: translateY(-3px) scale(1.02);
-    box-shadow: 0 16px 40px rgba(0, 0, 0, .4);
+.btn:hover {
+    background: rgba(255, 255, 255, .12);
+    transform: translateY(-3px) scale(1.03);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, .5);
 }
-.btn-action.primary {
-    background: linear-gradient(135deg, var(--pink), var(--purple), var(--violet));
-    border-color: transparent;
-    box-shadow: 0 12px 32px rgba(236, 72, 153, .4),
-                inset 0 1px 0 rgba(255, 255, 255, .3);
+.btn-primary {
+    background: linear-gradient(135deg, var(--p1), var(--p2), var(--p3));
+    background-size: 200% auto;
     color: #fff;
+    border-color: transparent;
+    box-shadow: 0 8px 30px rgba(255, 0, 128, .5);
+    animation: gradientShift 3s linear infinite;
 }
-.btn-action.primary::after {
+.btn-primary:hover {
+    box-shadow: 0 12px 40px rgba(255, 0, 128, .7),
+                0 0 60px rgba(121, 40, 202, .5);
+}
+.btn-primary::before {
     content: "";
     position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 50%;
-    background: linear-gradient(180deg, rgba(255, 255, 255, .25), transparent);
-    border-radius: 100px 100px 0 0;
-    pointer-events: none;
-}
-.btn-action.primary:hover {
-    box-shadow: 0 20px 50px rgba(236, 72, 153, .6),
-                inset 0 1px 0 rgba(255, 255, 255, .4);
+    inset: 0;
+    background: linear-gradient(120deg, transparent, rgba(255, 255, 255, .3), transparent);
+    transform: translateX(-100%);
+    animation: shine 2s ease-in-out infinite;
 }
 
 /* ============================================================
@@ -1052,47 +1010,50 @@ html, body {
     z-index: 9999;
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    max-width: 360px;
+    gap: 12px;
+    max-width: 380px;
 }
 .toast {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 14px 18px;
-    border-radius: var(--radius-sm);
-    background: rgba(20, 15, 40, .9);
+    gap: 14px;
+    padding: 16px 20px;
+    background: rgba(15, 10, 35, .95);
     backdrop-filter: blur(24px);
     border: 1px solid var(--border-hi);
+    border-radius: 16px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, .6);
+    animation: toastIn .4s cubic-bezier(.34, 1.56, .64, 1);
     color: var(--text);
     font-size: 13.5px;
-    font-weight: 500;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, .5);
-    animation: toastIn .35s cubic-bezier(.34, 1.56, .64, 1);
+    font-weight: 600;
     position: relative;
     overflow: hidden;
-    letter-spacing: -.01em;
 }
 .toast::before {
     content: "";
     position: absolute;
-    left: 0; top: 0; bottom: 0;
+    left: 0;
+    top: 0;
+    bottom: 0;
     width: 4px;
 }
-.toast.success::before { background: linear-gradient(180deg, var(--green), var(--teal)); }
-.toast.error::before   { background: linear-gradient(180deg, var(--red), var(--pink)); }
-.toast.info::before    { background: linear-gradient(180deg, var(--purple), var(--violet)); }
-.toast .ticon {
-    width: 30px; height: 30px;
+.toast.success::before { background: linear-gradient(180deg, #00ff88, #00d4ff); }
+.toast.error::before   { background: linear-gradient(180deg, #ff0080, #ff5500); }
+.toast.info::before    { background: linear-gradient(180deg, #00d4ff, #7928ca); }
+.toast-icon {
+    width: 34px;
+    height: 34px;
     border-radius: 10px;
-    display: grid; place-items: center;
-    font-size: 15px;
+    display: grid;
+    place-items: center;
+    font-size: 16px;
     font-weight: 700;
     flex-shrink: 0;
 }
-.toast.success .ticon { background: linear-gradient(135deg, var(--green), var(--teal)); color: #fff; }
-.toast.error   .ticon { background: linear-gradient(135deg, var(--red), var(--pink)); color: #fff; }
-.toast.info    .ticon { background: linear-gradient(135deg, var(--purple), var(--violet)); color: #fff; }
+.toast.success .toast-icon { background: linear-gradient(135deg, #00ff88, #00d4ff); color: #fff; }
+.toast.error   .toast-icon { background: linear-gradient(135deg, #ff0080, #ff5500); color: #fff; }
+.toast.info    .toast-icon { background: linear-gradient(135deg, #00d4ff, #7928ca); color: #fff; }
 @keyframes toastIn {
     from { opacity: 0; transform: translateX(30px) scale(.9); }
     to   { opacity: 1; transform: translateX(0) scale(1); }
@@ -1102,50 +1063,66 @@ html, body {
    RESPONSIVE
    ============================================================ */
 @media (max-width: 1100px) {
-    .bento { grid-template-columns: 1fr; }
-    .sidebar-col { position: static; flex-direction: row; flex-wrap: wrap; }
-    .profile-card, .docs-panel { flex: 1 1 340px; }
-    .avatar-wrap { width: 110px; height: 110px; }
-    .avatar-img { width: 100px; height: 100px; }
+    .layout { grid-template-columns: 1fr; }
+    .sidebar { position: static; }
 }
 @media (max-width: 640px) {
-    .page { padding: 20px 16px 80px; }
-    .page-header h1 { font-size: 28px; }
-    .topnav { padding: 0 12px; top: 8px; }
-    .topnav-inner { padding: 10px 14px; }
-    .brand-text .sub { display: none; }
-    .action-bar { flex-direction: column; align-items: stretch; }
+    .page { padding: 16px 16px 80px; }
+    .navbar { padding: 12px 12px 8px; }
+    .nav-inner { padding: 10px 16px; }
+    .hero-title { font-size: 26px; }
+    .action-bar { flex-direction: column; align-items: stretch; padding: 14px 16px; border-radius: 20px; }
     .action-hint { justify-content: center; }
-    .btn-action { justify-content: center; }
+    .btn { justify-content: center; }
     .toast-host { top: 90px; right: 12px; left: 12px; max-width: none; }
-    .sidebar-col { flex-direction: column; }
 }
 </style>
 </head>
 <body>
 
-<!-- Blob background -->
-<div class="blob-bg">
-    <div class="blob blob-1"></div>
-    <div class="blob blob-2"></div>
-    <div class="blob blob-3"></div>
-    <div class="blob blob-4"></div>
+<!-- LIVE BACKGROUND -->
+<div class="live-bg">
+    <div class="aurora aurora-1"></div>
+    <div class="aurora aurora-2"></div>
+    <div class="aurora aurora-3"></div>
+    <div class="aurora aurora-4"></div>
+
+    <svg class="wave-layer" viewBox="0 0 1440 320" preserveAspectRatio="none">
+        <path fill="url(#wg1)" d="M0,224L48,213.3C96,203,192,181,288,181.3C384,181,480,203,576,213.3C672,224,768,224,864,213.3C960,203,1056,181,1152,170.7C1248,160,1344,160,1392,160L1440,160L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
+        <defs>
+            <linearGradient id="wg1" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stop-color="#ff0080"/>
+                <stop offset="50%" stop-color="#7928ca"/>
+                <stop offset="100%" stop-color="#00d4ff"/>
+            </linearGradient>
+        </defs>
+    </svg>
+    <svg class="wave-layer w2" viewBox="0 0 1440 320" preserveAspectRatio="none">
+        <path fill="url(#wg2)" d="M0,160L48,170.7C96,181,192,203,288,197.3C384,192,480,160,576,165.3C672,171,768,213,864,224C960,235,1056,213,1152,192C1248,171,1344,149,1392,138.7L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
+        <defs>
+            <linearGradient id="wg2" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stop-color="#00ff88"/>
+                <stop offset="100%" stop-color="#ff0080"/>
+            </linearGradient>
+        </defs>
+    </svg>
+
+    <div class="particles" id="particles"></div>
 </div>
 
-<!-- Top Nav -->
-<div class="topnav">
-    <div class="topnav-inner">
-        <div class="brand">
+<!-- NAVBAR -->
+<div class="navbar">
+    <div class="nav-inner">
+        <div class="nav-brand">
             <div class="brand-logo">EIS</div>
-            <div class="brand-text">
-                <div class="title">Employee Portal</div>
-                <div class="sub">Edit Profile</div>
+            <div>
+                <div class="brand-title">Employee Portal</div>
+                <div class="brand-sub">Edit Profile</div>
             </div>
         </div>
-        <div class="nav-right">
-            <a href="<%=ctx%>/ViewEISRegistrationDetailsActionNew" class="btn-pill">
-                ← Back
-            </a>
+        <div class="nav-status">
+            <span class="live-dot">Live</span>
+            <a href="<%=ctx%>/ViewEISRegistrationDetailsActionNew" class="nav-btn">← Back</a>
         </div>
     </div>
 </div>
@@ -1153,47 +1130,42 @@ html, body {
 <div class="page">
 
 <% if (emp == null) { %>
-
-    <div class="bento" style="grid-template-columns:1fr;">
-        <div class="bento-card c-red" style="text-align:center; padding:80px 40px;">
-            <div class="card-icon i-red" style="margin:0 auto 24px;width:80px;height:80px;font-size:36px;">⚠</div>
-            <h2 class="card-title" style="font-size:24px;margin-bottom:12px;">Employee Not Found</h2>
-            <p style="color:var(--text-3);margin-bottom:28px;">
-                No employee exists with ID: <strong style="color:var(--pink);"><%=empid%></strong>
-            </p>
-            <a href="<%=ctx%>/ViewEISRegistrationDetailsActionNew" class="btn-action primary">Go to List</a>
-        </div>
+    <div class="card" style="text-align:center;padding:80px 40px;">
+        <div class="card-icon" style="margin:0 auto 24px;background:linear-gradient(135deg,#ff0080,#ff5500);color:#fff;width:70px;height:70px;font-size:32px;">⚠</div>
+        <h2 style="font-size:26px;font-weight:800;margin-bottom:12px;">Employee Not Found</h2>
+        <p style="color:var(--text-3);margin-bottom:28px;">No employee exists with ID: <strong style="color:#ff0080;"><%=empid%></strong></p>
+        <a href="<%=ctx%>/ViewEISRegistrationDetailsActionNew" class="btn btn-primary">Go to List →</a>
     </div>
-
 <% } else { %>
 
-    <!-- Page Header -->
-    <div class="page-header">
+    <!-- HERO -->
+    <div class="hero">
         <div>
-            <h1>Hey, <%=fullName%> 👋</h1>
-            <p class="subtitle">Let's update your profile. Every field is editable — make your changes and hit save.</p>
+            <h1 class="hero-title">Hey <%=fullName%> 👋</h1>
+            <p class="hero-sub">Update your profile — every field is live, every change is one click away.</p>
         </div>
-        <div class="chips">
-            <div class="chip">
-                <span style="opacity:.7;">ID</span>
-                <strong><%=emp.getM_strEmployee_ID()%></strong>
+        <div class="hero-badges">
+            <div class="badge-live">
+                <span>ID</span>
+                <span class="kv"><%=emp.getM_strEmployee_ID()%></span>
             </div>
-            <div class="chip <%=active ? "active" : "inactive"%>">
-                <span class="dot"></span>
-                <%=active ? "Active" : "Inactive"%>
+            <div class="badge-live <%=active ? "active" : ""%>">
+                <span class="live-dot" style="<%=!active ? "background:rgba(255,0,128,.1);border-color:rgba(255,0,128,.3);color:#ff0080;" : ""%>">
+                    <%=active ? "Active" : "Inactive"%>
+                </span>
             </div>
         </div>
     </div>
 
     <form id="editForm" method="post" enctype="multipart/form-data">
 
-    <div class="bento">
+    <div class="layout">
 
-        <!-- ====================== SIDEBAR ====================== -->
-        <div class="sidebar-col">
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
 
             <!-- Profile Card -->
-            <div class="profile-card">
+            <div class="card profile-card">
                 <div class="avatar-wrap">
                     <div class="avatar-ring-3"></div>
                     <div class="avatar-ring-2"></div>
@@ -1201,10 +1173,10 @@ html, body {
                     <img id="profilePhoto" class="avatar-img"
                          src="<%=ctx%>/DocumentDownloadServlet?empid=<%=emp.getM_strEmployee_ID()%>&type=PHOTO&_t=<%=System.currentTimeMillis()%>"
                          alt="Profile"
-                         onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><defs><linearGradient id=%22g%22 x1=%220%22 y1=%220%22 x2=%221%22 y2=%221%22><stop offset=%220%25%22 stop-color=%22%23ec4899%22/><stop offset=%22100%25%22 stop-color=%22%23a855f7%22/></linearGradient></defs><rect fill=%22url(%23g)%22 width=%22128%22 height=%22128%22/><text x=%2264%22 y=%2286%22 text-anchor=%22middle%22 font-size=%2264%22 font-weight=%22800%22 fill=%22white%22 font-family=%22sans-serif%22><%=initial%></text></svg>'"/>
+                         onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><defs><linearGradient id=%22g%22 x1=%220%22 y1=%220%22 x2=%221%22 y2=%221%22><stop offset=%220%25%22 stop-color=%22%23ff0080%22/><stop offset=%22100%25%22 stop-color=%22%2300d4ff%22/></linearGradient></defs><rect fill=%22url(%23g)%22 width=%22128%22 height=%22128%22/><text x=%2264%22 y=%2286%22 text-anchor=%22middle%22 font-size=%2264%22 font-weight=%22800%22 fill=%22white%22><%=initial%></text></svg>'"/>
                     <label class="avatar-overlay" for="photoInput">
                         <span class="icon">📷</span>
-                        <span>Change Photo</span>
+                        <span>Change</span>
                     </label>
                     <input type="file" id="photoInput" name="m_strthePhotofile"
                            accept="image/*" style="display:none;" onchange="previewPhoto(this);"/>
@@ -1212,143 +1184,133 @@ html, body {
 
                 <div class="profile-name"><%=fullName%></div>
                 <div class="profile-role">
-                    <%=emp.getM_strTeam() != null && !emp.getM_strTeam().isEmpty() ? emp.getM_strTeam() : "Team not set"%>
+                    <span class="team-chip"><%=emp.getM_strTeam() != null && !emp.getM_strTeam().isEmpty() ? emp.getM_strTeam() : "Team not set"%></span>
                 </div>
 
-                <div class="profile-quick">
-                    <div class="quick-item">
-                        <div class="label">AD ID</div>
-                        <div class="value"><%=emp.getM_strAD_ID() != null && !emp.getM_strAD_ID().isEmpty() ? emp.getM_strAD_ID() : "—"%></div>
+                <div class="counters">
+                    <div class="counter">
+                        <div class="counter-label">AD ID</div>
+                        <div class="counter-value"><%=emp.getM_strAD_ID() != null && !emp.getM_strAD_ID().isEmpty() ? emp.getM_strAD_ID() : "—"%></div>
                     </div>
-                    <div class="quick-item">
-                        <div class="label">HID</div>
-                        <div class="value"><%=emp.getM_strHID() != null && !emp.getM_strHID().isEmpty() ? emp.getM_strHID() : "—"%></div>
+                    <div class="counter">
+                        <div class="counter-label">HID</div>
+                        <div class="counter-value"><%=emp.getM_strHID() != null && !emp.getM_strHID().isEmpty() ? emp.getM_strHID() : "—"%></div>
                     </div>
-                    <div class="quick-item">
-                        <div class="label">Asset</div>
-                        <div class="value"><%=emp.getM_strAsset_ID() != null && !emp.getM_strAsset_ID().isEmpty() ? emp.getM_strAsset_ID() : "—"%></div>
+                    <div class="counter">
+                        <div class="counter-label">Asset</div>
+                        <div class="counter-value"><%=emp.getM_strAsset_ID() != null && !emp.getM_strAsset_ID().isEmpty() ? emp.getM_strAsset_ID() : "—"%></div>
                     </div>
-                    <div class="quick-item">
-                        <div class="label">Qualification</div>
-                        <div class="value"><%=emp.getM_strEducation_Qualification() != null && !emp.getM_strEducation_Qualification().isEmpty() ? emp.getM_strEducation_Qualification() : "—"%></div>
+                    <div class="counter">
+                        <div class="counter-label">Qual</div>
+                        <div class="counter-value"><%=emp.getM_strEducation_Qualification() != null && !emp.getM_strEducation_Qualification().isEmpty() ? emp.getM_strEducation_Qualification() : "—"%></div>
                     </div>
                 </div>
             </div>
 
-            <!-- Documents -->
-            <div class="docs-panel">
-                <div class="docs-panel-head">
-                    <div class="title">Your Documents</div>
-                    <span class="count">
-                        <%
-                            int docCount = 0;
-                            if (emp.getM_strBGC_Documents_Path() != null && !emp.getM_strBGC_Documents_Path().isEmpty()) docCount++;
-                            if (emp.getM_strPolice_Verification_Path() != null && !emp.getM_strPolice_Verification_Path().isEmpty()) docCount++;
-                            if (emp.getM_strCV_Document() != null && !emp.getM_strCV_Document().isEmpty()) docCount++;
-                            out.print(docCount + " / 3");
-                        %>
-                    </span>
+            <!-- Documents Card -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon icon-float" style="background:linear-gradient(135deg,#00ff88,#00d4ff);color:#fff;">📄</div>
+                    <div style="flex:1;">
+                        <div class="card-title">Documents</div>
+                        <div class="card-sub">Your uploaded files</div>
+                    </div>
                 </div>
 
-                <div class="doc-row <%=emp.getM_strBGC_Documents_Path() != null && !emp.getM_strBGC_Documents_Path().isEmpty() ? "uploaded" : ""%>">
+                <div class="doc-item <%=emp.getM_strBGC_Documents_Path() != null && !emp.getM_strBGC_Documents_Path().isEmpty() ? "uploaded" : ""%>">
                     <div class="doc-icon">📄</div>
                     <div class="doc-info">
-                        <div class="name">BGC Document</div>
-                        <div class="status"><%=emp.getM_strBGC_Documents_Path() != null && !emp.getM_strBGC_Documents_Path().isEmpty() ? "Ready" : "Not uploaded"%></div>
+                        <div class="doc-name">BGC Document</div>
+                        <div class="doc-status"><%=emp.getM_strBGC_Documents_Path() != null && !emp.getM_strBGC_Documents_Path().isEmpty() ? "✓ Ready" : "Not uploaded"%></div>
                     </div>
                     <% if (emp.getM_strBGC_Documents_Path() != null && !emp.getM_strBGC_Documents_Path().isEmpty()) { %>
-                        <button type="button" class="doc-view" onclick="openDocument('<%=emp.getM_strEmployee_ID()%>','BGC');" title="View">👁</button>
+                        <button type="button" class="doc-view" onclick="openDocument('<%=emp.getM_strEmployee_ID()%>','BGC');">👁</button>
                     <% } %>
                 </div>
 
-                <div class="doc-row <%=emp.getM_strPolice_Verification_Path() != null && !emp.getM_strPolice_Verification_Path().isEmpty() ? "uploaded" : ""%>">
+                <div class="doc-item <%=emp.getM_strPolice_Verification_Path() != null && !emp.getM_strPolice_Verification_Path().isEmpty() ? "uploaded" : ""%>">
                     <div class="doc-icon">🛡️</div>
                     <div class="doc-info">
-                        <div class="name">Police Verification</div>
-                        <div class="status"><%=emp.getM_strPolice_Verification_Path() != null && !emp.getM_strPolice_Verification_Path().isEmpty() ? "Ready" : "Not uploaded"%></div>
+                        <div class="doc-name">Police Verification</div>
+                        <div class="doc-status"><%=emp.getM_strPolice_Verification_Path() != null && !emp.getM_strPolice_Verification_Path().isEmpty() ? "✓ Ready" : "Not uploaded"%></div>
                     </div>
                     <% if (emp.getM_strPolice_Verification_Path() != null && !emp.getM_strPolice_Verification_Path().isEmpty()) { %>
-                        <button type="button" class="doc-view" onclick="openDocument('<%=emp.getM_strEmployee_ID()%>','POLICE');" title="View">👁</button>
+                        <button type="button" class="doc-view" onclick="openDocument('<%=emp.getM_strEmployee_ID()%>','POLICE');">👁</button>
                     <% } %>
                 </div>
 
-                <div class="doc-row <%=emp.getM_strCV_Document() != null && !emp.getM_strCV_Document().isEmpty() ? "uploaded" : ""%>">
+                <div class="doc-item <%=emp.getM_strCV_Document() != null && !emp.getM_strCV_Document().isEmpty() ? "uploaded" : ""%>">
                     <div class="doc-icon">📎</div>
                     <div class="doc-info">
-                        <div class="name">CV Document</div>
-                        <div class="status"><%=emp.getM_strCV_Document() != null && !emp.getM_strCV_Document().isEmpty() ? "Ready" : "Not uploaded"%></div>
+                        <div class="doc-name">CV Document</div>
+                        <div class="doc-status"><%=emp.getM_strCV_Document() != null && !emp.getM_strCV_Document().isEmpty() ? "✓ Ready" : "Not uploaded"%></div>
                     </div>
                     <% if (emp.getM_strCV_Document() != null && !emp.getM_strCV_Document().isEmpty()) { %>
-                        <button type="button" class="doc-view" onclick="openDocument('<%=emp.getM_strEmployee_ID()%>','CV');" title="View">👁</button>
+                        <button type="button" class="doc-view" onclick="openDocument('<%=emp.getM_strEmployee_ID()%>','CV');">👁</button>
                     <% } %>
                 </div>
             </div>
 
-        </div>
+        </aside>
 
-        <!-- ====================== BENTO CARDS ====================== -->
-        <div class="bento-col">
+        <!-- MAIN COLUMN -->
+        <main class="main-col">
 
-            <!-- CARD 1: Identity -->
-            <div class="bento-card c-pink tilt">
-                <div class="card-head">
-                    <div class="card-icon i-pink">🎯</div>
-                    <div class="card-title-block">
+            <!-- Identity -->
+            <div class="card" style="--glow: var(--p1);">
+                <div class="card-header">
+                    <div class="card-icon icon-pulse" style="background:linear-gradient(135deg,#ff0080,#7928ca);color:#fff;">🎯</div>
+                    <div style="flex:1;">
                         <div class="card-title">Identity</div>
-                        <div class="card-sub">Your unique identifiers</div>
+                        <div class="card-sub">Unique identifiers that define you</div>
                     </div>
+                    <span class="card-num">01</span>
                 </div>
-                <div class="fields-grid">
+                <div class="fields">
                     <div class="field">
-                        <label class="field-label">Employee ID <span class="req">*</span></label>
-                        <input class="field-input" type="text" name="m_stremployee_id"
-                               value="<%=emp.getM_strEmployee_ID()%>" readonly/>
+                        <label class="field-label"><span class="dot"></span>Employee ID <span class="req">*</span></label>
+                        <input class="field-input" type="text" name="m_stremployee_id" value="<%=emp.getM_strEmployee_ID()%>" readonly/>
                     </div>
                     <div class="field">
-                        <label class="field-label">AD ID</label>
-                        <input class="field-input" type="text" name="m_strad_id"
-                               value="<%=emp.getM_strAD_ID() != null ? emp.getM_strAD_ID() : ""%>"/>
+                        <label class="field-label"><span class="dot"></span>AD ID</label>
+                        <input class="field-input" type="text" name="m_strad_id" value="<%=emp.getM_strAD_ID() != null ? emp.getM_strAD_ID() : ""%>"/>
                     </div>
                     <div class="field">
-                        <label class="field-label">HID</label>
-                        <input class="field-input" type="text" name="m_strhid"
-                               value="<%=emp.getM_strHID() != null ? emp.getM_strHID() : ""%>"/>
+                        <label class="field-label"><span class="dot"></span>HID</label>
+                        <input class="field-input" type="text" name="m_strhid" value="<%=emp.getM_strHID() != null ? emp.getM_strHID() : ""%>"/>
                     </div>
                     <div class="field">
-                        <label class="field-label">Asset ID</label>
-                        <input class="field-input" type="text" name="m_strasset_id"
-                               value="<%=emp.getM_strAsset_ID() != null ? emp.getM_strAsset_ID() : ""%>"/>
+                        <label class="field-label"><span class="dot"></span>Asset ID</label>
+                        <input class="field-input" type="text" name="m_strasset_id" value="<%=emp.getM_strAsset_ID() != null ? emp.getM_strAsset_ID() : ""%>"/>
                     </div>
                 </div>
             </div>
 
-            <!-- CARD 2: Personal -->
-            <div class="bento-card c-purple tilt">
-                <div class="card-head">
-                    <div class="card-icon i-purple">👤</div>
-                    <div class="card-title-block">
+            <!-- Personal -->
+            <div class="card" style="--glow: var(--p2);">
+                <div class="card-header">
+                    <div class="card-icon icon-float" style="background:linear-gradient(135deg,#7928ca,#00d4ff);color:#fff;">👤</div>
+                    <div style="flex:1;">
                         <div class="card-title">Personal Information</div>
                         <div class="card-sub">Basic details about you</div>
                     </div>
+                    <span class="card-num">02</span>
                 </div>
-                <div class="fields-grid">
+                <div class="fields">
                     <div class="field">
-                        <label class="field-label">First Name <span class="req">*</span></label>
-                        <input class="field-input" type="text" name="m_strfirstName"
-                               value="<%=emp.getM_strFirst_Name() != null ? emp.getM_strFirst_Name() : ""%>"/>
+                        <label class="field-label"><span class="dot"></span>First Name <span class="req">*</span></label>
+                        <input class="field-input" type="text" name="m_strfirstName" value="<%=emp.getM_strFirst_Name() != null ? emp.getM_strFirst_Name() : ""%>"/>
                     </div>
                     <div class="field">
-                        <label class="field-label">Middle Name</label>
-                        <input class="field-input" type="text" name="m_strmiddleName"
-                               value="<%=emp.getM_strMiddle_Name() != null ? emp.getM_strMiddle_Name() : ""%>"/>
+                        <label class="field-label"><span class="dot"></span>Middle Name</label>
+                        <input class="field-input" type="text" name="m_strmiddleName" value="<%=emp.getM_strMiddle_Name() != null ? emp.getM_strMiddle_Name() : ""%>"/>
                     </div>
                     <div class="field">
-                        <label class="field-label">Last Name <span class="req">*</span></label>
-                        <input class="field-input" type="text" name="m_strlastName"
-                               value="<%=emp.getM_strLast_Name() != null ? emp.getM_strLast_Name() : ""%>"/>
+                        <label class="field-label"><span class="dot"></span>Last Name <span class="req">*</span></label>
+                        <input class="field-input" type="text" name="m_strlastName" value="<%=emp.getM_strLast_Name() != null ? emp.getM_strLast_Name() : ""%>"/>
                     </div>
                     <div class="field">
-                        <label class="field-label">Gender</label>
+                        <label class="field-label"><span class="dot"></span>Gender</label>
                         <select class="field-select" name="m_strgender">
                             <option value="Male" <%="Male".equalsIgnoreCase(emp.getM_strGender()) ? "selected" : ""%>>Male</option>
                             <option value="Female" <%="Female".equalsIgnoreCase(emp.getM_strGender()) ? "selected" : ""%>>Female</option>
@@ -1356,12 +1318,11 @@ html, body {
                         </select>
                     </div>
                     <div class="field">
-                        <label class="field-label">Date of Birth</label>
-                        <input class="field-input" type="date" name="m_strdob"
-                               value="<%=emp.getM_strDate_Of_Birth() != null ? emp.getM_strDate_Of_Birth() : ""%>"/>
+                        <label class="field-label"><span class="dot"></span>Date of Birth</label>
+                        <input class="field-input" type="date" name="m_strdob" value="<%=emp.getM_strDate_Of_Birth() != null ? emp.getM_strDate_Of_Birth() : ""%>"/>
                     </div>
                     <div class="field">
-                        <label class="field-label">Status</label>
+                        <label class="field-label"><span class="dot"></span>Status</label>
                         <select class="field-select" name="m_strISACTIVE">
                             <option value="Active" <%="Active".equalsIgnoreCase(isActive) ? "selected" : ""%>>Active</option>
                             <option value="InActive" <%="InActive".equalsIgnoreCase(isActive) ? "selected" : ""%>>InActive</option>
@@ -1370,23 +1331,23 @@ html, body {
                 </div>
             </div>
 
-            <!-- CARD 3: Work -->
-            <div class="bento-card c-cyan tilt">
-                <div class="card-head">
-                    <div class="card-icon i-cyan">💼</div>
-                    <div class="card-title-block">
+            <!-- Work -->
+            <div class="card" style="--glow: var(--p3);">
+                <div class="card-header">
+                    <div class="card-icon icon-spin-slow" style="background:linear-gradient(135deg,#00d4ff,#00ff88);color:#fff;">💼</div>
+                    <div style="flex:1;">
                         <div class="card-title">Work Information</div>
-                        <div class="card-sub">Role, team and qualification</div>
+                        <div class="card-sub">Your role, team, and qualifications</div>
                     </div>
+                    <span class="card-num">03</span>
                 </div>
-                <div class="fields-grid">
+                <div class="fields">
                     <div class="field">
-                        <label class="field-label">Team / Role</label>
-                        <input class="field-input" type="text" name="m_strRole"
-                               value="<%=emp.getM_strTeam() != null ? emp.getM_strTeam() : ""%>"/>
+                        <label class="field-label"><span class="dot"></span>Team / Role</label>
+                        <input class="field-input" type="text" name="m_strRole" value="<%=emp.getM_strTeam() != null ? emp.getM_strTeam() : ""%>"/>
                     </div>
                     <div class="field">
-                        <label class="field-label">Education Qualification</label>
+                        <label class="field-label"><span class="dot"></span>Education Qualification</label>
                         <select class="field-select" name="m_streduqualification">
                             <option value="">Select</option>
                             <%
@@ -1399,82 +1360,75 @@ html, body {
                         </select>
                     </div>
                     <div class="field">
-                        <label class="field-label">TCS Joining Date</label>
-                        <input class="field-input" type="date" name="m_strtcsjoiningdate"
-                               value="<%=emp.getM_strTCS_Joining_Date() != null ? emp.getM_strTCS_Joining_Date() : ""%>"/>
+                        <label class="field-label"><span class="dot"></span>TCS Joining Date</label>
+                        <input class="field-input" type="date" name="m_strtcsjoiningdate" value="<%=emp.getM_strTCS_Joining_Date() != null ? emp.getM_strTCS_Joining_Date() : ""%>"/>
                     </div>
                     <div class="field">
-                        <label class="field-label">TCS Mail ID</label>
-                        <input class="field-input" type="email" name="m_strtcsmailid"
-                               value="<%=emp.getM_strTCS_mail_ID() != null ? emp.getM_strTCS_mail_ID() : ""%>"/>
+                        <label class="field-label"><span class="dot"></span>TCS Mail ID</label>
+                        <input class="field-input" type="email" name="m_strtcsmailid" value="<%=emp.getM_strTCS_mail_ID() != null ? emp.getM_strTCS_mail_ID() : ""%>"/>
                     </div>
                     <div class="field span-2">
-                        <label class="field-label">SBI Mail ID</label>
-                        <input class="field-input" type="email" name="m_strsbimailid"
-                               value="<%=emp.getM_strSBI_mail_ID() != null ? emp.getM_strSBI_mail_ID() : ""%>"/>
+                        <label class="field-label"><span class="dot"></span>SBI Mail ID</label>
+                        <input class="field-input" type="email" name="m_strsbimailid" value="<%=emp.getM_strSBI_mail_ID() != null ? emp.getM_strSBI_mail_ID() : ""%>"/>
                     </div>
                 </div>
             </div>
 
-            <!-- CARD 4: Contact -->
-            <div class="bento-card c-green tilt">
-                <div class="card-head">
-                    <div class="card-icon i-green">📞</div>
-                    <div class="card-title-block">
+            <!-- Contact -->
+            <div class="card" style="--glow: var(--p4);">
+                <div class="card-header">
+                    <div class="card-icon icon-pulse" style="background:linear-gradient(135deg,#00ff88,#ffcc00);color:#fff;">📞</div>
+                    <div style="flex:1;">
                         <div class="card-title">Contact Information</div>
                         <div class="card-sub">How we can reach you</div>
                     </div>
+                    <span class="card-num">04</span>
                 </div>
-                <div class="fields-grid">
+                <div class="fields">
                     <div class="field">
-                        <label class="field-label">Employee Contact</label>
-                        <input class="field-input" type="text" name="m_strcontactno" maxlength="10"
-                               value="<%=emp.getM_strEmployee_contact_Number() != null ? emp.getM_strEmployee_contact_Number() : ""%>"/>
+                        <label class="field-label"><span class="dot"></span>Employee Contact</label>
+                        <input class="field-input" type="text" name="m_strcontactno" maxlength="10" value="<%=emp.getM_strEmployee_contact_Number() != null ? emp.getM_strEmployee_contact_Number() : ""%>"/>
                     </div>
                     <div class="field">
-                        <label class="field-label">Emergency Contact</label>
-                        <input class="field-input" type="text" name="m_stremergencycontactno" maxlength="10"
-                               value="<%=emp.getM_strEmergency_contact_Number() != null ? emp.getM_strEmergency_contact_Number() : ""%>"/>
+                        <label class="field-label"><span class="dot"></span>Emergency Contact</label>
+                        <input class="field-input" type="text" name="m_stremergencycontactno" maxlength="10" value="<%=emp.getM_strEmergency_contact_Number() != null ? emp.getM_strEmergency_contact_Number() : ""%>"/>
                     </div>
                     <div class="field">
-                        <label class="field-label">State</label>
-                        <input class="field-input" type="text" name="m_strstate"
-                               value="<%=emp.getM_strState() != null ? emp.getM_strState() : ""%>"/>
+                        <label class="field-label"><span class="dot"></span>State</label>
+                        <input class="field-input" type="text" name="m_strstate" value="<%=emp.getM_strState() != null ? emp.getM_strState() : ""%>"/>
                     </div>
                     <div class="field">
-                        <label class="field-label">City</label>
-                        <input class="field-input" type="text" name="m_strcity"
-                               value="<%=emp.getM_strCity() != null ? emp.getM_strCity() : ""%>"/>
+                        <label class="field-label"><span class="dot"></span>City</label>
+                        <input class="field-input" type="text" name="m_strcity" value="<%=emp.getM_strCity() != null ? emp.getM_strCity() : ""%>"/>
                     </div>
                     <div class="field span-2">
-                        <label class="field-label">Local Address</label>
+                        <label class="field-label"><span class="dot"></span>Local Address</label>
                         <textarea class="field-textarea" name="m_strlocaladdress"><%=emp.getM_strLocal_Address() != null ? emp.getM_strLocal_Address() : ""%></textarea>
                     </div>
                 </div>
             </div>
 
-            <!-- CARD 5: VPN -->
-            <div class="bento-card c-amber tilt">
-                <div class="card-head">
-                    <div class="card-icon i-amber">💻</div>
-                    <div class="card-title-block">
+            <!-- VPN -->
+            <div class="card" style="--glow: var(--p5);">
+                <div class="card-header">
+                    <div class="card-icon icon-float" style="background:linear-gradient(135deg,#ffcc00,#ff5500);color:#fff;">💻</div>
+                    <div style="flex:1;">
                         <div class="card-title">VPN / Laptop Details</div>
                         <div class="card-sub">Your devices and connections</div>
                     </div>
+                    <span class="card-num">05</span>
                 </div>
-                <div class="fields-grid">
+                <div class="fields">
                     <div class="field">
-                        <label class="field-label">VPN Hostname</label>
-                        <input class="field-input" type="text" name="m_strvpnhostname"
-                               value="<%=emp.getM_strVPN_Hostname() != null ? emp.getM_strVPN_Hostname() : ""%>"/>
+                        <label class="field-label"><span class="dot"></span>VPN Hostname</label>
+                        <input class="field-input" type="text" name="m_strvpnhostname" value="<%=emp.getM_strVPN_Hostname() != null ? emp.getM_strVPN_Hostname() : ""%>"/>
                     </div>
                     <div class="field">
-                        <label class="field-label">Laptop Hostname</label>
-                        <input class="field-input" type="text" name="m_strlaptophostname"
-                               value="<%=emp.getM_strLaptop_Hostname() != null ? emp.getM_strLaptop_Hostname() : ""%>"/>
+                        <label class="field-label"><span class="dot"></span>Laptop Hostname</label>
+                        <input class="field-input" type="text" name="m_strlaptophostname" value="<%=emp.getM_strLaptop_Hostname() != null ? emp.getM_strLaptop_Hostname() : ""%>"/>
                     </div>
                     <div class="field">
-                        <label class="field-label">Remote Type</label>
+                        <label class="field-label"><span class="dot"></span>Remote Type</label>
                         <select class="field-select" name="m_strremotetype">
                             <option value="NONE" <%="NONE".equalsIgnoreCase(emp.getM_strRemote_Type()) ? "selected" : ""%>>NONE</option>
                             <option value="VPN" <%="VPN".equalsIgnoreCase(emp.getM_strRemote_Type()) ? "selected" : ""%>>VPN</option>
@@ -1482,78 +1436,79 @@ html, body {
                         </select>
                     </div>
                     <div class="field">
-                        <label class="field-label">MAC Address</label>
-                        <input class="field-input" type="text" name="m_strvpnmacaddress"
-                               value="<%=emp.getM_strVPN_VDI_MAC_Address() != null ? emp.getM_strVPN_VDI_MAC_Address() : ""%>"/>
+                        <label class="field-label"><span class="dot"></span>MAC Address</label>
+                        <input class="field-input" type="text" name="m_strvpnmacaddress" value="<%=emp.getM_strVPN_VDI_MAC_Address() != null ? emp.getM_strVPN_VDI_MAC_Address() : ""%>"/>
                     </div>
                     <div class="field span-2">
-                        <label class="field-label">IP Address</label>
-                        <input class="field-input" type="text" name="m_strvpnipaddress"
-                               value="<%=emp.getM_strVPN_VDI_IP_Address() != null ? emp.getM_strVPN_VDI_IP_Address() : ""%>"/>
+                        <label class="field-label"><span class="dot"></span>IP Address</label>
+                        <input class="field-input" type="text" name="m_strvpnipaddress" value="<%=emp.getM_strVPN_VDI_IP_Address() != null ? emp.getM_strVPN_VDI_IP_Address() : ""%>"/>
                     </div>
                 </div>
             </div>
 
-            <!-- CARD 6: Credentials -->
-            <div class="bento-card c-violet tilt">
-                <div class="card-head">
-                    <div class="card-icon i-purple">🔑</div>
-                    <div class="card-title-block">
+            <!-- Credentials -->
+            <div class="card" style="--glow: var(--p2);">
+                <div class="card-header">
+                    <div class="card-icon icon-pulse" style="background:linear-gradient(135deg,#7928ca,#ff0080);color:#fff;">🔑</div>
+                    <div style="flex:1;">
                         <div class="card-title">Credentials</div>
                         <div class="card-sub">Your login details</div>
                     </div>
+                    <span class="card-num">06</span>
                 </div>
-                <div class="fields-grid">
+                <div class="fields">
                     <div class="field">
-                        <label class="field-label">Username</label>
-                        <input class="field-input" type="text" name="m_strUserName"
-                               value="<%=emp.getM_strUserName() != null ? emp.getM_strUserName() : ""%>"/>
+                        <label class="field-label"><span class="dot"></span>Username</label>
+                        <input class="field-input" type="text" name="m_strUserName" value="<%=emp.getM_strUserName() != null ? emp.getM_strUserName() : ""%>"/>
                     </div>
                     <div class="field">
-                        <label class="field-label">Password</label>
-                        <input class="field-input" type="text" name="m_strPassword"
-                               value="<%=emp.getM_strPassword() != null ? emp.getM_strPassword() : ""%>"/>
+                        <label class="field-label"><span class="dot"></span>Password</label>
+                        <input class="field-input" type="text" name="m_strPassword" value="<%=emp.getM_strPassword() != null ? emp.getM_strPassword() : ""%>"/>
                     </div>
                 </div>
             </div>
 
-            <!-- CARD 7: Documents -->
-            <div class="bento-card c-red tilt">
-                <div class="card-head">
-                    <div class="card-icon i-red">📄</div>
-                    <div class="card-title-block">
+            <!-- Documents Upload -->
+            <div class="card" style="--glow: var(--p6);">
+                <div class="card-header">
+                    <div class="card-icon icon-float" style="background:linear-gradient(135deg,#ff5500,#ff0080);color:#fff;">📤</div>
+                    <div style="flex:1;">
                         <div class="card-title">Replace Documents</div>
                         <div class="card-sub">Upload new files to replace existing ones</div>
                     </div>
+                    <span class="card-num">07</span>
                 </div>
-                <div class="fields-grid">
+                <div class="fields">
                     <div class="field">
-                        <label class="field-label">BGC Document</label>
+                        <label class="field-label"><span class="dot"></span>BGC Document</label>
                         <label class="file-drop" id="drop-BGC">
                             <input type="file" name="m_strtheBgcfile" onchange="onFileChange(this, 'BGC');"/>
-                            <div class="file-drop-text">
-                                <div class="file-drop-name">BGC Document</div>
-                                <div class="file-drop-hint">Click to choose file</div>
+                            <div class="file-drop-icon">📄</div>
+                            <div class="file-text">
+                                <div class="file-name">Choose BGC file</div>
+                                <div class="file-hint">Click to browse</div>
                             </div>
                         </label>
                     </div>
                     <div class="field">
-                        <label class="field-label">Police Verification</label>
+                        <label class="field-label"><span class="dot"></span>Police Verification</label>
                         <label class="file-drop" id="drop-POLICE">
                             <input type="file" name="m_strthePoliceverificationfile" onchange="onFileChange(this, 'POLICE');"/>
-                            <div class="file-drop-text">
-                                <div class="file-drop-name">Police Verification</div>
-                                <div class="file-drop-hint">Click to choose file</div>
+                            <div class="file-drop-icon">🛡️</div>
+                            <div class="file-text">
+                                <div class="file-name">Choose Police file</div>
+                                <div class="file-hint">Click to browse</div>
                             </div>
                         </label>
                     </div>
                     <div class="field">
-                        <label class="field-label">CV Document</label>
+                        <label class="field-label"><span class="dot"></span>CV Document</label>
                         <label class="file-drop" id="drop-CV">
                             <input type="file" name="m_strtheCvfile" onchange="onFileChange(this, 'CV');"/>
-                            <div class="file-drop-text">
-                                <div class="file-drop-name">CV Document</div>
-                                <div class="file-drop-hint">Click to choose file</div>
+                            <div class="file-drop-icon">📎</div>
+                            <div class="file-text">
+                                <div class="file-name">Choose CV file</div>
+                                <div class="file-hint">Click to browse</div>
                             </div>
                         </label>
                     </div>
@@ -1564,19 +1519,17 @@ html, body {
             <div class="action-bar">
                 <div class="action-hint">
                     <span class="dot"></span>
-                    <span>You have unsaved changes — <kbd style="padding:2px 6px;background:rgba(255,255,255,.1);border-radius:4px;font-size:11px;">Ctrl</kbd> + <kbd style="padding:2px 6px;background:rgba(255,255,255,.1);border-radius:4px;font-size:11px;">S</kbd> to save</span>
+                    <span>Unsaved changes — <kbd style="padding:2px 6px;background:rgba(255,255,255,.1);border-radius:4px;font-size:11px;">Ctrl</kbd> + <kbd style="padding:2px 6px;background:rgba(255,255,255,.1);border-radius:4px;font-size:11px;">S</kbd> to save</span>
                 </div>
-                <div style="display:flex;gap:10px;">
-                    <a href="<%=ctx%>/ViewEISRegistrationDetailsActionNew" class="btn-action">
-                        Cancel
-                    </a>
-                    <button type="button" class="btn-action primary" onclick="submitEdit();">
+                <div style="display:flex;gap:12px;">
+                    <a href="<%=ctx%>/ViewEISRegistrationDetailsActionNew" class="btn">Cancel</a>
+                    <button type="button" class="btn btn-primary" onclick="submitEdit();">
                         💾 Save Changes
                     </button>
                 </div>
             </div>
 
-        </div>
+        </main>
     </div>
 
     </form>
@@ -1592,23 +1545,77 @@ html, body {
     var CTX = '<%=ctx%>';
     var EMP_ID = '<%= emp != null ? emp.getM_strEmployee_ID() : "" %>';
 
-    /* Toast */
+    /* ============================================================
+       PARTICLES
+       ============================================================ */
+    (function spawnParticles() {
+        var host = document.getElementById('particles');
+        if (!host) return;
+        var colors = ['#ff0080', '#7928ca', '#00d4ff', '#00ff88', '#ffcc00'];
+        for (var i = 0; i < 40; i++) {
+            var p = document.createElement('div');
+            p.className = 'particle';
+            p.style.left = Math.random() * 100 + '%';
+            p.style.background = colors[Math.floor(Math.random() * colors.length)];
+            p.style.color = p.style.background;
+            p.style.animationDuration = (8 + Math.random() * 12) + 's';
+            p.style.animationDelay = (Math.random() * 10) + 's';
+            p.style.width = p.style.height = (2 + Math.random() * 3) + 'px';
+            host.appendChild(p);
+        }
+    })();
+
+    /* ============================================================
+       RIPPLE ON CLICK
+       ============================================================ */
+    document.addEventListener('click', function (e) {
+        var target = e.target.closest('.card, .btn, .doc-item, .file-drop, .nav-btn');
+        if (!target) return;
+        var rect = target.getBoundingClientRect();
+        var ripple = document.createElement('span');
+        var size = Math.max(rect.width, rect.height);
+        ripple.style.position = 'absolute';
+        ripple.style.left = (e.clientX - rect.left - size / 2) + 'px';
+        ripple.style.top = (e.clientY - rect.top - size / 2) + 'px';
+        ripple.style.width = ripple.style.height = size + 'px';
+        ripple.style.borderRadius = '50%';
+        ripple.style.background = 'radial-gradient(circle, rgba(255,255,255,.3), transparent 70%)';
+        ripple.style.pointerEvents = 'none';
+        ripple.style.transform = 'scale(0)';
+        ripple.style.transition = 'transform .6s ease-out, opacity .6s ease-out';
+        ripple.style.opacity = '1';
+        if (getComputedStyle(target).position === 'static') {
+            target.style.position = 'relative';
+        }
+        target.appendChild(ripple);
+        requestAnimationFrame(function () {
+            ripple.style.transform = 'scale(2.5)';
+            ripple.style.opacity = '0';
+        });
+        setTimeout(function () { ripple.remove(); }, 700);
+    });
+
+    /* ============================================================
+       TOAST
+       ============================================================ */
     var toastHost = document.getElementById('toastHost');
     function toast(msg, type) {
         var el = document.createElement('div');
         el.className = 'toast ' + (type || 'info');
         var icons = { success: '✓', error: '✕', info: 'ℹ' };
-        el.innerHTML = '<div class="ticon">' + (icons[type] || icons.info) + '</div><span>' + msg + '</span>';
+        el.innerHTML = '<div class="toast-icon">' + (icons[type] || icons.info) + '</div><span>' + msg + '</span>';
         toastHost.appendChild(el);
         setTimeout(function () {
             el.style.transition = 'all .3s';
             el.style.opacity = '0';
             el.style.transform = 'translateX(30px)';
             setTimeout(function () { el.remove(); }, 300);
-        }, 3000);
+        }, 3200);
     }
 
-    /* Photo Preview */
+    /* ============================================================
+       PHOTO PREVIEW
+       ============================================================ */
     window.previewPhoto = function (input) {
         if (input.files && input.files[0]) {
             var reader = new FileReader();
@@ -1620,26 +1627,29 @@ html, body {
         }
     };
 
-    /* File Change */
+    /* ============================================================
+       FILE CHANGE
+       ============================================================ */
     window.onFileChange = function (input, type) {
         var drop = document.getElementById('drop-' + type);
-        var nameEl = drop.querySelector('.file-drop-name');
-        var hintEl = drop.querySelector('.file-drop-hint');
+        var nameEl = drop.querySelector('.file-name');
+        var hintEl = drop.querySelector('.file-hint');
         if (input.files && input.files[0]) {
             var f = input.files[0];
-            var sizeKb = Math.round(f.size / 1024);
             nameEl.textContent = f.name;
-            hintEl.textContent = sizeKb + ' KB · ready to upload';
+            hintEl.textContent = Math.round(f.size / 1024) + ' KB · ready';
             drop.classList.add('has-file');
-            toast(type + ' ready', 'info');
+            toast(type + ' ready to upload', 'info');
         } else {
-            nameEl.textContent = type + ' Document';
-            hintEl.textContent = 'Click to choose file';
+            nameEl.textContent = 'Choose ' + type + ' file';
+            hintEl.textContent = 'Click to browse';
             drop.classList.remove('has-file');
         }
     };
 
-    /* Open document */
+    /* ============================================================
+       OPEN DOCUMENT
+       ============================================================ */
     window.openDocument = function (empid, docType) {
         if (!empid || !docType) return;
         var url = CTX + '/DocumentDownloadServlet'
@@ -1649,7 +1659,9 @@ html, body {
         window.open(url, '_blank');
     };
 
-    /* Submit */
+    /* ============================================================
+       SUBMIT
+       ============================================================ */
     window.submitEdit = function () {
         var form = document.getElementById('editForm');
         if (!form) { toast('Form not found', 'error'); return; }
@@ -1672,7 +1684,9 @@ html, body {
         form.submit();
     };
 
-    /* Ctrl+S */
+    /* ============================================================
+       CTRL+S
+       ============================================================ */
     document.addEventListener('keydown', function (e) {
         if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
             e.preventDefault();
@@ -1680,16 +1694,18 @@ html, body {
         }
     });
 
-    /* 3D Tilt on bento cards */
-    document.querySelectorAll('.tilt').forEach(function (card) {
+    /* ============================================================
+       3D TILT
+       ============================================================ */
+    document.querySelectorAll('.card').forEach(function (card) {
         card.addEventListener('mousemove', function (e) {
             var rect = card.getBoundingClientRect();
             var x = e.clientX - rect.left;
             var y = e.clientY - rect.top;
             var cx = rect.width / 2;
             var cy = rect.height / 2;
-            var rotX = ((y - cy) / cy) * -2;
-            var rotY = ((x - cx) / cx) * 2;
+            var rotX = ((y - cy) / cy) * -1.5;
+            var rotY = ((x - cx) / cx) * 1.5;
             card.style.transform = 'translateY(-6px) perspective(1200px) rotateX(' + rotX + 'deg) rotateY(' + rotY + 'deg)';
         });
         card.addEventListener('mouseleave', function () {
@@ -1697,31 +1713,15 @@ html, body {
         });
     });
 
-    /* Profile card tilt */
-    var profileCard = document.querySelector('.profile-card');
-    if (profileCard) {
-        profileCard.addEventListener('mousemove', function (e) {
-            var rect = profileCard.getBoundingClientRect();
-            var x = e.clientX - rect.left;
-            var y = e.clientY - rect.top;
-            var cx = rect.width / 2;
-            var cy = rect.height / 2;
-            var rotX = ((y - cy) / cy) * -3;
-            var rotY = ((x - cx) / cx) * 3;
-            profileCard.style.transform = 'perspective(1000px) rotateX(' + rotX + 'deg) rotateY(' + rotY + 'deg)';
-        });
-        profileCard.addEventListener('mouseleave', function () {
-            profileCard.style.transform = '';
-        });
-    }
-
-    /* Magnetic buttons */
-    document.querySelectorAll('.btn-action, .btn-pill').forEach(function (btn) {
+    /* ============================================================
+       MAGNETIC BUTTONS
+       ============================================================ */
+    document.querySelectorAll('.btn').forEach(function (btn) {
         btn.addEventListener('mousemove', function (e) {
             var rect = btn.getBoundingClientRect();
             var x = e.clientX - rect.left - rect.width / 2;
             var y = e.clientY - rect.top - rect.height / 2;
-            btn.style.transform = 'translate(' + (x * 0.15) + 'px, ' + (y * 0.15) + 'px) translateY(-3px) scale(1.02)';
+            btn.style.transform = 'translate(' + (x * 0.15) + 'px, ' + (y * 0.15) + 'px) translateY(-3px) scale(1.03)';
         });
         btn.addEventListener('mouseleave', function () {
             btn.style.transform = '';
