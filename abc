@@ -63,7 +63,7 @@ public class EISRegistrationAction extends ActionSupport {
     }
 
     // ============================================================
-    // ACTION METHODS (no-arg, return String)
+    // ACTION METHODS
     // ============================================================
 
     @Override
@@ -71,10 +71,6 @@ public class EISRegistrationAction extends ActionSupport {
         return showregpage();
     }
 
-    /**
-     * Shows the registration page with the role dropdown populated.
-     * URL: showregpage.action
-     */
     public String showregpage() throws Exception {
         RegistrationActionForm form = getOrCreateForm();
         loadEISRole(form);
@@ -86,25 +82,26 @@ public class EISRegistrationAction extends ActionSupport {
      * URL: saveRegistration.action
      */
     public String saveRegistration() throws Exception {
+
+        System.out.println("========== saveRegistration START ==========");
+
         RegistrationActionForm form = getOrCreateForm();
         loadEISRole(form);
 
         HttpServletRequest request = ServletActionContext.getRequest();
         String actionParam = request.getParameter("action");
 
-        // No action param → show empty form
+        System.out.println("[DEBUG] actionParam = " + actionParam);
+
         if (actionParam == null) {
             clearForm(form);
             return "success";
         }
-
-        // Anything other than insert → clear form
         if (!"insert".equals(actionParam)) {
             clearForm(form);
             return "success";
         }
 
-        // ---------------- INSERT path ----------------
         Connection con = null;
         PreparedStatement psEmp = null;
         PreparedStatement psRoster = null;
@@ -113,10 +110,12 @@ public class EISRegistrationAction extends ActionSupport {
 
         try {
             con = DBUtilityAuto.getReportDBConnection();
+            System.out.println("[DEBUG] DB Connected OK");
 
             // ---- Duplicate check ----
+            String empId = request.getParameter("m_stremployee_id");
             String countQuery = "select count(*) from eisupport_employee_master where EMPLOYEE_ID='"
-                    + request.getParameter("m_stremployee_id") + "'";
+                    + empId + "'";
             checkSt = con.createStatement();
             checkRs = checkSt.executeQuery(countQuery);
 
@@ -124,15 +123,17 @@ public class EISRegistrationAction extends ActionSupport {
             if (checkRs != null && checkRs.next()) {
                 count = checkRs.getInt(1);
             }
+            System.out.println("[DEBUG] Duplicate count = " + count);
 
             if (count > 0) {
-                // ⚠️ DUPLICATE — set on BOTH form and action, do NOT clear
                 form.setM_strmsg("duplicate");
                 this.setM_strmsg("duplicate");
                 return "success";
             }
 
-            // ---- Upload files ----
+            // ============================================================
+            // FILE UPLOAD — Now with proper logging & checks
+            // ============================================================
             String photoPath  = "";
             String bgcPath    = "";
             String policePath = "";
@@ -141,44 +142,54 @@ public class EISRegistrationAction extends ActionSupport {
             String baseUpload = System.getProperty("catalina.base")
                     + "/webapps/EISPortalVer2/EISEMPLOYEEDOCUMENT/";
 
-            if (form.getM_strthePhotofile() != null
-                    && form.getM_strthePhotofile().length() > 0
-                    && form.getM_strthePhotofileFileName() != null) {
-                photoPath = uploadFile(
-                        form.getM_strthePhotofileFileName(),
-                        form.getM_strthePhotofile(),
-                        baseUpload + "PHOTO/",
-                        form);
-            }
-            if (form.getM_strtheBgcfile() != null
-                    && form.getM_strtheBgcfile().length() > 0
-                    && form.getM_strtheBgcfileFileName() != null) {
-                bgcPath = uploadFile(
-                        form.getM_strtheBgcfileFileName(),
-                        form.getM_strtheBgcfile(),
-                        baseUpload + "BGC/",
-                        form);
-            }
-            if (form.getM_strthePoliceverificationfile() != null
-                    && form.getM_strthePoliceverificationfile().length() > 0
-                    && form.getM_strthePoliceverificationfileFileName() != null) {
-                policePath = uploadFile(
-                        form.getM_strthePoliceverificationfileFileName(),
-                        form.getM_strthePoliceverificationfile(),
-                        baseUpload + "Police/",
-                        form);
-            }
-            if (form.getM_strtheCvfile() != null
-                    && form.getM_strtheCvfile().length() > 0
-                    && form.getM_strtheCvfileFileName() != null) {
-                cvPath = uploadFile(
-                        form.getM_strtheCvfileFileName(),
-                        form.getM_strtheCvfile(),
-                        baseUpload + "CV/",
-                        form);
+            System.out.println("[DEBUG] Upload base path: " + baseUpload);
+
+            // ---- PHOTO ----
+            File   photoFile = form.getM_strthePhotofile();
+            String photoName = form.getM_strthePhotofileFileName();
+            System.out.println("[DEBUG] PHOTO File object   = " + photoFile);
+            System.out.println("[DEBUG] PHOTO original name = " + photoName);
+            if (photoFile != null && photoName != null && photoName.trim().length() > 0) {
+                photoPath = uploadFile(photoName, photoFile, baseUpload + "PHOTO/", form);
+                System.out.println("[DEBUG] PHOTO saved as = " + photoPath);
             }
 
-            // ---- Insert into eisupport_employee_master ----
+            // ---- BGC ----
+            File   bgcFile = form.getM_strtheBgcfile();
+            String bgcName = form.getM_strtheBgcfileFileName();
+            System.out.println("[DEBUG] BGC File object   = " + bgcFile);
+            System.out.println("[DEBUG] BGC original name = " + bgcName);
+            if (bgcFile != null && bgcName != null && bgcName.trim().length() > 0) {
+                bgcPath = uploadFile(bgcName, bgcFile, baseUpload + "BGC/", form);
+                System.out.println("[DEBUG] BGC saved as = " + bgcPath);
+            }
+
+            // ---- POLICE VERIFICATION ----
+            File   policeFile = form.getM_strthePoliceverificationfile();
+            String policeName = form.getM_strthePoliceverificationfileFileName();
+            System.out.println("[DEBUG] POLICE File object   = " + policeFile);
+            System.out.println("[DEBUG] POLICE original name = " + policeName);
+            if (policeFile != null && policeName != null && policeName.trim().length() > 0) {
+                policePath = uploadFile(policeName, policeFile, baseUpload + "Police/", form);
+                System.out.println("[DEBUG] POLICE saved as = " + policePath);
+            }
+
+            // ---- CV ----
+            File   cvFile = form.getM_strtheCvfile();
+            String cvName = form.getM_strtheCvfileFileName();
+            System.out.println("[DEBUG] CV File object   = " + cvFile);
+            System.out.println("[DEBUG] CV original name = " + cvName);
+            if (cvFile != null && cvName != null && cvName.trim().length() > 0) {
+                cvPath = uploadFile(cvName, cvFile, baseUpload + "CV/", form);
+                System.out.println("[DEBUG] CV saved as = " + cvPath);
+            }
+
+            System.out.println("[DEBUG] Final paths: photo=" + photoPath
+                    + " bgc=" + bgcPath + " police=" + policePath + " cv=" + cvPath);
+
+            // ============================================================
+            // INSERT — eisupport_employee_master
+            // ============================================================
             String sqlEmp =
                     "INSERT INTO eisupport_employee_master ("
                   + "EMPLOYEE_ID,AD_ID,ASSET_ID,EDU_QUALIFICATION,TCS_JOINING_DATE,CONTACTNUMBER,"
@@ -190,10 +201,12 @@ public class EISRegistrationAction extends ActionSupport {
 
             psEmp = con.prepareStatement(sqlEmp);
             bindInsertParams(psEmp, request, cvPath, bgcPath, photoPath, policePath);
-            psEmp.addBatch();
-            psEmp.executeBatch();
+            psEmp.executeUpdate();
+            System.out.println("[DEBUG] Inserted into eisupport_employee_master");
 
-            // ---- Insert into roster_employee_details ----
+            // ============================================================
+            // INSERT — roster_employee_details
+            // ============================================================
             String sqlRoster =
                     "INSERT INTO roster_employee_details ("
                   + "EMPLOYEE_ID,AD_ID,ASSET_ID,EDU_QUALIFICATION,TCS_JOINING_DATE,CONTACTNUMBER,"
@@ -205,17 +218,17 @@ public class EISRegistrationAction extends ActionSupport {
 
             psRoster = con.prepareStatement(sqlRoster);
             bindInsertParams(psRoster, request, cvPath, bgcPath, photoPath, policePath);
-            psRoster.addBatch();
-            psRoster.executeBatch();
-
-            System.out.println("Updated in Roster Employee Table");
+            psRoster.executeUpdate();
+            System.out.println("[DEBUG] Inserted into roster_employee_details");
 
             clearForm(form);
+            System.out.println("========== saveRegistration SUCCESS ==========");
             return "thanks";
 
         } catch (Exception e) {
+            System.out.println("========== saveRegistration FAILED ==========");
+            System.out.println("[ERROR] " + e.getClass().getName() + ": " + e.getMessage());
             e.printStackTrace();
-            // ⚠️ ERROR — set on BOTH form and action, do NOT clear
             form.setM_strmsg("error");
             this.setM_strmsg("error");
             return "success";
@@ -307,6 +320,9 @@ public class EISRegistrationAction extends ActionSupport {
         }
     }
 
+    /**
+     * Saves uploaded file to disk and returns the generated file name.
+     */
     private static String uploadFile(String originalName,
                                      File uploadedFile,
                                      String directoryPath,
@@ -316,30 +332,49 @@ public class EISRegistrationAction extends ActionSupport {
         OutputStream out = null;
 
         try {
-            if (originalName == null || originalName.indexOf('.') < 0) {
+            if (originalName == null || originalName.trim().length() == 0) {
+                System.out.println("[UPLOAD] Skipped: original name empty");
                 return "";
             }
 
-            String base = originalName.substring(0, originalName.indexOf('.'));
-            String ext  = originalName.substring(originalName.indexOf('.'));
-            newFileName = Math.random() + "_" + base + ext;
+            // Build new file name
+            int dot = originalName.lastIndexOf('.');
+            String base;
+            String ext;
+            if (dot > 0) {
+                base = originalName.substring(0, dot);
+                ext  = originalName.substring(dot);
+            } else {
+                base = originalName;
+                ext  = "";
+            }
+            newFileName = System.currentTimeMillis() + "_" + Math.random() + "_" + base + ext;
 
+            // Ensure directory exists
             File dir = new File(directoryPath);
-            if (!dir.isDirectory()) {
-                dir.mkdirs();
+            if (!dir.exists()) {
+                boolean created = dir.mkdirs();
+                System.out.println("[UPLOAD] Created dir " + directoryPath + " = " + created);
             }
 
+            // Copy file
             in = new FileInputStream(uploadedFile);
             out = new FileOutputStream(directoryPath + newFileName);
 
             byte[] buffer = new byte[8192];
             int len;
+            long total = 0;
             while ((len = in.read(buffer)) != -1) {
                 out.write(buffer, 0, len);
+                total += len;
             }
+
+            System.out.println("[UPLOAD] Saved " + directoryPath + newFileName + " (" + total + " bytes)");
+
         } catch (Exception e) {
-            l_obj.setM_strmsg("Error");
+            System.out.println("[UPLOAD] FAILED for " + originalName + " -> " + directoryPath);
             e.printStackTrace();
+            l_obj.setM_strmsg("Error");
         } finally {
             try { if (in  != null) in.close();  } catch (Exception ignore) {}
             try { if (out != null) out.close(); } catch (Exception ignore) {}
