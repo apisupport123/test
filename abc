@@ -1,5 +1,6 @@
 package com.action;
 
+import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -7,132 +8,472 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.URLConnection;
 import java.sql.Blob;
+import java.sql.Clob;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
 
+import com.actionform.RegistrationActionForm;
 import com.jdbc.DBUtilityAuto;
+import com.beans.EmployeeDetailsBean;
 
-@WebServlet("/MigrateBlobsToDisk")
-public class MigrateBlobsToDisk extends HttpServlet {
+/**
+ * Loads all employees, handles delete, forwards to view JSP.
+ */
+@WebServlet("/ViewEISRegistrationDetailsActionNew")
+public class ViewEISRegistrationDetailsActionNew extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
+
     private static final String UPLOAD_BASE =
             "/webapps/EISPortalVer2/EISEMPLOYEEDOCUMENT/";
+
+    public ViewEISRegistrationDetailsActionNew() {
+        super();
+    }
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        processRequest(request, response);
+    }
 
-        response.setContentType("text/plain");
-        StringBuilder log = new StringBuilder();
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        processRequest(request, response);
+    }
+
+    protected void processRequest(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        System.out.println("========== ViewEISRegistrationDetailsActionNew ==========");
+
+        RegistrationActionForm regForm = new RegistrationActionForm();
+        regForm.setM_strmsg("");
+
+        String action = request.getParameter("action");
+        String empId  = request.getParameter("empid");
+
+        System.out.println("[DEBUG] action=" + action + " empId=" + empId);
+
+        if ("delete".equals(action) && empId != null && !empId.trim().isEmpty()) {
+            try {
+                deleteEmployeeDetails(empId, regForm);
+            } catch (SQLException e) {
+                e.printStackTrace();
+                regForm.setM_strmsg("error");
+            }
+        }
+
+        try {
+            viewEmployeedetailsdata(regForm);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            regForm.setM_strmsg("error");
+        }
+
+        request.setAttribute("RegForm", regForm);
+
+        RequestDispatcher dispatcher = request.getRequestDispatcher(
+                "/jsp/ViewEISRegistrationDetailsNew.jsp");
+        dispatcher.forward(request, response);
+    }
+
+    // =================================================================
+    // DELETE
+    // =================================================================
+
+    private void deleteEmployeeDetails(String empId, RegistrationActionForm regForm)
+            throws SQLException {
 
         Connection conn = null;
-        Statement st = null;
+        PreparedStatement selectPs = null;
+        PreparedStatement deleteEmpPs = null;
+        PreparedStatement deleteRosterPs = null;
         ResultSet rs = null;
-        PreparedStatement ps = null;
 
         try {
             conn = DBUtilityAuto.getReportDBConnection();
-            st = conn.createStatement();
-            rs = st.executeQuery(
-                "SELECT EMPLOYEE_ID, BGC_DOCUMENT_PATH, PHOTO_PATH, "
-              + "POLICE_VERIFICATION_PATH, CV_DOCUMENT_PATH "
-              + "FROM eisupport_employee_master");
 
-            ps = conn.prepareStatement(
-                "UPDATE eisupport_employee_master SET "
-              + "BGC_DOCUMENT_PATH = ?, PHOTO_PATH = ?, "
-              + "POLICE_VERIFICATION_PATH = ?, CV_DOCUMENT_PATH = ? "
-              + "WHERE EMPLOYEE_ID = ?");
+            // Legacy check — delete physical files if paths were filenames
+            String selectSql =
+                    "SELECT BGC_DOCUMENT_PATH, PHOTO_PATH, "
+                  + "POLICE_VERIFICATION_PATH, CV_DOCUMENT_PATH "
+                  + "FROM eisupport_employee_master WHERE EMPLOYEE_ID = ?";
 
-            String basePath = System.getProperty("catalina.base") + UPLOAD_BASE;
-            int rowNum = 0;
+            selectPs = conn.prepareStatement(selectSql);
+            selectPs.setString(1, empId);
+            rs = selectPs.executeQuery();
 
-            while (rs.next()) {
-                rowNum++;
-                String empId = rs.getString("EMPLOYEE_ID");
-                log.append("\n--- Row ").append(rowNum).append(" empId=").append(empId).append("\n");
-
-                String bgc    = migrateColumn(rs, "BGC_DOCUMENT_PATH", "BGC", empId, basePath, log);
-                String photo  = migrateColumn(rs, "PHOTO_PATH", "PHOTO", empId, basePath, log);
-                String police = migrateColumn(rs, "POLICE_VERIFICATION_PATH", "Police", empId, basePath, log);
-                String cv     = migrateColumn(rs, "CV_DOCUMENT_PATH", "CV", empId, basePath, log);
-
-                ps.setString(1, bgc);
-                ps.setString(2, photo);
-                ps.setString(3, police);
-                ps.setString(4, cv);
-                ps.setString(5, empId);
-                ps.executeUpdate();
-                log.append("  → DB updated\n");
+            if (!rs.next()) {
+                regForm.setM_strmsg("error");
+                System.out.println("[DELETE] Employee " + empId + " not found");
+                return;
             }
 
-            log.append("\n\n=== MIGRATION COMPLETE ===\n");
-            log.append("Total rows: ").append(rowNum).append("\n");
+            // Physical files (only if stored as filename, not BLOB)
+            try {
+                Object bgcObj = rs.getObject("BGC_DOCUMENT_PATH");
+                if (bgcObj instanceof String) {
+                    deleteFile((String) bgcObj, "BGC");
+                }
+                Object photoObj = rs.getObject("PHOTO_PATH");
+                if (photoObj instanceof String) {
+                    deleteFile((String) photoObj, "PHOTO");
+                }
+                Object policeObj = rs.getObject("POLICE_VERIFICATION_PATH");
+                if (policeObj instanceof String) {
+                    deleteFile((String) policeObj, "Police");
+                }
+                Object cvObj = rs.getObject("CV_DOCUMENT_PATH");
+                if (cvObj instanceof String) {
+                    deleteFile((String) cvObj, "CV");
+                }
+            } catch (Exception ignore) {
+                // ignore — BLOB columns may fail on getObject
+            }
+
+            rs.close();       rs = null;
+            selectPs.close(); selectPs = null;
+
+            // Delete from BOTH tables
+            deleteEmpPs = conn.prepareStatement(
+                    "DELETE FROM eisupport_employee_master WHERE EMPLOYEE_ID = ?");
+            deleteEmpPs.setString(1, empId);
+            int rowsEmp = deleteEmpPs.executeUpdate();
+
+            deleteRosterPs = conn.prepareStatement(
+                    "DELETE FROM roster_employee_details WHERE EMPLOYEE_ID = ?");
+            deleteRosterPs.setString(1, empId);
+            int rowsRoster = deleteRosterPs.executeUpdate();
+
+            System.out.println("[DELETE] master=" + rowsEmp + " roster=" + rowsRoster);
+
+            if (rowsEmp > 0) {
+                regForm.setM_strmsg("delete");
+                System.out.println("[DELETE] Employee " + empId + " deleted successfully.");
+            } else {
+                regForm.setM_strmsg("error");
+                System.out.println("[DELETE] Failed to delete employee " + empId);
+            }
+
+        } catch (Exception e) {
+            regForm.setM_strmsg("error");
+            e.printStackTrace();
+        } finally {
+            closeQuietly(rs, selectPs, deleteEmpPs, deleteRosterPs, conn);
+        }
+    }
+
+    private void deleteFile(String filePath, String folder) {
+        if (filePath == null || filePath.trim().isEmpty()) return;
+
+        try {
+            if ("Uploaded".equalsIgnoreCase(filePath.trim())) return;
+
+            String basePath = System.getProperty("catalina.base");
+            String fullPath = basePath + UPLOAD_BASE + folder + "/" + filePath;
+            File file = new File(fullPath);
+
+            if (file.exists()) {
+                if (file.delete()) {
+                    System.out.println("[DELETE FILE] " + folder + " deleted: " + filePath);
+                } else {
+                    System.out.println("[DELETE FILE] Failed: " + filePath);
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("[DELETE FILE] Error: " + e.getMessage());
+        }
+    }
+
+    // =================================================================
+    // LOAD LIST
+    // =================================================================
+
+    private void viewEmployeedetailsdata(RegistrationActionForm regForm) throws SQLException {
+
+        Connection conn = null;
+        Statement stmt = null;
+        ResultSet rs = null;
+
+        try {
+            conn = DBUtilityAuto.getReportDBConnection();
+            stmt = conn.createStatement();
+
+            String query = "SELECT * FROM eisupport_employee_master ORDER BY EMPLOYEE_ID";
+            rs = stmt.executeQuery(query);
+
+            List<EmployeeDetailsBean> employeeList = new ArrayList<>();
+
+            while (rs.next()) {
+                EmployeeDetailsBean employee = new EmployeeDetailsBean();
+
+                employee.setM_strEmployee_ID(getString(rs, "EMPLOYEE_ID"));
+                employee.setM_strAD_ID(getString(rs, "AD_ID"));
+                employee.setM_strHID(getString(rs, "HID"));
+                employee.setM_strAsset_ID(getString(rs, "ASSET_ID"));
+                employee.setM_strEducation_Qualification(getString(rs, "EDU_QUALIFICATION"));
+                employee.setM_strTCS_Joining_Date(getString(rs, "TCS_JOINING_DATE"));
+                employee.setM_strEmployee_contact_Number(getString(rs, "CONTACTNUMBER"));
+                employee.setM_strEmergency_contact_Number(getString(rs, "EMERGENCY_CONTACTNUMBER"));
+                employee.setM_strTeam(getString(rs, "TEAM"));
+                employee.setM_strTCS_mail_ID(getString(rs, "TCS_MAILID"));
+                employee.setM_strSBI_mail_ID(getString(rs, "SBI_MAILID"));
+                employee.setM_strState(getString(rs, "STATE"));
+                employee.setM_strCity(getString(rs, "CITY"));
+                employee.setM_strLocal_Address(getString(rs, "LOCAL_ADDRESS"));
+                employee.setM_strGender(getString(rs, "GENDER"));
+                employee.setM_strDate_Of_Birth(getString(rs, "DOB"));
+                employee.setM_strFirst_Name(getString(rs, "FIRSTNAME"));
+                employee.setM_strMiddle_Name(getString(rs, "MIDDLENAME"));
+                employee.setM_strLast_Name(getString(rs, "LASTNAME"));
+                employee.setM_strVPN_Hostname(getString(rs, "VPN_HOSTNAME"));
+                employee.setM_strLaptop_Hostname(getString(rs, "LAPTOP_HOSTNAME"));
+                employee.setM_strRemote_Type(getString(rs, "REMOTETYPE"));
+                employee.setM_strVPN_VDI_MAC_Address(getString(rs, "VPN_VDI_MACADDRESS"));
+                employee.setM_strVPN_VDI_IP_Address(getString(rs, "VPN_VDI_IPADDRESS"));
+
+                // ⭐ Document paths — returns "Uploaded" for BLOB, filename for VARCHAR
+                employee.setM_strBGC_Documents_Path(getDocumentStatus(rs, "BGC_DOCUMENT_PATH"));
+                employee.setM_strPhoto_Path(getDocumentStatus(rs, "PHOTO_PATH"));
+                employee.setM_strPolice_Verification_Path(getDocumentStatus(rs, "POLICE_VERIFICATION_PATH"));
+                employee.setM_strCV_Document(getDocumentStatus(rs, "CV_DOCUMENT_PATH"));
+
+                employee.setM_strUserName(getString(rs, "USERNAME"));
+                employee.setM_strPassword(getStringSafe(rs, "PASSWORD", "password"));
+                employee.setM_strISACTIVE(getStringSafe(rs, "ISACTIVE", "IS_ACTIVE"));
+
+                employeeList.add(employee);
+            }
+
+            regForm.setM_lstViewEmployeeRegistrationdetail(employeeList);
+            System.out.println("[LOAD] Total " + employeeList.size() + " employee records loaded.");
 
         } catch (Exception e) {
             e.printStackTrace();
-            log.append("\n\nERROR: ").append(e.getMessage()).append("\n");
+            regForm.setM_strmsg("error");
         } finally {
-            try { if (rs   != null) rs.close();   } catch (Exception ignore) {}
-            try { if (st   != null) st.close();   } catch (Exception ignore) {}
-            try { if (ps   != null) ps.close();   } catch (Exception ignore) {}
-            try { if (conn != null) conn.close(); } catch (Exception ignore) {}
+            closeQuietly(rs, stmt, null, null, conn);
         }
-
-        response.getWriter().write(log.toString());
     }
 
-    private String migrateColumn(ResultSet rs, String columnName, String folder,
-                                  String empId, String basePath, StringBuilder log) {
+    // =================================================================
+    // HELPERS
+    // =================================================================
+
+    private String getString(ResultSet rs, String columnName) {
         try {
-            Blob blob = rs.getBlob(columnName);
-            if (blob == null || blob.length() == 0) {
-                log.append("  ").append(columnName).append(": empty\n");
-                return "";
-            }
-
-            byte[] data = blob.getBytes(1, (int) blob.length());
-
-            // Detect MIME
-            String mime = URLConnection.guessContentTypeFromStream(
-                    new java.io.ByteArrayInputStream(data));
-            String ext = extFromMime(mime);
-
-            String filename = empId + "_" + folder + "_" + System.currentTimeMillis() + ext;
-            File dir = new File(basePath + folder);
-            if (!dir.exists()) dir.mkdirs();
-
-            File out = new File(dir, filename);
-            try (FileOutputStream fos = new FileOutputStream(out)) {
-                fos.write(data);
-            }
-
-            log.append("  ").append(columnName).append(": ")
-               .append(data.length).append(" bytes → ").append(filename).append("\n");
-
-            return filename;
-        } catch (Exception e) {
-            log.append("  ").append(columnName).append(": ERROR ").append(e.getMessage()).append("\n");
+            String v = rs.getString(columnName);
+            return v != null ? v : "";
+        } catch (SQLException e) {
             return "";
         }
     }
 
-    private String extFromMime(String mime) {
-        if (mime == null) return "";
-        if (mime.startsWith("image/jpeg")) return ".jpg";
-        if (mime.startsWith("image/png"))  return ".png";
-        if (mime.startsWith("image/gif"))  return ".gif";
-        if (mime.equals("application/pdf")) return ".pdf";
-        if (mime.contains("wordprocessingml")) return ".docx";
-        if (mime.equals("application/msword")) return ".doc";
+    private String getStringSafe(ResultSet rs, String... columnNames) {
+        for (String col : columnNames) {
+            try {
+                String v = rs.getString(col);
+                if (v != null) return v;
+            } catch (SQLException ignore) {}
+        }
         return "";
     }
+
+    /**
+     * ⭐ KEY METHOD
+     * Returns:
+     *   - "Uploaded"  → if BLOB has data  (View JSP uses this to enable button)
+     *   - ""          → if empty
+     *   - filename    → if VARCHAR path (legacy)
+     *   - "Uploaded"  → if legacy "Uploaded" string
+     */
+    private String getDocumentStatus(ResultSet rs, String columnName) {
+        try {
+            Object obj = rs.getObject(columnName);
+            if (obj == null) return "";
+
+            if (obj instanceof Blob) {
+                Blob blob = (Blob) obj;
+                long len = blob.length();
+                return len > 0 ? "Uploaded" : "";
+            }
+            if (obj instanceof Clob) {
+                Clob clob = (Clob) obj;
+                long len = clob.length();
+                return len > 0 ? "Uploaded" : "";
+            }
+            if (obj instanceof String) {
+                String s = ((String) obj).trim();
+                if (s.isEmpty()) return "";
+                if ("Uploaded".equalsIgnoreCase(s)) return "Uploaded";
+                return s;   // legacy filename
+            }
+            return obj.toString();
+        } catch (SQLException e) {
+            System.out.println("[WARN] Column read failed: " + columnName);
+            return "";
+        }
+    }
+
+    private void closeQuietly(ResultSet rs, Statement st1, PreparedStatement ps1,
+                              PreparedStatement ps2, Connection con) {
+        try { if (rs  != null) rs.close();  } catch (Exception ignore) {}
+        try { if (st1 != null) st1.close(); } catch (Exception ignore) {}
+        try { if (ps1 != null) ps1.close(); } catch (Exception ignore) {}
+        try { if (ps2 != null) ps2.close(); } catch (Exception ignore) {}
+        try { if (con != null) con.close(); } catch (Exception ignore) {}
+    }
 }
+
+
+--------------------------------------------------------------
+
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="https://jakarta.ee/xml/ns/jakartaee"
+         xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee
+                             https://jakarta.ee/xml/ns/jakartaee/web-app_5_0.xsd"
+         version="5.0">
+
+  <display-name>EISPortalVer2</display-name>
+
+  <!-- ============================================================
+       SESSION CONFIG — 12 HOURS
+       ============================================================ -->
+  <session-config>
+    <session-timeout>720</session-timeout>
+    <cookie-config>
+      <http-only>true</http-only>
+      <secure>false</secure>
+    </cookie-config>
+    <tracking-mode>COOKIE</tracking-mode>
+  </session-config>
+
+  <!-- ============================================================
+       STRUTS 2 FILTER
+       ============================================================ -->
+  <filter>
+    <filter-name>struts2</filter-name>
+    <filter-class>org.apache.struts2.dispatcher.filter.StrutsPrepareAndExecuteFilter</filter-class>
+  </filter>
+  <filter-mapping>
+    <filter-name>struts2</filter-name>
+    <url-pattern>*.do</url-pattern>
+  </filter-mapping>
+  <filter-mapping>
+    <filter-name>struts2</filter-name>
+    <url-pattern>*.action</url-pattern>
+  </filter-mapping>
+
+  <!-- ============================================================
+       CORS FILTER
+       ============================================================ -->
+  <filter>
+    <filter-name>CORSFilter</filter-name>
+    <filter-class>com.action.CORSFilter</filter-class>
+  </filter>
+  <filter-mapping>
+    <filter-name>CORSFilter</filter-name>
+    <url-pattern>/*</url-pattern>
+  </filter-mapping>
+
+  <!-- ============================================================
+       LOGIN CONFIG
+       ============================================================ -->
+  <login-config>
+    <auth-method>BASIC</auth-method>
+    <realm-name>LDAP Realm</realm-name>
+  </login-config>
+
+  <!-- ============================================================
+       WELCOME FILES
+       ============================================================ -->
+  <welcome-file-list>
+    <welcome-file>index.html</welcome-file>
+    <welcome-file>index.htm</welcome-file>
+    <welcome-file>index.jsp</welcome-file>
+    <welcome-file>default.html</welcome-file>
+    <welcome-file>default.htm</welcome-file>
+    <welcome-file>default.jsp</welcome-file>
+  </welcome-file-list>
+
+  <!-- ============================================================
+       ⚠️ IMPORTANT — SERVLET MAPPING NOTE
+       
+       DocumentDownloadServlet and ViewEISRegistrationDetailsActionNew
+       both use @WebServlet annotation. DO NOT declare them here too —
+       duplicate mapping will cause Tomcat startup failure.
+       
+       If you prefer web.xml over annotations, uncomment below AND
+       remove the @WebServlet line from the Java classes.
+       ============================================================ -->
+
+  <!-- Optional: Uncomment ONLY if @WebServlet is removed from Java
+  <servlet>
+    <servlet-name>DocumentDownloadServlet</servlet-name>
+    <servlet-class>com.action.DocumentDownloadServlet</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>DocumentDownloadServlet</servlet-name>
+    <url-pattern>/DocumentDownloadServlet</url-pattern>
+  </servlet-mapping>
+
+  <servlet>
+    <servlet-name>ViewEISRegistrationDetailsActionNew</servlet-name>
+    <servlet-class>com.action.ViewEISRegistrationDetailsActionNew</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>ViewEISRegistrationDetailsActionNew</servlet-name>
+    <url-pattern>/ViewEISRegistrationDetailsActionNew</url-pattern>
+  </servlet-mapping>
+  -->
+
+  <!-- ============================================================
+       OTHER SERVLETS (existing)
+       ============================================================ -->
+  <servlet>
+    <servlet-name>TestServlet</servlet-name>
+    <jsp-file>/debug.jsp</jsp-file>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>TestServlet</servlet-name>
+    <url-pattern>/test</url-pattern>
+  </servlet-mapping>
+
+  <servlet>
+    <servlet-name>ViewDeploymentSheetActionServ</servlet-name>
+    <servlet-class>com.action.ViewDeploymentSheetActionServ</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>ViewDeploymentSheetActionServ</servlet-name>
+    <url-pattern>/ViewDeploymentSheetActionServ</url-pattern>
+  </servlet-mapping>
+
+  <servlet>
+    <servlet-name>DeploymentSheetServlet</servlet-name>
+    <servlet-class>com.action.DeploymentSheetServlet</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>DeploymentSheetServlet</servlet-name>
+    <url-pattern>/DeploymentSheetServlet</url-pattern>
+  </servlet-mapping>
+
+  <servlet>
+    <servlet-name>UpdateMonthlyRosterAction</servlet-name>
+    <servlet-class>com.action.UpdateMonthlyRosterAction</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>UpdateMonthlyRosterAction</servlet-name>
+    <url-pattern>/UpdateMonthlyRosterAction</url-pattern>
+  </servlet-mapping>
+
+</web-app>
