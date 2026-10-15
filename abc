@@ -1,26 +1,21 @@
 <div class="field">
-    <label class="field-label"><span class="dot"></span>Team / Role</label>
-    <select class="field-select" name="m_strRole" id="m_strRole">
-        <option value="">Select Role</option>
+    <label class="field-label"><span class="dot"></span>State / Province</label>
+    <select class="field-select" name="m_strstate" id="m_strstate">
+        <option value="">Select State</option>
         <%
-            String[] roles = {
-                "Incident Management",
-                "Event Management",
-                "EIS Bank",
-                "Service Reporting Management",
-                "Manager",
-                "Problem Management",
-                "Service Desk",
-                "Process Improvement",
-                "Team Lead",
-                "EIS Infra",
-                "EIS Development",
-                "test"
+            String[] chinaStates = {
+                "Anhui", "Beijing", "Chongqing", "Fujian", "Gansu",
+                "Guangdong", "Guangxi", "Guizhou", "Hainan", "Hebei",
+                "Heilongjiang", "Henan", "Hong Kong", "Hubei", "Hunan",
+                "Inner Mongolia", "Jiangsu", "Jiangxi", "Jilin", "Liaoning",
+                "Macau", "Ningxia", "Qinghai", "Shaanxi", "Shandong",
+                "Shanghai", "Shanxi", "Sichuan", "Taiwan", "Tianjin",
+                "Tibet", "Xinjiang", "Yunnan", "Zhejiang"
             };
-            String currentRole = emp.getM_strTeam() != null ? emp.getM_strTeam() : "";
-            for (String r : roles) {
+            String currentState = emp.getM_strState() != null ? emp.getM_strState() : "";
+            for (String s : chinaStates) {
         %>
-            <option value="<%=r%>" <%=r.equals(currentRole) ? "selected" : ""%>><%=r%></option>
+            <option value="<%=s%>" <%=s.equals(currentState) ? "selected" : ""%>><%=s%></option>
         <% } %>
     </select>
 </div>
