@@ -1,1542 +1,262 @@
-<%@page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
-<%@page import="com.actionform.RegistrationActionForm"%>
-<%@page import="com.beans.EmployeeDetailsBean"%>
-<%@page import="java.util.List"%>
-<%@page import="java.util.ArrayList"%>
+package com.action;
 
-<%
-    RegistrationActionForm regForm = (RegistrationActionForm) request.getAttribute("RegForm");
-    List<EmployeeDetailsBean> employeeList = new ArrayList<>();
-    String message = "";
+import jakarta.servlet.RequestDispatcher;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
-    if (regForm != null) {
-        Object listObj = regForm.getM_lstViewEmployeeRegistrationdetail();
-        if (listObj instanceof List) {
-            @SuppressWarnings("unchecked")
-            List<EmployeeDetailsBean> tempList = (List<EmployeeDetailsBean>) listObj;
-            employeeList = tempList;
-        }
-        message = regForm.getM_strmsg() != null ? regForm.getM_strmsg() : "";
+import java.io.File;
+import java.io.IOException;
+import java.sql.Blob;
+import java.sql.Clob;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.actionform.RegistrationActionForm;
+import com.jdbc.DBUtilityAuto;
+import com.beans.EmployeeDetailsBean;
+/**
+ * Servlet implementation class ViewEISRegistrationDetailsActionNew
+ */
+@WebServlet("/ViewEISRegistrationDetailsActionNew")
+public class ViewEISRegistrationDetailsActionNew extends HttpServlet {
+	private static final long serialVersionUID = 1L;
+       
+    /**
+     * @see HttpServlet#HttpServlet()
+     */
+    public ViewEISRegistrationDetailsActionNew() {
+        super();
+        // TODO Auto-generated constructor stub
     }
 
-    String ctx = request.getContextPath();
-
-    int activeCount = 0;
-    for (EmployeeDetailsBean e : employeeList) {
-        String s = e.getM_strISACTIVE();
-        if ("Y".equalsIgnoreCase(s) || "Yes".equalsIgnoreCase(s) || "1".equals(s)) activeCount++;
-    }
-%>
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Employee Registry · EIS Portal</title>
-
-<style>
-/* ================================================================
-   RESET & TOKENS — Enterprise palette
-   ================================================================ */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-:root {
-    /* Brand */
-    --brand-50:  #eef2ff;
-    --brand-100: #e0e7ff;
-    --brand-200: #c7d2fe;
-    --brand-500: #6366f1;
-    --brand-600: #4f46e5;
-    --brand-700: #4338ca;
-
-    /* Neutrals */
-    --bg:        #f8fafc;
-    --surface:   #ffffff;
-    --surface-2: #f1f5f9;
-    --surface-3: #e2e8f0;
-    --border:    #e2e8f0;
-    --border-2:  #cbd5e1;
-
-    /* Text */
-    --text:      #0f172a;
-    --text-2:    #334155;
-    --text-3:    #64748b;
-    --text-4:    #94a3b8;
-
-    /* Status */
-    --green:     #10b981;
-    --green-bg:  #d1fae5;
-    --green-text:#065f46;
-    --red:       #ef4444;
-    --red-bg:    #fee2e2;
-    --red-text:  #991b1b;
-    --amber:     #f59e0b;
-    --amber-bg:  #fef3c7;
-    --amber-text:#92400e;
-    --blue:      #3b82f6;
-    --blue-bg:   #dbeafe;
-    --blue-text: #1e40af;
-
-    /* Radius */
-    --r-sm: 6px;
-    --r:    10px;
-    --r-lg: 14px;
-
-    /* Shadows — subtle, professional */
-    --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
-    --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
-    --shadow:    0 4px 12px rgba(15, 23, 42, 0.06), 0 2px 4px rgba(15, 23, 42, 0.04);
-    --shadow-md: 0 12px 24px rgba(15, 23, 42, 0.08), 0 4px 8px rgba(15, 23, 42, 0.04);
-
-    --font: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-            "Helvetica Neue", Arial, sans-serif;
-    --mono: ui-monospace, "SF Mono", Consolas, "Liberation Mono", monospace;
-}
-
-html, body {
-    font-family: var(--font);
-    color: var(--text);
-    background: var(--bg);
-    min-height: 100vh;
-    -webkit-font-smoothing: antialiased;
-    font-feature-settings: "cv11", "ss01";
-}
-
-/* ================================================================
-   TOP NAV BAR
-   ================================================================ */
-.topnav {
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    padding: 0 24px;
-    height: 64px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    box-shadow: var(--shadow-xs);
-}
-.nav-brand {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-.nav-logo {
-    width: 36px; height: 36px;
-    border-radius: 9px;
-    background: linear-gradient(135deg, var(--brand-500), var(--brand-700));
-    display: grid; place-items: center;
-    color: #fff;
-    font-weight: 700;
-    font-size: 15px;
-    letter-spacing: -0.5px;
-    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.35);
-}
-.nav-title {
-    font-size: 15px;
-    font-weight: 700;
-    letter-spacing: -0.2px;
-    color: var(--text);
-}
-.nav-subtitle {
-    font-size: 12px;
-    color: var(--text-3);
-    margin-top: 1px;
-}
-.nav-actions {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-}
-
-/* ================================================================
-   BUTTONS
-   ================================================================ */
-.btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 9px 16px;
-    font-family: inherit;
-    font-size: 13.5px;
-    font-weight: 600;
-    letter-spacing: -0.1px;
-    border-radius: var(--r-sm);
-    border: 1px solid transparent;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    text-decoration: none;
-    white-space: nowrap;
-    line-height: 1;
-    height: 38px;
-}
-.btn:focus-visible {
-    outline: 2px solid var(--brand-500);
-    outline-offset: 2px;
-}
-
-.btn-primary {
-    background: var(--brand-600);
-    color: #fff;
-    box-shadow: 0 1px 2px rgba(79, 70, 229, 0.3);
-}
-.btn-primary:hover {
-    background: var(--brand-700);
-    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.35);
-}
-
-.btn-secondary {
-    background: var(--surface);
-    color: var(--text-2);
-    border-color: var(--border);
-    box-shadow: var(--shadow-xs);
-}
-.btn-secondary:hover {
-    background: var(--surface-2);
-    color: var(--text);
-    border-color: var(--border-2);
-}
-
-.btn-ghost {
-    background: transparent;
-    color: var(--text-2);
-}
-.btn-ghost:hover {
-    background: var(--surface-2);
-    color: var(--text);
-}
-
-.btn-danger {
-    background: var(--surface);
-    color: var(--red);
-    border-color: var(--border);
-    box-shadow: var(--shadow-xs);
-}
-.btn-danger:hover {
-    background: var(--red-bg);
-    border-color: var(--red);
-    color: var(--red-text);
-}
-
-.btn-sm {
-    height: 32px;
-    padding: 6px 12px;
-    font-size: 12.5px;
-}
-
-.btn-icon {
-    width: 34px;
-    height: 34px;
-    padding: 0;
-}
-
-/* ================================================================
-   PAGE LAYOUT
-   ================================================================ */
-.page {
-    max-width: 1440px;
-    margin: 0 auto;
-    padding: 32px 24px 60px;
-}
-
-/* ================================================================
-   PAGE HEADER
-   ================================================================ */
-.page-header {
-    margin-bottom: 24px;
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-    gap: 20px;
-    flex-wrap: wrap;
-}
-.page-header h1 {
-    font-size: 26px;
-    font-weight: 700;
-    letter-spacing: -0.6px;
-    color: var(--text);
-    line-height: 1.2;
-}
-.page-header p {
-    font-size: 14px;
-    color: var(--text-3);
-    margin-top: 6px;
-    letter-spacing: -0.1px;
-}
-.page-header-actions {
-    display: flex;
-    gap: 8px;
-}
-
-/* ================================================================
-   STATS ROW — clean KPI cards
-   ================================================================ */
-.stats {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 16px;
-    margin-bottom: 24px;
-}
-.stat {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--r);
-    padding: 18px 20px;
-    box-shadow: var(--shadow-xs);
-    transition: all 0.15s ease;
-    display: flex;
-    align-items: center;
-    gap: 14px;
-}
-.stat:hover {
-    box-shadow: var(--shadow);
-    border-color: var(--border-2);
-}
-.stat-icon {
-    width: 42px;
-    height: 42px;
-    border-radius: 10px;
-    display: grid;
-    place-items: center;
-    font-size: 18px;
-    flex-shrink: 0;
-}
-.stat-icon.indigo { background: var(--brand-50); color: var(--brand-600); }
-.stat-icon.green  { background: var(--green-bg); color: var(--green-text); }
-.stat-icon.red    { background: var(--red-bg);   color: var(--red-text); }
-.stat-icon.blue   { background: var(--blue-bg);  color: var(--blue-text); }
-
-.stat-body { flex: 1; min-width: 0; }
-.stat-label {
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--text-3);
-    letter-spacing: 0.1px;
-    margin-bottom: 2px;
-}
-.stat-value {
-    font-size: 24px;
-    font-weight: 700;
-    letter-spacing: -0.6px;
-    color: var(--text);
-    line-height: 1.1;
-}
-
-/* ================================================================
-   ALERT BANNERS
-   ================================================================ */
-.alert {
-    border-radius: var(--r);
-    padding: 14px 18px;
-    margin-bottom: 20px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-size: 14px;
-    font-weight: 500;
-    border: 1px solid;
-    box-shadow: var(--shadow-xs);
-}
-.alert-error {
-    background: var(--red-bg);
-    border-color: #fecaca;
-    color: var(--red-text);
-}
-.alert-success {
-    background: var(--green-bg);
-    border-color: #a7f3d0;
-    color: var(--green-text);
-}
-.alert-icon {
-    font-size: 18px;
-    line-height: 1;
-}
-
-/* ================================================================
-   MAIN LAYOUT — Split
-   ================================================================ */
-.layout {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 460px;
-    gap: 20px;
-    align-items: start;
-}
-
-/* ================================================================
-   CARD
-   ================================================================ */
-.card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--r-lg);
-    box-shadow: var(--shadow-sm);
-    overflow: hidden;
-}
-
-/* Toolbar inside card */
-.card-toolbar {
-    padding: 14px 18px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    background: var(--surface);
-}
-
-.search-input {
-    position: relative;
-    flex: 1;
-}
-.search-input svg {
-    position: absolute;
-    left: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--text-4);
-    pointer-events: none;
-}
-.search-input input {
-    width: 100%;
-    height: 38px;
-    padding: 0 14px 0 38px;
-    font-family: inherit;
-    font-size: 13.5px;
-    font-weight: 500;
-    color: var(--text);
-    background: var(--surface-2);
-    border: 1px solid transparent;
-    border-radius: var(--r-sm);
-    outline: none;
-    transition: all 0.15s ease;
-}
-.search-input input::placeholder {
-    color: var(--text-4);
-    font-weight: 400;
-}
-.search-input input:focus {
-    background: var(--surface);
-    border-color: var(--brand-500);
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
-}
-
-/* ================================================================
-   EMPLOYEE LIST
-   ================================================================ */
-.list-head {
-    display: grid;
-    grid-template-columns: 44px 1fr 130px 100px 80px;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 18px;
-    background: var(--surface-2);
-    border-bottom: 1px solid var(--border);
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--text-3);
-    text-transform: uppercase;
-    letter-spacing: 0.6px;
-}
-
-.list-scroll {
-    max-height: 640px;
-    overflow-y: auto;
-}
-
-.emp-row {
-    display: grid;
-    grid-template-columns: 44px 1fr 130px 100px 80px;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 18px;
-    border-bottom: 1px solid var(--border);
-    cursor: pointer;
-    transition: background 0.1s ease;
-    background: var(--surface);
-}
-.emp-row:last-child { border-bottom: none; }
-.emp-row:hover { background: var(--surface-2); }
-.emp-row.active {
-    background: var(--brand-50);
-    box-shadow: inset 3px 0 0 var(--brand-600);
-}
-
-.avatar {
-    width: 38px;
-    height: 38px;
-    border-radius: 50%;
-    background: var(--brand-100);
-    color: var(--brand-700);
-    display: grid;
-    place-items: center;
-    font-weight: 600;
-    font-size: 13px;
-    flex-shrink: 0;
-    overflow: hidden;
-    letter-spacing: -0.3px;
-}
-.avatar img {
-    width: 100%; height: 100%; object-fit: cover;
-}
-
-.emp-name {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--text);
-    letter-spacing: -0.15px;
-    margin-bottom: 2px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-.emp-id {
-    font-family: var(--mono);
-    font-size: 11.5px;
-    color: var(--text-3);
-    letter-spacing: -0.1px;
-}
-
-.emp-team {
-    font-size: 12.5px;
-    color: var(--text-2);
-    font-weight: 500;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-/* Status badge */
-.badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 3px 9px;
-    border-radius: 100px;
-    font-size: 11.5px;
-    font-weight: 600;
-    letter-spacing: -0.05px;
-    white-space: nowrap;
-}
-.badge::before {
-    content: "";
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: currentColor;
-}
-.badge.active {
-    background: var(--green-bg);
-    color: var(--green-text);
-}
-.badge.inactive {
-    background: var(--red-bg);
-    color: var(--red-text);
-}
-
-.row-actions {
-    display: flex;
-    gap: 4px;
-    justify-content: flex-end;
-}
-.row-btn {
-    width: 30px;
-    height: 30px;
-    border-radius: var(--r-sm);
-    border: 1px solid transparent;
-    background: transparent;
-    color: var(--text-3);
-    cursor: pointer;
-    display: grid;
-    place-items: center;
-    transition: all 0.15s ease;
-}
-.row-btn:hover {
-    background: var(--surface-3);
-    color: var(--text);
-}
-.row-btn.edit:hover {
-    background: var(--brand-50);
-    color: var(--brand-600);
-}
-.row-btn.delete:hover {
-    background: var(--red-bg);
-    color: var(--red-text);
-}
-
-/* ================================================================
-   DETAIL PANEL
-   ================================================================ */
-.detail-panel {
-    position: sticky;
-    top: 84px;
-    max-height: calc(100vh - 100px);
-    overflow-y: auto;
-}
-
-.empty-detail {
-    padding: 80px 40px;
-    text-align: center;
-}
-.empty-detail svg {
-    color: var(--text-4);
-    margin-bottom: 16px;
-}
-.empty-detail h3 {
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--text-2);
-    letter-spacing: -0.2px;
-    margin-bottom: 6px;
-}
-.empty-detail p {
-    font-size: 13px;
-    color: var(--text-3);
-    line-height: 1.5;
-}
-
-/* Detail header */
-.detail-head {
-    padding: 20px 22px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    gap: 16px;
-    align-items: center;
-}
-.detail-avatar {
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    background: var(--brand-100);
-    color: var(--brand-700);
-    display: grid;
-    place-items: center;
-    font-size: 20px;
-    font-weight: 700;
-    overflow: hidden;
-    flex-shrink: 0;
-    letter-spacing: -0.5px;
-}
-.detail-avatar img {
-    width: 100%; height: 100%; object-fit: cover;
-}
-.detail-name {
-    font-size: 17px;
-    font-weight: 700;
-    color: var(--text);
-    letter-spacing: -0.3px;
-    margin-bottom: 4px;
-    line-height: 1.2;
-}
-.detail-meta {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-    font-size: 12.5px;
-}
-.detail-meta .id {
-    font-family: var(--mono);
-    color: var(--text-3);
-}
-
-/* Detail body */
-.detail-body {
-    padding: 6px 22px 22px;
-}
-
-.detail-section {
-    padding: 18px 0;
-    border-bottom: 1px solid var(--border);
-}
-.detail-section:last-child { border-bottom: none; }
-
-.detail-section-title {
-    font-size: 11px;
-    font-weight: 700;
-    color: var(--text-3);
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
-    margin-bottom: 12px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-.detail-section-title .dot {
-    width: 6px; height: 6px;
-    background: var(--brand-500);
-    border-radius: 50%;
-}
-
-.detail-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px 20px;
-}
-.detail-field { min-width: 0; }
-.detail-field.full { grid-column: 1 / -1; }
-.detail-field .k {
-    font-size: 11px;
-    font-weight: 500;
-    color: var(--text-3);
-    margin-bottom: 3px;
-    letter-spacing: 0.1px;
-}
-.detail-field .v {
-    font-size: 13.5px;
-    font-weight: 500;
-    color: var(--text);
-    word-break: break-word;
-    overflow-wrap: anywhere;
-    line-height: 1.4;
-}
-.detail-field .v.mono {
-    font-family: var(--mono);
-    font-size: 12.5px;
-    letter-spacing: -0.2px;
-}
-.detail-field .v.empty {
-    color: var(--text-4);
-    font-style: italic;
-    font-weight: 400;
-}
-
-/* Document list */
-.doc-list {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-}
-.doc-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 12px;
-    border: 1px solid var(--border);
-    border-radius: var(--r-sm);
-    background: var(--surface);
-    text-decoration: none;
-    color: var(--text);
-    transition: all 0.15s ease;
-    cursor: pointer;
-}
-.doc-item.has:hover {
-    border-color: var(--brand-500);
-    background: var(--brand-50);
-    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.12);
-}
-.doc-item.none {
-    opacity: 0.5;
-    cursor: not-allowed;
-    background: var(--surface-2);
-}
-.doc-icon {
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-    display: grid;
-    place-items: center;
-    background: var(--surface-2);
-    color: var(--text-3);
-    flex-shrink: 0;
-}
-.doc-item.has .doc-icon {
-    background: var(--brand-50);
-    color: var(--brand-600);
-}
-.doc-meta { min-width: 0; }
-.doc-name {
-    font-size: 12.5px;
-    font-weight: 600;
-    color: var(--text);
-    letter-spacing: -0.1px;
-    line-height: 1.2;
-}
-.doc-status {
-    font-size: 11px;
-    color: var(--text-3);
-    margin-top: 1px;
-}
-
-/* Detail actions */
-.detail-actions {
-    padding: 16px 22px;
-    border-top: 1px solid var(--border);
-    display: flex;
-    gap: 8px;
-    background: var(--surface-2);
-}
-.detail-actions .btn { flex: 1; }
-
-/* ================================================================
-   EMPTY LIST
-   ================================================================ */
-.empty-list {
-    padding: 60px 24px;
-    text-align: center;
-}
-.empty-list svg {
-    color: var(--text-4);
-    margin-bottom: 14px;
-}
-.empty-list h3 {
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--text-2);
-    margin-bottom: 4px;
-    letter-spacing: -0.2px;
-}
-.empty-list p {
-    font-size: 13px;
-    color: var(--text-3);
-}
-
-/* ================================================================
-   TOAST
-   ================================================================ */
-.toast-host {
-    position: fixed;
-    top: 78px;
-    right: 24px;
-    z-index: 9999;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    max-width: 360px;
-}
-.toast {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--r);
-    padding: 12px 16px;
-    font-size: 13.5px;
-    font-weight: 500;
-    color: var(--text);
-    box-shadow: var(--shadow-md);
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    animation: toastIn 0.25s ease;
-    position: relative;
-    overflow: hidden;
-}
-.toast::before {
-    content: "";
-    position: absolute;
-    left: 0; top: 0; bottom: 0;
-    width: 3px;
-}
-.toast.success::before { background: var(--green); }
-.toast.error::before   { background: var(--red); }
-.toast.info::before    { background: var(--blue); }
-.toast .ticon {
-    font-size: 15px;
-    line-height: 1;
-}
-.toast.success .ticon { color: var(--green); }
-.toast.error .ticon   { color: var(--red); }
-.toast.info .ticon    { color: var(--blue); }
-@keyframes toastIn {
-    from { opacity: 0; transform: translateX(20px); }
-    to   { opacity: 1; transform: translateX(0); }
-}
-
-/* ================================================================
-   FOOTER
-   ================================================================ */
-.footer {
-    text-align: center;
-    padding: 32px 20px;
-    color: var(--text-4);
-    font-size: 12.5px;
-    letter-spacing: -0.1px;
-}
-
-/* ================================================================
-   RESPONSIVE
-   ================================================================ */
-@media (max-width: 1100px) {
-    .layout { grid-template-columns: 1fr; }
-    .detail-panel {
-        position: fixed;
-        inset: 0;
-        top: 64px;
-        z-index: 200;
-        max-height: none;
-        border-radius: 0;
-        display: none;
-        background: var(--surface);
-    }
-    .detail-panel.open { display: block; }
-    .detail-panel .close-btn {
-        display: grid;
-    }
-}
-@media (max-width: 720px) {
-    .page { padding: 20px 16px 40px; }
-    .list-head { display: none; }
-    .emp-row {
-        grid-template-columns: 44px 1fr auto;
-        padding: 14px 16px;
-    }
-    .emp-team { display: none; }
-    .emp-row .badge { grid-column: 2; }
-    .topnav { padding: 0 16px; }
-    .nav-subtitle { display: none; }
-    .stats { grid-template-columns: 1fr 1fr; }
-    .detail-grid { grid-template-columns: 1fr; }
-    .doc-list { grid-template-columns: 1fr; }
-    .toast-host { top: 76px; right: 12px; left: 12px; max-width: none; }
-}
-
-/* Close button for mobile detail panel */
-.close-btn {
-    display: none;
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    width: 34px;
-    height: 34px;
-    border-radius: 50%;
-    background: var(--surface-2);
-    border: none;
-    cursor: pointer;
-    color: var(--text-2);
-    place-items: center;
-    z-index: 1;
-}
-
-/* Scrollbar */
-.list-scroll::-webkit-scrollbar,
-.detail-panel::-webkit-scrollbar { width: 10px; }
-.list-scroll::-webkit-scrollbar-track,
-.detail-panel::-webkit-scrollbar-track { background: transparent; }
-.list-scroll::-webkit-scrollbar-thumb,
-.detail-panel::-webkit-scrollbar-thumb {
-    background: var(--border-2);
-    border-radius: 6px;
-    border: 2px solid var(--surface);
-}
-.list-scroll::-webkit-scrollbar-thumb:hover,
-.detail-panel::-webkit-scrollbar-thumb:hover { background: var(--text-4); }
-</style>
-</head>
-<body>
-
-<!-- ============================================================
-     TOP NAV
-     ============================================================ -->
-<nav class="topnav">
-    <div class="nav-brand">
-        <div class="nav-logo">EIS</div>
-        <div>
-            <div class="nav-title">Employee Registry</div>
-            <div class="nav-subtitle">Enterprise Information System</div>
-        </div>
-    </div>
-    <div class="nav-actions">
-        <button type="button" class="btn btn-secondary" onclick="location.reload();">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
-            Refresh
-        </button>
-        <button type="button" class="btn btn-primary" onclick="goToRegistration();">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-            New Registration
-        </button>
-    </div>
-</nav>
-
-<div class="page">
-
-    <!-- ============================================================
-         PAGE HEADER
-         ============================================================ -->
-    <div class="page-header">
-        <div>
-            <h1>Employee Directory</h1>
-            <p>View, manage and export all registered employees</p>
-        </div>
-        <div class="page-header-actions">
-            <button type="button" class="btn btn-secondary" onclick="exportToExcel();">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                Export
-            </button>
-        </div>
-    </div>
-
-    <!-- ============================================================
-         BANNERS
-         ============================================================ -->
-    <% if ("error".equals(message)) { %>
-        <div class="alert alert-error">
-            <span class="alert-icon">⚠️</span>
-            <span>Something went wrong. Please try again.</span>
-        </div>
-    <% } %>
-    <% if ("delete".equals(message)) { %>
-        <div class="alert alert-success">
-            <span class="alert-icon">✓</span>
-            <span>Employee record deleted successfully.</span>
-        </div>
-    <% } %>
-
-    <!-- ============================================================
-         STATS
-         ============================================================ -->
-    <div class="stats">
-        <div class="stat">
-            <div class="stat-icon indigo">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6M23 11h-6"/></svg>
-            </div>
-            <div class="stat-body">
-                <div class="stat-label">Total Employees</div>
-                <div class="stat-value"><%= employeeList.size() %></div>
-            </div>
-        </div>
-        <div class="stat">
-            <div class="stat-icon green">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-            </div>
-            <div class="stat-body">
-                <div class="stat-label">Active</div>
-                <div class="stat-value"><%= activeCount %></div>
-            </div>
-        </div>
-        <div class="stat">
-            <div class="stat-icon red">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-            </div>
-            <div class="stat-body">
-                <div class="stat-label">Inactive</div>
-                <div class="stat-value"><%= employeeList.size() - activeCount %></div>
-            </div>
-        </div>
-        <div class="stat">
-            <div class="stat-icon blue">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-            </div>
-            <div class="stat-body">
-                <div class="stat-label">Document Types</div>
-                <div class="stat-value">4</div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ============================================================
-         SPLIT LAYOUT
-         ============================================================ -->
-    <div class="layout">
-
-        <!-- LEFT: LIST -->
-        <div class="card">
-            <div class="card-toolbar">
-                <div class="search-input">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                    <input type="text" id="searchInput" placeholder="Search by name, ID, or team..." autocomplete="off"/>
-                </div>
-            </div>
-
-            <div class="list-head">
-                <div></div>
-                <div>Employee</div>
-                <div>Team</div>
-                <div>Status</div>
-                <div style="text-align:right;">Actions</div>
-            </div>
-
-            <div class="list-scroll" id="employeeList">
-            <% if (employeeList != null && !employeeList.isEmpty()) {
-                   int idx = 0;
-                   for (EmployeeDetailsBean e : employeeList) {
-                       String empId = e.getM_strEmployee_ID() != null ? e.getM_strEmployee_ID() : "";
-                       String fname = e.getM_strFirst_Name() != null ? e.getM_strFirst_Name() : "";
-                       String lname = e.getM_strLast_Name() != null ? e.getM_strLast_Name() : "";
-                       String fullName = (fname + " " + lname).trim();
-                       if (fullName.isEmpty()) fullName = "Employee " + empId;
-                       String initials = (fname.isEmpty() ? "?" : fname.substring(0,1)).toUpperCase()
-                                       + (lname.isEmpty() ? "" : lname.substring(0,1).toUpperCase());
-                       String team = e.getM_strTeam() != null ? e.getM_strTeam() : "—";
-                       String isActive = e.getM_strISACTIVE() != null ? e.getM_strISACTIVE() : "";
-                       boolean active = "Y".equalsIgnoreCase(isActive) || "Yes".equalsIgnoreCase(isActive) || "1".equals(isActive);
-                       String photoPath = e.getM_strPhoto_Path();
-                       boolean hasPhoto = photoPath != null && !photoPath.trim().isEmpty();
-            %>
-                <div class="emp-row" data-id="<%= empId %>"
-                     data-index="<%= idx %>"
-                     data-search="<%= (fullName + " " + empId + " " + team).toLowerCase() %>"
-                     onclick="selectEmployee(this, <%= idx %>);">
-
-                    <div class="avatar">
-                        <% if (hasPhoto) { %>
-                            <img src="<%=ctx%>/DocumentDownloadServlet?empid=<%= empId %>&type=PHOTO"
-                                 alt=""
-                                 onerror="this.style.display='none'; this.parentNode.textContent='<%= initials %>';"/>
-                        <% } else { %>
-                            <%= initials %>
-                        <% } %>
-                    </div>
-
-                    <div style="min-width:0;">
-                        <div class="emp-name"><%= fullName %></div>
-                        <div class="emp-id">#<%= empId %></div>
-                    </div>
-
-                    <div class="emp-team"><%= team %></div>
-
-                    <div>
-                        <span class="badge <%= active ? "active" : "inactive" %>">
-                            <%= active ? "Active" : "Inactive" %>
-                        </span>
-                    </div>
-
-                    <div class="row-actions" onclick="event.stopPropagation();">
-                        <button type="button" class="row-btn edit" title="Edit"
-                                onclick="editRecord('<%= empId %>');">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                        </button>
-                        <button type="button" class="row-btn delete" title="Delete"
-                                onclick="deleteRecord('<%= empId %>');">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                        </button>
-                    </div>
-                </div>
-            <%     idx++;
-                   }
-               } else { %>
-                <div class="empty-list">
-                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 13V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7"/><path d="M22 17v2a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-2"/><path d="M2 17h20"/></svg>
-                    <h3>No employees yet</h3>
-                    <p>Click "New Registration" to add your first employee</p>
-                </div>
-            <% } %>
-            </div>
-        </div>
-
-        <!-- RIGHT: DETAIL -->
-        <aside class="card detail-panel" id="detailPanel">
-            <button type="button" class="close-btn" onclick="closeDetail();">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
-            <div id="detailContent">
-                <div class="empty-detail">
-                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                    <h3>No employee selected</h3>
-                    <p>Select an employee from the list to view their full details</p>
-                </div>
-            </div>
-        </aside>
-
-    </div>
-
-    <div class="footer">
-        Designed by <strong>@Shubham Chaudhari</strong> · Developed by <strong>@Amit Avhad</strong>
-    </div>
-</div>
-
-<!-- Hidden table for export -->
-<div style="position:absolute;left:-9999px;top:-9999px;" id="exportHost">
-    <table id="exportTable">
-        <thead>
-            <tr>
-                <th>Emp ID</th><th>AD ID</th><th>Status</th><th>HID</th><th>Asset ID</th>
-                <th>Education</th><th>Joining Date</th><th>Contact</th><th>Emergency</th>
-                <th>Team</th><th>TCS Mail</th><th>SBI Mail</th><th>State</th><th>City</th>
-                <th>Address</th><th>Gender</th><th>DOB</th><th>First</th><th>Middle</th><th>Last</th>
-                <th>VPN Host</th><th>Laptop Host</th><th>Remote</th><th>MAC</th><th>IP</th>
-                <th>Username</th><th>Password</th>
-            </tr>
-        </thead>
-        <tbody>
-        <% for (EmployeeDetailsBean e : employeeList) { %>
-            <tr>
-                <td><%= safe(e.getM_strEmployee_ID()) %></td>
-                <td><%= safe(e.getM_strAD_ID()) %></td>
-                <td><%= safe(e.getM_strISACTIVE()) %></td>
-                <td><%= safe(e.getM_strHID()) %></td>
-                <td><%= safe(e.getM_strAsset_ID()) %></td>
-                <td><%= safe(e.getM_strEducation_Qualification()) %></td>
-                <td><%= safe(e.getM_strTCS_Joining_Date()) %></td>
-                <td><%= safe(e.getM_strEmployee_contact_Number()) %></td>
-                <td><%= safe(e.getM_strEmergency_contact_Number()) %></td>
-                <td><%= safe(e.getM_strTeam()) %></td>
-                <td><%= safe(e.getM_strTCS_mail_ID()) %></td>
-                <td><%= safe(e.getM_strSBI_mail_ID()) %></td>
-                <td><%= safe(e.getM_strState()) %></td>
-                <td><%= safe(e.getM_strCity()) %></td>
-                <td><%= safe(e.getM_strLocal_Address()) %></td>
-                <td><%= safe(e.getM_strGender()) %></td>
-                <td><%= safe(e.getM_strDate_Of_Birth()) %></td>
-                <td><%= safe(e.getM_strFirst_Name()) %></td>
-                <td><%= safe(e.getM_strMiddle_Name()) %></td>
-                <td><%= safe(e.getM_strLast_Name()) %></td>
-                <td><%= safe(e.getM_strVPN_Hostname()) %></td>
-                <td><%= safe(e.getM_strLaptop_Hostname()) %></td>
-                <td><%= safe(e.getM_strRemote_Type()) %></td>
-                <td><%= safe(e.getM_strVPN_VDI_MAC_Address()) %></td>
-                <td><%= safe(e.getM_strVPN_VDI_IP_Address()) %></td>
-                <td><%= safe(e.getM_strUserName()) %></td>
-                <td><%= safe(e.getM_strPassword()) %></td>
-            </tr>
-        <% } %>
-        </tbody>
-    </table>
-</div>
-
-<div class="toast-host" id="toastHost"></div>
-
-<!-- ================================================================
-     DATA JSON
-     ================================================================ -->
-<script>
-    window.EIS_DATA = [
-    <%
-        for (int i = 0; i < employeeList.size(); i++) {
-            EmployeeDetailsBean e = employeeList.get(i);
-            String fname = safe(e.getM_strFirst_Name());
-            String lname = safe(e.getM_strLast_Name());
-            String fullName = (fname + " " + lname).trim();
-            if (fullName.isEmpty()) fullName = "Employee " + safe(e.getM_strEmployee_ID());
-            String initials = (fname.isEmpty() ? "?" : fname.substring(0,1)).toUpperCase()
-                            + (lname.isEmpty() ? "" : lname.substring(0,1).toUpperCase());
-            String isActive = safe(e.getM_strISACTIVE());
-            boolean active = "Y".equalsIgnoreCase(isActive) || "Yes".equalsIgnoreCase(isActive) || "1".equals(isActive);
-    %>
-        {
-            index: <%= i %>,
-            empId: "<%= jsSafe(e.getM_strEmployee_ID()) %>",
-            adId: "<%= jsSafe(e.getM_strAD_ID()) %>",
-            hid: "<%= jsSafe(e.getM_strHID()) %>",
-            assetId: "<%= jsSafe(e.getM_strAsset_ID()) %>",
-            education: "<%= jsSafe(e.getM_strEducation_Qualification()) %>",
-            joiningDate: "<%= jsSafe(e.getM_strTCS_Joining_Date()) %>",
-            contact: "<%= jsSafe(e.getM_strEmployee_contact_Number()) %>",
-            emergency: "<%= jsSafe(e.getM_strEmergency_contact_Number()) %>",
-            team: "<%= jsSafe(e.getM_strTeam()) %>",
-            tcsMail: "<%= jsSafe(e.getM_strTCS_mail_ID()) %>",
-            sbiMail: "<%= jsSafe(e.getM_strSBI_mail_ID()) %>",
-            state: "<%= jsSafe(e.getM_strState()) %>",
-            city: "<%= jsSafe(e.getM_strCity()) %>",
-            address: "<%= jsSafe(e.getM_strLocal_Address()) %>",
-            gender: "<%= jsSafe(e.getM_strGender()) %>",
-            dob: "<%= jsSafe(e.getM_strDate_Of_Birth()) %>",
-            firstName: "<%= jsSafe(e.getM_strFirst_Name()) %>",
-            middleName: "<%= jsSafe(e.getM_strMiddle_Name()) %>",
-            lastName: "<%= jsSafe(e.getM_strLast_Name()) %>",
-            vpnHost: "<%= jsSafe(e.getM_strVPN_Hostname()) %>",
-            laptopHost: "<%= jsSafe(e.getM_strLaptop_Hostname()) %>",
-            remoteType: "<%= jsSafe(e.getM_strRemote_Type()) %>",
-            mac: "<%= jsSafe(e.getM_strVPN_VDI_MAC_Address()) %>",
-            ip: "<%= jsSafe(e.getM_strVPN_VDI_IP_Address()) %>",
-            username: "<%= jsSafe(e.getM_strUserName()) %>",
-            password: "<%= jsSafe(e.getM_strPassword()) %>",
-            fullName: "<%= jsSafe(fullName) %>",
-            initials: "<%= jsSafe(initials) %>",
-            active: <%= active %>,
-            hasPhoto: <%= !safe(e.getM_strPhoto_Path()).isEmpty() %>,
-            hasBgc: <%= !safe(e.getM_strBGC_Documents_Path()).isEmpty() %>,
-            hasPolice: <%= !safe(e.getM_strPolice_Verification_Path()).isEmpty() %>,
-            hasCv: <%= !safe(e.getM_strCV_Document()).isEmpty() %>
-        }<%= (i < employeeList.size() - 1) ? "," : "" %>
-    <%
-        }
-    %>
-    ];
-</script>
-
-<!-- ================================================================
-     SCRIPTS
-     ================================================================ -->
-<script src="<%=ctx%>/js/jquery-3.7.0.min.js"></script>
-<script src="<%=ctx%>/js/dist_xlsx.full.min.js"></script>
-
-<script>
-(function () {
-    'use strict';
-
-    var CTX = '<%=ctx%>';
-
-    /* Toast */
-    var toastHost = document.getElementById('toastHost');
-    function toast(msg, type) {
-        var el = document.createElement('div');
-        el.className = 'toast ' + (type || 'info');
-        var icons = { success: '✓', error: '✕', info: 'ℹ' };
-        el.innerHTML = '<span class="ticon">' + (icons[type] || icons.info) + '</span><span>' + msg + '</span>';
-        toastHost.appendChild(el);
-        setTimeout(function () {
-            el.style.transition = 'all .3s';
-            el.style.opacity = '0';
-            el.style.transform = 'translateX(20px)';
-            setTimeout(function () { el.remove(); }, 300);
-        }, 3200);
-    }
-
-    /* Escape */
-    function esc(s) {
-        if (s === null || s === undefined) return '';
-        return String(s)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;');
-    }
-
-    function field(k, v, full, mono) {
-        var empty = (v === null || v === undefined || v === '');
-        var display = empty ? '—' : v;
-        var cls = 'v' + (mono ? ' mono' : '') + (empty ? ' empty' : '');
-        return '<div class="detail-field' + (full ? ' full' : '') + '">'
-             +   '<div class="k">' + esc(k) + '</div>'
-             +   '<div class="' + cls + '">' + esc(display) + '</div>'
-             + '</div>';
-    }
-
-    function docItem(label, hasFile, type, empId) {
-        if (hasFile) {
-            return '<a class="doc-item has" href="' + CTX + '/DocumentDownloadServlet?empid='
-                 +   encodeURIComponent(empId) + '&type=' + type + '" target="_blank" '
-                 +   'onclick="event.stopPropagation();">'
-                 +   '<div class="doc-icon">'
-                 +     '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>'
-                 +   '</div>'
-                 +   '<div class="doc-meta">'
-                 +     '<div class="doc-name">' + esc(label) + '</div>'
-                 +     '<div class="doc-status">View document</div>'
-                 +   '</div>'
-                 + '</a>';
-        } else {
-            return '<div class="doc-item none">'
-                 +   '<div class="doc-icon">'
-                 +     '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
-                 +   '</div>'
-                 +   '<div class="doc-meta">'
-                 +     '<div class="doc-name">' + esc(label) + '</div>'
-                 +     '<div class="doc-status">Not uploaded</div>'
-                 +   '</div>'
-                 + '</div>';
-        }
-    }
-
-    /* Select employee */
-    window.selectEmployee = function (rowEl, index) {
-        document.querySelectorAll('.emp-row').forEach(function (r) { r.classList.remove('active'); });
-        rowEl.classList.add('active');
-        var data = window.EIS_DATA[index];
-        if (!data) return;
-        renderDetail(data);
-        document.getElementById('detailPanel').classList.add('open');
-    };
-
-    window.closeDetail = function () {
-        document.getElementById('detailPanel').classList.remove('open');
-    };
-
-    function renderDetail(d) {
-        var html = '';
-
-        // Header
-        html += '<div class="detail-head">';
-        html +=   '<div class="detail-avatar">';
-        if (d.hasPhoto) {
-            html += '<img src="' + CTX + '/DocumentDownloadServlet?empid=' + encodeURIComponent(d.empId)
-                  + '&type=PHOTO" alt="" onerror="this.style.display=\'none\';this.parentNode.textContent=\''
-                  + esc(d.initials) + '\';"/>';
-        } else {
-            html += esc(d.initials);
-        }
-        html +=   '</div>';
-        html +=   '<div style="min-width:0;">';
-        html +=     '<div class="detail-name">' + esc(d.fullName) + '</div>';
-        html +=     '<div class="detail-meta">'
-                  +   '<span class="id">#' + esc(d.empId) + '</span>'
-                  +   '<span class="badge ' + (d.active ? 'active' : 'inactive') + '">'
-                  +     (d.active ? 'Active' : 'Inactive')
-                  +   '</span>'
-                  + '</div>';
-        html +=   '</div>';
-        html += '</div>';
-
-        // Body
-        html += '<div class="detail-body">';
-
-        // Identity
-        html += '<div class="detail-section">';
-        html +=   '<div class="detail-section-title"><span class="dot"></span>Identity</div>';
-        html +=   '<div class="detail-grid">';
-        html +=     field('Employee ID', d.empId, false, true);
-        html +=     field('AD ID', d.adId, false, true);
-        html +=     field('HID', d.hid, false, true);
-        html +=     field('Asset ID', d.assetId, false, true);
-        html +=   '</div>';
-        html += '</div>';
-
-        // Personal
-        html += '<div class="detail-section">';
-        html +=   '<div class="detail-section-title"><span class="dot"></span>Personal</div>';
-        html +=   '<div class="detail-grid">';
-        html +=     field('First Name', d.firstName);
-        html +=     field('Middle Name', d.middleName);
-        html +=     field('Last Name', d.lastName);
-        html +=     field('Gender', d.gender);
-        html +=     field('Date of Birth', d.dob, false, true);
-        html +=     field('Education', d.education);
-        html +=   '</div>';
-        html += '</div>';
-
-        // Contact
-        html += '<div class="detail-section">';
-        html +=   '<div class="detail-section-title"><span class="dot"></span>Contact</div>';
-        html +=   '<div class="detail-grid">';
-        html +=     field('Contact', d.contact, false, true);
-        html +=     field('Emergency', d.emergency, false, true);
-        html +=     field('TCS Mail', d.tcsMail, true);
-        html +=     field('SBI Mail', d.sbiMail, true);
-        html +=   '</div>';
-        html += '</div>';
-
-        // Address
-        html += '<div class="detail-section">';
-        html +=   '<div class="detail-section-title"><span class="dot"></span>Address</div>';
-        html +=   '<div class="detail-grid">';
-        html +=     field('State', d.state);
-        html +=     field('City', d.city);
-        html +=     field('Address', d.address, true);
-        html +=   '</div>';
-        html += '</div>';
-
-        // Work
-        html += '<div class="detail-section">';
-        html +=   '<div class="detail-section-title"><span class="dot"></span>Work</div>';
-        html +=   '<div class="detail-grid">';
-        html +=     field('Team', d.team);
-        html +=     field('Joining Date', d.joiningDate, false, true);
-        html +=   '</div>';
-        html += '</div>';
-
-        // VPN
-        html += '<div class="detail-section">';
-        html +=   '<div class="detail-section-title"><span class="dot"></span>VPN / Laptop</div>';
-        html +=   '<div class="detail-grid">';
-        html +=     field('VPN Host', d.vpnHost, false, true);
-        html +=     field('Laptop Host', d.laptopHost, false, true);
-        html +=     field('Remote Type', d.remoteType);
-        html +=     field('MAC Address', d.mac, false, true);
-        html +=     field('IP Address', d.ip, false, true);
-        html +=   '</div>';
-        html += '</div>';
-
-        // Credentials
-        html += '<div class="detail-section">';
-        html +=   '<div class="detail-section-title"><span class="dot"></span>Credentials</div>';
-        html +=   '<div class="detail-grid">';
-        html +=     field('Username', d.username, false, true);
-        html +=     field('Password', d.password, false, true);
-        html +=   '</div>';
-        html += '</div>';
-
-        // Documents
-        html += '<div class="detail-section">';
-        html +=   '<div class="detail-section-title"><span class="dot"></span>Documents</div>';
-        html +=   '<div class="doc-list">';
-        html +=     docItem('Photo', d.hasPhoto, 'PHOTO', d.empId);
-        html +=     docItem('BGC Document', d.hasBgc, 'BGC', d.empId);
-        html +=     docItem('Police Verification', d.hasPolice, 'POLICE', d.empId);
-        html +=     docItem('CV', d.hasCv, 'CV', d.empId);
-        html +=   '</div>';
-        html += '</div>';
-
-        html += '</div>';
-
-        // Actions
-        html += '<div class="detail-actions">';
-        html +=   '<button type="button" class="btn btn-secondary" onclick="editRecord(\'' + esc(d.empId) + '\');">'
-              +     '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>'
-              +     'Edit'
-              +   '</button>';
-        html +=   '<button type="button" class="btn btn-danger" onclick="deleteRecord(\'' + esc(d.empId) + '\');">'
-              +     '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>'
-              +     'Delete'
-              +   '</button>';
-        html += '</div>';
-
-        document.getElementById('detailContent').innerHTML = html;
-    }
-
-    /* Actions */
-    window.editRecord = function (empId) {
-        if (!empId) return;
-        toast('Opening editor...', 'info');
-        setTimeout(function () {
-            window.location.href = CTX + '/jsp/EditProfileNew.jsp?action=edit&empid=' + encodeURIComponent(empId);
-        }, 150);
-    };
-
-    window.deleteRecord = function (empId) {
-        if (!empId) return;
-        if (!confirm('Delete employee ' + empId + '?\nThis action cannot be undone.')) return;
-        toast('Deleting ' + empId + '...', 'info');
-        setTimeout(function () {
-            window.location.href = CTX + '/ViewEisRegistrationDetails.action?action=delete&empid=' + encodeURIComponent(empId);
-        }, 150);
-    };
-
-    window.goToRegistration = function () {
-        window.location.href = CTX + '/showregpage.action';
-    };
-
-    window.exportToExcel = function () {
-        try {
-            var elt = document.getElementById('exportTable');
-            var wb = XLSX.utils.table_to_book(elt, { sheet: 'Employees' });
-            XLSX.writeFile(wb, 'Employee_Registry_' + new Date().toISOString().slice(0,10) + '.xlsx');
-            toast('Exported successfully', 'success');
-        } catch (e) {
-            toast('Export failed: ' + e.message, 'error');
-        }
-    };
-
-    /* Search */
-    document.getElementById('searchInput').addEventListener('input', function () {
-        var q = this.value.trim().toLowerCase();
-        var rows = document.querySelectorAll('.emp-row');
-        var visible = 0;
-        rows.forEach(function (r) {
-            var hay = r.getAttribute('data-search') || '';
-            if (q === '' || hay.indexOf(q) !== -1) {
-                r.style.display = '';
-                visible++;
-            } else {
-                r.style.display = 'none';
-            }
-        });
-    });
-
-    /* Auto-select first row on desktop */
-    document.addEventListener('DOMContentLoaded', function () {
-        var firstRow = document.querySelector('.emp-row');
-        if (firstRow && window.innerWidth > 1100) {
-            firstRow.click();
-        }
-    });
-
-})();
-</script>
-
-<%!
-    private static String safe(String s) { return s != null ? s : ""; }
-
-    private static String jsSafe(String s) {
-        if (s == null) return "";
-        return s.replace("\\", "\\\\")
-                .replace("\"", "\\\"")
-                .replace("\n", "\\n")
-                .replace("\r", "\\r")
-                .replace("<", "\\u003c")
-                .replace(">", "\\u003e")
-                .replace("&", "\\u0026");
-    }
-%>
-
-</body>
-</html>
+	/**
+	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
+	 */
+	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		// TODO Auto-generated method stub
+		processRequest(request, response);
+	}
+
+	/**
+	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
+	 */
+	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		// TODO Auto-generated method stub
+		processRequest(request, response);
+	}
+	 protected void processRequest(HttpServletRequest request, HttpServletResponse response) 
+	            throws ServletException, IOException {
+	        
+	        RegistrationActionForm regForm = new RegistrationActionForm();
+	        regForm.setM_strmsg("clear");
+	        
+	        String action = request.getParameter("action");
+	        String empId = request.getParameter("empid");
+	        
+	        if (action != null && action.equals("delete") && empId != null && !empId.isEmpty()) {
+	            try {
+	                deleteEmployeeDetails(empId, regForm);
+	            } catch (SQLException e) {
+	                e.printStackTrace();
+	                regForm.setM_strmsg("error");
+	            }
+	        }
+	        
+	        try {
+	            viewemployeedetailsdata(regForm);
+	        } catch (SQLException e) {
+	            e.printStackTrace();
+	            regForm.setM_strmsg("error");
+	        }
+	        
+	        request.setAttribute("RegForm", regForm);
+	        RequestDispatcher dispatcher = request.getRequestDispatcher("/jsp/ViewEISRegistrationDetailsNew.jsp");
+	        dispatcher.forward(request, response);
+	    }
+	    
+	    private void deleteEmployeeDetails(String empId, RegistrationActionForm regForm) throws SQLException {
+	        Connection conn = null;
+	        Statement stmt = null;
+	        ResultSet rs = null;
+	        
+	        try {
+	            conn = DBUtilityAuto.getReportDBConnection();
+	            stmt = conn.createStatement();
+	            
+	            // First get file paths
+	            String selectQuery = "SELECT * FROM eisupport_employee_master WHERE EMPLOYEE_ID='" + empId + "'";
+	            rs = stmt.executeQuery(selectQuery);
+	            
+	            if (rs.next()) {
+	                // Delete associated files
+	                deleteFile(rs.getString("BGC_DOCUMENT_PATH"), "BGC");
+	                deleteFile(rs.getString("PHOTO_PATH"), "PHOTO");
+	                deleteFile(rs.getString("POLICE_VERIFICATION_PATH"), "Police");
+	                deleteFile(rs.getString("CV_DOCUMENT_PATH"), "CV");
+	                
+	                // Delete database record
+	                String deleteQuery = "DELETE FROM eisupport_employee_master WHERE EMPLOYEE_ID='" + empId + "'";
+	                int rowsDeleted = stmt.executeUpdate(deleteQuery);
+	                
+	                if (rowsDeleted > 0) {
+	                    regForm.setM_strmsg("delete");
+	                    System.out.println("Employee " + empId + " deleted successfully.");
+	                } else {
+	                    regForm.setM_strmsg("error");
+	                    System.out.println("Failed to delete employee " + empId);
+	                }
+	            } else {
+	                regForm.setM_strmsg("error");
+	                System.out.println("Employee " + empId + " not found.");
+	            }
+	            
+	        } catch (Exception e) {
+	            regForm.setM_strmsg("error");
+	            e.printStackTrace();
+	        } finally {
+	            closeResources(rs, stmt, conn);
+	        }
+	    }
+	    
+	    private void deleteFile(String filePath, String folder) {
+	        if (filePath != null && !filePath.trim().isEmpty()) {
+	            try {
+	                String basePath = System.getProperty("catalina.base");
+	                String fullPath = basePath + "/webapps/EISEMPLOYEEDOCUMENT/" + folder + "/" + filePath;
+	                File file = new File(fullPath);
+	                
+	                if (file.exists()) {
+	                    if (file.delete()) {
+	                        System.out.println(folder + " file deleted: " + filePath);
+	                    } else {
+	                        System.out.println("Failed to delete " + folder + " file: " + filePath);
+	                    }
+	                }
+	            } catch (Exception e) {
+	                System.out.println("Error deleting file: " + e.getMessage());
+	            }
+	        }
+	    }
+	    
+	    private void viewemployeedetailsdata(RegistrationActionForm regForm) throws SQLException {
+	        Connection conn = null;
+	        Statement stmt = null;
+	        ResultSet rs = null;
+	        
+	        try {
+	            conn = DBUtilityAuto.getReportDBConnection();
+	            stmt = conn.createStatement();
+	            String query = "SELECT * FROM eisupport_employee_master ORDER BY EMPLOYEE_ID";
+	            rs = stmt.executeQuery(query);
+	            
+	            List<EmployeeDetailsBean> employeeList = new ArrayList<>();
+	            
+	            while (rs.next()) {
+	                EmployeeDetailsBean employee = new EmployeeDetailsBean();
+	                
+	                employee.setM_strEmployee_ID(rs.getString("EMPLOYEE_ID"));
+	                employee.setM_strAD_ID(rs.getString("AD_ID"));
+	                employee.setM_strHID(rs.getString("HID"));
+	                employee.setM_strAsset_ID(rs.getString("ASSET_ID"));
+	                employee.setM_strEducation_Qualification(rs.getString("EDU_QUALIFICATION"));
+	                employee.setM_strTCS_Joining_Date(rs.getString("TCS_JOINING_DATE"));
+	                employee.setM_strEmployee_contact_Number(rs.getString("CONTACTNUMBER"));
+	                employee.setM_strEmergency_contact_Number(rs.getString("EMERGENCY_CONTACTNUMBER"));
+	                employee.setM_strTeam(rs.getString("TEAM"));
+	                employee.setM_strTCS_mail_ID(rs.getString("TCS_MAILID"));
+	                employee.setM_strSBI_mail_ID(rs.getString("SBI_MAILID"));
+	                employee.setM_strState(rs.getString("STATE"));
+	                employee.setM_strCity(rs.getString("CITY"));
+	                employee.setM_strLocal_Address(rs.getString("LOCAL_ADDRESS"));
+	                employee.setM_strGender(rs.getString("GENDER"));
+	                employee.setM_strDate_Of_Birth(rs.getString("DOB"));
+	                employee.setM_strFirst_Name(rs.getString("FIRSTNAME"));
+	                employee.setM_strMiddle_Name(rs.getString("MIDDLENAME"));
+	                employee.setM_strLast_Name(rs.getString("LASTNAME"));
+	                employee.setM_strVPN_Hostname(rs.getString("VPN_HOSTNAME"));
+	                employee.setM_strLaptop_Hostname(rs.getString("LAPTOP_HOSTNAME"));
+	                employee.setM_strRemote_Type(rs.getString("REMOTETYPE"));
+	                employee.setM_strVPN_VDI_MAC_Address(rs.getString("VPN_VDI_MACADDRESS"));
+	                employee.setM_strVPN_VDI_IP_Address(rs.getString("VPN_VDI_IPADDRESS"));
+	             // Handle BLOB/CLOB columns - these might be file paths or actual BLOBs
+	                String cvDocument = getColumnValue(rs, "CV_DOCUMENT_PATH");
+	                String bgcDocument = getColumnValue(rs, "BGC_DOCUMENT_PATH");
+	                String photoPath = getColumnValue(rs, "PHOTO_PATH");
+	                String policeVerification = getColumnValue(rs, "POLICE_VERIFICATION_PATH");
+	               
+	                employee.setM_strCV_Document(cvDocument);
+	                employee.setM_strBGC_Documents_Path(bgcDocument);
+	                employee.setM_strPhoto_Path(photoPath);
+	                employee.setM_strPolice_Verification_Path(policeVerification);
+
+	                employee.setM_strUserName(rs.getString("USERNAME"));
+	                employee.setM_strPassword(rs.getString("password"));
+	                employee.setM_strISACTIVE(rs.getString("ISACTIVE"));
+	                
+	                employeeList.add(employee);
+	            }
+	            
+	            regForm.setM_lstViewEmployeeRegistrationdetail(employeeList);
+	            System.out.println("Loaded " + employeeList.size() + " employee records.");
+	            
+	        } catch (Exception e) {
+	            e.printStackTrace();
+	            regForm.setM_strmsg("error");
+	        } finally {
+	            closeResources(rs, stmt, conn);
+	        }
+	    }
+	    
+	    private String getColumnValue(ResultSet rs, String columnName) throws SQLException {
+	        try {
+	          // First try to get as String (for VARCHAR columns)
+	          return rs.getString(columnName);
+	        } catch (SQLException e) {
+	          // If getString fails, it might be a BLOB/CLOB
+	          try {
+	            Object obj = rs.getObject(columnName);
+	            if (obj == null) {
+	              return null;
+	            } else if (obj instanceof Blob) {
+	              Blob blob = (Blob) obj;
+	              // For BLOB, you might want to read as bytes or store as file
+	              // Since it's a file path, return the blob length or handle differently
+	              return "[BLOB - Size: " + blob.length() + " bytes]";
+	            } else if (obj instanceof Clob) {
+	              Clob clob = (Clob) obj;
+	              // For CLOB, read the string content
+	              return clob.getSubString(1, (int) Math.min(clob.length(), 1000));
+	            } else {
+	              return obj.toString();
+	            }
+	          } catch (Exception ex) {
+	            System.out.println("Error getting column " + columnName + ": " + ex.getMessage());
+	            return null;
+	          }
+	        }
+	      }
+	    private void closeResources(ResultSet rs, Statement stmt, Connection conn) {
+	        try {
+	            if (rs != null) rs.close();
+	        } catch (SQLException e) {
+	            e.printStackTrace();
+	        }
+	        try {
+	            if (stmt != null) stmt.close();
+	        } catch (SQLException e) {
+	            e.printStackTrace();
+	        }
+	        try {
+	            if (conn != null) conn.close();
+	        } catch (SQLException e) {
+	            e.printStackTrace();
+	        }
+	    }
+	}
