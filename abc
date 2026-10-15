@@ -1,1 +1,33 @@
-http://localhost:8085/EISPortalVer2/DocumentDownloadServlet?empid=2423004&type=POLICE&_t=1792047326815
+Name                     Null?    Type          
+------------------------ -------- ------------- 
+EMPLOYEE_ID                       VARCHAR2(45)  
+AD_ID                             VARCHAR2(45)  
+ASSET_ID                          VARCHAR2(45)  
+EDU_QUALIFICATION                 VARCHAR2(45)  
+TCS_JOINING_DATE                  VARCHAR2(45)  
+CONTACTNUMBER                     VARCHAR2(12)  
+EMERGENCY_CONTACTNUMBER           VARCHAR2(12)  
+TEAM                              VARCHAR2(45)  
+TCS_MAILID                        VARCHAR2(45)  
+STATE                             VARCHAR2(100) 
+CITY                              VARCHAR2(100) 
+LOCAL_ADDRESS                     VARCHAR2(200) 
+GENDER                            VARCHAR2(45)  
+DOB                               VARCHAR2(45)  
+FIRSTNAME                         VARCHAR2(45)  
+MIDDLENAME                        VARCHAR2(45)  
+LASTNAME                          VARCHAR2(45)  
+VPN_HOSTNAME                      VARCHAR2(45)  
+LAPTOP_HOSTNAME                   VARCHAR2(45)  
+REMOTETYPE                        VARCHAR2(45)  
+VPN_VDI_MACADDRESS                VARCHAR2(45)  
+VPN_VDI_IPADDRESS                 VARCHAR2(45)  
+CV_DOCUMENT_PATH                  BLOB          
+BGC_DOCUMENT_PATH                 BLOB          
+PHOTO_PATH                        BLOB          
+POLICE_VERIFICATION_PATH          BLOB          
+USERNAME                          VARCHAR2(45)  
+PASSWORD                          VARCHAR2(45)  
+HID                               VARCHAR2(45)  
+SBI_MAILID                        VARCHAR2(45)  
+ISACTIVE                 NOT NULL VARCHAR2(255) 
