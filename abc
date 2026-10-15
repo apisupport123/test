@@ -1,25 +1,89 @@
-========== saveRegistration START ==========
-Connected to PRIMARY DB 1
-Flag Status: PR, Location: HI
-getReportDBConnection - flagStatus: PR
-Connecting to Report PR Database
-Report PR Connected
-[FORM] Method: POST
-[FORM] Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryG0ciOKOlZtCtdtrJ
-[FORM] isMultipart: true
-[FORM] actionParam = insert
-Connected to PRIMARY DB 1
-Flag Status: PR, Location: HI
-getReportDBConnection - flagStatus: PR
-Connecting to Report PR Database
-Report PR Connected
-[DEBUG] DB Connected OK
-[DEBUG] Duplicate count = 0
-[UPLOAD] PHOTO file=null name=null
-[UPLOAD] BGC file=null name=null
-[UPLOAD] POLICE file=null name=null
-[UPLOAD] CV file=null name=null
-[UPLOAD] FINAL SIZES: photo=0 bgc=0 police=0 cv=0
-[DEBUG] Inserted into eisupport_employee_master
-[DEBUG] Inserted into roster_employee_details
-========== saveRegistration SUCCESS ==========
+debugUpload.jsp
+
+
+<%@ page contentType="text/html;charset=UTF-8" %>
+<%@ page import="java.util.*" %>
+<%@ taglib prefix="s" uri="/struts-tags" %>
+
+<!DOCTYPE html>
+<html>
+<head>
+<title>Upload Debug</title>
+<style>
+body { font-family: monospace; padding: 20px; background: #f5f5f5; }
+h1 { color: #d32f2f; }
+h2 { color: #1976d2; margin-top: 30px; }
+pre { background: #fff; padding: 15px; border-left: 4px solid #1976d2; overflow-x: auto; }
+.box { background: #fff; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,.1); }
+</style>
+</head>
+<body>
+
+<h1>🔍 File Upload Debug Tool</h1>
+
+<div class="box">
+    <h2>1. Form Bean Properties</h2>
+    <p><strong>registrationActionForm</strong> class:
+    <%= (request.getAttribute("registrationActionForm") != null
+         ? request.getAttribute("registrationActionForm").getClass().getName()
+         : "NULL — form bean not in request scope") %>
+    </p>
+</div>
+
+<div class="box">
+    <h2>2. All Request Parameters</h2>
+    <pre><%
+    java.util.Enumeration<String> pnames = request.getParameterNames();
+    while (pnames.hasMoreElements()) {
+        String name = pnames.nextElement();
+        String value = request.getParameter(name);
+        out.println(name + " = [" + value + "]");
+    }
+    %></pre>
+</div>
+
+<div class="box">
+    <h2>3. All Request Attributes</h2>
+    <pre><%
+    java.util.Enumeration<String> anames = request.getAttributeNames();
+    while (anames.hasMoreElements()) {
+        String name = anames.nextElement();
+        Object value = request.getAttribute(name);
+        out.println(name + " = " + (value != null ? value.getClass().getName() : "null"));
+    }
+    %></pre>
+</div>
+
+<div class="box">
+    <h2>4. Content Type / Method</h2>
+    <pre>
+Method: <%= request.getMethod() %>
+Content-Type: <%= request.getContentType() %>
+Is Multipart: <%= request.getContentType() != null && request.getContentType().toLowerCase().startsWith("multipart/") %>
+    </pre>
+</div>
+
+<div class="box">
+    <h2>5. Test Upload Form (simple)</h2>
+    <form action="<%= request.getContextPath() %>/saveRegistration.action" 
+          method="post" enctype="multipart/form-data">
+        
+        <input type="hidden" name="action" value="insert"/>
+        
+        <label>Employee ID:</label>
+        <input type="text" name="m_stremployee_id" value="TEST999" required/>
+        <br><br>
+        
+        <label>Test File (Photo field):</label>
+        <input type="file" name="m_strthePhotofile"/>
+        <br><br>
+        
+        <button type="submit">Test Submit</button>
+    </form>
+    <p style="color: #d32f2f; margin-top: 10px;">
+        ⚠️ After submitting, check Tomcat log for <strong>[UPLOAD]</strong> lines.
+    </p>
+</div>
+
+</body>
+</html>
