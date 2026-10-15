@@ -1,33 +1,415 @@
-Name                     Null?    Type          
------------------------- -------- ------------- 
-EMPLOYEE_ID                       VARCHAR2(45)  
-AD_ID                             VARCHAR2(45)  
-ASSET_ID                          VARCHAR2(45)  
-EDU_QUALIFICATION                 VARCHAR2(45)  
-TCS_JOINING_DATE                  VARCHAR2(45)  
-CONTACTNUMBER                     VARCHAR2(12)  
-EMERGENCY_CONTACTNUMBER           VARCHAR2(12)  
-TEAM                              VARCHAR2(45)  
-TCS_MAILID                        VARCHAR2(45)  
-STATE                             VARCHAR2(100) 
-CITY                              VARCHAR2(100) 
-LOCAL_ADDRESS                     VARCHAR2(200) 
-GENDER                            VARCHAR2(45)  
-DOB                               VARCHAR2(45)  
-FIRSTNAME                         VARCHAR2(45)  
-MIDDLENAME                        VARCHAR2(45)  
-LASTNAME                          VARCHAR2(45)  
-VPN_HOSTNAME                      VARCHAR2(45)  
-LAPTOP_HOSTNAME                   VARCHAR2(45)  
-REMOTETYPE                        VARCHAR2(45)  
-VPN_VDI_MACADDRESS                VARCHAR2(45)  
-VPN_VDI_IPADDRESS                 VARCHAR2(45)  
-CV_DOCUMENT_PATH                  BLOB          
-BGC_DOCUMENT_PATH                 BLOB          
-PHOTO_PATH                        BLOB          
-POLICE_VERIFICATION_PATH          BLOB          
-USERNAME                          VARCHAR2(45)  
-PASSWORD                          VARCHAR2(45)  
-HID                               VARCHAR2(45)  
-SBI_MAILID                        VARCHAR2(45)  
-ISACTIVE                 NOT NULL VARCHAR2(255) 
+package com.action;
+
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.URLConnection;
+import java.sql.Blob;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+
+import com.jdbc.DBUtilityAuto;
+
+@WebServlet("/DocumentDownloadServlet")
+public class DocumentDownloadServlet extends HttpServlet {
+
+    private static final long serialVersionUID = 1L;
+
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        String empId   = request.getParameter("empid");
+        String docType = request.getParameter("type");
+
+        System.out.println("[DOC-DOWNLOAD] empid=" + empId + " type=" + docType);
+
+        if (empId == null || empId.trim().isEmpty()
+                || docType == null || docType.trim().isEmpty()) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Missing parameters");
+            return;
+        }
+
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+
+        try {
+            conn = DBUtilityAuto.getReportDBConnection();
+
+            String columnName;
+            String baseFileName;
+
+            switch (docType.toUpperCase()) {
+                case "BGC":    columnName = "BGC_DOCUMENT_PATH";       baseFileName = "bgc";    break;
+                case "PHOTO":  columnName = "PHOTO_PATH";              baseFileName = "photo";  break;
+                case "POLICE": columnName = "POLICE_VERIFICATION_PATH";baseFileName = "police"; break;
+                case "CV":     columnName = "CV_DOCUMENT_PATH";        baseFileName = "cv";     break;
+                default:
+                    response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid docType");
+                    return;
+            }
+
+            String sql = "SELECT " + columnName
+                       + " FROM eisupport_employee_master WHERE EMPLOYEE_ID = ?";
+            stmt = conn.prepareStatement(sql);
+            stmt.setString(1, empId);
+            rs = stmt.executeQuery();
+
+            if (!rs.next()) {
+                System.out.println("[DOC-DOWNLOAD] Employee not found: " + empId);
+                response.sendError(HttpServletResponse.SC_NOT_FOUND, "Employee not found");
+                return;
+            }
+
+            // ============================================================
+            // ⭐ ORACLE BLOB READING
+            // ============================================================
+            Blob blob = rs.getBlob(1);
+
+            if (blob == null) {
+                System.out.println("[DOC-DOWNLOAD] BLOB is NULL for " + docType);
+                response.sendError(HttpServletResponse.SC_NOT_FOUND, "No document uploaded");
+                return;
+            }
+
+            long length = blob.length();
+            System.out.println("[DOC-DOWNLOAD] BLOB size = " + length + " bytes");
+
+            if (length == 0) {
+                System.out.println("[DOC-DOWNLOAD] BLOB is EMPTY for " + docType);
+                response.sendError(HttpServletResponse.SC_NOT_FOUND, "Empty document");
+                return;
+            }
+
+            // Read the BLOB — Oracle-safe
+            byte[] data = blob.getBytes(1, (int) length);
+
+            // ============================================================
+            // DETECT MIME TYPE
+            // ============================================================
+            String mimeType = URLConnection.guessContentTypeFromStream(
+                    new ByteArrayInputStream(data));
+
+            if (mimeType == null) {
+                mimeType = detectFromMagicBytes(data);
+            }
+            if (mimeType == null) {
+                // Default based on docType
+                if ("PHOTO".equals(docType)) {
+                    mimeType = "image/jpeg";
+                } else {
+                    mimeType = "application/pdf";
+                }
+            }
+
+            System.out.println("[DOC-DOWNLOAD] MIME: " + mimeType);
+
+            // ============================================================
+            // SERVE FILE
+            // ============================================================
+            String ext = getExtensionFromMimeType(mimeType);
+            String filename = baseFileName + "_" + empId + ext;
+
+            response.setContentType(mimeType);
+            response.setContentLength(data.length);
+
+            boolean inline = mimeType.startsWith("image/")
+                          || mimeType.equals("application/pdf");
+            String disposition = (inline ? "inline" : "attachment")
+                               + "; filename=\"" + filename + "\"";
+            response.setHeader("Content-Disposition", disposition);
+            response.setHeader("Cache-Control", "private, max-age=3600");
+
+            OutputStream os = response.getOutputStream();
+            os.write(data);
+            os.flush();
+
+            System.out.println("[DOC-DOWNLOAD] Served " + filename
+                               + " (" + data.length + " bytes)");
+
+        } catch (Exception e) {
+            System.out.println("[DOC-DOWNLOAD] EXCEPTION: " + e.getClass().getName()
+                               + " - " + e.getMessage());
+            e.printStackTrace();
+            if (!response.isCommitted()) {
+                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                                   "Error retrieving document");
+            }
+        } finally {
+            try { if (rs   != null) rs.close();   } catch (Exception ignore) {}
+            try { if (stmt != null) stmt.close(); } catch (Exception ignore) {}
+            try { if (conn != null) conn.close(); } catch (Exception ignore) {}
+        }
+    }
+
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        doGet(request, response);
+    }
+
+    private String detectFromMagicBytes(byte[] d) {
+        if (d == null || d.length < 4) return null;
+        if (d[0] == 0x25 && d[1] == 0x50 && d[2] == 0x44 && d[3] == 0x46) return "application/pdf";
+        if ((d[0] & 0xFF) == 0xFF && (d[1] & 0xFF) == 0xD8 && (d[2] & 0xFF) == 0xFF) return "image/jpeg";
+        if ((d[0] & 0xFF) == 0x89 && d[1] == 0x50 && d[2] == 0x4E && d[3] == 0x47) return "image/png";
+        if (d[0] == 0x47 && d[1] == 0x49 && d[2] == 0x46) return "image/gif";
+        if (d[0] == 0x50 && d[1] == 0x4B) return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+        if ((d[0] & 0xFF) == 0xD0 && (d[1] & 0xFF) == 0xCF) return "application/msword";
+        return null;
+    }
+
+    private String getExtensionFromMimeType(String mimeType) {
+        switch (mimeType) {
+            case "image/png":       return ".png";
+            case "image/jpeg":      return ".jpg";
+            case "image/gif":       return ".gif";
+            case "application/pdf": return ".pdf";
+            case "application/msword": return ".doc";
+            case "application/vnd.openxmlformats-officedocument.wordprocessingml.document": return ".docx";
+            default:                return "";
+        }
+    }
+}
+
+
+--------------------------------------------------------
+
+package com.action;
+
+import jakarta.servlet.RequestDispatcher;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
+import java.io.IOException;
+import java.sql.Blob;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.actionform.RegistrationActionForm;
+import com.jdbc.DBUtilityAuto;
+import com.beans.EmployeeDetailsBean;
+
+@WebServlet("/ViewEISRegistrationDetailsActionNew")
+public class ViewEISRegistrationDetailsActionNew extends HttpServlet {
+
+    private static final long serialVersionUID = 1L;
+
+    public ViewEISRegistrationDetailsActionNew() {
+        super();
+    }
+
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        processRequest(request, response);
+    }
+
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        processRequest(request, response);
+    }
+
+    protected void processRequest(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        System.out.println("========== ViewEISRegistrationDetailsActionNew ==========");
+
+        RegistrationActionForm regForm = new RegistrationActionForm();
+        regForm.setM_strmsg("");
+
+        String action = request.getParameter("action");
+        String empId  = request.getParameter("empid");
+
+        System.out.println("[DEBUG] action=" + action + " empId=" + empId);
+
+        if ("delete".equals(action) && empId != null && !empId.trim().isEmpty()) {
+            try {
+                deleteEmployeeDetails(empId, regForm);
+            } catch (SQLException e) {
+                e.printStackTrace();
+                regForm.setM_strmsg("error");
+            }
+        }
+
+        try {
+            viewEmployeedetailsdata(regForm);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            regForm.setM_strmsg("error");
+        }
+
+        request.setAttribute("RegForm", regForm);
+
+        RequestDispatcher dispatcher = request.getRequestDispatcher(
+                "/jsp/ViewEISRegistrationDetailsNew.jsp");
+        dispatcher.forward(request, response);
+    }
+
+    // =================================================================
+    // DELETE
+    // =================================================================
+
+    private void deleteEmployeeDetails(String empId, RegistrationActionForm regForm)
+            throws SQLException {
+
+        Connection conn = null;
+        PreparedStatement deleteEmpPs = null;
+        PreparedStatement deleteRosterPs = null;
+
+        try {
+            conn = DBUtilityAuto.getReportDBConnection();
+
+            // Delete from BOTH tables
+            deleteEmpPs = conn.prepareStatement(
+                    "DELETE FROM eisupport_employee_master WHERE EMPLOYEE_ID = ?");
+            deleteEmpPs.setString(1, empId);
+            int rowsEmp = deleteEmpPs.executeUpdate();
+
+            deleteRosterPs = conn.prepareStatement(
+                    "DELETE FROM roster_employee_details WHERE EMPLOYEE_ID = ?");
+            deleteRosterPs.setString(1, empId);
+            int rowsRoster = deleteRosterPs.executeUpdate();
+
+            System.out.println("[DELETE] master=" + rowsEmp + " roster=" + rowsRoster);
+
+            if (rowsEmp > 0) {
+                regForm.setM_strmsg("delete");
+                System.out.println("[DELETE] Employee " + empId + " deleted successfully.");
+            } else {
+                regForm.setM_strmsg("error");
+                System.out.println("[DELETE] Failed to delete employee " + empId);
+            }
+
+        } catch (Exception e) {
+            regForm.setM_strmsg("error");
+            e.printStackTrace();
+        } finally {
+            try { if (deleteEmpPs    != null) deleteEmpPs.close();    } catch (Exception ignore) {}
+            try { if (deleteRosterPs != null) deleteRosterPs.close(); } catch (Exception ignore) {}
+            try { if (conn           != null) conn.close();           } catch (Exception ignore) {}
+        }
+    }
+
+    // =================================================================
+    // LOAD LIST
+    // =================================================================
+
+    private void viewEmployeedetailsdata(RegistrationActionForm regForm) throws SQLException {
+
+        Connection conn = null;
+        Statement stmt = null;
+        ResultSet rs = null;
+
+        try {
+            conn = DBUtilityAuto.getReportDBConnection();
+            stmt = conn.createStatement();
+
+            String query = "SELECT * FROM eisupport_employee_master ORDER BY EMPLOYEE_ID";
+            rs = stmt.executeQuery(query);
+
+            List<EmployeeDetailsBean> employeeList = new ArrayList<>();
+
+            while (rs.next()) {
+                EmployeeDetailsBean employee = new EmployeeDetailsBean();
+
+                employee.setM_strEmployee_ID(getString(rs, "EMPLOYEE_ID"));
+                employee.setM_strAD_ID(getString(rs, "AD_ID"));
+                employee.setM_strHID(getString(rs, "HID"));
+                employee.setM_strAsset_ID(getString(rs, "ASSET_ID"));
+                employee.setM_strEducation_Qualification(getString(rs, "EDU_QUALIFICATION"));
+                employee.setM_strTCS_Joining_Date(getString(rs, "TCS_JOINING_DATE"));
+                employee.setM_strEmployee_contact_Number(getString(rs, "CONTACTNUMBER"));
+                employee.setM_strEmergency_contact_Number(getString(rs, "EMERGENCY_CONTACTNUMBER"));
+                employee.setM_strTeam(getString(rs, "TEAM"));
+                employee.setM_strTCS_mail_ID(getString(rs, "TCS_MAILID"));
+                employee.setM_strSBI_mail_ID(getString(rs, "SBI_MAILID"));
+                employee.setM_strState(getString(rs, "STATE"));
+                employee.setM_strCity(getString(rs, "CITY"));
+                employee.setM_strLocal_Address(getString(rs, "LOCAL_ADDRESS"));
+                employee.setM_strGender(getString(rs, "GENDER"));
+                employee.setM_strDate_Of_Birth(getString(rs, "DOB"));
+                employee.setM_strFirst_Name(getString(rs, "FIRSTNAME"));
+                employee.setM_strMiddle_Name(getString(rs, "MIDDLENAME"));
+                employee.setM_strLast_Name(getString(rs, "LASTNAME"));
+                employee.setM_strVPN_Hostname(getString(rs, "VPN_HOSTNAME"));
+                employee.setM_strLaptop_Hostname(getString(rs, "LAPTOP_HOSTNAME"));
+                employee.setM_strRemote_Type(getString(rs, "REMOTETYPE"));
+                employee.setM_strVPN_VDI_MAC_Address(getString(rs, "VPN_VDI_MACADDRESS"));
+                employee.setM_strVPN_VDI_IP_Address(getString(rs, "VPN_VDI_IPADDRESS"));
+
+                // ⭐ BLOB columns — return "Uploaded" if data present
+                employee.setM_strBGC_Documents_Path(getBlobStatus(rs, "BGC_DOCUMENT_PATH"));
+                employee.setM_strPhoto_Path(getBlobStatus(rs, "PHOTO_PATH"));
+                employee.setM_strPolice_Verification_Path(getBlobStatus(rs, "POLICE_VERIFICATION_PATH"));
+                employee.setM_strCV_Document(getBlobStatus(rs, "CV_DOCUMENT_PATH"));
+
+                employee.setM_strUserName(getString(rs, "USERNAME"));
+                employee.setM_strPassword(getString(rs, "PASSWORD"));
+                employee.setM_strISACTIVE(getString(rs, "ISACTIVE"));
+
+                employeeList.add(employee);
+            }
+
+            regForm.setM_lstViewEmployeeRegistrationdetail(employeeList);
+            System.out.println("[LOAD] Total " + employeeList.size() + " employee records loaded.");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            regForm.setM_strmsg("error");
+        } finally {
+            try { if (rs   != null) rs.close();   } catch (Exception ignore) {}
+            try { if (stmt != null) stmt.close(); } catch (Exception ignore) {}
+            try { if (conn != null) conn.close(); } catch (Exception ignore) {}
+        }
+    }
+
+    // =================================================================
+    // HELPERS
+    // =================================================================
+
+    private String getString(ResultSet rs, String columnName) {
+        try {
+            String v = rs.getString(columnName);
+            return v != null ? v : "";
+        } catch (SQLException e) {
+            return "";
+        }
+    }
+
+    /**
+     * ⭐ For BLOB columns: returns "Uploaded" if data present, "" otherwise.
+     * Handles Oracle BLOB gracefully.
+     */
+    private String getBlobStatus(ResultSet rs, String columnName) {
+        try {
+            Blob blob = rs.getBlob(columnName);
+            if (blob == null) return "";
+
+            long length = blob.length();
+            blob.free();   // release Oracle resources
+
+            return length > 0 ? "Uploaded" : "";
+        } catch (Exception e) {
+            System.out.println("[WARN] BLOB read failed for " + columnName + ": " + e.getMessage());
+            return "";
+        }
+    }
+}
