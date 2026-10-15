@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.sql.Blob;
 import java.sql.Clob;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -21,242 +22,307 @@ import java.util.List;
 import com.actionform.RegistrationActionForm;
 import com.jdbc.DBUtilityAuto;
 import com.beans.EmployeeDetailsBean;
-/**
- * Servlet implementation class ViewEISRegistrationDetailsActionNew
- */
+
 @WebServlet("/ViewEISRegistrationDetailsActionNew")
 public class ViewEISRegistrationDetailsActionNew extends HttpServlet {
-	private static final long serialVersionUID = 1L;
-       
-    /**
-     * @see HttpServlet#HttpServlet()
-     */
+
+    private static final long serialVersionUID = 1L;
+
+    /** Base path for uploaded documents (relative to catalina.base). */
+    private static final String UPLOAD_BASE =
+            "/webapps/EISPortalVer2/EISEMPLOYEEDOCUMENT/";
+
     public ViewEISRegistrationDetailsActionNew() {
         super();
-        // TODO Auto-generated constructor stub
     }
 
-	/**
-	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
-	 */
-	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		// TODO Auto-generated method stub
-		processRequest(request, response);
-	}
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        processRequest(request, response);
+    }
 
-	/**
-	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
-	 */
-	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		// TODO Auto-generated method stub
-		processRequest(request, response);
-	}
-	 protected void processRequest(HttpServletRequest request, HttpServletResponse response) 
-	            throws ServletException, IOException {
-	        
-	        RegistrationActionForm regForm = new RegistrationActionForm();
-	        regForm.setM_strmsg("clear");
-	        
-	        String action = request.getParameter("action");
-	        String empId = request.getParameter("empid");
-	        
-	        if (action != null && action.equals("delete") && empId != null && !empId.isEmpty()) {
-	            try {
-	                deleteEmployeeDetails(empId, regForm);
-	            } catch (SQLException e) {
-	                e.printStackTrace();
-	                regForm.setM_strmsg("error");
-	            }
-	        }
-	        
-	        try {
-	            viewemployeedetailsdata(regForm);
-	        } catch (SQLException e) {
-	            e.printStackTrace();
-	            regForm.setM_strmsg("error");
-	        }
-	        
-	        request.setAttribute("RegForm", regForm);
-	        RequestDispatcher dispatcher = request.getRequestDispatcher("/jsp/ViewEISRegistrationDetailsNew.jsp");
-	        dispatcher.forward(request, response);
-	    }
-	    
-	    private void deleteEmployeeDetails(String empId, RegistrationActionForm regForm) throws SQLException {
-	        Connection conn = null;
-	        Statement stmt = null;
-	        ResultSet rs = null;
-	        
-	        try {
-	            conn = DBUtilityAuto.getReportDBConnection();
-	            stmt = conn.createStatement();
-	            
-	            // First get file paths
-	            String selectQuery = "SELECT * FROM eisupport_employee_master WHERE EMPLOYEE_ID='" + empId + "'";
-	            rs = stmt.executeQuery(selectQuery);
-	            
-	            if (rs.next()) {
-	                // Delete associated files
-	                deleteFile(rs.getString("BGC_DOCUMENT_PATH"), "BGC");
-	                deleteFile(rs.getString("PHOTO_PATH"), "PHOTO");
-	                deleteFile(rs.getString("POLICE_VERIFICATION_PATH"), "Police");
-	                deleteFile(rs.getString("CV_DOCUMENT_PATH"), "CV");
-	                
-	                // Delete database record
-	                String deleteQuery = "DELETE FROM eisupport_employee_master WHERE EMPLOYEE_ID='" + empId + "'";
-	                int rowsDeleted = stmt.executeUpdate(deleteQuery);
-	                
-	                if (rowsDeleted > 0) {
-	                    regForm.setM_strmsg("delete");
-	                    System.out.println("Employee " + empId + " deleted successfully.");
-	                } else {
-	                    regForm.setM_strmsg("error");
-	                    System.out.println("Failed to delete employee " + empId);
-	                }
-	            } else {
-	                regForm.setM_strmsg("error");
-	                System.out.println("Employee " + empId + " not found.");
-	            }
-	            
-	        } catch (Exception e) {
-	            regForm.setM_strmsg("error");
-	            e.printStackTrace();
-	        } finally {
-	            closeResources(rs, stmt, conn);
-	        }
-	    }
-	    
-	    private void deleteFile(String filePath, String folder) {
-	        if (filePath != null && !filePath.trim().isEmpty()) {
-	            try {
-	                String basePath = System.getProperty("catalina.base");
-	                String fullPath = basePath + "/webapps/EISEMPLOYEEDOCUMENT/" + folder + "/" + filePath;
-	                File file = new File(fullPath);
-	                
-	                if (file.exists()) {
-	                    if (file.delete()) {
-	                        System.out.println(folder + " file deleted: " + filePath);
-	                    } else {
-	                        System.out.println("Failed to delete " + folder + " file: " + filePath);
-	                    }
-	                }
-	            } catch (Exception e) {
-	                System.out.println("Error deleting file: " + e.getMessage());
-	            }
-	        }
-	    }
-	    
-	    private void viewemployeedetailsdata(RegistrationActionForm regForm) throws SQLException {
-	        Connection conn = null;
-	        Statement stmt = null;
-	        ResultSet rs = null;
-	        
-	        try {
-	            conn = DBUtilityAuto.getReportDBConnection();
-	            stmt = conn.createStatement();
-	            String query = "SELECT * FROM eisupport_employee_master ORDER BY EMPLOYEE_ID";
-	            rs = stmt.executeQuery(query);
-	            
-	            List<EmployeeDetailsBean> employeeList = new ArrayList<>();
-	            
-	            while (rs.next()) {
-	                EmployeeDetailsBean employee = new EmployeeDetailsBean();
-	                
-	                employee.setM_strEmployee_ID(rs.getString("EMPLOYEE_ID"));
-	                employee.setM_strAD_ID(rs.getString("AD_ID"));
-	                employee.setM_strHID(rs.getString("HID"));
-	                employee.setM_strAsset_ID(rs.getString("ASSET_ID"));
-	                employee.setM_strEducation_Qualification(rs.getString("EDU_QUALIFICATION"));
-	                employee.setM_strTCS_Joining_Date(rs.getString("TCS_JOINING_DATE"));
-	                employee.setM_strEmployee_contact_Number(rs.getString("CONTACTNUMBER"));
-	                employee.setM_strEmergency_contact_Number(rs.getString("EMERGENCY_CONTACTNUMBER"));
-	                employee.setM_strTeam(rs.getString("TEAM"));
-	                employee.setM_strTCS_mail_ID(rs.getString("TCS_MAILID"));
-	                employee.setM_strSBI_mail_ID(rs.getString("SBI_MAILID"));
-	                employee.setM_strState(rs.getString("STATE"));
-	                employee.setM_strCity(rs.getString("CITY"));
-	                employee.setM_strLocal_Address(rs.getString("LOCAL_ADDRESS"));
-	                employee.setM_strGender(rs.getString("GENDER"));
-	                employee.setM_strDate_Of_Birth(rs.getString("DOB"));
-	                employee.setM_strFirst_Name(rs.getString("FIRSTNAME"));
-	                employee.setM_strMiddle_Name(rs.getString("MIDDLENAME"));
-	                employee.setM_strLast_Name(rs.getString("LASTNAME"));
-	                employee.setM_strVPN_Hostname(rs.getString("VPN_HOSTNAME"));
-	                employee.setM_strLaptop_Hostname(rs.getString("LAPTOP_HOSTNAME"));
-	                employee.setM_strRemote_Type(rs.getString("REMOTETYPE"));
-	                employee.setM_strVPN_VDI_MAC_Address(rs.getString("VPN_VDI_MACADDRESS"));
-	                employee.setM_strVPN_VDI_IP_Address(rs.getString("VPN_VDI_IPADDRESS"));
-	             // Handle BLOB/CLOB columns - these might be file paths or actual BLOBs
-	                String cvDocument = getColumnValue(rs, "CV_DOCUMENT_PATH");
-	                String bgcDocument = getColumnValue(rs, "BGC_DOCUMENT_PATH");
-	                String photoPath = getColumnValue(rs, "PHOTO_PATH");
-	                String policeVerification = getColumnValue(rs, "POLICE_VERIFICATION_PATH");
-	               
-	                employee.setM_strCV_Document(cvDocument);
-	                employee.setM_strBGC_Documents_Path(bgcDocument);
-	                employee.setM_strPhoto_Path(photoPath);
-	                employee.setM_strPolice_Verification_Path(policeVerification);
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        processRequest(request, response);
+    }
 
-	                employee.setM_strUserName(rs.getString("USERNAME"));
-	                employee.setM_strPassword(rs.getString("password"));
-	                employee.setM_strISACTIVE(rs.getString("ISACTIVE"));
-	                
-	                employeeList.add(employee);
-	            }
-	            
-	            regForm.setM_lstViewEmployeeRegistrationdetail(employeeList);
-	            System.out.println("Loaded " + employeeList.size() + " employee records.");
-	            
-	        } catch (Exception e) {
-	            e.printStackTrace();
-	            regForm.setM_strmsg("error");
-	        } finally {
-	            closeResources(rs, stmt, conn);
-	        }
-	    }
-	    
-	    private String getColumnValue(ResultSet rs, String columnName) throws SQLException {
-	        try {
-	          // First try to get as String (for VARCHAR columns)
-	          return rs.getString(columnName);
-	        } catch (SQLException e) {
-	          // If getString fails, it might be a BLOB/CLOB
-	          try {
-	            Object obj = rs.getObject(columnName);
-	            if (obj == null) {
-	              return null;
-	            } else if (obj instanceof Blob) {
-	              Blob blob = (Blob) obj;
-	              // For BLOB, you might want to read as bytes or store as file
-	              // Since it's a file path, return the blob length or handle differently
-	              return "[BLOB - Size: " + blob.length() + " bytes]";
-	            } else if (obj instanceof Clob) {
-	              Clob clob = (Clob) obj;
-	              // For CLOB, read the string content
-	              return clob.getSubString(1, (int) Math.min(clob.length(), 1000));
-	            } else {
-	              return obj.toString();
-	            }
-	          } catch (Exception ex) {
-	            System.out.println("Error getting column " + columnName + ": " + ex.getMessage());
-	            return null;
-	          }
-	        }
-	      }
-	    private void closeResources(ResultSet rs, Statement stmt, Connection conn) {
-	        try {
-	            if (rs != null) rs.close();
-	        } catch (SQLException e) {
-	            e.printStackTrace();
-	        }
-	        try {
-	            if (stmt != null) stmt.close();
-	        } catch (SQLException e) {
-	            e.printStackTrace();
-	        }
-	        try {
-	            if (conn != null) conn.close();
-	        } catch (SQLException e) {
-	            e.printStackTrace();
-	        }
-	    }
-	}
+    protected void processRequest(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        System.out.println("========== ViewEISRegistrationDetailsActionNew ==========");
+
+        RegistrationActionForm regForm = new RegistrationActionForm();
+        regForm.setM_strmsg("");   // default: no message
+
+        String action = request.getParameter("action");
+        String empId  = request.getParameter("empid");
+
+        System.out.println("[DEBUG] action=" + action + " empId=" + empId);
+
+        // ---- DELETE ----
+        if ("delete".equals(action) && empId != null && !empId.trim().isEmpty()) {
+            try {
+                deleteEmployeeDetails(empId, regForm);
+            } catch (SQLException e) {
+                e.printStackTrace();
+                regForm.setM_strmsg("error");
+            }
+        }
+
+        // ---- LOAD LIST ----
+        try {
+            viewEmployeedetailsdata(regForm);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            regForm.setM_strmsg("error");
+        }
+
+        request.setAttribute("RegForm", regForm);
+
+        RequestDispatcher dispatcher = request.getRequestDispatcher("/jsp/ViewEISRegistrationDetailsNew.jsp");
+        dispatcher.forward(request, response);
+    }
+
+    // =================================================================
+    // DELETE
+    // =================================================================
+
+    private void deleteEmployeeDetails(String empId, RegistrationActionForm regForm) throws SQLException {
+
+        Connection conn = null;
+        PreparedStatement selectPs = null;
+        PreparedStatement deleteEmpPs = null;
+        PreparedStatement deleteRosterPs = null;
+        ResultSet rs = null;
+
+        try {
+            conn = DBUtilityAuto.getReportDBConnection();
+
+            // ---- 1. Fetch file paths BEFORE delete ----
+            String selectSql = "SELECT BGC_DOCUMENT_PATH, PHOTO_PATH, POLICE_VERIFICATION_PATH, CV_DOCUMENT_PATH "
+                             + "FROM eisupport_employee_master WHERE EMPLOYEE_ID = ?";
+            selectPs = conn.prepareStatement(selectSql);
+            selectPs.setString(1, empId);
+            rs = selectPs.executeQuery();
+
+            if (!rs.next()) {
+                regForm.setM_strmsg("error");
+                System.out.println("[DELETE] Employee " + empId + " not found");
+                return;
+            }
+
+            String bgcPath    = rs.getString("BGC_DOCUMENT_PATH");
+            String photoPath  = rs.getString("PHOTO_PATH");
+            String policePath = rs.getString("POLICE_VERIFICATION_PATH");
+            String cvPath     = rs.getString("CV_DOCUMENT_PATH");
+
+            // Close before reuse
+            rs.close(); rs = null;
+            selectPs.close(); selectPs = null;
+
+            // ---- 2. Delete physical files ----
+            deleteFile(bgcPath,    "BGC");
+            deleteFile(photoPath,  "PHOTO");
+            deleteFile(policePath, "Police");
+            deleteFile(cvPath,     "CV");
+
+            // ---- 3. Delete DB rows from BOTH tables ----
+            deleteEmpPs = conn.prepareStatement(
+                    "DELETE FROM eisupport_employee_master WHERE EMPLOYEE_ID = ?");
+            deleteEmpPs.setString(1, empId);
+            int rowsEmp = deleteEmpPs.executeUpdate();
+
+            deleteRosterPs = conn.prepareStatement(
+                    "DELETE FROM roster_employee_details WHERE EMPLOYEE_ID = ?");
+            deleteRosterPs.setString(1, empId);
+            int rowsRoster = deleteRosterPs.executeUpdate();
+
+            System.out.println("[DELETE] master=" + rowsEmp + " roster=" + rowsRoster);
+
+            if (rowsEmp > 0) {
+                regForm.setM_strmsg("delete");
+                System.out.println("[DELETE] Employee " + empId + " deleted successfully.");
+            } else {
+                regForm.setM_strmsg("error");
+                System.out.println("[DELETE] Failed to delete employee " + empId);
+            }
+
+        } catch (Exception e) {
+            regForm.setM_strmsg("error");
+            e.printStackTrace();
+        } finally {
+            closeQuietly(rs, selectPs, deleteEmpPs, deleteRosterPs, conn);
+        }
+    }
+
+    /**
+     * Deletes the physical file from disk.
+     * Handles both raw filename and full path.
+     */
+    private void deleteFile(String filePath, String folder) {
+        if (filePath == null || filePath.trim().isEmpty()) return;
+
+        try {
+            // Skip status markers
+            if ("Uploaded".equalsIgnoreCase(filePath)) {
+                System.out.println("[DELETE FILE] Skipped status marker for " + folder);
+                return;
+            }
+
+            String basePath = System.getProperty("catalina.base");
+            String fullPath = basePath + UPLOAD_BASE + folder + "/" + filePath;
+            File file = new File(fullPath);
+
+            if (file.exists()) {
+                if (file.delete()) {
+                    System.out.println("[DELETE FILE] " + folder + " deleted: " + filePath);
+                } else {
+                    System.out.println("[DELETE FILE] Failed to delete " + folder + ": " + filePath);
+                }
+            } else {
+                System.out.println("[DELETE FILE] Not found: " + fullPath);
+            }
+        } catch (Exception e) {
+            System.out.println("[DELETE FILE] Error: " + e.getMessage());
+        }
+    }
+
+    // =================================================================
+    // LOAD LIST
+    // =================================================================
+
+    private void viewEmployeedetailsdata(RegistrationActionForm regForm) throws SQLException {
+
+        Connection conn = null;
+        Statement stmt = null;
+        ResultSet rs = null;
+
+        try {
+            conn = DBUtilityAuto.getReportDBConnection();
+            stmt = conn.createStatement();
+
+            String query = "SELECT * FROM eisupport_employee_master ORDER BY EMPLOYEE_ID";
+            rs = stmt.executeQuery(query);
+
+            List<EmployeeDetailsBean> employeeList = new ArrayList<>();
+
+            while (rs.next()) {
+                EmployeeDetailsBean employee = new EmployeeDetailsBean();
+
+                employee.setM_strEmployee_ID(getString(rs, "EMPLOYEE_ID"));
+                employee.setM_strAD_ID(getString(rs, "AD_ID"));
+                employee.setM_strHID(getString(rs, "HID"));
+                employee.setM_strAsset_ID(getString(rs, "ASSET_ID"));
+                employee.setM_strEducation_Qualification(getString(rs, "EDU_QUALIFICATION"));
+                employee.setM_strTCS_Joining_Date(getString(rs, "TCS_JOINING_DATE"));
+                employee.setM_strEmployee_contact_Number(getString(rs, "CONTACTNUMBER"));
+                employee.setM_strEmergency_contact_Number(getString(rs, "EMERGENCY_CONTACTNUMBER"));
+                employee.setM_strTeam(getString(rs, "TEAM"));
+                employee.setM_strTCS_mail_ID(getString(rs, "TCS_MAILID"));
+                employee.setM_strSBI_mail_ID(getString(rs, "SBI_MAILID"));
+                employee.setM_strState(getString(rs, "STATE"));
+                employee.setM_strCity(getString(rs, "CITY"));
+                employee.setM_strLocal_Address(getString(rs, "LOCAL_ADDRESS"));
+                employee.setM_strGender(getString(rs, "GENDER"));
+                employee.setM_strDate_Of_Birth(getString(rs, "DOB"));
+                employee.setM_strFirst_Name(getString(rs, "FIRSTNAME"));
+                employee.setM_strMiddle_Name(getString(rs, "MIDDLENAME"));
+                employee.setM_strLast_Name(getString(rs, "LASTNAME"));
+                employee.setM_strVPN_Hostname(getString(rs, "VPN_HOSTNAME"));
+                employee.setM_strLaptop_Hostname(getString(rs, "LAPTOP_HOSTNAME"));
+                employee.setM_strRemote_Type(getString(rs, "REMOTETYPE"));
+                employee.setM_strVPN_VDI_MAC_Address(getString(rs, "VPN_VDI_MACADDRESS"));
+                employee.setM_strVPN_VDI_IP_Address(getString(rs, "VPN_VDI_IPADDRESS"));
+
+                // Document paths
+                employee.setM_strBGC_Documents_Path(getColumnValue(rs, "BGC_DOCUMENT_PATH"));
+                employee.setM_strPhoto_Path(getColumnValue(rs, "PHOTO_PATH"));
+                employee.setM_strPolice_Verification_Path(getColumnValue(rs, "POLICE_VERIFICATION_PATH"));
+                employee.setM_strCV_Document(getColumnValue(rs, "CV_DOCUMENT_PATH"));
+
+                // Credentials
+                employee.setM_strUserName(getString(rs, "USERNAME"));
+                employee.setM_strPassword(getStringSafe(rs, "PASSWORD", "password"));
+                employee.setM_strISACTIVE(getStringSafe(rs, "ISACTIVE", "IS_ACTIVE"));
+
+                employeeList.add(employee);
+            }
+
+            regForm.setM_lstViewEmployeeRegistrationdetail(employeeList);
+            System.out.println("[LOAD] Total " + employeeList.size() + " employee records loaded.");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            regForm.setM_strmsg("error");
+        } finally {
+            closeQuietly(rs, stmt, null, null, conn);
+        }
+    }
+
+    // =================================================================
+    // HELPERS
+    // =================================================================
+
+    /** Safely read a String column — returns "" if null or missing. */
+    private String getString(ResultSet rs, String columnName) {
+        try {
+            String v = rs.getString(columnName);
+            return v != null ? v : "";
+        } catch (SQLException e) {
+            System.out.println("[WARN] Column not found: " + columnName);
+            return "";
+        }
+    }
+
+    /** Try multiple column names — returns first found value. */
+    private String getStringSafe(ResultSet rs, String... columnNames) {
+        for (String col : columnNames) {
+            try {
+                String v = rs.getString(col);
+                if (v != null) return v;
+            } catch (SQLException ignore) {
+                // try next
+            }
+        }
+        return "";
+    }
+
+    /**
+     * Robust column reader — handles VARCHAR, BLOB, CLOB.
+     * For file paths stored as VARCHAR, returns the path directly.
+     * For BLOB, returns a readable placeholder.
+     */
+    private String getColumnValue(ResultSet rs, String columnName) {
+        try {
+            Object obj = rs.getObject(columnName);
+            if (obj == null) return "";
+
+            if (obj instanceof String) {
+                return (String) obj;
+            }
+            if (obj instanceof Blob) {
+                Blob blob = (Blob) obj;
+                return "[BLOB " + blob.length() + "B]";
+            }
+            if (obj instanceof Clob) {
+                Clob clob = (Clob) obj;
+                return clob.getSubString(1, (int) Math.min(clob.length(), 500));
+            }
+            return obj.toString();
+        } catch (SQLException e) {
+            System.out.println("[WARN] Column read failed: " + columnName);
+            return "";
+        }
+    }
+
+    private void closeQuietly(ResultSet rs, Statement st1, PreparedStatement ps1,
+                              PreparedStatement ps2, Connection con) {
+        try { if (rs  != null) rs.close();  } catch (Exception ignore) {}
+        try { if (st1 != null) st1.close(); } catch (Exception ignore) {}
+        try { if (ps1 != null) ps1.close(); } catch (Exception ignore) {}
+        try { if (ps2 != null) ps2.close(); } catch (Exception ignore) {}
+        try { if (con != null) con.close(); } catch (Exception ignore) {}
+    }
+}
