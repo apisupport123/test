@@ -1,521 +1,153 @@
-package com.action;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.ArrayList;
-
-import org.apache.struts2.ActionSupport;
-import org.apache.struts2.ServletActionContext;
-import org.apache.struts2.dispatcher.multipart.MultiPartRequestWrapper;
-import org.apache.struts2.dispatcher.multipart.UploadedFile;
-
-import jakarta.servlet.http.HttpServletRequest;
-
-import com.actionform.RegistrationActionForm;
-import com.jdbc.DBUtilityAuto;
-
-@SuppressWarnings({ "serial", "deprecation" })
-public class EISRegistrationAction extends ActionSupport {
-
-    // ============================================================
-    // Bound form bean
-    // ============================================================
-    private RegistrationActionForm registrationActionForm;
-
-    public RegistrationActionForm getRegistrationActionForm() {
-        return registrationActionForm;
-    }
-
-    public void setRegistrationActionForm(RegistrationActionForm registrationActionForm) {
-        this.registrationActionForm = registrationActionForm;
-    }
-
-    // ============================================================
-    // ⭐ FILE FIELDS — DIRECTLY ON ACTION
-    // ============================================================
-    private File   m_strthePhotofile;
-    private String m_strthePhotofileFileName;
-    private String m_strthePhotofileContentType;
-
-    private File   m_strtheBgcfile;
-    private String m_strtheBgcfileFileName;
-    private String m_strtheBgcfileContentType;
-
-    private File   m_strthePoliceverificationfile;
-    private String m_strthePoliceverificationfileFileName;
-    private String m_strthePoliceverificationfileContentType;
-
-    private File   m_strtheCvfile;
-    private String m_strtheCvfileFileName;
-    private String m_strtheCvfileContentType;
-
-    // Getters / Setters
-    public File getM_strthePhotofile() { return m_strthePhotofile; }
-    public void setM_strthePhotofile(File v) { this.m_strthePhotofile = v; }
-    public String getM_strthePhotofileFileName() { return m_strthePhotofileFileName; }
-    public void setM_strthePhotofileFileName(String v) { this.m_strthePhotofileFileName = v; }
-    public String getM_strthePhotofileContentType() { return m_strthePhotofileContentType; }
-    public void setM_strthePhotofileContentType(String v) { this.m_strthePhotofileContentType = v; }
-
-    public File getM_strtheBgcfile() { return m_strtheBgcfile; }
-    public void setM_strtheBgcfile(File v) { this.m_strtheBgcfile = v; }
-    public String getM_strtheBgcfileFileName() { return m_strtheBgcfileFileName; }
-    public void setM_strtheBgcfileFileName(String v) { this.m_strtheBgcfileFileName = v; }
-    public String getM_strtheBgcfileContentType() { return m_strtheBgcfileContentType; }
-    public void setM_strtheBgcfileContentType(String v) { this.m_strtheBgcfileContentType = v; }
-
-    public File getM_strthePoliceverificationfile() { return m_strthePoliceverificationfile; }
-    public void setM_strthePoliceverificationfile(File v) { this.m_strthePoliceverificationfile = v; }
-    public String getM_strthePoliceverificationfileFileName() { return m_strthePoliceverificationfileFileName; }
-    public void setM_strthePoliceverificationfileFileName(String v) { this.m_strthePoliceverificationfileFileName = v; }
-    public String getM_strthePoliceverificationfileContentType() { return m_strthePoliceverificationfileContentType; }
-    public void setM_strthePoliceverificationfileContentType(String v) { this.m_strthePoliceverificationfileContentType = v; }
-
-    public File getM_strtheCvfile() { return m_strtheCvfile; }
-    public void setM_strtheCvfile(File v) { this.m_strtheCvfile = v; }
-    public String getM_strtheCvfileFileName() { return m_strtheCvfileFileName; }
-    public void setM_strtheCvfileFileName(String v) { this.m_strtheCvfileFileName = v; }
-    public String getM_strtheCvfileContentType() { return m_strtheCvfileContentType; }
-    public void setM_strtheCvfileContentType(String v) { this.m_strtheCvfileContentType = v; }
-
-    // ============================================================
-    // Role list
-    // ============================================================
-    private ArrayList<String> rolelist = new ArrayList<>();
-
-    public ArrayList<String> getRolelist() { return rolelist; }
-    public void setRolelist(ArrayList<String> rolelist) { this.rolelist = rolelist; }
-
-    // ============================================================
-    // m_strmsg MIRROR
-    // ============================================================
-    public String getM_strmsg() {
-        return (registrationActionForm != null) ? registrationActionForm.getM_strmsg() : null;
-    }
-    public void setM_strmsg(String m_strmsg) {
-        if (registrationActionForm != null) registrationActionForm.setM_strmsg(m_strmsg);
-    }
-
-    // ============================================================
-    // ACTION METHODS
-    // ============================================================
-
-    @Override
-    public String execute() throws Exception {
-        return showregpage();
-    }
-
-    public String showregpage() throws Exception {
-        RegistrationActionForm form = getOrCreateForm();
-        loadEISRole(form);
-        return "success";
-    }
-
-    public String saveRegistration() throws Exception {
-
-        System.out.println("========== saveRegistration START ==========");
-
-        RegistrationActionForm form = getOrCreateForm();
-        loadEISRole(form);
-
-        HttpServletRequest request = ServletActionContext.getRequest();
-
-        String contentType = request.getContentType();
-        String method = request.getMethod();
-        boolean isMultipart = contentType != null
-                && contentType.toLowerCase().startsWith("multipart/");
-
-        System.out.println("[FORM] Method: " + method);
-        System.out.println("[FORM] Content-Type: " + contentType);
-        System.out.println("[FORM] isMultipart: " + isMultipart);
-
-        // ============================================================
-        // ⭐ DEBUG: Peek at wrapper (Struts 7)
-        // ============================================================
-        try {
-            System.out.println("[WRAPPER] Request class: " + request.getClass().getName());
-
-            if (request instanceof MultiPartRequestWrapper) {
-                MultiPartRequestWrapper mpr = (MultiPartRequestWrapper) request;
-
-                // ✅ Struts 7 — Enumeration<String>
-                java.util.Enumeration<String> allNames = mpr.getFileParameterNames();
-                java.util.List<String> nameList = java.util.Collections.list(allNames);
-                System.out.println("[WRAPPER] All file parameter names: " + nameList);
-
-                System.out.println("[WRAPPER] photoNames: "
-                        + java.util.Arrays.toString(mpr.getFileNames("m_strthePhotofile")));
-                System.out.println("[WRAPPER] bgcNames: "
-                        + java.util.Arrays.toString(mpr.getFileNames("m_strtheBgcfile")));
-                System.out.println("[WRAPPER] policeNames: "
-                        + java.util.Arrays.toString(mpr.getFileNames("m_strthePoliceverificationfile")));
-                System.out.println("[WRAPPER] cvNames: "
-                        + java.util.Arrays.toString(mpr.getFileNames("m_strtheCvfile")));
-            } else {
-                System.out.println("[WRAPPER] Not a MultiPartRequestWrapper");
-            }
-        } catch (Throwable t) {
-            System.out.println("[WRAPPER] Check failed: " + t.getClass().getName()
-                    + " - " + t.getMessage());
-        }
-
-        String actionParam = request.getParameter("action");
-        System.out.println("[FORM] actionParam = " + actionParam);
-
-        if (actionParam == null) {
-            clearForm(form);
-            return "success";
-        }
-        if (!"insert".equals(actionParam)) {
-            clearForm(form);
-            return "success";
-        }
-
-        Connection con = null;
-        PreparedStatement psEmp = null;
-        PreparedStatement psRoster = null;
-        Statement checkSt = null;
-        ResultSet checkRs = null;
-
-        try {
-            con = DBUtilityAuto.getReportDBConnection();
-            System.out.println("[DEBUG] DB Connected OK");
-
-            String empId = request.getParameter("m_stremployee_id");
-            String countQuery = "select count(*) from eisupport_employee_master where EMPLOYEE_ID='"
-                    + empId + "'";
-            checkSt = con.createStatement();
-            checkRs = checkSt.executeQuery(countQuery);
-
-            int count = 0;
-            if (checkRs != null && checkRs.next()) {
-                count = checkRs.getInt(1);
-            }
-            System.out.println("[DEBUG] Duplicate count = " + count);
-
-            if (count > 0) {
-                form.setM_strmsg("duplicate");
-                this.setM_strmsg("duplicate");
-                return "success";
-            }
-
-            // ============================================================
-            // DUAL CHECK
-            // ============================================================
-            System.out.println("[DUAL CHECK] this.photoFile = " + this.getM_strthePhotofile());
-            System.out.println("[DUAL CHECK] form.photoFile = " + form.getM_strthePhotofile());
-
-            // ============================================================
-            // ⭐⭐⭐ DIRECTLY READ FILES FROM MultiPartRequestWrapper
-            // ============================================================
-            byte[] photoBytes  = null;
-            byte[] bgcBytes    = null;
-            byte[] policeBytes = null;
-            byte[] cvBytes     = null;
-
-            if (request instanceof MultiPartRequestWrapper) {
-                MultiPartRequestWrapper mpr = (MultiPartRequestWrapper) request;
-
-                photoBytes  = extractBytes(mpr, "m_strthePhotofile",              "PHOTO");
-                bgcBytes    = extractBytes(mpr, "m_strtheBgcfile",                "BGC");
-                policeBytes = extractBytes(mpr, "m_strthePoliceverificationfile", "POLICE");
-                cvBytes     = extractBytes(mpr, "m_strtheCvfile",                 "CV");
-            } else {
-                System.out.println("[FETCH] Not MultiPartRequestWrapper — bean fallback");
-
-                File photoFile = this.getM_strthePhotofile() != null
-                        ? this.getM_strthePhotofile() : form.getM_strthePhotofile();
-                String photoName = this.getM_strthePhotofileFileName() != null
-                        ? this.getM_strthePhotofileFileName() : form.getM_strthePhotofileFileName();
-                if (photoFile != null && photoName != null && !photoName.trim().isEmpty()) {
-                    photoBytes = readFileBytes(photoFile);
-                }
-
-                File bgcFile = this.getM_strtheBgcfile() != null
-                        ? this.getM_strtheBgcfile() : form.getM_strtheBgcfile();
-                String bgcName = this.getM_strtheBgcfileFileName() != null
-                        ? this.getM_strtheBgcfileFileName() : form.getM_strtheBgcfileFileName();
-                if (bgcFile != null && bgcName != null && !bgcName.trim().isEmpty()) {
-                    bgcBytes = readFileBytes(bgcFile);
-                }
-
-                File policeFile = this.getM_strthePoliceverificationfile() != null
-                        ? this.getM_strthePoliceverificationfile() : form.getM_strthePoliceverificationfile();
-                String policeName = this.getM_strthePoliceverificationfileFileName() != null
-                        ? this.getM_strthePoliceverificationfileFileName() : form.getM_strthePoliceverificationfileFileName();
-                if (policeFile != null && policeName != null && !policeName.trim().isEmpty()) {
-                    policeBytes = readFileBytes(policeFile);
-                }
-
-                File cvFile = this.getM_strtheCvfile() != null
-                        ? this.getM_strtheCvfile() : form.getM_strtheCvfile();
-                String cvName = this.getM_strtheCvfileFileName() != null
-                        ? this.getM_strtheCvfileFileName() : form.getM_strtheCvfileFileName();
-                if (cvFile != null && cvName != null && !cvName.trim().isEmpty()) {
-                    cvBytes = readFileBytes(cvFile);
-                }
-            }
-
-            System.out.println("[UPLOAD] FINAL SIZES: photo="
-                    + (photoBytes != null ? photoBytes.length : 0)
-                    + " bgc=" + (bgcBytes != null ? bgcBytes.length : 0)
-                    + " police=" + (policeBytes != null ? policeBytes.length : 0)
-                    + " cv=" + (cvBytes != null ? cvBytes.length : 0));
-
-            // ============================================================
-            // INSERT — eisupport_employee_master
-            // ============================================================
-            String sqlEmp =
-                    "INSERT INTO eisupport_employee_master ("
-                  + "EMPLOYEE_ID,AD_ID,ASSET_ID,EDU_QUALIFICATION,TCS_JOINING_DATE,CONTACTNUMBER,"
-                  + "EMERGENCY_CONTACTNUMBER,TEAM,TCS_MAILID,STATE,CITY,LOCAL_ADDRESS,GENDER,DOB,FIRSTNAME,"
-                  + "MIDDLENAME,LASTNAME,VPN_HOSTNAME,LAPTOP_HOSTNAME,REMOTETYPE,VPN_VDI_MACADDRESS,"
-                  + "VPN_VDI_IPADDRESS,CV_DOCUMENT_PATH,BGC_DOCUMENT_PATH,PHOTO_PATH,POLICE_VERIFICATION_PATH,"
-                  + "USERNAME,PASSWORD,HID,SBI_MAILID) "
-                  + "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
-
-            psEmp = con.prepareStatement(sqlEmp);
-            bindInsertParams(psEmp, request, cvBytes, bgcBytes, photoBytes, policeBytes);
-            psEmp.executeUpdate();
-            System.out.println("[DEBUG] Inserted into eisupport_employee_master");
-
-            // ============================================================
-            // INSERT — roster_employee_details
-            // ============================================================
-            String sqlRoster =
-                    "INSERT INTO roster_employee_details ("
-                  + "EMPLOYEE_ID,AD_ID,ASSET_ID,EDU_QUALIFICATION,TCS_JOINING_DATE,CONTACTNUMBER,"
-                  + "EMERGENCY_CONTACTNUMBER,TEAM,TCS_MAILID,STATE,CITY,LOCAL_ADDRESS,GENDER,DOB,FIRSTNAME,"
-                  + "MIDDLENAME,LASTNAME,VPN_HOSTNAME,LAPTOP_HOSTNAME,REMOTETYPE,VPN_VDI_MACADDRESS,"
-                  + "VPN_VDI_IPADDRESS,CV_DOCUMENT_PATH,BGC_DOCUMENT_PATH,PHOTO_PATH,POLICE_VERIFICATION_PATH,"
-                  + "USERNAME,PASSWORD,HID,SBI_MAILID) "
-                  + "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
-
-            psRoster = con.prepareStatement(sqlRoster);
-            bindInsertParams(psRoster, request, cvBytes, bgcBytes, photoBytes, policeBytes);
-            psRoster.executeUpdate();
-            System.out.println("[DEBUG] Inserted into roster_employee_details");
-
-            clearForm(form);
-            System.out.println("========== saveRegistration SUCCESS ==========");
-            return "thanks";
-
-        } catch (Exception e) {
-            System.out.println("========== saveRegistration FAILED ==========");
-            System.out.println("[ERROR] " + e.getClass().getName() + ": " + e.getMessage());
-            e.printStackTrace();
-            form.setM_strmsg("error");
-            this.setM_strmsg("error");
-            return "success";
-        } finally {
-            closeQuietly(checkRs, checkSt, psEmp, psRoster, con);
-        }
-    }
-
-    // ============================================================
-    // HELPERS
-    // ============================================================
-
-    /**
-     * ⭐ Extract file bytes DIRECTLY from MultiPartRequestWrapper (Struts 7).
-     * Uses UploadedFile.getContent() — returns byte[] directly.
-     */
-    private byte[] extractBytes(MultiPartRequestWrapper mpr,
-                                String fieldName,
-                                String label) {
-        try {
-            UploadedFile[] files = mpr.getFiles(fieldName);
-            String[] names = mpr.getFileNames(fieldName);
-
-            if (files == null || files.length == 0 || files[0] == null) {
-                System.out.println("[FETCH] " + label + ": no file");
-                return null;
-            }
-
-            UploadedFile uf = files[0];
-            String name = (names != null && names.length > 0) ? names[0] : "?";
-
-            System.out.println("[FETCH] " + label + ": name=" + name
-                    + " contentLen=" + uf.length());
-
-            byte[] data = uf.getContent();
-
-            if (data != null && data.length > 0) {
-                System.out.println("[FETCH] " + label + ": read " + data.length + " bytes");
-            } else {
-                System.out.println("[FETCH] " + label + ": empty content");
-            }
-
-            return data;
-
-        } catch (Exception e) {
-            System.out.println("[FETCH] " + label + " error: " + e.getClass().getName()
-                    + " - " + e.getMessage());
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    private RegistrationActionForm getOrCreateForm() {
-        if (registrationActionForm == null) {
-            registrationActionForm = new RegistrationActionForm();
-        }
-        return registrationActionForm;
-    }
-
-    private byte[] readFileBytes(File file) {
-        if (file == null || !file.exists()) {
-            System.out.println("[READ] File does not exist: " + file);
-            return null;
-        }
-        try (FileInputStream fis = new FileInputStream(file)) {
-            long size = file.length();
-            System.out.println("[READ] File size = " + size + " bytes");
-            if (size <= 0 || size > Integer.MAX_VALUE) return null;
-            byte[] data = new byte[(int) size];
-            int read = 0;
-            while (read < data.length) {
-                int n = fis.read(data, read, data.length - read);
-                if (n < 0) break;
-                read += n;
-            }
-            return data;
-        } catch (IOException e) {
-            System.out.println("[READ] ERROR: " + e.getMessage());
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    private void bindInsertParams(PreparedStatement ps,
-                                  HttpServletRequest request,
-                                  byte[] cvBytes,
-                                  byte[] bgcBytes,
-                                  byte[] photoBytes,
-                                  byte[] policeBytes) throws SQLException {
-
-        ps.setObject(1,  request.getParameter("m_stremployee_id"));
-        ps.setObject(2,  request.getParameter("m_strad_id"));
-        ps.setObject(3,  request.getParameter("m_strasset_id"));
-        ps.setObject(4,  request.getParameter("m_streduqualification"));
-        ps.setObject(5,  request.getParameter("m_strtcsjoiningdate"));
-        ps.setObject(6,  request.getParameter("m_strcontactno"));
-        ps.setObject(7,  request.getParameter("m_stremergencycontactno"));
-        ps.setObject(8,  request.getParameter("m_strRole"));
-        ps.setObject(9,  request.getParameter("m_strtcsmailid"));
-        ps.setObject(10, request.getParameter("m_strstate"));
-        ps.setObject(11, request.getParameter("m_strcity"));
-        ps.setObject(12, request.getParameter("m_strlocaladdress"));
-        ps.setObject(13, request.getParameter("m_strgender"));
-        ps.setObject(14, request.getParameter("m_strdob"));
-        ps.setObject(15, request.getParameter("m_strfirstName"));
-        ps.setObject(16, request.getParameter("m_strmiddleName"));
-        ps.setObject(17, request.getParameter("m_strlastName"));
-        ps.setObject(18, request.getParameter("m_strvpnhostname"));
-        ps.setObject(19, request.getParameter("m_strlaptophostname"));
-        ps.setObject(20, request.getParameter("m_strremotetype"));
-        ps.setObject(21, request.getParameter("m_strvpnmacaddress"));
-        ps.setObject(22, request.getParameter("m_strvpnipaddress"));
-
-        if (cvBytes != null && cvBytes.length > 0) ps.setBytes(23, cvBytes);
-        else ps.setNull(23, java.sql.Types.BLOB);
-
-        if (bgcBytes != null && bgcBytes.length > 0) ps.setBytes(24, bgcBytes);
-        else ps.setNull(24, java.sql.Types.BLOB);
-
-        if (photoBytes != null && photoBytes.length > 0) ps.setBytes(25, photoBytes);
-        else ps.setNull(25, java.sql.Types.BLOB);
-
-        if (policeBytes != null && policeBytes.length > 0) ps.setBytes(26, policeBytes);
-        else ps.setNull(26, java.sql.Types.BLOB);
-
-        ps.setObject(27, request.getParameter("m_strUserName"));
-        ps.setObject(28, request.getParameter("m_strPassword"));
-        ps.setObject(29, request.getParameter("m_strhid"));
-        ps.setObject(30, request.getParameter("m_strsbimailid"));
-    }
-
-    private void clearForm(RegistrationActionForm l_obj) {
-        try {
-            this.setM_strthePhotofile(null);
-            this.setM_strtheBgcfile(null);
-            this.setM_strthePoliceverificationfile(null);
-            this.setM_strtheCvfile(null);
-
-            l_obj.setM_strthePhotofile(null);
-            l_obj.setM_strtheBgcfile(null);
-            l_obj.setM_strthePoliceverificationfile(null);
-            l_obj.setM_strtheCvfile(null);
-
-            l_obj.setM_strUserName("");
-            l_obj.setM_strPassword("");
-            l_obj.setM_stremployee_id("");
-            l_obj.setM_strad_id("");
-            l_obj.setM_strasset_id("");
-            l_obj.setM_streduqualification("Select Education Qualification");
-            l_obj.setM_strtcsmailid("");
-            l_obj.setM_strsbimailid("");
-            l_obj.setM_strhid("");
-            l_obj.setM_strstate("Select State");
-            l_obj.setM_strRole("Select Role");
-            l_obj.setM_strcity("");
-            l_obj.setM_strlocaladdress("");
-            l_obj.setM_strvpnhostname("");
-            l_obj.setM_strlaptophostname("");
-            l_obj.setM_strremotetype("NONE");
-            l_obj.setM_strvpnmacaddress("");
-            l_obj.setM_strvpnipaddress("");
-            l_obj.setM_strfirstName("");
-            l_obj.setM_strlastName("");
-            l_obj.setM_strmiddleName("");
-            l_obj.setM_strmsg("");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void loadEISRole(RegistrationActionForm l_obj) {
-        Connection con = null;
-        Statement st = null;
-        ResultSet rs = null;
-        try {
-            con = DBUtilityAuto.getReportDBConnection();
-
-            ArrayList<String> list = new ArrayList<>();
-            list.add("Select Role");
-
-            st = con.createStatement();
-            rs = st.executeQuery("select rolename from rolemst");
-
-            while (rs.next()) {
-                list.add(rs.getString("rolename"));
-            }
-
-            l_obj.setRolelist(list);
-            this.setRolelist(list);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            closeQuietly(rs, st, null, null, con);
-        }
-    }
-
-    private static void closeQuietly(ResultSet rs,
-                                     Statement st,
-                                     PreparedStatement ps1,
-                                     PreparedStatement ps2,
-                                     Connection con) {
-        try { if (rs  != null) rs.close();  } catch (Exception ignore) {}
-        try { if (st  != null) st.close();  } catch (Exception ignore) {}
-        try { if (ps1 != null) ps1.close(); } catch (Exception ignore) {}
-        try { if (ps2 != null) ps2.close(); } catch (Exception ignore) {}
-        try { if (con != null) con.close(); } catch (Exception ignore) {}
-    }
-}
+========== saveRegistration START ==========
+Connected to PRIMARY DB 1
+Flag Status: PR, Location: HI
+getReportDBConnection - flagStatus: PR
+Connecting to Report PR Database
+Report PR Connected
+[FORM] Method: POST
+[FORM] Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryJQsYTn0ZfMHBt2mr
+[FORM] isMultipart: true
+[WRAPPER] Request class: org.apache.struts2.dispatcher.multipart.MultiPartRequestWrapper
+[WRAPPER] All file parameter names: [m_strtheBgcfile]
+[WRAPPER] photoNames: []
+[WRAPPER] bgcNames: [PAN_STATUS_HOURLY.png]
+[WRAPPER] policeNames: []
+[WRAPPER] cvNames: []
+[FORM] actionParam = insert
+Connected to PRIMARY DB 1
+Flag Status: PR, Location: HI
+getReportDBConnection - flagStatus: PR
+Connecting to Report PR Database
+Report PR Connected
+[DEBUG] DB Connected OK
+[DEBUG] Duplicate count = 0
+[DUAL CHECK] this.photoFile = null
+[DUAL CHECK] form.photoFile = null
+15:00:16.903 [http-nio-8085-exec-12] ERROR org.apache.struts2.dispatcher.DefaultDispatcherErrorHandler - Exception occurred during processing request: Method "saveRegistration" failed for object com.action.EISRegistrationAction@3318ee37
+ognl.MethodFailedException: Method "saveRegistration" failed for object com.action.EISRegistrationAction@3318ee37
+Caused by: java.lang.Error: Unresolved compilation problem: 
+	Type mismatch: cannot convert from Object to byte[]
+
+	at com.action.EISRegistrationAction.extractBytes(EISRegistrationAction.java:347) ~[classes/:?]
+	at com.action.EISRegistrationAction.saveRegistration(EISRegistrationAction.java:225) ~[classes/:?]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[?:?]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580) ~[?:?]
+	at ognl.OgnlRuntime.invokeMethodInsideSandbox(OgnlRuntime.java:1245) ~[ognl-3.3.5.jar:?]
+	at ognl.OgnlRuntime.invokeMethod(OgnlRuntime.java:1230) ~[ognl-3.3.5.jar:?]
+	at ognl.OgnlRuntime.callAppropriateMethod(OgnlRuntime.java:1958) ~[ognl-3.3.5.jar:?]
+	at ognl.ObjectMethodAccessor.callMethod(ObjectMethodAccessor.java:68) ~[ognl-3.3.5.jar:?]
+	at org.apache.struts2.ognl.accessor.XWorkMethodAccessor.callMethodWithDebugInfo(XWorkMethodAccessor.java:101) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.ognl.accessor.XWorkMethodAccessor.callMethod(XWorkMethodAccessor.java:93) ~[struts2-core-7.0.3.jar:7.0.3]
+	at ognl.OgnlRuntime.callMethod(OgnlRuntime.java:2034) ~[ognl-3.3.5.jar:?]
+	at ognl.ASTMethod.getValueBody(ASTMethod.java:97) ~[ognl-3.3.5.jar:?]
+	at ognl.SimpleNode.evaluateGetValueBody(SimpleNode.java:212) ~[ognl-3.3.5.jar:?]
+	at ognl.SimpleNode.getValue(SimpleNode.java:258) ~[ognl-3.3.5.jar:?]
+	at ognl.Ognl.getValue(Ognl.java:586) ~[ognl-3.3.5.jar:?]
+	at org.apache.struts2.ognl.OgnlUtil.ognlGet(OgnlUtil.java:425) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.ognl.OgnlUtil.callMethod(OgnlUtil.java:401) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.DefaultActionInvocation.invokeAction(DefaultActionInvocation.java:447) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.DefaultActionInvocation.invokeActionOnly(DefaultActionInvocation.java:320) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.DefaultActionInvocation.invoke(DefaultActionInvocation.java:271) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.interceptor.debugging.DebuggingInterceptor.intercept(DebuggingInterceptor.java:261) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.DefaultActionInvocation.executeConditional(DefaultActionInvocation.java:311) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.DefaultActionInvocation.invoke(DefaultActionInvocation.java:265) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.interceptor.DefaultWorkflowInterceptor.doIntercept(DefaultWorkflowInterceptor.java:181) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.interceptor.MethodFilterInterceptor.intercept(MethodFilterInterceptor.java:99) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.DefaultActionInvocation.executeConditional(DefaultActionInvocation.java:311) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.DefaultActionInvocation.invoke(DefaultActionInvocation.java:265) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.validator.ValidationInterceptor.doIntercept(ValidationInterceptor.java:263) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.interceptor.validation.AnnotationValidationInterceptor.doIntercept(AnnotationValidationInterceptor.java:49) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.interceptor.MethodFilterInterceptor.intercept(MethodFilterInterceptor.java:99) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.DefaultActionInvocation.executeConditional(DefaultActionInvocation.java:311) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.DefaultActionInvocation.invoke(DefaultActionInvocation.java:265) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.interceptor.FetchMetadataInterceptor.intercept(FetchMetadataInterceptor.java:78) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.DefaultActionInvocation.executeConditional(DefaultActionInvocation.java:311) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.DefaultActionInvocation.invoke(DefaultActionInvocation.java:265) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.interceptor.CoopInterceptor.intercept(CoopInterceptor.java:57) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.DefaultActionInvocation.executeConditional(DefaultActionInvocation.java:311) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.DefaultActionInvocation.invoke(DefaultActionInvocation.java:265) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.interceptor.CoepInterceptor.intercept(CoepInterceptor.java:55) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.DefaultActionInvocation.executeConditional(DefaultActionInvocation.java:311) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.DefaultActionInvocation.invoke(DefaultActionInvocation.java:265) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.interceptor.ConversionErrorInterceptor.doIntercept(ConversionErrorInterceptor.java:140) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.interceptor.MethodFilterInterceptor.intercept(MethodFilterInterceptor.java:99) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.DefaultActionInvocation.executeConditional(DefaultActionInvocation.java:311) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.DefaultActionInvocation.invoke(DefaultActionInvocation.java:265) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.interceptor.parameter.ParametersInterceptor.doIntercept(ParametersInterceptor.java:212) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.interceptor.MethodFilterInterceptor.intercept(MethodFilterInterceptor.java:99) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.DefaultActionInvocation.executeConditional(DefaultActionInvocation.java:311) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.DefaultActionInvocation.invoke(DefaultActionInvocation.java:265) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.interceptor.parameter.ParametersInterceptor.doIntercept(ParametersInterceptor.java:212) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.interceptor.MethodFilterInterceptor.intercept(MethodFilterInterceptor.java:99) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.DefaultActionInvocation.executeConditional(DefaultActionInvocation.java:311) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.DefaultActionInvocation.invoke(DefaultActionInvocation.java:265) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.interceptor.StaticParametersInterceptor.intercept(StaticParametersInterceptor.java:202) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.DefaultActionInvocation.executeConditional(DefaultActionInvocation.java:311) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.DefaultActionInvocation.invoke(DefaultActionInvocation.java:265) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.interceptor.MultiselectInterceptor.intercept(MultiselectInterceptor.java:69) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.DefaultActionInvocation.executeConditional(DefaultActionInvocation.java:311) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.DefaultActionInvocation.invoke(DefaultActionInvocation.java:265) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.interceptor.DateTextFieldInterceptor.intercept(DateTextFieldInterceptor.java:133) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.DefaultActionInvocation.executeConditional(DefaultActionInvocation.java:311) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.DefaultActionInvocation.invoke(DefaultActionInvocation.java:265) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.interceptor.CheckboxInterceptor.intercept(CheckboxInterceptor.java:92) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.DefaultActionInvocation.executeConditional(DefaultActionInvocation.java:311) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.DefaultActionInvocation.invoke(DefaultActionInvocation.java:265) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.interceptor.ActionFileUploadInterceptor.intercept(ActionFileUploadInterceptor.java:151) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.DefaultActionInvocation.executeConditional(DefaultActionInvocation.java:311) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.DefaultActionInvocation.invoke(DefaultActionInvocation.java:265) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.interceptor.ModelDrivenInterceptor.intercept(ModelDrivenInterceptor.java:101) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.DefaultActionInvocation.executeConditional(DefaultActionInvocation.java:311) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.DefaultActionInvocation.invoke(DefaultActionInvocation.java:265) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.interceptor.ScopedModelDrivenInterceptor.intercept(ScopedModelDrivenInterceptor.java:141) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.DefaultActionInvocation.executeConditional(DefaultActionInvocation.java:311) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.DefaultActionInvocation.invoke(DefaultActionInvocation.java:265) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.interceptor.ChainingInterceptor.intercept(ChainingInterceptor.java:166) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.DefaultActionInvocation.executeConditional(DefaultActionInvocation.java:311) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.DefaultActionInvocation.invoke(DefaultActionInvocation.java:265) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.interceptor.PrepareInterceptor.doIntercept(PrepareInterceptor.java:175) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.interceptor.MethodFilterInterceptor.intercept(MethodFilterInterceptor.java:99) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.DefaultActionInvocation.executeConditional(DefaultActionInvocation.java:311) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.DefaultActionInvocation.invoke(DefaultActionInvocation.java:265) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.interceptor.csp.CspInterceptor.intercept(CspInterceptor.java:66) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.DefaultActionInvocation.executeConditional(DefaultActionInvocation.java:311) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.DefaultActionInvocation.invoke(DefaultActionInvocation.java:265) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.interceptor.I18nInterceptor.intercept(I18nInterceptor.java:138) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.DefaultActionInvocation.executeConditional(DefaultActionInvocation.java:311) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.DefaultActionInvocation.invoke(DefaultActionInvocation.java:265) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.interceptor.httpmethod.HttpMethodInterceptor.intercept(HttpMethodInterceptor.java:99) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.DefaultActionInvocation.executeConditional(DefaultActionInvocation.java:311) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.DefaultActionInvocation.invoke(DefaultActionInvocation.java:265) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.interceptor.ServletConfigInterceptor.intercept(ServletConfigInterceptor.java:156) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.DefaultActionInvocation.executeConditional(DefaultActionInvocation.java:311) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.DefaultActionInvocation.invoke(DefaultActionInvocation.java:265) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.interceptor.AliasInterceptor.intercept(AliasInterceptor.java:228) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.DefaultActionInvocation.executeConditional(DefaultActionInvocation.java:311) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.DefaultActionInvocation.invoke(DefaultActionInvocation.java:265) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.interceptor.ExceptionMappingInterceptor.intercept(ExceptionMappingInterceptor.java:205) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.DefaultActionInvocation.executeConditional(DefaultActionInvocation.java:311) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.DefaultActionInvocation.invoke(DefaultActionInvocation.java:265) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.factory.StrutsActionProxy.execute(StrutsActionProxy.java:51) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.dispatcher.Dispatcher.serviceAction(Dispatcher.java:721) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.dispatcher.ExecuteOperations.executeAction(ExecuteOperations.java:79) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.dispatcher.filter.StrutsPrepareAndExecuteFilter.handleRequest(StrutsPrepareAndExecuteFilter.java:154) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.dispatcher.filter.StrutsPrepareAndExecuteFilter.tryHandleRequest(StrutsPrepareAndExecuteFilter.java:137) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.struts2.dispatcher.filter.StrutsPrepareAndExecuteFilter.doFilter(StrutsPrepareAndExecuteFilter.java:125) ~[struts2-core-7.0.3.jar:7.0.3]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[catalina.jar:11.0.13]
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:165) ~[catalina.jar:11.0.13]
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:77) ~[catalina.jar:11.0.13]
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:482) ~[catalina.jar:11.0.13]
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:113) ~[catalina.jar:11.0.13]
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:83) ~[catalina.jar:11.0.13]
+	at org.apache.catalina.valves.AbstractAccessLogValve.invoke(AbstractAccessLogValve.java:654) ~[catalina.jar:11.0.13]
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:72) ~[catalina.jar:11.0.13]
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:341) ~[catalina.jar:11.0.13]
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:397) ~[tomcat-coyote.jar:11.0.13]
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63) ~[tomcat-coyote.jar:11.0.13]
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:903) ~[tomcat-coyote.jar:11.0.13]
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1778) ~[tomcat-coyote.jar:11.0.13]
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52) ~[tomcat-coyote.jar:11.0.13]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:946) ~[tomcat-util.jar:11.0.13]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:480) ~[tomcat-util.jar:11.0.13]
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:57) ~[tomcat-util.jar:11.0.13]
+	at java.base/java.lang.Thread.run(Thread.java:1583) [?:?]
