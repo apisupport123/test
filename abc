@@ -1,21 +1,401 @@
-<div class="field">
-    <label class="field-label"><span class="dot"></span>State / Province</label>
-    <select class="field-select" name="m_strstate" id="m_strstate">
-        <option value="">Select State</option>
-        <%
-            String[] chinaStates = {
-                "Anhui", "Beijing", "Chongqing", "Fujian", "Gansu",
-                "Guangdong", "Guangxi", "Guizhou", "Hainan", "Hebei",
-                "Heilongjiang", "Henan", "Hong Kong", "Hubei", "Hunan",
-                "Inner Mongolia", "Jiangsu", "Jiangxi", "Jilin", "Liaoning",
-                "Macau", "Ningxia", "Qinghai", "Shaanxi", "Shandong",
-                "Shanghai", "Shanxi", "Sichuan", "Taiwan", "Tianjin",
-                "Tibet", "Xinjiang", "Yunnan", "Zhejiang"
-            };
-            String currentState = emp.getM_strState() != null ? emp.getM_strState() : "";
-            for (String s : chinaStates) {
-        %>
-            <option value="<%=s%>" <%=s.equals(currentState) ? "selected" : ""%>><%=s%></option>
-        <% } %>
-    </select>
-</div>
+package com.action;
+
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.MultipartConfig;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.Part;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+
+import com.actionform.RegistrationActionForm;
+import com.jdbc.DBUtilityAuto;
+
+/**
+ * Servlet implementation class EISRegistrationEditServletNew
+ */
+@WebServlet("/EISRegistrationEditServletNew")
+@MultipartConfig(
+	    maxFileSize = 1024 * 1024 * 10, // 10MB max file size
+	    maxRequestSize = 1024 * 1024 * 50, // 50MB max request size
+	    fileSizeThreshold = 1024 * 1024 // 1MB threshold
+	)
+public class EISRegistrationEditServletNew extends HttpServlet {
+	private static final long serialVersionUID = 1L;
+       
+    /**
+     * @see HttpServlet#HttpServlet()
+     */
+    public EISRegistrationEditServletNew() {
+        super();
+        // TODO Auto-generated constructor stub
+    }
+
+	/**
+	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
+	 */
+	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		// TODO Auto-generated method stub
+		 // Forward GET requests to appropriate pages
+        String action = request.getParameter("action");
+        if ("edit".equals(action)) {
+            // Show edit form
+            RegistrationActionForm l_obj = new RegistrationActionForm();
+            try {
+                getEISRole(l_obj);
+                request.setAttribute("roleList", l_obj.getRolelist());
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+            request.getRequestDispatcher("/editProfile.jsp").forward(request, response);
+        } else {
+            response.sendRedirect("index.jsp");
+        }
+	}
+
+	/**
+	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
+	 */
+	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		// TODO Auto-generated method stub
+		String action = request.getParameter("action");
+		System.out.println("Action:- "+action);
+        RegistrationActionForm l_obj = new RegistrationActionForm();
+        
+        try {
+            // Get EIS roles
+            getEISRole(l_obj);
+            request.setAttribute("roleList", l_obj.getRolelist());
+            
+            if ("edit".equals(action)) {
+                processEditRequest(request, response, l_obj);
+            } else {
+                clearForm(l_obj);
+               // request.getRequestDispatcher("/thanks.jsp").forward(request, response);
+            }
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            l_obj.setM_strmsg("error");
+            request.setAttribute("errorMessage", "An error occurred: " + e.getMessage());
+            request.getRequestDispatcher("/error.jsp").forward(request, response);
+        }
+	}
+	
+	private void processEditRequest(HttpServletRequest request, HttpServletResponse response, 
+            RegistrationActionForm l_obj) throws Exception {
+
+Connection l_objreportdbcon = null;
+ResultSet l_bjres = null;
+Statement l_bjst = null;
+
+try {
+l_objreportdbcon = DBUtilityAuto.getReportDBConnection();
+
+// Get employee ID from request
+String employeeId = request.getParameter("m_stremployee_id");
+String originalEmpId = request.getParameter("empid");
+
+// Check if employee exists
+String checkQuery = "SELECT * FROM eisupport_employee_master WHERE EMPLOYEE_ID = ?";
+try (PreparedStatement checkStmt = l_objreportdbcon.prepareStatement(checkQuery)) {
+checkStmt.setString(1, originalEmpId);
+l_bjres = checkStmt.executeQuery();
+
+byte[] photoBytes = null;
+byte[] bgcBytes = null;
+byte[] policeBytes = null;
+byte[] cvBytes = null;
+
+// Get delete flags
+String DBGC = request.getParameter("deleteBGC");
+String DPOLICE = request.getParameter("deletePOLICE");
+String DCV = request.getParameter("deleteCV");
+
+if (l_bjres.next()) {
+// Get existing file data from database
+photoBytes = l_bjres.getBytes("PHOTO_PATH");
+bgcBytes = l_bjres.getBytes("BGC_DOCUMENT_PATH");
+policeBytes = l_bjres.getBytes("POLICE_VERIFICATION_PATH");
+cvBytes = l_bjres.getBytes("CV_DOCUMENT_PATH");
+
+// Handle file uploads from request parts
+// Handle photo file
+Part photoPart = request.getPart("m_strthePhotofile");
+if (photoPart != null && photoPart.getSize() > 0) {
+photoBytes = photoPart.getInputStream().readAllBytes();
+System.out.println("Photo file uploaded, size: " + photoBytes.length);
+}
+
+// Handle BGC file
+Part bgcPart = request.getPart("m_strtheBgcfile");
+if (bgcPart != null && bgcPart.getSize() > 0) {
+bgcBytes = bgcPart.getInputStream().readAllBytes();
+System.out.println("BGC file uploaded, size: " + bgcBytes.length);
+} else if ("DELETEBGC".equals(DBGC)) {
+bgcBytes = null;
+}
+
+// Handle police verification file
+Part policePart = request.getPart("m_strthePoliceverificationfile");
+if (policePart != null && policePart.getSize() > 0) {
+policeBytes = policePart.getInputStream().readAllBytes();
+System.out.println("Police file uploaded, size: " + policeBytes.length);
+} else if ("DELETEPOLICE".equals(DPOLICE)) {
+policeBytes = null;
+}
+
+// Handle CV file
+Part cvPart = request.getPart("m_strtheCvfile");
+if (cvPart != null && cvPart.getSize() > 0) {
+cvBytes = cvPart.getInputStream().readAllBytes();
+System.out.println("CV file uploaded, size: " + cvBytes.length);
+} else if ("DELETECV".equals(DCV)) {
+cvBytes = null;
+}
+}
+
+// Update the employee record
+String SQL_UPDATE = """
+UPDATE eisupport_employee_master SET 
+EMPLOYEE_ID = ?,
+AD_ID = ?,
+ASSET_ID = ?,
+EDU_QUALIFICATION = ?,
+TCS_JOINING_DATE = ?,
+CONTACTNUMBER = ?,
+EMERGENCY_CONTACTNUMBER = ?,
+TEAM = ?,
+TCS_MAILID = ?,
+STATE = ?,
+CITY = ?,
+LOCAL_ADDRESS = ?,
+GENDER = ?,
+DOB = ?,
+FIRSTNAME = ?,
+MIDDLENAME = ?,
+LASTNAME = ?,
+ISACTIVE = ?,
+VPN_HOSTNAME = ?,
+LAPTOP_HOSTNAME = ?,
+REMOTETYPE = ?,
+VPN_VDI_MACADDRESS = ?,
+VPN_VDI_IPADDRESS = ?,
+CV_DOCUMENT_PATH = ?,
+BGC_DOCUMENT_PATH = ?,
+PHOTO_PATH = ?,
+POLICE_VERIFICATION_PATH = ?,
+USERNAME = ?,
+PASSWORD = ?,
+HID = ?,
+SBI_MAILID = ?
+WHERE employee_id = ?
+""";
+
+try (PreparedStatement preparedStatement = l_objreportdbcon.prepareStatement(SQL_UPDATE)) {
+// Set parameters
+	System.out.println("Emp Id:- "+ request.getParameter("m_stremployee_id"));
+	System.out.println("AD Id:- "+ request.getParameter("m_strad_id"));
+	System.out.println("Status:- "+ request.getParameter("m_strISACTIVE"));
+	System.out.println("Status:- "+ request.getParameter("m_strISACTIVE"));
+	System.out.println("Remote Type:- "+ request.getParameter("m_strremotetype"));
+preparedStatement.setString(1, request.getParameter("m_stremployee_id"));
+preparedStatement.setString(2, request.getParameter("m_strad_id"));
+preparedStatement.setString(3, request.getParameter("m_strasset_id"));
+preparedStatement.setString(4, request.getParameter("m_streduqualification"));
+preparedStatement.setString(5, request.getParameter("m_strtcsjoiningdate"));
+preparedStatement.setString(6, request.getParameter("m_strcontactno"));
+preparedStatement.setString(7, request.getParameter("m_stremergencycontactno"));
+preparedStatement.setString(8, request.getParameter("m_strRole"));
+preparedStatement.setString(9, request.getParameter("m_strtcsmailid"));
+preparedStatement.setString(10, request.getParameter("m_strstate"));
+preparedStatement.setString(11, request.getParameter("m_strcity"));
+preparedStatement.setString(12, request.getParameter("m_strlocaladdress"));
+preparedStatement.setString(13, request.getParameter("m_strgender"));
+preparedStatement.setString(14, request.getParameter("m_strdob"));
+preparedStatement.setString(15, request.getParameter("m_strfirstName"));
+preparedStatement.setString(16, request.getParameter("m_strmiddleName"));
+preparedStatement.setString(17, request.getParameter("m_strlastName"));
+preparedStatement.setString(18, request.getParameter("m_strISACTIVE"));
+preparedStatement.setString(19, request.getParameter("m_strvpnhostname"));
+preparedStatement.setString(20, request.getParameter("m_strlaptophostname"));
+preparedStatement.setString(21, request.getParameter("m_strremotetype"));
+preparedStatement.setString(22, request.getParameter("m_strvpnmacaddress"));
+preparedStatement.setString(23, request.getParameter("m_strvpnipaddress"));
+
+// Set BLOB data
+if (cvBytes != null) {
+preparedStatement.setBinaryStream(24, new ByteArrayInputStream(cvBytes), cvBytes.length);
+} else {
+preparedStatement.setNull(24, java.sql.Types.BLOB);
+}
+
+if (bgcBytes != null) {
+preparedStatement.setBinaryStream(25, new ByteArrayInputStream(bgcBytes), bgcBytes.length);
+} else {
+preparedStatement.setNull(25, java.sql.Types.BLOB);
+}
+
+if (photoBytes != null) {
+preparedStatement.setBinaryStream(26, new ByteArrayInputStream(photoBytes), photoBytes.length);
+} else {
+preparedStatement.setNull(26, java.sql.Types.BLOB);
+}
+
+if (policeBytes != null) {
+preparedStatement.setBinaryStream(27, new ByteArrayInputStream(policeBytes), policeBytes.length);
+} else {
+preparedStatement.setNull(27, java.sql.Types.BLOB);
+}
+
+preparedStatement.setString(28, request.getParameter("m_strUserName"));
+preparedStatement.setString(29, request.getParameter("m_strPassword"));
+preparedStatement.setString(30, request.getParameter("m_strhid"));
+preparedStatement.setString(31, request.getParameter("m_strsbimailid"));
+preparedStatement.setString(32, originalEmpId);
+
+System.out.println("Executing update: " + preparedStatement.toString());
+int rowsUpdated = preparedStatement.executeUpdate();
+
+if (rowsUpdated > 0) {
+System.out.println("Update successful, rows affected: " + rowsUpdated);
+clearForm(l_obj);
+request.setAttribute("successMessage", "Employee profile updated successfully!");
+request.getRequestDispatcher("/ViewEISRegistrationDetailsActionNew").forward(request, response);
+} else {
+l_obj.setM_strmsg("error");
+request.setAttribute("errorMessage", "No records updated. Employee ID may not exist.");
+request.getRequestDispatcher("/ViewEISRegistrationDetailsActionNew").forward(request, response);
+}
+}
+}
+
+} catch (SQLException e) {
+e.printStackTrace();
+l_obj.setM_strmsg("error");
+request.setAttribute("errorMessage", "Database error: " + e.getMessage());
+request.getRequestDispatcher("/error.jsp").forward(request, response);
+} finally {
+// Close resources
+try {
+if (l_bjres != null) l_bjres.close();
+if (l_bjst != null) l_bjst.close();
+if (l_objreportdbcon != null) l_objreportdbcon.close();
+} catch (SQLException e) {
+e.printStackTrace();
+}
+}
+}
+
+private void clearForm(RegistrationActionForm l_obj) {
+try {
+// Note: In servlet context, we don't have FormFile objects from Struts
+// The file parts are handled directly from request
+
+l_obj.setM_strUserName("");
+l_obj.setM_strPassword("");
+l_obj.setM_stremployee_id("");
+l_obj.setM_strad_id("");
+l_obj.setM_strasset_id("");
+l_obj.setM_streduqualification("Select Education Qualification");
+l_obj.setM_strtcsmailid("");
+l_obj.setM_strsbimailid("");
+l_obj.setM_strhid("");
+l_obj.setM_strstate("Select State");
+l_obj.setM_strRole("Select Role");
+l_obj.setM_strcity("");
+l_obj.setM_strlocaladdress("");
+l_obj.setM_strvpnhostname("");
+l_obj.setM_strlaptophostname("");
+l_obj.setM_strremotetype("NONE");
+l_obj.setM_strvpnmacaddress("");
+l_obj.setM_strvpnipaddress("");
+l_obj.setM_strfirstName("");
+l_obj.setM_strlastName("");
+l_obj.setM_strmiddleName("");
+l_obj.setM_strmsg("");
+} catch (Exception e) {
+e.printStackTrace();
+}
+}
+
+private void getEISRole(RegistrationActionForm l_obj) throws SQLException {
+Connection con = null;
+Statement l_objstatement = null;
+ResultSet l_bjres = null;
+
+try {
+con = DBUtilityAuto.getReportDBConnection();
+ArrayList<String> list = new ArrayList<>();
+list.add("Select Role");
+
+String query = "SELECT rolename FROM rolemst";
+l_objstatement = con.createStatement();
+l_bjres = l_objstatement.executeQuery(query);
+
+if (l_bjres != null) {
+while (l_bjres.next()) {
+list.add(l_bjres.getString("rolename"));
+}
+}
+
+l_obj.setRolelist(list);
+} catch (SQLException e) {
+e.printStackTrace();
+throw e;
+} finally {
+// Close resources
+try {
+if (l_bjres != null) l_bjres.close();
+if (l_objstatement != null) l_objstatement.close();
+if (con != null) con.close();
+} catch (SQLException e) {
+e.printStackTrace();
+}
+}
+}
+
+// Helper method to safely get parameter value
+private String getParameter(HttpServletRequest request, String paramName) {
+String value = request.getParameter(paramName);
+return value != null ? value.trim() : "";
+}
+
+// Helper method to validate required fields
+private boolean validateRequiredFields(HttpServletRequest request) {
+String[] requiredFields = {
+"m_stremployee_id", "m_strad_id", "m_streduqualification",
+"m_strtcsjoiningdate", "m_strcontactno", "m_strRole",
+"m_strtcsmailid", "m_strstate", "m_strcity",
+"m_strlocaladdress", "m_strdob", "m_strfirstName",
+"m_strlastName", "m_strISACTIVE", "m_strUserName",
+"m_strPassword", "m_strhid"
+};
+
+for (String field : requiredFields) {
+String value = getParameter(request, field);
+if (value.isEmpty() || "Select".equals(value) || "Select Role".equals(value) 
+|| "Select Education Qualification".equals(value) || "Select State".equals(value)) {
+return false;
+}
+}
+
+// Validate contact number format
+String contactNo = getParameter(request, "m_strcontactno");
+if (!contactNo.matches("\\d{10}")) {
+return false;
+}
+
+return true;
+}
+
+}
