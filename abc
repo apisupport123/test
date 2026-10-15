@@ -1,49 +1,25 @@
-HTTP Status 500 – Internal Server Error
-Type Exception Report
-
-Message java.nio.file.NoSuchFileException: D:\Jakarta EISPortal\.metadata\.plugins\org.eclipse.wst.server.core\tmp0\work\Catalina\localhost\EISPortalVer2\upload_cfb9de7f_baca_4c73_a880_c98ec5e42efd_00000026.tmp
-
-Description The server encountered an unexpected condition that prevented it from fulfilling the request.
-
-Exception
-
-java.io.UncheckedIOException: java.nio.file.NoSuchFileException: D:\Jakarta EISPortal\.metadata\.plugins\org.eclipse.wst.server.core\tmp0\work\Catalina\localhost\EISPortalVer2\upload_cfb9de7f_baca_4c73_a880_c98ec5e42efd_00000026.tmp
-	org.apache.commons.io.function.Uncheck.wrap(Uncheck.java:355)
-	org.apache.commons.io.function.Uncheck.get(Uncheck.java:215)
-	org.apache.commons.fileupload2.core.DiskFileItem.get(DiskFileItem.java:306)
-	org.apache.commons.fileupload2.core.DiskFileItem.getString(DiskFileItem.java:459)
-	org.apache.struts2.dispatcher.multipart.JakartaMultiPartRequest.processNormalFormField(JakartaMultiPartRequest.java:90)
-	org.apache.struts2.dispatcher.multipart.JakartaMultiPartRequest.processUpload(JakartaMultiPartRequest.java:54)
-	org.apache.struts2.dispatcher.multipart.AbstractMultiPartRequest.parse(AbstractMultiPartRequest.java:235)
-	org.apache.struts2.dispatcher.multipart.MultiPartRequestWrapper.<init>(MultiPartRequestWrapper.java:81)
-	org.apache.struts2.dispatcher.Dispatcher.wrapRequest(Dispatcher.java:1017)
-	org.apache.struts2.dispatcher.PrepareOperations.wrapRequest(PrepareOperations.java:141)
-	org.apache.struts2.dispatcher.filter.StrutsPrepareAndExecuteFilter.handleRequest(StrutsPrepareAndExecuteFilter.java:146)
-	org.apache.struts2.dispatcher.filter.StrutsPrepareAndExecuteFilter.tryHandleRequest(StrutsPrepareAndExecuteFilter.java:137)
-	org.apache.struts2.dispatcher.filter.StrutsPrepareAndExecuteFilter.doFilter(StrutsPrepareAndExecuteFilter.java:125)
-Root Cause
-
-java.nio.file.NoSuchFileException: D:\Jakarta EISPortal\.metadata\.plugins\org.eclipse.wst.server.core\tmp0\work\Catalina\localhost\EISPortalVer2\upload_cfb9de7f_baca_4c73_a880_c98ec5e42efd_00000026.tmp
-	java.base/sun.nio.fs.WindowsException.translateToIOException(WindowsException.java:85)
-	java.base/sun.nio.fs.WindowsException.rethrowAsIOException(WindowsException.java:103)
-	java.base/sun.nio.fs.WindowsException.rethrowAsIOException(WindowsException.java:108)
-	java.base/sun.nio.fs.WindowsFileSystemProvider.newByteChannel(WindowsFileSystemProvider.java:234)
-	java.base/java.nio.file.Files.newByteChannel(Files.java:380)
-	java.base/java.nio.file.Files.newByteChannel(Files.java:432)
-	java.base/java.nio.file.Files.readAllBytes(Files.java:3281)
-	org.apache.commons.fileupload2.core.DiskFileItem.lambda$get$0(DiskFileItem.java:306)
-	org.apache.commons.io.function.Uncheck.get(Uncheck.java:213)
-	org.apache.commons.fileupload2.core.DiskFileItem.get(DiskFileItem.java:306)
-	org.apache.commons.fileupload2.core.DiskFileItem.getString(DiskFileItem.java:459)
-	org.apache.struts2.dispatcher.multipart.JakartaMultiPartRequest.processNormalFormField(JakartaMultiPartRequest.java:90)
-	org.apache.struts2.dispatcher.multipart.JakartaMultiPartRequest.processUpload(JakartaMultiPartRequest.java:54)
-	org.apache.struts2.dispatcher.multipart.AbstractMultiPartRequest.parse(AbstractMultiPartRequest.java:235)
-	org.apache.struts2.dispatcher.multipart.MultiPartRequestWrapper.<init>(MultiPartRequestWrapper.java:81)
-	org.apache.struts2.dispatcher.Dispatcher.wrapRequest(Dispatcher.java:1017)
-	org.apache.struts2.dispatcher.PrepareOperations.wrapRequest(PrepareOperations.java:141)
-	org.apache.struts2.dispatcher.filter.StrutsPrepareAndExecuteFilter.handleRequest(StrutsPrepareAndExecuteFilter.java:146)
-	org.apache.struts2.dispatcher.filter.StrutsPrepareAndExecuteFilter.tryHandleRequest(StrutsPrepareAndExecuteFilter.java:137)
-	org.apache.struts2.dispatcher.filter.StrutsPrepareAndExecuteFilter.doFilter(StrutsPrepareAndExecuteFilter.java:125)
-Note The full stack trace of the root cause is available in the server logs.
-
-Apache Tomcat/11.0.13
+========== saveRegistration START ==========
+Connected to PRIMARY DB 1
+Flag Status: PR, Location: HI
+getReportDBConnection - flagStatus: PR
+Connecting to Report PR Database
+Report PR Connected
+[FORM] Method: POST
+[FORM] Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryG0ciOKOlZtCtdtrJ
+[FORM] isMultipart: true
+[FORM] actionParam = insert
+Connected to PRIMARY DB 1
+Flag Status: PR, Location: HI
+getReportDBConnection - flagStatus: PR
+Connecting to Report PR Database
+Report PR Connected
+[DEBUG] DB Connected OK
+[DEBUG] Duplicate count = 0
+[UPLOAD] PHOTO file=null name=null
+[UPLOAD] BGC file=null name=null
+[UPLOAD] POLICE file=null name=null
+[UPLOAD] CV file=null name=null
+[UPLOAD] FINAL SIZES: photo=0 bgc=0 police=0 cv=0
+[DEBUG] Inserted into eisupport_employee_master
+[DEBUG] Inserted into roster_employee_details
+========== saveRegistration SUCCESS ==========
