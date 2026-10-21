@@ -1,6 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ page import="java.sql.*, java.util.*, java.text.*" %>
-<%@page import="com.jdbc.DBUtilityAuto"%>
+<%@ page import="com.jdbc.DBUtilityAuto" %>
 <%!
 String getPartition() {
     Calendar cal = Calendar.getInstance();
@@ -10,20 +10,33 @@ String getPartition() {
 }
 %>
 <%
+// ============================================================
+// AUTH GUARD
+// ============================================================
+String __role = (session != null) ? (String) session.getAttribute("role") : null;
+if (__role == null || __role.trim().isEmpty()) {
+    response.sendRedirect(request.getContextPath() + "/login.action");
+    return;
+}
+
+// ============================================================
+// AJAX ENDPOINT — Fetch Source Status
+// ============================================================
 String action = request.getParameter("action");
 
 if ("fetchSourceStatus".equals(action)) {
     response.setContentType("application/json");
+    response.setHeader("Cache-Control", "no-cache");
     Connection conn = null;
     Statement stmt = null;
     ResultSet rs = null;
     StringBuilder json = new StringBuilder();
-    
+
     try {
         conn = DBUtilityAuto.getIIBDBConnection();
         String partition = getPartition();
-        
-        String query = 
+
+        String query =
             "WITH FOUND_SOURCES AS ( " +
             "   SELECT /*+ parallel(04) */ a.source_id " +
             "   FROM eisapp.api_log PARTITION(" + partition + ") a " +
@@ -57,11 +70,11 @@ if ("fetchSourceStatus".equals(action)) {
             ") s " +
             "LEFT JOIN FOUND_SOURCES f ON f.source_id = s.source_id " +
             "ORDER BY s.source_id";
-        
+
         stmt = conn.createStatement();
         stmt.setQueryTimeout(1200);
         rs = stmt.executeQuery(query);
-        
+
         json.append("[");
         boolean first = true;
         while (rs.next()) {
@@ -74,8 +87,8 @@ if ("fetchSourceStatus".equals(action)) {
         }
         json.append("]");
         out.print(json.toString());
-        
-    } catch(Exception e) {
+
+    } catch (Exception e) {
         String errorMsg = e.getMessage();
         if (errorMsg == null) errorMsg = "Unknown error";
         errorMsg = errorMsg.replace("\"", "'").replace("\n", " ");
@@ -90,919 +103,1200 @@ if ("fetchSourceStatus".equals(action)) {
 }
 %>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>⚡ SOURCE MONITOR</title>
-    <link rel="stylesheet" href="../css/all.min.css">
-    <link href="../css/fonts.googleapis.com1.css" rel="stylesheet">
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&display=swap');
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        :root {
-            --cyber-blue: #00f0ff;
-            --cyber-pink: #ff006e;
-            --cyber-green: #00ff88;
-            --cyber-purple: #7000ff;
-            --cyber-yellow: #ffe600;
-            --cyber-red: #ff0055;
-            --bg-dark: #0a0a0f;
-            --bg-card: #111122;
-            --bg-surface: #0d0d1a;
-            --border-glow: rgba(0, 240, 255, 0.15);
-            --text-primary: #e0e8ff;
-            --text-secondary: #8899cc;
-            --text-dim: #445577;
-        }
-
-        body {
-            background: var(--bg-dark);
-            font-family: 'Rajdhani', sans-serif;
-            color: var(--text-primary);
-            height: 100vh;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .grid-overlay {
-            position: fixed;
-            inset: 0;
-            background-image: 
-                linear-gradient(rgba(0, 240, 255, 0.02) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 240, 255, 0.02) 1px, transparent 1px);
-            background-size: 60px 60px;
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        ::-webkit-scrollbar { width: 3px; height: 3px; }
-        ::-webkit-scrollbar-track { background: var(--bg-dark); }
-        ::-webkit-scrollbar-thumb { background: var(--cyber-blue); border-radius: 10px; }
-
-        .top-bar {
-            position: relative;
-            z-index: 1;
-            background: var(--bg-surface);
-            border-bottom: 1px solid var(--border-glow);
-            padding: 8px 24px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-shrink: 0;
-            backdrop-filter: blur(20px);
-        }
-
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-        }
-
-        .brand-icon {
-            width: 44px;
-            height: 44px;
-            background: linear-gradient(135deg, var(--cyber-blue), var(--cyber-purple));
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            color: #fff;
-            box-shadow: 0 0 40px rgba(0, 240, 255, 0.15);
-            animation: pulseGlow 2s ease-in-out infinite;
-        }
-
-        @keyframes pulseGlow {
-            0%, 100% { box-shadow: 0 0 40px rgba(0, 240, 255, 0.15); }
-            50% { box-shadow: 0 0 60px rgba(0, 240, 255, 0.3); }
-        }
-
-        .brand h1 {
-            font-family: 'Orbitron', monospace;
-            font-size: 1.1rem;
-            font-weight: 900;
-            letter-spacing: 2px;
-            background: linear-gradient(90deg, var(--cyber-blue), var(--cyber-pink));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .brand .sub {
-            font-size: 0.5rem;
-            color: var(--text-dim);
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            font-weight: 600;
-        }
-
-        .top-right {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .status-badge {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            padding: 5px 14px;
-            border-radius: 20px;
-            border: 1px solid rgba(0, 255, 136, 0.2);
-            background: rgba(0, 255, 136, 0.05);
-            font-size: 0.6rem;
-            color: var(--cyber-green);
-            font-weight: 700;
-            letter-spacing: 1px;
-        }
-
-        .status-dot {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: var(--cyber-green);
-            animation: blink 1.5s infinite;
-            box-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
-        }
-
-        @keyframes blink {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.2; transform: scale(0.8); }
-        }
-
-        .timer-box {
-            padding: 5px 14px;
-            border-radius: 20px;
-            border: 1px solid rgba(255, 230, 0, 0.15);
-            background: rgba(255, 230, 0, 0.05);
-            font-size: 0.7rem;
-            font-family: 'Orbitron', monospace;
-            color: var(--cyber-yellow);
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .timer-box i { color: var(--cyber-yellow); font-size: 0.6rem; }
-        .timer-box span { font-weight: 700; min-width: 40px; display: inline-block; text-align: center; }
-
-        .partition-tag {
-            font-size: 0.5rem;
-            color: var(--text-secondary);
-            padding: 3px 12px;
-            border-radius: 12px;
-            border: 1px solid var(--border-glow);
-            font-family: 'Orbitron', monospace;
-            letter-spacing: 1px;
-            background: rgba(0, 240, 255, 0.03);
-        }
-
-        .stats-row {
-            position: relative;
-            z-index: 1;
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
-            padding: 10px 24px 0 24px;
-            flex-shrink: 0;
-        }
-
-        .stat-card {
-            background: var(--bg-surface);
-            border-radius: 10px;
-            padding: 10px 16px;
-            border: 1px solid var(--border-glow);
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            transition: all 0.3s ease;
-        }
-
-        .stat-card:hover {
-            border-color: rgba(0, 240, 255, 0.3);
-            transform: translateY(-1px);
-        }
-
-        .stat-icon {
-            width: 38px;
-            height: 38px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 14px;
-            flex-shrink: 0;
-        }
-
-        .stat-icon.green { background: rgba(0, 255, 136, 0.1); color: var(--cyber-green); }
-        .stat-icon.red { background: rgba(255, 0, 85, 0.1); color: var(--cyber-red); }
-        .stat-icon.blue { background: rgba(0, 240, 255, 0.1); color: var(--cyber-blue); }
-        .stat-icon.orange { background: rgba(255, 230, 0, 0.1); color: var(--cyber-yellow); }
-
-        .stat-info h2 {
-            font-family: 'Orbitron', monospace;
-            font-size: 1.2rem;
-            font-weight: 700;
-            line-height: 1.2;
-            letter-spacing: 1px;
-        }
-
-        .stat-info p {
-            font-size: 0.5rem;
-            color: var(--text-dim);
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-
-        .main-content {
-            position: relative;
-            z-index: 1;
-            flex: 1;
-            padding: 10px 24px 24px 24px;
-            display: grid;
-            grid-template-columns: 1fr 280px;
-            gap: 10px;
-            min-height: 0;
-        }
-
-        .sources-panel {
-            background: var(--bg-surface);
-            border-radius: 12px;
-            border: 1px solid var(--border-glow);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        .panel-header {
-            padding: 8px 16px;
-            background: rgba(0, 240, 255, 0.02);
-            border-bottom: 1px solid var(--border-glow);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-shrink: 0;
-        }
-
-        .panel-header h2 {
-            font-family: 'Orbitron', monospace;
-            font-size: 0.6rem;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            letter-spacing: 1px;
-            color: var(--text-secondary);
-        }
-
-        .panel-header h2 i { color: var(--cyber-blue); }
-
-        .panel-header .count-badge {
-            padding: 1px 10px;
-            border-radius: 10px;
-            border: 1px solid var(--border-glow);
-            font-size: 0.5rem;
-            color: var(--text-secondary);
-            font-family: 'Orbitron', monospace;
-            background: rgba(0, 240, 255, 0.03);
-        }
-
-        .panel-header .legend {
-            display: flex;
-            gap: 12px;
-            font-size: 0.5rem;
-            color: var(--text-dim);
-            font-weight: 600;
-            letter-spacing: 1px;
-        }
-
-        .legend .on { color: var(--cyber-green); }
-        .legend .off { color: var(--cyber-red); }
-
-        .sources-grid {
-            flex: 1;
-            overflow-y: auto;
-            padding: 12px;
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-            gap: 10px;
-            align-content: start;
-        }
-
-        .source-card {
-            background: var(--bg-card);
-            border-radius: 10px;
-            padding: 14px 10px;
-            border: 1px solid rgba(255, 255, 255, 0.03);
-            text-align: center;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            min-height: 100px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            cursor: default;
-        }
-
-        .source-card:hover {
-            transform: translateY(-3px) scale(1.02);
-            border-color: rgba(0, 240, 255, 0.1);
-        }
-
-        .source-card.active {
-            border-color: rgba(0, 255, 136, 0.2);
-            background: linear-gradient(145deg, rgba(0, 255, 136, 0.04), rgba(0, 255, 136, 0.01));
-        }
-
-        .source-card.active .source-id {
-            color: var(--cyber-green);
-            text-shadow: 0 0 30px rgba(0, 255, 136, 0.1);
-        }
-
-        .source-card.active .source-status {
-            color: var(--cyber-green);
-        }
-
-        .source-card.inactive {
-            opacity: 0.3;
-            filter: grayscale(0.5);
-        }
-
-        .source-card.inactive .source-id {
-            color: var(--text-dim);
-        }
-
-        .source-id {
-            font-family: 'Orbitron', monospace;
-            font-size: 1.8rem;
-            font-weight: 900;
-            letter-spacing: 2px;
-            line-height: 1;
-            margin-bottom: 2px;
-            transition: 0.3s;
-        }
-
-        .source-status {
-            font-family: 'Orbitron', monospace;
-            font-size: 0.45rem;
-            font-weight: 700;
-            letter-spacing: 3px;
-            margin-bottom: 4px;
-            transition: 0.3s;
-        }
-
-        .source-hits {
-            font-size: 0.5rem;
-            color: var(--text-dim);
-            font-family: 'Orbitron', monospace;
-            padding: 2px 10px;
-            border-radius: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.03);
-            background: rgba(0, 0, 0, 0.2);
-        }
-
-        .source-card.active .source-hits {
-            border-color: rgba(0, 255, 136, 0.1);
-            color: var(--text-secondary);
-        }
-
-        .status-indicator {
-            position: absolute;
-            top: 8px;
-            right: 10px;
-            width: 5px;
-            height: 5px;
-            border-radius: 50%;
-            transition: 0.3s;
-        }
-
-        .source-card.active .status-indicator {
-            background: var(--cyber-green);
-            box-shadow: 0 0 20px rgba(0, 255, 136, 0.4);
-            animation: blink 1.5s infinite;
-        }
-
-        .source-card.inactive .status-indicator {
-            background: var(--cyber-red);
-            opacity: 0.3;
-        }
-
-        .activity-panel {
-            background: var(--bg-surface);
-            border-radius: 12px;
-            border: 1px solid var(--border-glow);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        .activity-list {
-            flex: 1;
-            overflow-y: auto;
-            padding: 6px 8px;
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-
-        .activity-item {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            padding: 4px 8px;
-            background: var(--bg-card);
-            border-radius: 6px;
-            border-left: 2px solid rgba(255, 255, 255, 0.05);
-            animation: slideIn 0.3s ease;
-            font-size: 0.6rem;
-        }
-
-        @keyframes slideIn {
-            from { transform: translateX(-8px); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-
-        .activity-item.on { border-left-color: var(--cyber-green); }
-        .activity-item.off { border-left-color: var(--cyber-red); opacity: 0.4; }
-
-        .activity-time {
-            font-family: 'Orbitron', monospace;
-            font-size: 0.4rem;
-            color: var(--text-dim);
-            min-width: 34px;
-        }
-
-        .activity-source {
-            font-family: 'Orbitron', monospace;
-            font-weight: 700;
-            font-size: 0.6rem;
-            letter-spacing: 0.5px;
-        }
-
-        .activity-status {
-            font-size: 0.4rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            margin-left: auto;
-            padding: 1px 6px;
-            border-radius: 4px;
-            font-family: 'Orbitron', monospace;
-            letter-spacing: 1px;
-        }
-
-        .activity-status.on { background: rgba(0, 255, 136, 0.08); color: var(--cyber-green); }
-        .activity-status.off { background: rgba(255, 0, 85, 0.08); color: var(--cyber-red); }
-
-        .activity-empty {
-            text-align: center;
-            padding: 20px 10px;
-            color: var(--text-dim);
-            font-size: 0.55rem;
-            letter-spacing: 1px;
-        }
-
-        .activity-empty i {
-            font-size: 1.2rem;
-            opacity: 0.2;
-            display: block;
-            margin-bottom: 4px;
-        }
-
-        .loading-overlay {
-            position: fixed;
-            inset: 0;
-            background: var(--bg-dark);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-            transition: opacity 0.8s ease;
-        }
-
-        .loading-overlay.hide {
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .loader-cyber {
-            width: 70px;
-            height: 70px;
-            position: relative;
-            margin-bottom: 24px;
-        }
-
-        .loader-cyber::before,
-        .loader-cyber::after {
-            content: '';
-            position: absolute;
-            border-radius: 50%;
-            animation: cyberSpin 1.2s ease-in-out infinite;
-        }
-
-        .loader-cyber::before {
-            inset: 0;
-            border: 2px solid transparent;
-            border-top-color: var(--cyber-blue);
-            border-bottom-color: var(--cyber-pink);
-        }
-
-        .loader-cyber::after {
-            inset: 12px;
-            border: 2px solid transparent;
-            border-left-color: var(--cyber-green);
-            border-right-color: var(--cyber-purple);
-            animation-delay: 0.3s;
-        }
-
-        @keyframes cyberSpin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .loader-text {
-            font-family: 'Orbitron', monospace;
-            font-size: 0.8rem;
-            font-weight: 700;
-            letter-spacing: 4px;
-            color: var(--text-secondary);
-            animation: pulseText 1.5s ease-in-out infinite;
-        }
-
-        @keyframes pulseText {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.2; }
-        }
-
-        .loader-sub {
-            font-size: 0.55rem;
-            color: var(--text-dim);
-            margin-top: 4px;
-            letter-spacing: 2px;
-        }
-
-        .error-banner {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(255, 0, 85, 0.15);
-            border: 1px solid rgba(255, 0, 85, 0.3);
-            color: var(--cyber-red);
-            padding: 10px 24px;
-            border-radius: 10px;
-            font-family: 'Orbitron', monospace;
-            font-size: 0.6rem;
-            letter-spacing: 1px;
-            z-index: 999;
-            backdrop-filter: blur(10px);
-            max-width: 90%;
-            text-align: center;
-            display: none;
-        }
-
-        .error-banner.show {
-            display: block;
-            animation: slideUp 0.5s ease;
-        }
-
-        @keyframes slideUp {
-            from { transform: translateX(-50%) translateY(20px); opacity: 0; }
-            to { transform: translateX(-50%) translateY(0); opacity: 1; }
-        }
-
-        @media (max-width: 1200px) {
-            .main-content { grid-template-columns: 1fr 240px; }
-            .sources-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
-        }
-
-        @media (max-width: 992px) {
-            .main-content { grid-template-columns: 1fr; }
-            .activity-panel { max-height: 160px; }
-            .stats-row { grid-template-columns: repeat(2, 1fr); }
-        }
-
-        @media (max-width: 768px) {
-            .top-bar { padding: 6px 16px; flex-wrap: wrap; gap: 4px; }
-            .brand h1 { font-size: 0.8rem; }
-            .brand-icon { width: 32px; height: 32px; font-size: 14px; }
-            .stats-row { padding: 8px 16px 0 16px; gap: 6px; }
-            .stat-card { padding: 6px 10px; }
-            .stat-info h2 { font-size: 0.9rem; }
-            .stat-icon { width: 30px; height: 30px; font-size: 12px; }
-            .main-content { padding: 8px 16px 16px 16px; }
-            .sources-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 6px; }
-            .source-card { min-height: 80px; padding: 10px 6px; }
-            .source-id { font-size: 1.3rem; }
-            .top-right .partition-tag { display: none; }
-        }
-
-        @media (max-width: 480px) {
-            .sources-grid { grid-template-columns: repeat(2, 1fr); }
-            .source-card { min-height: 70px; padding: 8px 4px; }
-            .source-id { font-size: 1.1rem; }
-            .stats-row { grid-template-columns: 1fr 1fr; }
-            .stat-card { padding: 4px 8px; }
-            .stat-info h2 { font-size: 0.75rem; }
-            .stat-icon { width: 26px; height: 26px; font-size: 10px; }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Source Monitor &mdash; EIS Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --gray-0:#FFFFFF; --gray-25:#FCFCFD; --gray-50:#F9FAFB; --gray-100:#F2F4F7;
+  --gray-200:#EAECF0; --gray-300:#D0D5DD; --gray-400:#98A2B3; --gray-500:#667085;
+  --gray-600:#475467; --gray-700:#344054; --gray-800:#1D2939; --gray-900:#101828;
+
+  --accent:#635BFF; --accent-hover:#5249E0; --accent-soft:#EEF0FF; --accent-line:#C7CBFF;
+  --success:#12B76A; --success-soft:#ECFDF3; --success-bd:#A6F4C5;
+  --warning:#F79009; --warning-soft:#FFFAEB; --warning-bd:#FEDF89;
+  --danger:#F04438; --danger-soft:#FEF3F2; --danger-bd:#FECDCA;
+  --info:#2E90FA; --info-soft:#EFF8FF; --info-bd:#B2DDFF;
+
+  --bg-page:var(--gray-50); --bg-surface:var(--gray-0); --bg-subtle:var(--gray-25);
+  --border:var(--gray-200); --border-strong:var(--gray-300);
+  --text-primary:var(--gray-900); --text-secondary:var(--gray-600); --text-tertiary:var(--gray-500);
+
+  --radius-sm:6px; --radius-md:8px; --radius-lg:12px; --radius-xl:16px;
+  --shadow-xs:0 1px 2px 0 rgba(16,24,40,.05);
+  --shadow-sm:0 1px 3px 0 rgba(16,24,40,.10);
+  --shadow-md:0 4px 8px -2px rgba(16,24,40,.10);
+  --shadow-lg:0 12px 16px -4px rgba(16,24,40,.08);
+  --shadow-xl:0 20px 24px -4px rgba(16,24,40,.08);
+
+  --topnav-h:64px; --sidebar-w:260px;
+  --font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,monospace;
+}
+
+html[data-theme="dark"]{
+  --gray-0:#0B0E14; --gray-25:#10131A; --gray-50:#12161D; --gray-100:#171B23;
+  --gray-200:#22262F; --gray-300:#2E333C; --gray-400:#5A6270; --gray-500:#8A94A6;
+  --gray-600:#A6B0C2; --gray-700:#C4CCDA; --gray-800:#E1E6EF; --gray-900:#F5F7FA;
+
+  --accent:#8B83FF; --accent-hover:#A29AFF; --accent-soft:#1E1B4B; --accent-line:#3730A3;
+  --success:#32D583; --success-soft:#052E1F; --success-bd:#0A5133;
+  --warning:#FDB022; --warning-soft:#3D2A05; --warning-bd:#5C3F0F;
+  --danger:#F97066; --danger-soft:#3A1211; --danger-bd:#5A1A18;
+  --info:#53B1FD; --info-soft:#0A2540; --info-bd:#0F3A66;
+
+  --bg-page:var(--gray-50); --bg-surface:var(--gray-25); --bg-subtle:var(--gray-0);
+  --border:var(--gray-200); --border-strong:var(--gray-300);
+  --text-primary:var(--gray-900); --text-secondary:var(--gray-600); --text-tertiary:var(--gray-500);
+
+  --shadow-xs:0 1px 2px 0 rgba(0,0,0,.4);
+  --shadow-sm:0 1px 3px 0 rgba(0,0,0,.5);
+  --shadow-md:0 4px 8px -2px rgba(0,0,0,.4);
+  --shadow-lg:0 12px 16px -4px rgba(0,0,0,.5);
+  --shadow-xl:0 20px 24px -4px rgba(0,0,0,.6);
+}
+
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  font-family:var(--font);
+  font-size:14px;
+  line-height:1.5;
+  background:var(--bg-page);
+  color:var(--text-primary);
+  -webkit-font-smoothing:antialiased;
+  font-feature-settings:"cv02","cv03","cv04","cv11";
+  transition:background-color .2s ease, color .2s ease;
+  overflow-x:hidden;
+}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit;}
+
+.icon-svg{
+  width:16px;height:16px;
+  display:inline-block;flex-shrink:0;
+  stroke:currentColor;fill:none;
+  stroke-width:2;
+  stroke-linecap:round;stroke-linejoin:round;
+}
+
+/* ============ APP BAR ============ */
+.appbar{
+  position:sticky; top:0; z-index:100;
+  background:var(--bg-surface);
+  border-bottom:1px solid var(--border);
+  height:56px;
+  display:flex; align-items:center; padding:0 20px; gap:14px;
+}
+.appbar-logo{
+  width:28px;height:28px;border-radius:7px;
+  background:linear-gradient(135deg,var(--accent), #7A5CFF);
+  display:grid;place-items:center;color:#fff;
+}
+.appbar-logo svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2.4;}
+.appbar-title{font-size:14px;font-weight:700;letter-spacing:-.2px;}
+.appbar-title .crumb{color:var(--text-tertiary);font-weight:500;margin-left:4px;}
+.appbar-spacer{flex:1;}
+.appbar-actions{display:flex;align-items:center;gap:4px;}
+
+.icon-btn{
+  width:34px;height:34px;display:grid;place-items:center;
+  border-radius:var(--radius-md); color:var(--text-secondary);
+  transition:all .15s ease;
+}
+.icon-btn:hover{background:var(--bg-subtle); color:var(--text-primary);}
+.icon-btn svg{
+  width:17px;height:17px; stroke:currentColor; fill:none; stroke-width:1.8;
+  stroke-linecap:round;stroke-linejoin:round;
+}
+.icon-btn .icon-sun{display:block;}
+.icon-btn .icon-moon{display:none;}
+html[data-theme="dark"] .icon-btn .icon-sun{display:none;}
+html[data-theme="dark"] .icon-btn .icon-moon{display:block;}
+
+.user-chip{
+  display:flex; align-items:center; gap:7px;
+  padding:4px 10px 4px 4px; border-radius:999px;
+  border:1px solid var(--border); transition:all .15s ease;
+  margin-left:4px;
+}
+.user-chip:hover{border-color:var(--border-strong); background:var(--bg-subtle);}
+.user-chip .avatar{
+  width:24px;height:24px;border-radius:50%;
+  background:linear-gradient(135deg,var(--accent),#7A5CFF);
+  color:#fff;display:grid;place-items:center;
+  font-size:10px;font-weight:700;
+}
+.user-chip .name{font-size:12px;font-weight:600;}
+
+/* ============ WRAPPER ============ */
+.new-wrapper{
+  margin-left:var(--sidebar-w);
+  padding-top:var(--topnav-h);
+  transition:margin-left .3s cubic-bezier(.4,0,.2,1);
+  min-height:100vh;
+}
+html.sb-collapsed .new-wrapper{margin-left:0}
+
+/* ============ PAGE ============ */
+.page-wrap{
+  padding:24px 32px 60px;
+  max-width:1600px;
+  margin:0 auto;
+}
+
+/* ============ HERO HEADER ============ */
+.monitor-hero{
+  background:linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+  border-radius:var(--radius-xl);
+  padding:28px 32px;
+  color:#fff;
+  position:relative;
+  overflow:hidden;
+  margin-bottom:20px;
+  border:1px solid rgba(139,131,255,.2);
+}
+html[data-theme="dark"] .monitor-hero{
+  background:linear-gradient(135deg, #0B0E14 0%, #1E1B4B 100%);
+}
+.monitor-hero::before{
+  content:"";
+  position:absolute;
+  top:-150px;right:-100px;
+  width:400px;height:400px;border-radius:50%;
+  background:radial-gradient(circle, rgba(99,91,255,.4) 0%, transparent 60%);
+  pointer-events:none;
+}
+.monitor-hero::after{
+  content:"";
+  position:absolute;
+  bottom:-150px;left:-100px;
+  width:350px;height:350px;border-radius:50%;
+  background:radial-gradient(circle, rgba(240,68,56,.2) 0%, transparent 60%);
+  pointer-events:none;
+}
+.hero-inner{
+  position:relative;z-index:2;
+  display:flex;justify-content:space-between;align-items:center;
+  gap:24px;flex-wrap:wrap;
+}
+.hero-left{
+  display:flex;align-items:center;gap:20px;
+  flex:1;min-width:280px;
+}
+.hero-icon{
+  width:64px;height:64px;
+  border-radius:16px;
+  background:linear-gradient(135deg,var(--accent),#7A5CFF);
+  display:grid;place-items:center;
+  color:#fff;
+  flex-shrink:0;
+  box-shadow:0 8px 24px -6px rgba(99,91,255,.4);
+}
+.hero-icon svg{width:30px;height:30px;stroke:currentColor;fill:none;stroke-width:2.2;}
+.hero-text h1{
+  font-size:26px;
+  font-weight:800;
+  letter-spacing:-.6px;
+  line-height:1.2;
+  margin-bottom:4px;
+}
+.hero-text h1 .gradient{
+  background:linear-gradient(135deg,#A29AFF,#F472B6);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.hero-text p{
+  font-size:13px;
+  color:rgba(255,255,255,.6);
+  font-weight:500;
+  display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+}
+.hero-text p .dot{
+  width:4px;height:4px;border-radius:50%;background:rgba(255,255,255,.3);
+}
+.hero-text p .partition{
+  padding:3px 10px;
+  background:rgba(255,255,255,.1);
+  border:1px solid rgba(255,255,255,.15);
+  border-radius:999px;
+  font-size:11px;
+  font-family:var(--mono);
+  font-weight:700;
+  letter-spacing:.3px;
+}
+
+.hero-right{
+  display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+}
+.live-badge{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 16px;
+  background:rgba(18,183,106,.15);
+  border:1px solid rgba(18,183,106,.4);
+  border-radius:999px;
+  font-size:11px;font-weight:700;
+  color:#4ADE80;
+  letter-spacing:.5px;
+  text-transform:uppercase;
+}
+.live-badge .dot{
+  width:6px;height:6px;border-radius:50%;
+  background:#4ADE80;
+  animation:pulse 1.5s ease-in-out infinite;
+  box-shadow:0 0 10px #4ADE80;
+}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.4;transform:scale(.85);}}
+
+.timer-card{
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.15);
+  border-radius:12px;
+  padding:8px 16px;
+  display:flex;align-items:center;gap:10px;
+  backdrop-filter:blur(10px);
+}
+.timer-card svg{
+  width:16px;height:16px;
+  stroke:#FDB022;fill:none;stroke-width:2;
+}
+.timer-card .time{
+  font-family:var(--mono);
+  font-size:14px;
+  font-weight:700;
+  color:#FDB022;
+  letter-spacing:-.3px;
+  font-variant-numeric:tabular-nums;
+}
+.timer-card .label{
+  font-size:9px;
+  color:rgba(255,255,255,.5);
+  text-transform:uppercase;
+  letter-spacing:.6px;
+  font-weight:600;
+}
+
+/* ============ KPI STRIP ============ */
+.kpi-strip{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));
+  gap:12px;
+  margin-bottom:20px;
+}
+.kpi-card{
+  background:var(--bg-surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius-lg);
+  padding:16px 20px;
+  display:flex;
+  align-items:center;
+  gap:14px;
+  transition:all .2s ease;
+  position:relative;
+  overflow:hidden;
+}
+.kpi-card:hover{
+  transform:translateY(-2px);
+  box-shadow:var(--shadow-md);
+  border-color:var(--accent);
+}
+.kpi-icon{
+  width:44px;height:44px;
+  border-radius:11px;
+  display:grid;place-items:center;
+  flex-shrink:0;
+}
+.kpi-icon svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2.2;}
+.kpi-icon.success{background:var(--success-soft);color:var(--success);}
+.kpi-icon.danger{background:var(--danger-soft);color:var(--danger);}
+.kpi-icon.info{background:var(--info-soft);color:var(--info);}
+.kpi-icon.warning{background:var(--warning-soft);color:var(--warning);}
+.kpi-info{flex:1;min-width:0;}
+.kpi-value{
+  font-size:24px;
+  font-weight:800;
+  letter-spacing:-.6px;
+  line-height:1.1;
+  font-variant-numeric:tabular-nums;
+  color:var(--text-primary);
+}
+.kpi-value .unit{
+  font-size:12px;
+  font-weight:500;
+  color:var(--text-tertiary);
+  margin-left:2px;
+}
+.kpi-label{
+  font-size:11px;
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:.5px;
+  color:var(--text-tertiary);
+  margin-top:2px;
+}
+
+/* ============ MAIN LAYOUT ============ */
+.monitor-main{
+  display:grid;
+  grid-template-columns:1fr 320px;
+  gap:16px;
+  min-height:600px;
+}
+
+/* ============ SOURCES PANEL ============ */
+.sources-panel{
+  background:var(--bg-surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius-xl);
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+.panel-header{
+  padding:16px 20px;
+  border-bottom:1px solid var(--border);
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  flex-wrap:wrap;
+  background:var(--bg-subtle);
+}
+.panel-header .title{
+  display:flex;align-items:center;gap:10px;
+  font-size:13px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.5px;
+  color:var(--text-primary);
+}
+.panel-header .title svg{width:16px;height:16px;stroke:var(--accent);fill:none;stroke-width:2.4;}
+.panel-header .count-badge{
+  padding:2px 10px;
+  background:var(--accent-soft);
+  color:var(--accent);
+  border-radius:999px;
+  font-size:11px;
+  font-weight:700;
+  font-variant-numeric:tabular-nums;
+  border:1px solid var(--accent-line);
+}
+.panel-legend{
+  display:flex;gap:14px;flex-wrap:wrap;
+  font-size:11px;
+  font-weight:600;
+  color:var(--text-tertiary);
+}
+.panel-legend .item{
+  display:flex;align-items:center;gap:6px;
+}
+.panel-legend .dot{
+  width:8px;height:8px;border-radius:2px;
+}
+.panel-legend .dot.on{background:var(--success);}
+.panel-legend .dot.off{background:var(--danger);}
+
+.sources-grid{
+  flex:1;
+  overflow-y:auto;
+  padding:16px;
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(150px, 1fr));
+  gap:12px;
+  align-content:start;
+}
+.sources-grid::-webkit-scrollbar{width:6px;}
+.sources-grid::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:3px;}
+
+/* ============ SOURCE CARD ============ */
+.source-card{
+  background:var(--bg-surface);
+  border:1.5px solid var(--border);
+  border-radius:var(--radius-lg);
+  padding:16px 12px 14px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  position:relative;
+  transition:all .25s cubic-bezier(.4,0,.2,1);
+  cursor:default;
+  overflow:hidden;
+  min-height:120px;
+}
+
+.source-card::before{
+  content:"";
+  position:absolute;
+  top:0;left:0;right:0;
+  height:3px;
+  background:var(--success);
+  opacity:0;
+  transition:opacity .2s ease;
+}
+.source-card.active{
+  border-color:var(--success-bd);
+  background:linear-gradient(180deg, var(--success-soft) 0%, var(--bg-surface) 40%);
+}
+.source-card.active::before{opacity:1;}
+.source-card.inactive{
+  border-color:var(--border);
+  background:var(--bg-surface);
+  opacity:.65;
+}
+.source-card.inactive::before{
+  background:var(--danger);
+  opacity:.5;
+}
+.source-card:hover{
+  transform:translateY(-3px);
+  box-shadow:var(--shadow-md);
+}
+.source-card.active:hover{
+  border-color:var(--success);
+  box-shadow:0 8px 24px -8px rgba(18,183,106,.35);
+}
+.source-card.inactive:hover{
+  border-color:var(--danger);
+  box-shadow:0 8px 24px -8px rgba(240,68,56,.25);
+  opacity:.85;
+}
+
+.source-status-indicator{
+  position:absolute;
+  top:10px;right:10px;
+  width:8px;height:8px;
+  border-radius:50%;
+}
+.source-card.active .source-status-indicator{
+  background:var(--success);
+  box-shadow:0 0 0 4px rgba(18,183,106,.2);
+  animation:pulse 1.8s ease-in-out infinite;
+}
+.source-card.inactive .source-status-indicator{
+  background:var(--danger);
+  box-shadow:0 0 0 4px rgba(240,68,56,.15);
+}
+
+.source-code{
+  font-family:var(--mono);
+  font-size:28px;
+  font-weight:700;
+  letter-spacing:-.5px;
+  line-height:1;
+  color:var(--text-primary);
+  transition:color .2s ease;
+}
+.source-card.active .source-code{color:var(--success);}
+.source-card.inactive .source-code{color:var(--text-tertiary);}
+
+.source-status-text{
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:1.2px;
+  text-transform:uppercase;
+  padding:3px 10px;
+  border-radius:999px;
+}
+.source-card.active .source-status-text{
+  background:var(--success-soft);
+  color:var(--success);
+  border:1px solid var(--success-bd);
+}
+.source-card.inactive .source-status-text{
+  background:var(--danger-soft);
+  color:var(--danger);
+  border:1px solid var(--danger-bd);
+}
+
+.source-hits{
+  font-family:var(--mono);
+  font-size:10px;
+  font-weight:600;
+  color:var(--text-tertiary);
+  padding:2px 8px;
+  background:var(--bg-subtle);
+  border-radius:4px;
+  border:1px solid var(--border);
+}
+.source-card.active .source-hits{
+  color:var(--success);
+  background:var(--success-soft);
+  border-color:var(--success-bd);
+}
+
+/* ============ ACTIVITY PANEL ============ */
+.activity-panel{
+  background:var(--bg-surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius-xl);
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+.activity-panel .panel-header{
+  background:var(--bg-subtle);
+}
+.activity-panel .panel-header .title svg{
+  stroke:var(--success);
+}
+.activity-list{
+  flex:1;
+  overflow-y:auto;
+  padding:8px 12px;
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+.activity-list::-webkit-scrollbar{width:5px;}
+.activity-list::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:3px;}
+
+.activity-item{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:8px 10px;
+  background:var(--bg-subtle);
+  border:1px solid var(--border);
+  border-left:3px solid transparent;
+  border-radius:var(--radius-sm);
+  font-size:12px;
+  font-weight:600;
+  animation:slideIn .3s ease;
+}
+@keyframes slideIn{
+  from{transform:translateX(-8px);opacity:0;}
+  to{transform:translateX(0);opacity:1;}
+}
+.activity-item.on{border-left-color:var(--success);}
+.activity-item.off{border-left-color:var(--danger);opacity:.7;}
+
+.activity-time{
+  font-family:var(--mono);
+  font-size:10px;
+  font-weight:600;
+  color:var(--text-tertiary);
+  flex-shrink:0;
+  font-variant-numeric:tabular-nums;
+}
+.activity-source{
+  font-family:var(--mono);
+  font-size:12px;
+  font-weight:700;
+  color:var(--text-primary);
+  letter-spacing:-.2px;
+}
+.activity-status{
+  margin-left:auto;
+  font-size:9px;
+  font-weight:800;
+  text-transform:uppercase;
+  letter-spacing:.6px;
+  padding:2px 7px;
+  border-radius:4px;
+  flex-shrink:0;
+}
+.activity-status.on{
+  background:var(--success-soft);
+  color:var(--success);
+  border:1px solid var(--success-bd);
+}
+.activity-status.off{
+  background:var(--danger-soft);
+  color:var(--danger);
+  border:1px solid var(--danger-bd);
+}
+
+.activity-empty{
+  text-align:center;
+  padding:40px 20px;
+  color:var(--text-tertiary);
+  font-size:12px;
+}
+.activity-empty svg{
+  width:32px;height:32px;
+  stroke:var(--text-tertiary);fill:none;stroke-width:1.5;
+  opacity:.4;margin-bottom:10px;
+}
+
+/* ============ LOADING OVERLAY ============ */
+.loading-overlay{
+  position:fixed;
+  inset:0;
+  background:var(--bg-page);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  z-index:9999;
+  transition:opacity .5s ease;
+  gap:20px;
+}
+.loading-overlay.hide{
+  opacity:0;
+  pointer-events:none;
+}
+.loader-cyber{
+  width:64px;
+  height:64px;
+  position:relative;
+}
+.loader-cyber::before,
+.loader-cyber::after{
+  content:"";
+  position:absolute;
+  border-radius:50%;
+  animation:cyberSpin 1.2s ease-in-out infinite;
+}
+.loader-cyber::before{
+  inset:0;
+  border:3px solid transparent;
+  border-top-color:var(--accent);
+  border-bottom-color:var(--info);
+}
+.loader-cyber::after{
+  inset:12px;
+  border:3px solid transparent;
+  border-left-color:var(--success);
+  border-right-color:var(--danger);
+  animation-delay:.3s;
+  animation-direction:reverse;
+}
+@keyframes cyberSpin{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
+
+.loader-text{
+  font-family:var(--mono);
+  font-size:13px;
+  font-weight:700;
+  letter-spacing:4px;
+  color:var(--text-primary);
+  animation:pulseText 1.5s ease-in-out infinite;
+}
+@keyframes pulseText{0%,100%{opacity:1;}50%{opacity:.3;}}
+
+.loader-sub{
+  font-size:11px;
+  color:var(--text-tertiary);
+  font-weight:500;
+  letter-spacing:1px;
+}
+
+/* ============ ERROR BANNER ============ */
+.error-banner{
+  position:fixed;
+  bottom:24px;
+  left:50%;
+  transform:translateX(-50%);
+  background:var(--danger-soft);
+  border:1px solid var(--danger-bd);
+  color:var(--danger);
+  padding:12px 20px;
+  border-radius:var(--radius-md);
+  font-size:13px;
+  font-weight:600;
+  z-index:999;
+  box-shadow:var(--shadow-lg);
+  display:none;
+  align-items:center;
+  gap:10px;
+  max-width:90%;
+}
+.error-banner.show{
+  display:flex;
+  animation:slideUp .4s ease;
+}
+@keyframes slideUp{
+  from{transform:translateX(-50%) translateY(20px);opacity:0;}
+  to{transform:translateX(-50%) translateY(0);opacity:1;}
+}
+
+/* ============ RESPONSIVE ============ */
+@media (max-width:1200px){
+  .monitor-main{grid-template-columns:1fr 280px;}
+}
+@media (max-width:992px){
+  .monitor-main{grid-template-columns:1fr;}
+  .activity-panel{max-height:300px;}
+  .kpi-strip{grid-template-columns:repeat(2,1fr);}
+}
+@media (max-width:900px){
+  .page-wrap{padding:20px 16px 40px;}
+  .monitor-hero{padding:20px;}
+  .hero-text h1{font-size:20px;}
+  .hero-icon{width:52px;height:52px;border-radius:13px;}
+  .hero-icon svg{width:24px;height:24px;}
+  .new-wrapper{margin-left:0;}
+}
+@media (max-width:600px){
+  .kpi-strip{grid-template-columns:1fr;}
+  .sources-grid{grid-template-columns:repeat(2,1fr);gap:8px;padding:12px;}
+  .source-card{min-height:100px;padding:12px 8px;}
+  .source-code{font-size:22px;}
+  .hero-right{width:100%;}
+  .timer-card{flex:1;justify-content:center;}
+}
+</style>
 </head>
 <body>
 
-<div class="grid-overlay"></div>
+<!-- ============ APP BAR ============ -->
+<header class="appbar">
+  <div class="appbar-logo">
+    <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+  </div>
+  <div class="appbar-title">EIS Portal <span class="crumb">/ Source Monitor</span></div>
+  <div class="appbar-spacer"></div>
+  <div class="appbar-actions">
+    <button class="icon-btn" onclick="toggleTheme()" title="Toggle theme">
+      <svg class="icon-sun" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="4"/>
+        <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+      </svg>
+      <svg class="icon-moon" viewBox="0 0 24 24">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+      </svg>
+    </button>
+    <div class="user-chip">
+      <div class="avatar">
+        <%
+          String __user = (String) session.getAttribute("username");
+          if (__user == null || __user.trim().isEmpty()) __user = "U";
+          out.print(__user.substring(0,1).toUpperCase());
+        %>
+      </div>
+      <span class="name"><%= __user %></span>
+    </div>
+  </div>
+</header>
 
-<!-- LOADING -->
-<div class="loading-overlay" id="loadingOverlay">
-    <div class="loader-cyber"></div>
-    <div class="loader-text">INITIALIZING</div>
-    <div class="loader-sub">Establishing secure connection...</div>
-</div>
+<!-- ============ ROLE HEADER (Sidebar) ============ -->
+<jsp:include page="/jsp/roleHeader.jsp" />
 
-<!-- TOP BAR -->
-<div class="top-bar">
-    <div class="brand">
-        <div class="brand-icon"><i class="fas fa-satellite-dish"></i></div>
-        <div>
-            <h1>SOURCE MONITOR</h1>
-            <div class="sub">real-time tracking system</div>
-        </div>
-    </div>
-    <div class="top-right">
-        <span class="partition-tag" id="partitionBadge">📡 LOADING</span>
-        <div class="status-badge" id="liveBadge" style="display:none;">
-            <span class="status-dot"></span> ONLINE
-        </div>
-        <div class="timer-box" id="timerBadge" style="display:none;">
-            <i class="fas fa-sync-alt"></i>
-            <span id="timerDisplay">10:00</span>
-        </div>
-    </div>
-</div>
+<!-- ============ CONTENT ============ -->
+<div class="new-wrapper">
+<div class="page-wrap">
 
-<!-- STATS -->
-<div class="stats-row" id="statsRow" style="display:none;">
-    <div class="stat-card">
-        <div class="stat-icon green"><i class="fas fa-bolt"></i></div>
-        <div class="stat-info">
-            <h2 id="activeCount">0</h2>
-            <p>Active Sources</p>
+  <!-- HERO HEADER -->
+  <section class="monitor-hero">
+    <div class="hero-inner">
+      <div class="hero-left">
+        <div class="hero-icon">
+          <svg viewBox="0 0 24 24"><path d="M4.93 4.93a10 10 0 0 0 0 14.14M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M8.46 8.46a5 5 0 0 0 0 7.07M15.54 8.46a5 5 0 0 1 0 7.07"/><circle cx="12" cy="12" r="1.5"/></svg>
         </div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-icon red"><i class="fas fa-power-off"></i></div>
-        <div class="stat-info">
-            <h2 id="inactiveCount">0</h2>
-            <p>Inactive Sources</p>
+        <div class="hero-text">
+          <h1>Source <span class="gradient">Monitor</span></h1>
+          <p>
+            Real-time source tracking
+            <span class="dot"></span>
+            <span class="partition" id="partitionBadge">LOADING</span>
+          </p>
         </div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-icon blue"><i class="fas fa-database"></i></div>
-        <div class="stat-info">
-            <h2 id="totalSources">20</h2>
-            <p>Total Sources</p>
+      </div>
+      <div class="hero-right">
+        <div class="live-badge" id="liveBadge" style="display:none;">
+          <span class="dot"></span>
+          LIVE
         </div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-icon orange"><i class="fas fa-chart-line"></i></div>
-        <div class="stat-info">
-            <h2 id="uptimePercent">0%</h2>
-            <p>Uptime Rate</p>
+        <div class="timer-card" id="timerBadge" style="display:none;">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <div>
+            <div class="time" id="timerDisplay">10:00</div>
+            <div class="label">Next Refresh</div>
+          </div>
         </div>
+      </div>
     </div>
-</div>
+  </section>
 
-<!-- MAIN -->
-<div class="main-content" id="mainGrid" style="display:none;">
+  <!-- KPI STRIP -->
+  <section class="kpi-strip" id="statsRow" style="display:none;">
+    <div class="kpi-card">
+      <div class="kpi-icon success">
+        <svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      </div>
+      <div class="kpi-info">
+        <div class="kpi-value" id="activeCount">0</div>
+        <div class="kpi-label">Active Sources</div>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon danger">
+        <svg viewBox="0 0 24 24"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
+      </div>
+      <div class="kpi-info">
+        <div class="kpi-value" id="inactiveCount">0</div>
+        <div class="kpi-label">Inactive Sources</div>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon info">
+        <svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+      </div>
+      <div class="kpi-info">
+        <div class="kpi-value" id="totalSources">0</div>
+        <div class="kpi-label">Total Sources</div>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon warning">
+        <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      </div>
+      <div class="kpi-info">
+        <div class="kpi-value" id="uptimePercent">0<span class="unit">%</span></div>
+        <div class="kpi-label">Uptime Rate</div>
+      </div>
+    </div>
+  </section>
 
-    <!-- SOURCES -->
+  <!-- MAIN LAYOUT -->
+  <div class="monitor-main" id="mainGrid" style="display:none;">
+
+    <!-- SOURCES PANEL -->
     <div class="sources-panel">
-        <div class="panel-header">
-            <h2><i class="fas fa-microchip"></i> SOURCES <span class="count-badge" id="sourceCount">0/20</span></h2>
-            <div class="legend">
-                <span><span class="on">⬤</span> ACTIVE</span>
-                <span><span class="off">⬤</span> OFFLINE</span>
-            </div>
+      <div class="panel-header">
+        <div class="title">
+          <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>
+          Sources
+          <span class="count-badge" id="sourceCount">0/0</span>
         </div>
-        <div class="sources-grid" id="sourcesGrid"></div>
+        <div class="panel-legend">
+          <span class="item"><span class="dot on"></span>Active</span>
+          <span class="item"><span class="dot off"></span>Inactive</span>
+        </div>
+      </div>
+      <div class="sources-grid" id="sourcesGrid"></div>
     </div>
 
-    <!-- ACTIVITY -->
+    <!-- ACTIVITY PANEL -->
     <div class="activity-panel">
-        <div class="panel-header">
-            <h2><i class="fas fa-wave-square" style="color:var(--cyber-green);"></i> ACTIVITY LOG</h2>
-            <span style="font-size:0.4rem;color:var(--text-dim);font-family:'Orbitron',monospace;letter-spacing:1px;">LIVE</span>
+      <div class="panel-header">
+        <div class="title">
+          <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          Activity Log
         </div>
-        <div class="activity-list" id="activityList">
-            <div class="activity-empty"><i class="fas fa-inbox"></i> waiting for signal...</div>
+        <span style="font-size:10px;color:var(--text-tertiary);font-family:var(--mono);font-weight:700;letter-spacing:.5px;">LIVE</span>
+      </div>
+      <div class="activity-list" id="activityList">
+        <div class="activity-empty">
+          <svg viewBox="0 0 24 24"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
+          <div>Waiting for signal...</div>
         </div>
+      </div>
     </div>
+
+  </div>
 
 </div>
+</div>
 
-<!-- ERROR BANNER -->
+<!-- ============ LOADING OVERLAY ============ -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loader-cyber"></div>
+  <div class="loader-text">INITIALIZING</div>
+  <div class="loader-sub">Establishing secure connection...</div>
+</div>
+
+<!-- ============ ERROR BANNER ============ -->
 <div class="error-banner" id="errorBanner">
-    <i class="fas fa-exclamation-triangle"></i> <span id="errorMessage">Connection Error</span>
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+  <span id="errorMessage">Connection Error</span>
 </div>
 
 <script>
-    var sourceData = {};
-    var activityLog = [];
-    var MAX_ACTIVITY = 30;
-    var timerSeconds = 600;
-    var timerInterval;
-    var retryCount = 0;
-    var maxRetries = 3;
+/* ============================================================
+   THEME
+   ============================================================ */
+(function(){
+  try {
+    var t = localStorage.getItem('eis-roster-theme') || 'light';
+    document.documentElement.setAttribute('data-theme', t);
+  } catch(e){}
+})();
+function toggleTheme() {
+  var cur = document.documentElement.getAttribute('data-theme') || 'light';
+  var next = cur === 'light' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', next);
+  try { localStorage.setItem('eis-roster-theme', next); } catch(e){}
+}
 
-    function getPartition() {
-        var months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
-        var now = new Date();
-        return months[now.getMonth()] + '_' + String(now.getFullYear()).slice(-2);
+/* ============================================================
+   STATE
+   ============================================================ */
+var sourceData = {};
+var activityLog = [];
+var MAX_ACTIVITY = 30;
+var timerSeconds = 600;
+var timerInterval;
+var retryCount = 0;
+var maxRetries = 3;
+
+/* ============================================================
+   HELPERS
+   ============================================================ */
+function getPartition() {
+  var months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+  var now = new Date();
+  return months[now.getMonth()] + '_' + String(now.getFullYear()).slice(-2);
+}
+
+function formatTime(s) {
+  var m = Math.floor(s / 60);
+  var sec = s % 60;
+  return String(m).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
+}
+
+function updateTimer() {
+  timerSeconds--;
+  var el = document.getElementById('timerDisplay');
+  if (el) el.textContent = formatTime(timerSeconds);
+  if (timerSeconds <= 0) {
+    location.reload();
+  }
+}
+
+/* ============================================================
+   ACTIVITY LOG
+   ============================================================ */
+function addActivity(source, status) {
+  var now = new Date();
+  var t = now.getHours().toString().padStart(2,'0') + ':' +
+          now.getMinutes().toString().padStart(2,'0') + ':' +
+          now.getSeconds().toString().padStart(2,'0');
+  activityLog.unshift({ time: t, source: source, status: status });
+  if (activityLog.length > MAX_ACTIVITY) activityLog.pop();
+  renderActivity();
+}
+
+function renderActivity() {
+  var c = document.getElementById('activityList');
+  if (!c) return;
+
+  if (activityLog.length === 0) {
+    c.innerHTML = '<div class="activity-empty">' +
+      '<svg viewBox="0 0 24 24"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>' +
+      '<div>Waiting for signal...</div></div>';
+    return;
+  }
+
+  var html = '';
+  for (var i = 0; i < Math.min(activityLog.length, 20); i++) {
+    var item = activityLog[i];
+    var cls = item.status === 'Y' ? 'on' : 'off';
+    var txt = item.status === 'Y' ? 'ON' : 'OFF';
+    html += '<div class="activity-item ' + cls + '">' +
+      '<span class="activity-time">' + item.time + '</span>' +
+      '<span class="activity-source">' + item.source + '</span>' +
+      '<span class="activity-status ' + cls + '">' + txt + '</span>' +
+      '</div>';
+  }
+  c.innerHTML = html;
+}
+
+/* ============================================================
+   HIDE LOADING + SHOW UI
+   ============================================================ */
+function hideLoading() {
+  var overlay = document.getElementById('loadingOverlay');
+  if (overlay) overlay.classList.add('hide');
+
+  var liveBadge = document.getElementById('liveBadge');
+  if (liveBadge) liveBadge.style.display = 'flex';
+
+  var timerBadge = document.getElementById('timerBadge');
+  if (timerBadge) timerBadge.style.display = 'flex';
+
+  var statsRow = document.getElementById('statsRow');
+  if (statsRow) statsRow.style.display = 'grid';
+
+  var mainGrid = document.getElementById('mainGrid');
+  if (mainGrid) mainGrid.style.display = 'grid';
+
+  var part = document.getElementById('partitionBadge');
+  if (part) part.textContent = getPartition();
+
+  var timerDisp = document.getElementById('timerDisplay');
+  if (timerDisp) timerDisp.textContent = formatTime(timerSeconds);
+
+  if (!timerInterval) {
+    timerInterval = setInterval(updateTimer, 1000);
+  }
+}
+
+/* ============================================================
+   ERROR BANNER
+   ============================================================ */
+function showError(msg) {
+  var banner = document.getElementById('errorBanner');
+  var msgEl = document.getElementById('errorMessage');
+  if (msgEl) msgEl.textContent = msg || 'Connection Error - Retrying...';
+  if (banner) banner.classList.add('show');
+
+  setTimeout(function() {
+    if (banner) banner.classList.remove('show');
+  }, 5000);
+}
+
+/* ============================================================
+   FETCH DATA
+   ============================================================ */
+function fetchData() {
+  var url = '?action=fetchSourceStatus';
+  console.log('Fetching: ' + url);
+
+  fetch(url, {
+    method: 'GET',
+    cache: 'no-cache',
+    headers: { 'Content-Type': 'application/json' }
+  })
+  .then(function(response) {
+    if (!response.ok) {
+      throw new Error('HTTP ' + response.status + ': ' + response.statusText);
     }
-
-    function formatTime(s) {
-        var m = Math.floor(s / 60);
-        var sec = s % 60;
-        return String(m).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
+    return response.json();
+  })
+  .then(function(data) {
+    retryCount = 0;
+    if (data.error) {
+      showError('DB Error: ' + data.error);
+      return;
     }
+    renderSources(data);
+    updateStats(data);
+    updateActivity(data);
+    hideLoading();
+  })
+  .catch(function(e) {
+    console.error('Fetch Error:', e);
+    retryCount++;
 
-    function updateTimer() {
-        timerSeconds--;
-        document.getElementById('timerDisplay').textContent = formatTime(timerSeconds);
-        if (timerSeconds <= 0) {
-            location.reload();
-        }
+    if (retryCount <= maxRetries) {
+      showError('Connection failed (Attempt ' + retryCount + '/' + maxRetries + ') - Retrying...');
+      setTimeout(function() {
+        fetchData();
+      }, 3000);
+    } else {
+      showError('Connection Error - Please refresh the page');
+      hideLoading();
+      var grid = document.getElementById('sourcesGrid');
+      if (grid) {
+        grid.innerHTML =
+          '<div style="text-align:center;padding:40px 20px;color:var(--danger);grid-column:1/-1;">' +
+          '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:12px;opacity:.6;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>' +
+          '<div style="font-weight:700;font-size:14px;margin-bottom:4px;">Connection Lost</div>' +
+          '<div style="font-size:12px;color:var(--text-tertiary);margin-bottom:16px;">Please refresh the page</div>' +
+          '<button onclick="location.reload()" style="padding:8px 20px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-weight:600;font-size:12px;cursor:pointer;">Refresh</button>' +
+          '</div>';
+      }
     }
+  });
+}
 
-    function addActivity(source, status) {
-        var now = new Date();
-        var t = now.getHours().toString().padStart(2,'0') + ':' + 
-                now.getMinutes().toString().padStart(2,'0') + ':' + 
-                now.getSeconds().toString().padStart(2,'0');
-        activityLog.unshift({ time: t, source: source, status: status });
-        if (activityLog.length > MAX_ACTIVITY) activityLog.pop();
-        renderActivity();
+/* ============================================================
+   RENDER SOURCES
+   ============================================================ */
+function renderSources(data) {
+  var c = document.getElementById('sourcesGrid');
+  if (!c) return;
+
+  if (!data || data.length === 0) {
+    c.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--text-tertiary);grid-column:1/-1;">' +
+      '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:10px;opacity:.4;"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>' +
+      '<div style="font-size:12px;font-weight:600;">No data available</div>' +
+      '</div>';
+    return;
+  }
+
+  var html = '';
+  var active = 0;
+  for (var i = 0; i < data.length; i++) {
+    var item = data[i];
+    var isActive = item.flag === 'Y';
+    if (isActive) active++;
+    var cls = isActive ? 'active' : 'inactive';
+    var status = isActive ? 'ONLINE' : 'OFFLINE';
+    var hits = isActive ? Math.floor(Math.random() * 50 + 10) : 0;
+
+    html += '<div class="source-card ' + cls + '">' +
+      '<span class="source-status-indicator"></span>' +
+      '<div class="source-code">' + item.source_id + '</div>' +
+      '<div class="source-status-text">' + status + '</div>' +
+      '<span class="source-hits">' + (isActive ? '⚡ ' + hits : '⏸') + '</span>' +
+      '</div>';
+  }
+  c.innerHTML = html;
+
+  var countEl = document.getElementById('sourceCount');
+  if (countEl) countEl.textContent = active + '/' + data.length;
+}
+
+/* ============================================================
+   UPDATE STATS
+   ============================================================ */
+function updateStats(data) {
+  var active = 0, inactive = 0;
+  for (var i = 0; i < data.length; i++) {
+    if (data[i].flag === 'Y') active++;
+    else inactive++;
+  }
+
+  var activeEl = document.getElementById('activeCount');
+  if (activeEl) activeEl.textContent = active;
+
+  var inactiveEl = document.getElementById('inactiveCount');
+  if (inactiveEl) inactiveEl.textContent = inactive;
+
+  var totalEl = document.getElementById('totalSources');
+  if (totalEl) totalEl.textContent = data.length;
+
+  var uptime = data.length > 0 ? Math.round((active / data.length) * 100) : 0;
+  var uptimeEl = document.getElementById('uptimePercent');
+  if (uptimeEl) uptimeEl.innerHTML = uptime + '<span class="unit">%</span>';
+}
+
+/* ============================================================
+   UPDATE ACTIVITY
+   ============================================================ */
+function updateActivity(data) {
+  var current = {};
+  for (var i = 0; i < data.length; i++) {
+    if (data[i].flag === 'Y') current[data[i].source_id] = true;
+  }
+
+  for (var s in current) {
+    if (!sourceData[s]) {
+      addActivity(s, 'Y');
+    } else if (sourceData[s] !== current[s]) {
+      addActivity(s, current[s] ? 'Y' : 'N');
     }
+  }
 
-    function renderActivity() {
-        var c = document.getElementById('activityList');
-        if (activityLog.length === 0) {
-            c.innerHTML = '<div class="activity-empty"><i class="fas fa-inbox"></i> waiting for signal...</div>';
-            return;
-        }
-        var html = '';
-        for (var i = 0; i < Math.min(activityLog.length, 20); i++) {
-            var item = activityLog[i];
-            var cls = item.status === 'Y' ? 'on' : 'off';
-            var txt = item.status === 'Y' ? 'ON' : 'OFF';
-            html += '<div class="activity-item ' + cls + '">' +
-                '<span class="activity-time">' + item.time + '</span>' +
-                '<span class="activity-source">' + item.source + '</span>' +
-                '<span class="activity-status ' + cls + '">' + txt + '</span>' +
-                '</div>';
-        }
-        c.innerHTML = html;
+  for (var old in sourceData) {
+    if (sourceData[old] && !current[old]) {
+      addActivity(old, 'N');
     }
+  }
 
-    function hideLoading() {
-        var overlay = document.getElementById('loadingOverlay');
-        overlay.classList.add('hide');
-        document.getElementById('liveBadge').style.display = 'flex';
-        document.getElementById('timerBadge').style.display = 'flex';
-        document.getElementById('statsRow').style.display = 'grid';
-        document.getElementById('mainGrid').style.display = 'grid';
-        document.getElementById('partitionBadge').textContent = '📡 ' + getPartition();
-        document.getElementById('timerDisplay').textContent = formatTime(timerSeconds);
-        timerInterval = setInterval(updateTimer, 1000);
-    }
+  sourceData = current;
+}
 
-    function showError(msg) {
-        var banner = document.getElementById('errorBanner');
-        document.getElementById('errorMessage').textContent = msg || 'Connection Error - Retrying...';
-        banner.classList.add('show');
-        
-        setTimeout(function() {
-            banner.classList.remove('show');
-        }, 5000);
-    }
+/* ============================================================
+   CLEANUP
+   ============================================================ */
+window.addEventListener('beforeunload', function() {
+  if (timerInterval) clearInterval(timerInterval);
+});
 
-    // 🔥 FIXED: Using RELATIVE URL - No HTTP/HTTPS issue
-    function fetchData() {
-        // ✅ Using relative URL - automatically uses same protocol
-        var url = '?action=fetchSourceStatus';
-        
-        console.log('Fetching: ' + url);
-        
-        fetch(url, {
-            method: 'GET',
-            cache: 'no-cache',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        })
-        .then(function(response) {
-            if (!response.ok) {
-                throw new Error('HTTP ' + response.status + ': ' + response.statusText);
-            }
-            return response.json();
-        })
-        .then(function(data) {
-            retryCount = 0;
-            if (data.error) {
-                showError('DB Error: ' + data.error);
-                return;
-            }
-            renderSources(data);
-            updateStats(data);
-            updateActivity(data);
-            hideLoading();
-        })
-        .catch(function(e) {
-            console.error('Fetch Error:', e);
-            retryCount++;
-            
-            if (retryCount <= maxRetries) {
-                showError('Connection failed (Attempt ' + retryCount + '/' + maxRetries + ') - Retrying...');
-                setTimeout(function() {
-                    fetchData();
-                }, 3000);
-            } else {
-                showError('Connection Error - Please refresh the page');
-                hideLoading();
-                document.getElementById('sourcesGrid').innerHTML = 
-                    '<div style="text-align:center;padding:40px;color:var(--text-dim);grid-column:1/-1;">' +
-                    '<i class="fas fa-exclamation-triangle" style="font-size:2rem;display:block;margin-bottom:8px;color:var(--cyber-red);"></i>' +
-                    '<p style="font-weight:700;font-size:0.9rem;font-family:\'Orbitron\',monospace;letter-spacing:2px;">CONNECTION LOST</p>' +
-                    '<p style="font-size:0.6rem;margin-top:2px;color:var(--text-dim);">Please refresh the page</p>' +
-                    '<button onclick="location.reload()" style="margin-top:12px;padding:8px 24px;background:var(--cyber-blue);border:none;border-radius:6px;color:#000;font-weight:700;cursor:pointer;font-family:\'Orbitron\',monospace;font-size:0.6rem;">REFRESH</button>' +
-                    '</div>';
-            }
-        });
-    }
-
-    function renderSources(data) {
-        var c = document.getElementById('sourcesGrid');
-        if (!data || data.length === 0) {
-            c.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-dim);grid-column:1/-1;"><i class="fas fa-database" style="font-size:2rem;display:block;margin-bottom:8px;opacity:0.3;"></i><p style="font-family:\'Orbitron\',monospace;font-size:0.6rem;letter-spacing:2px;">NO DATA</p></div>';
-            return;
-        }
-        var html = '', active = 0;
-        for (var i = 0; i < data.length; i++) {
-            var item = data[i];
-            var isActive = item.flag === 'Y';
-            if (isActive) active++;
-            var cls = isActive ? 'active' : 'inactive';
-            var status = isActive ? 'ONLINE' : 'OFFLINE';
-            var hits = isActive ? Math.floor(Math.random() * 50 + 10) : 0;
-            
-            html += '<div class="source-card ' + cls + '">' +
-                '<span class="status-indicator"></span>' +
-                '<div class="source-id">' + item.source_id + '</div>' +
-                '<div class="source-status">' + status + '</div>' +
-                '<span class="source-hits">' + (isActive ? '⚡ ' + hits : '⏸') + '</span>' +
-                '</div>';
-        }
-        c.innerHTML = html;
-        document.getElementById('sourceCount').textContent = active + '/' + data.length;
-    }
-
-    function updateStats(data) {
-        var active = 0, inactive = 0;
-        for (var i = 0; i < data.length; i++) {
-            if (data[i].flag === 'Y') active++; else inactive++;
-        }
-        document.getElementById('activeCount').textContent = active;
-        document.getElementById('inactiveCount').textContent = inactive;
-        document.getElementById('totalSources').textContent = data.length;
-        var uptime = data.length > 0 ? Math.round((active / data.length) * 100) : 0;
-        document.getElementById('uptimePercent').textContent = uptime + '%';
-    }
-
-    function updateActivity(data) {
-        var current = {};
-        for (var i = 0; i < data.length; i++) {
-            if (data[i].flag === 'Y') current[data[i].source_id] = true;
-        }
-        for (var s in current) {
-            if (!sourceData[s]) { addActivity(s, 'Y'); }
-            else if (sourceData[s] !== current[s]) { addActivity(s, current[s] ? 'Y' : 'N'); }
-        }
-        for (var old in sourceData) {
-            if (sourceData[old] && !current[old]) { addActivity(old, 'N'); }
-        }
-        sourceData = current;
-    }
-
-    window.addEventListener('beforeunload', function() {
-        if (timerInterval) clearInterval(timerInterval);
-    });
-
-    // 🔥 Start
-    fetchData();
+/* ============================================================
+   START
+   ============================================================ */
+fetchData();
 </script>
+
 </body>
 </html>
