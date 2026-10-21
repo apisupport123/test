@@ -5,6 +5,7 @@
   ✅ Sirf USER role ke liye sidebar + topnav.
   ✅ Role routing roleHeader.jsp karta hai — yahan NAHI.
   ✅ Fragment hai — isliye pageEncoding / sendRedirect NAHI.
+  ✅ Source_Monitor.jsp Dashboards section me add kiya.
   ============================================================
 --%>
 <%
@@ -477,6 +478,10 @@ html.sb-open .sb-overlay{opacity:1;pointer-events:auto}
       <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>
       <span>SYS Server Wise Count</span>
     </a>
+    <a class="sb-item animals" href="<%=ctx%>/jsp/Source_Monitor.jsp" target="_blank" rel="noopener noreferrer">
+      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>
+      <span>Source Monitor</span>
+    </a>
 
     <div class="sb-group">Deployments</div>
     <a class="sb-item animals" href="<%=ctx%>/DeploymentSheetServlet" target="_blank" rel="noopener noreferrer">
@@ -572,10 +577,6 @@ html.sb-open .sb-overlay{opacity:1;pointer-events:auto}
     <a class="sb-item animals" href="<%=ctx%>/jsp/monitoring_dashboard_morethan_30Per_fail.jsp" target="_blank" rel="noopener noreferrer">
       <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>
       <span>BD API Monitor</span>
-    </a>
-    <a class="sb-item animals" href="<%=ctx%>/jsp/Source_Monitor.jsp" target="_blank" rel="noopener noreferrer">
-      <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>
-      <span>Source Monitor</span>
     </a>
     <a class="sb-item animals" href="<%=ctx%>/jsp/AtmPortWiseManualSearch.jsp" target="_blank" rel="noopener noreferrer">
       <span class="sb-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></span>
@@ -817,8 +818,3 @@ document.addEventListener('keydown', function(e){
   }
 });
 </script>
-
-
-
-
-/jsp/Source_Monitor.jsp
