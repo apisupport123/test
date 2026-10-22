@@ -173,8 +173,8 @@ html[data-theme="dark"] .tx-timer {
     color: var(--ink);
     letter-spacing: -1px;
 }
-/* ✅ NEW palette — crimson / amber / emerald */
-.tx-kpi-value.red    { color: #dc2626; }
+/* ✅ NEW palette — red / amber / emerald */
+.tx-kpi-value.red    { color: #ff1a1a; }
 .tx-kpi-value.orange { color: #f59e0b; }
 .tx-kpi-value.green  { color: #10b981; }
 
@@ -256,7 +256,7 @@ html[data-theme="dark"] .tx-timer {
 }
 
 /* ================================================================
-   TOP CRITICAL CHIPS — crimson theme
+   TOP CRITICAL CHIPS — red theme
    ================================================================ */
 .tx-crit-bar {
     display: flex;
@@ -274,7 +274,7 @@ html[data-theme="dark"] .tx-timer {
 .tx-crit-bar .tx-crit-title {
     font-size: 11px;
     font-weight: 900;
-    color: #dc2626;                    /* crimson */
+    color: #ff1a1a;                    /* ✅ red */
     text-transform: uppercase;
     letter-spacing: 1.5px;
     white-space: nowrap;
@@ -288,22 +288,22 @@ html[data-theme="dark"] .tx-timer {
     align-items: center;
     gap: 8px;
     padding: 6px 12px;
-    background: rgba(220, 38, 38, 0.08);
-    border: 1px solid rgba(220, 38, 38, 0.4);
+    background: rgba(255, 26, 26, 0.08);   /* ✅ red tint */
+    border: 1px solid rgba(255, 26, 26, 0.4);
     border-radius: 8px;
     white-space: nowrap;
     flex-shrink: 0;
     transition: all 0.2s;
 }
 .tx-crit-chip:hover {
-    background: rgba(220, 38, 38, 0.15);
+    background: rgba(255, 26, 26, 0.15);
 }
 .tx-crit-chip.critical {
     animation: txChipBlink 2s ease-in-out infinite;
 }
 @keyframes txChipBlink {
-    0%, 100% { box-shadow: 0 0 0 rgba(220,38,38,0); }
-    50%      { box-shadow: 0 0 14px rgba(220,38,38,.6); }
+    0%, 100% { box-shadow: 0 0 0 rgba(255,26,26,0); }
+    50%      { box-shadow: 0 0 14px rgba(255,26,26,.6); }
 }
 .tx-crit-chip .name {
     font-size: 13px;
@@ -317,7 +317,7 @@ html[data-theme="dark"] .tx-timer {
     font-family: 'Courier New', monospace;
     font-size: 18px;
     font-weight: 900;
-    color: #dc2626;                    /* crimson */
+    color: #ff1a1a;                    /* ✅ red */
 }
 
 /* ================================================================
@@ -426,7 +426,7 @@ html[data-theme="dark"] .tx-timer {
             <div class="tx-sev-chips">
                 <div class="tx-sev-chip"><span class="tx-sev-dot" style="background:#10b981;"></span>&lt;1%</div>
                 <div class="tx-sev-chip"><span class="tx-sev-dot" style="background:#f59e0b;"></span>1-5%</div>
-                <div class="tx-sev-chip"><span class="tx-sev-dot" style="background:#dc2626;"></span>&gt;5%</div>
+                <div class="tx-sev-chip"><span class="tx-sev-dot" style="background:#ff1a1a;"></span>&gt;5%</div>
             </div>
             <div class="tx-live-badge">
                 <span class="pulse"></span> LIVE
@@ -609,11 +609,11 @@ labelArr = labelArr.map(function(lbl) {
 });
 
 /* ============================================================
-   ✅ 3-LEVEL SEVERITY (Crimson / Amber / Emerald)
+   ✅ 3-LEVEL SEVERITY (Red / Amber / Emerald)
    ============================================================ */
 var COLOR_LOW      = "#10b981";   /* emerald */
 var COLOR_MEDIUM   = "#f59e0b";   /* amber */
-var COLOR_CRITICAL = "#dc2626";   /* crimson — deep, not pink */
+var COLOR_CRITICAL = "#ff1a1a";   /* ✅ red */
 
 function severityColor(v) {
     if (v > 5) return COLOR_CRITICAL;
