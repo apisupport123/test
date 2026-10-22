@@ -35,9 +35,6 @@
     width: 100vw;
   }
 
-  /* ============================================================
-     TOP BAR
-     ============================================================ */
   .topbar {
     display: grid;
     grid-template-columns: auto 1fr auto;
@@ -118,7 +115,6 @@
     color: var(--ink, #fff);
     letter-spacing: -1px;
   }
-  /* 3-level severity — crimson / amber / emerald */
   .kpi-value.red    { color: #dc2626; }
   .kpi-value.orange { color: #f59e0b; }
   .kpi-value.green  { color: #10b981; }
@@ -183,9 +179,6 @@
     50%      { opacity: 0.4; transform: scale(0.8); }
   }
 
-  /* ============================================================
-     TOP CRITICAL BAR
-     ============================================================ */
   .crit-bar {
     display: flex;
     align-items: center;
@@ -248,9 +241,6 @@
     color: #dc2626;
   }
 
-  /* ============================================================
-     CHART HEADER
-     ============================================================ */
   .chart-header {
     flex-shrink: 0;
     padding: 8px 20px 4px;
@@ -276,9 +266,6 @@
     letter-spacing: 0.5px;
   }
 
-  /* ============================================================
-     CHART AREA
-     ============================================================ */
   .chart-area {
     flex: 1;
     min-height: 0;
@@ -295,7 +282,6 @@
                 inset 0 0 40px rgba(99, 102, 241, 0.04);
   }
 
-  /* Responsive */
   @media (max-width: 1280px) {
     .timer-label { font-size: 13px; }
     .timer { font-size: 26px; min-width: 95px; }
@@ -318,7 +304,6 @@
 
 <div class="app">
 
-  <!-- ============ TOP BAR ============ -->
   <div class="topbar">
     <div class="timer-block">
       <div class="timer-label">
@@ -360,25 +345,21 @@
     </div>
   </div>
 
-  <!-- ============ TOP CRITICAL BAR ============ -->
   <div class="crit-bar" id="critBar">
     <span class="title">Top Critical</span>
   </div>
 
-  <!-- ============ CHART HEADER ============ -->
   <div class="chart-header">
     <h2>Failure % &nbsp;&middot;&nbsp; End Point Wise</h2>
     <p>top 12 &middot; last 10 min</p>
   </div>
 
-  <!-- ============ CHART ============ -->
   <div class="chart-area">
     <div id="myChart"></div>
   </div>
 
 </div>
 
-<!-- ============ CLIENT SCRIPTS ============ -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
   var currentTime = new Date();
@@ -537,7 +518,7 @@ labelArr = labelArr.map(function(lbl) {
 });
 
 // ============================================================
-// 3-LEVEL SEVERITY — crimson / amber / emerald
+// 3-LEVEL SEVERITY
 // ============================================================
 var COLOR_LOW      = "#10b981";
 var COLOR_MEDIUM   = "#f59e0b";
@@ -550,7 +531,7 @@ function severityColor(v) {
 }
 
 // ============================================================
-// KPI compute + blink
+// KPI compute
 // ============================================================
 (function computeStats() {
   var total = 0, critical = 0, medium = 0, maxVal = 0;
@@ -607,21 +588,31 @@ function severityColor(v) {
 })();
 
 // ============================================================
-// Bars color — 3 levels
+// ✅ CRITICAL FIX: per-bar styles with OBJECT format
+//    ZingChart ko "styles" me object chahiye hota hai,
+//    sirf string se bar3d ka white background nahi hatta
 // ============================================================
-var barColors = valueArr.map(severityColor);
+var barStyles = valueArr.map(function(v) {
+  var c = severityColor(v);
+  return {
+    "background-color": c,
+    "background-color-2": c,        /* 3D top face bhi same color */
+    "border-color": "transparent",
+    "border-width": 0
+  };
+});
 
 // ============================================================
-// ✅ CHART CONFIG — 3D white face FIXED
+// CHART CONFIG — proper fix
 // ============================================================
 var chartConfig = {
   type: "bar3d",
-  /* ✅ FIX 1: yAngle 0 — side face white peek 100% gone */
-  "3dAspect": { depth: 40, true3d: 0, yAngle: 0 },
+  "3dAspect": { depth: 30, true3d: 0, yAngle: 0 },   /* side face nahi */
   backgroundColor: chartBg,
   globals: { fontFamily: "Inter, sans-serif" },
   plotarea: {
-    backgroundColor: "transparent",
+    backgroundColor: chartBg,           /* ✅ plotarea bhi theme color */
+    borderColor: chartBorder,
     margin: "40px 40px 190px 170px"
   },
   scaleX: {
@@ -676,15 +667,13 @@ var chartConfig = {
       shadow: false,
       fontColor: chartText
     },
-    styles: barColors,
-    /* ✅ FIX 2: 3D top face white — all transparent */
-    "alpha": 1,
-    "borderColor": "transparent",
-    "borderWidth": 0,
-    "backgroundColor": "transparent",
-    /* ✅ FIX 3: dark shadow for 3D depth (no white) */
-    "effects": [
-      { "effect": "SHADOW", "offsetX": 3, "offsetY": 3, "blur": 8, "color": "rgba(0,0,0,0.35)" }
+    /* ✅ YEH HAI ASLI FIX — object format styles */
+    styles: barStyles,
+    alpha: 1,
+    borderColor: "transparent",
+    borderWidth: 0,
+    effects: [
+      { effect: "SHADOW", offsetX: 3, offsetY: 3, blur: 8, color: "rgba(0,0,0,0.35)" }
     ]
   }]
 };
