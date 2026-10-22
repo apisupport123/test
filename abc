@@ -21,8 +21,11 @@
   html, body {
     height: 100vh;
     width: 100vw;
-    overflow: hidden;                 /* ⛔ no scroll */
-    background: #05060a;
+    overflow: hidden;
+    background:
+      radial-gradient(ellipse at 20% 0%, rgba(99,102,241,0.08), transparent 50%),
+      radial-gradient(ellipse at 80% 100%, rgba(239,68,68,0.06), transparent 50%),
+      #05060a;
     color: #fff;
     font-family: 'Inter', sans-serif;
   }
@@ -35,7 +38,7 @@
   }
 
   /* ============================================================
-     TOP BAR — timer | KPI | severity | live
+     TOP BAR
      ============================================================ */
   .topbar {
     display: grid;
@@ -43,12 +46,28 @@
     align-items: center;
     gap: 20px;
     padding: 12px 22px;
-    background: #0d1018;
+    background: linear-gradient(180deg, #121624 0%, #0d1018 100%);
     border-bottom: 1px solid #1c2030;
     flex-shrink: 0;
+    box-shadow:
+      0 4px 20px rgba(0,0,0,0.6),
+      inset 0 1px 0 rgba(255,255,255,0.04);
+    position: relative;
+    z-index: 5;
   }
 
-  /* Timer block */
+  /* subtle top sheen */
+  .topbar::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(99,102,241,0.5), transparent);
+  }
+
+  /* Timer */
   .timer-block {
     display: flex;
     align-items: center;
@@ -74,28 +93,42 @@
     font-family: 'Courier New', monospace;
     font-size: 32px;
     font-weight: 900;
-    background: rgba(99, 102, 241, 0.08);
+    background: linear-gradient(180deg, rgba(99,102,241,0.15), rgba(99,102,241,0.04));
     letter-spacing: 1px;
     line-height: 1;
+    box-shadow:
+      0 4px 12px rgba(99,102,241,0.3),
+      inset 0 1px 0 rgba(255,255,255,0.15),
+      inset 0 -2px 0 rgba(0,0,0,0.3);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
   }
 
-  /* KPI row in middle */
+  /* KPI row */
   .kpi-row {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 1px;
-    background: #1c2030;
-    border-left: 1px solid #1c2030;
-    border-right: 1px solid #1c2030;
+    gap: 10px;
     height: 100%;
   }
   .kpi {
-    background: #0a0d15;
+    background: linear-gradient(180deg, #0f1422 0%, #0a0d15 100%);
+    border: 1px solid #1c2030;
+    border-radius: 8px;
     padding: 8px 18px;
     display: flex;
     flex-direction: column;
     justify-content: center;
     min-width: 0;
+    box-shadow:
+      0 3px 10px rgba(0,0,0,0.4),
+      inset 0 1px 0 rgba(255,255,255,0.04);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .kpi:hover {
+    transform: translateY(-1px);
+    box-shadow:
+      0 5px 16px rgba(0,0,0,0.5),
+      inset 0 1px 0 rgba(255,255,255,0.06);
   }
   .kpi-label {
     font-size: 11px;
@@ -113,12 +146,13 @@
     margin-top: 4px;
     color: #fff;
     letter-spacing: -1px;
+    text-shadow: 0 2px 6px rgba(0,0,0,0.5);
   }
-  .kpi-value.red    { color: #ef4444; }
-  .kpi-value.orange { color: #f59e0b; }
-  .kpi-value.green  { color: #10b981; }
+  .kpi-value.red    { color: #ef4444; text-shadow: 0 0 20px rgba(239,68,68,0.4); }
+  .kpi-value.orange { color: #f59e0b; text-shadow: 0 0 20px rgba(245,158,11,0.4); }
+  .kpi-value.green  { color: #10b981; text-shadow: 0 0 20px rgba(16,185,129,0.4); }
 
-  /* Right side: severity + live */
+  /* Right block */
   .right-block {
     display: flex;
     align-items: center;
@@ -133,18 +167,22 @@
     align-items: center;
     gap: 6px;
     padding: 6px 12px;
-    background: #0a0d15;
+    background: linear-gradient(180deg, #0f1422, #0a0d15);
     border: 1px solid #1c2030;
     border-radius: 6px;
     font-size: 12px;
     font-weight: 700;
     color: #fff;
     white-space: nowrap;
+    box-shadow:
+      0 2px 6px rgba(0,0,0,0.4),
+      inset 0 1px 0 rgba(255,255,255,0.04);
   }
   .sev-dot {
     width: 10px;
     height: 10px;
     border-radius: 2px;
+    box-shadow: 0 0 6px currentColor;
   }
 
   .live-badge {
@@ -152,38 +190,43 @@
     align-items: center;
     gap: 8px;
     padding: 8px 16px;
-    background: rgba(16, 185, 129, 0.12);
-    border: 1px solid rgba(16, 185, 129, 0.3);
+    background: linear-gradient(180deg, rgba(16,185,129,0.18), rgba(16,185,129,0.06));
+    border: 1px solid rgba(16,185,129,0.4);
     border-radius: 6px;
     font-size: 13px;
     font-weight: 800;
     color: #10b981;
     letter-spacing: 1.5px;
+    box-shadow:
+      0 3px 10px rgba(16,185,129,0.2),
+      inset 0 1px 0 rgba(255,255,255,0.1);
   }
   .live-badge .pulse {
     width: 8px;
     height: 8px;
     border-radius: 50%;
     background: #10b981;
+    box-shadow: 0 0 10px #10b981;
     animation: pulse 2s infinite;
   }
   @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.3; }
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.8); }
   }
 
   /* ============================================================
-     SECOND BAR — Top critical chips horizontal
+     TOP CRITICAL BAR — 3D chips
      ============================================================ */
   .crit-bar {
     display: flex;
     align-items: center;
     gap: 14px;
     padding: 10px 22px;
-    background: #0d1018;
+    background: linear-gradient(180deg, #0d1018 0%, #0a0d15 100%);
     border-bottom: 1px solid #1c2030;
     flex-shrink: 0;
     overflow-x: auto;
+    box-shadow: inset 0 -1px 0 rgba(0,0,0,0.3);
   }
   .crit-bar::-webkit-scrollbar { height: 4px; }
   .crit-bar::-webkit-scrollbar-thumb { background: #1c2030; border-radius: 2px; }
@@ -198,6 +241,7 @@
     padding-right: 12px;
     border-right: 1px solid #1c2030;
     flex-shrink: 0;
+    text-shadow: 0 0 12px rgba(239,68,68,0.5);
   }
 
   .crit-chip {
@@ -205,11 +249,21 @@
     align-items: center;
     gap: 10px;
     padding: 8px 14px;
-    background: rgba(239, 68, 68, 0.08);
-    border: 1px solid rgba(239, 68, 68, 0.25);
+    background: linear-gradient(180deg, rgba(239,68,68,0.14), rgba(239,68,68,0.05));
+    border: 1px solid rgba(239,68,68,0.35);
     border-radius: 8px;
     white-space: nowrap;
     flex-shrink: 0;
+    box-shadow:
+      0 3px 10px rgba(239,68,68,0.15),
+      inset 0 1px 0 rgba(255,255,255,0.05);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .crit-chip:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 6px 16px rgba(239,68,68,0.3),
+      inset 0 1px 0 rgba(255,255,255,0.08);
   }
   .crit-chip .name {
     font-size: 14px;
@@ -224,28 +278,34 @@
     font-size: 20px;
     font-weight: 900;
     color: #ef4444;
+    text-shadow: 0 0 10px rgba(239,68,68,0.4);
   }
 
   /* ============================================================
-     CHART — fills remaining viewport
+     CHART — fills remaining viewport with 3D depth
      ============================================================ */
   .chart-area {
     flex: 1;
     min-height: 0;
-    padding: 8px;
+    padding: 10px;
     background: #05060a;
   }
   #myChart {
     width: 100%;
     height: 100%;
-    background: #0d1018;
+    background:
+      radial-gradient(ellipse at 50% 0%, rgba(99,102,241,0.06), transparent 60%),
+      linear-gradient(180deg, #0d1018 0%, #080a12 100%);
     border: 1px solid #1c2030;
     border-radius: 10px;
+    box-shadow:
+      0 10px 40px rgba(0,0,0,0.6),
+      inset 0 1px 0 rgba(255,255,255,0.03);
+    position: relative;
+    overflow: hidden;
   }
 
-  /* ============================================================
-     Responsive fallbacks for small screens
-     ============================================================ */
+  /* Responsive */
   @media (max-width: 1280px) {
     .timer-label { font-size: 13px; }
     .timer { font-size: 26px; min-width: 95px; }
@@ -257,7 +317,6 @@
     .topbar { grid-template-columns: 1fr 1fr; gap: 10px; }
     .right-block { display: none; }
     .kpi-row { grid-column: span 2; }
-    .sev-chips { display: none; }
   }
 </style>
 
@@ -269,7 +328,6 @@
 
   <!-- ============ TOP BAR ============ -->
   <div class="topbar">
-    <!-- Left: Timer -->
     <div class="timer-block">
       <div class="timer-label">
         Auto Refresh In
@@ -279,7 +337,6 @@
       <div class="timer" id="ten-countdown">10:00</div>
     </div>
 
-    <!-- Middle: KPI row -->
     <div class="kpi-row">
       <div class="kpi">
         <div class="kpi-label">Endpoints</div>
@@ -299,13 +356,12 @@
       </div>
     </div>
 
-    <!-- Right: Severity + Live -->
     <div class="right-block">
       <div class="sev-chips">
-        <div class="sev-chip"><span class="sev-dot" style="background:#ef4444;"></span>&gt;5%</div>
-        <div class="sev-chip"><span class="sev-dot" style="background:#f59e0b;"></span>2-5%</div>
-        <div class="sev-chip"><span class="sev-dot" style="background:#8b5cf6;"></span>1-2%</div>
-        <div class="sev-chip"><span class="sev-dot" style="background:#10b981;"></span>&lt;1%</div>
+        <div class="sev-chip"><span class="sev-dot" style="background:#ef4444;color:#ef4444;"></span>&gt;5%</div>
+        <div class="sev-chip"><span class="sev-dot" style="background:#f59e0b;color:#f59e0b;"></span>2-5%</div>
+        <div class="sev-chip"><span class="sev-dot" style="background:#8b5cf6;color:#8b5cf6;"></span>1-2%</div>
+        <div class="sev-chip"><span class="sev-dot" style="background:#10b981;color:#10b981;"></span>&lt;1%</div>
       </div>
       <div class="live-badge">
         <span class="pulse"></span> LIVE
@@ -316,7 +372,6 @@
   <!-- ============ TOP CRITICAL BAR ============ -->
   <div class="crit-bar" id="critBar">
     <span class="title">Top Critical</span>
-    <!-- chips injected by JS -->
   </div>
 
   <!-- ============ CHART ============ -->
@@ -326,13 +381,11 @@
 
 </div>
 
-<!-- ============ CLIENT SCRIPTS ============ -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
   var currentTime = new Date();
   var tenMinutesAgo = new Date();
   tenMinutesAgo.setMinutes(currentTime.getMinutes() - 10);
-
   function fmt(d) {
     var h = d.getHours(), m = d.getMinutes();
     return (h < 10 ? '0' + h : h) + ':' + (m < 10 ? '0' + m : m);
@@ -340,7 +393,6 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('timeRangeMessage').textContent =
     fmt(tenMinutesAgo) + ' → ' + fmt(currentTime);
 });
-
 function myFunction_Time() {
   var demo = document.getElementById("demo");
   if (demo) demo.innerHTML = document.lastModified;
@@ -418,7 +470,7 @@ while (labels.size() < 5) {
 
 <script>
 // ============================================================
-// Server-side data → JS arrays
+// Server data → JS arrays
 // ============================================================
 var labelArr = [
 <%
@@ -468,7 +520,7 @@ for (int k = 0; k < totalHits.size(); k++) {
 ];
 
 // ============================================================
-// KPI compute
+// KPI
 // ============================================================
 (function computeStats() {
   var total = 0, critical = 0, warning = 0, maxVal = 0;
@@ -488,7 +540,7 @@ for (int k = 0; k < totalHits.size(); k++) {
 })();
 
 // ============================================================
-// Top Critical chips in the horizontal bar
+// Top Critical chips
 // ============================================================
 (function buildCritBar() {
   var items = [];
@@ -519,22 +571,37 @@ for (int k = 0; k < totalHits.size(); k++) {
 })();
 
 // ============================================================
-// Severity colors per bar
+// 3D gradient colors for bars (top brighter, base darker)
 // ============================================================
+function makeBarColor(baseRgb, topBoost) {
+  // baseRgb like "239,68,68"
+  var parts = baseRgb.split(',');
+  var r = parseInt(parts[0]), g = parseInt(parts[1]), b = parseInt(parts[2]);
+  var topR = Math.min(255, r + topBoost);
+  var topG = Math.min(255, g + topBoost);
+  var topB = Math.min(255, b + topBoost);
+  return "rgb(" + topR + "," + topG + "," + topB + ") rgb(" + r + "," + g + "," + b + ")";
+}
+
 var barColors = valueArr.map(function(v) {
-  if (v >= 5) return "#ef4444";
-  if (v >= 2) return "#f59e0b";
-  if (v >= 1) return "#8b5cf6";
-  return "#10b981";
+  if (v >= 5) return makeBarColor("239,68,68", 60);   // red
+  if (v >= 2) return makeBarColor("245,158,11", 60);  // amber
+  if (v >= 1) return makeBarColor("139,92,246", 60);  // purple
+  return makeBarColor("16,185,129", 60);              // green
 });
 
 // ============================================================
-// Chart config — bar3d, tumhara original style + severity colors
+// CHART — deeper 3D + gradient bars
 // ============================================================
 var chartConfig = {
   type: "bar3d",
-  "3dAspect": { depth: 26, true3d: 0, yAngle: 10 },
-  backgroundColor: "#0d1018",
+  "3dAspect": {
+    depth: 45,       // 🎯 gehra 3D
+    true3d: 0,
+    yAngle: 15,      // strong perspective
+    xAngle: 6
+  },
+  backgroundColor: "transparent",
   globals: {
     fontFamily: "Inter, sans-serif"
   },
@@ -591,8 +658,8 @@ var chartConfig = {
       fontColor: "#fff"
     },
     styles: barColors,
-    backgroundColor: "#673AB7",
-    borderColor: "#fff"
+    borderColor: "rgba(255,255,255,0.15)",
+    borderWidth: 1
   }]
 };
 
@@ -617,11 +684,7 @@ zingchart.bind('myChart', 'node_click', updateChart);
 <script>
 function countdown(elementName, minutes, seconds) {
   var element, endTime;
-
-  function twoDigits(n) {
-    return (n <= 9 ? "0" + n : n);
-  }
-
+  function twoDigits(n) { return (n <= 9 ? "0" + n : n); }
   function updateTimer() {
     var msLeft = endTime - (+new Date);
     if (msLeft < 1000) {
@@ -634,12 +697,10 @@ function countdown(elementName, minutes, seconds) {
       setTimeout(updateTimer, time.getUTCMilliseconds() + 500);
     }
   }
-
   element = document.getElementById(elementName);
   endTime = (+new Date) + 1000 * (60 * minutes + seconds) + 500;
   updateTimer();
 }
-
 countdown("ten-countdown", 10, 0);
 </script>
 
