@@ -20,7 +20,7 @@
 
 <style>
 /* ================================================================
-   THEME-AWARE OVERRIDES (tumhare original se)
+   BASE / WRAPPER
    ================================================================ */
 body {
     background-color: var(--bg) !important;
@@ -36,15 +36,6 @@ body {
 }
 .topnav .tn-search {
     background: var(--card) !important;
-    border-color: var(--line) !important;
-    color: var(--muted) !important;
-}
-.topnav .tn-search:hover {
-    border-color: var(--brand) !important;
-    color: var(--ink) !important;
-}
-.topnav .tn-search .kbd {
-    background: var(--sidebar-hover) !important;
     border-color: var(--line) !important;
     color: var(--muted) !important;
 }
@@ -68,23 +59,17 @@ body {
     border-color: var(--brand) !important;
     color: #fff !important;
 }
-.topnav .tn-toggle {
-    border-color: var(--line) !important;
-    color: var(--ink) !important;
-}
 
-/* ================================================================
-   WRAPPER
-   ================================================================ */
+/* WRAPPER — full screen fit */
 .new-wrapper {
     padding-top: 64px !important;
     margin-left: 260px !important;
     background-color: var(--bg);
     min-height: 100vh;
-    display: flex;
-    flex-direction: column;
     height: 100vh;
     box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
     transition: margin-left .3s cubic-bezier(.4,0,.2,1), background .3s ease;
 }
 html.sb-collapsed .new-wrapper {
@@ -92,7 +77,7 @@ html.sb-collapsed .new-wrapper {
 }
 
 /* ================================================================
-   TOP STRIP — timer | KPI | severity | live | view-logs
+   TOP STRIP — timer | KPI | severity/live/logs
    ================================================================ */
 .tx-top-strip {
     display: grid;
@@ -105,11 +90,8 @@ html.sb-collapsed .new-wrapper {
     flex-shrink: 0;
 }
 
-.tx-timer-block {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
+/* Timer */
+.tx-timer-block { display: flex; align-items: center; gap: 12px; }
 .tx-timer-label {
     font-size: 13px;
     font-weight: 800;
@@ -135,11 +117,8 @@ html.sb-collapsed .new-wrapper {
     line-height: 1;
     box-shadow: 0 0 12px rgba(248,111,3,.3);
 }
-html[data-theme="dark"] .tx-timer {
-    background: rgba(248,111,3,.15);
-}
 
-/* KPI row */
+/* KPI */
 .tx-kpi-row {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -175,24 +154,26 @@ html[data-theme="dark"] .tx-timer {
     color: var(--ink);
     letter-spacing: -1px;
 }
-.tx-kpi-value.red    { color: #ef4444; text-shadow: 0 0 12px rgba(239,68,68,.4); }
-.tx-kpi-value.orange { color: #f59e0b; text-shadow: 0 0 12px rgba(245,158,11,.4); }
-.tx-kpi-value.green  { color: #10b981; text-shadow: 0 0 12px rgba(16,185,129,.4); }
+/* Colors — sirf color, NO glow by default */
+.tx-kpi-value.red    { color: #dc2626; }
+.tx-kpi-value.orange { color: #d97706; }
+.tx-kpi-value.green  { color: #059669; }
 
-.tx-blink-red {
-    animation: txBlinkRed 1.4s ease-in-out infinite;
-}
+/* Glow ONLY in dark mode */
+html[data-theme="dark"] .tx-kpi-value.red    { color: #ef4444; text-shadow: 0 0 12px rgba(239,68,68,.5); }
+html[data-theme="dark"] .tx-kpi-value.orange { color: #f59e0b; text-shadow: 0 0 12px rgba(245,158,11,.5); }
+html[data-theme="dark"] .tx-kpi-value.green  { color: #10b981; text-shadow: 0 0 12px rgba(16,185,129,.5); }
+
+/* Blink — text color always visible */
+.tx-blink-red { animation: txBlinkRed 1.4s ease-in-out infinite; }
 @keyframes txBlinkRed {
-    0%, 100% { opacity: 1; text-shadow: 0 0 14px rgba(239,68,68,.7); }
-    50%      { opacity: 0.4; text-shadow: 0 0 28px rgba(239,68,68,1); }
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.45; }
 }
 
 /* Right block */
-.tx-right-block {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
+.tx-right-block { display: flex; align-items: center; gap: 10px; }
+
 .tx-sev-chips { display: flex; gap: 6px; }
 .tx-sev-chip {
     display: flex;
@@ -207,32 +188,27 @@ html[data-theme="dark"] .tx-timer {
     color: var(--ink);
     white-space: nowrap;
 }
-.tx-sev-dot {
-    width: 9px;
-    height: 9px;
-    border-radius: 2px;
-}
+.tx-sev-dot { width: 9px; height: 9px; border-radius: 2px; }
 
 .tx-live-badge {
     display: flex;
     align-items: center;
     gap: 7px;
     padding: 7px 14px;
-    background: rgba(16, 185, 129, 0.14);
-    border: 1px solid rgba(16, 185, 129, 0.4);
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.35);
     border-radius: 6px;
     font-size: 12px;
     font-weight: 800;
-    color: #10b981;
+    color: #059669;
     letter-spacing: 1.5px;
-    box-shadow: 0 0 12px rgba(16, 185, 129, 0.25);
 }
+html[data-theme="dark"] .tx-live-badge { color: #10b981; }
 .tx-live-badge .pulse {
     width: 8px;
     height: 8px;
     border-radius: 50%;
     background: #10b981;
-    box-shadow: 0 0 10px #10b981;
     animation: txPulse 1.6s infinite;
 }
 @keyframes txPulse {
@@ -254,14 +230,10 @@ html[data-theme="dark"] .tx-timer {
     white-space: nowrap;
     text-transform: uppercase;
 }
-.tx-logs-btn:hover {
-    background: #00a4dc;
-    box-shadow: 0 0 16px rgba(0,140,186,.5);
-    transform: translateY(-1px);
-}
+.tx-logs-btn:hover { background: #00a4dc; }
 
 /* ================================================================
-   TOP CRITICAL BAR (horizontal chips)
+   TOP CRITICAL BAR
    ================================================================ */
 .tx-crit-bar {
     display: flex;
@@ -276,42 +248,46 @@ html[data-theme="dark"] .tx-timer {
 .tx-crit-bar::-webkit-scrollbar { height: 4px; }
 .tx-crit-bar::-webkit-scrollbar-thumb { background: var(--line); border-radius: 2px; }
 
-.tx-crit-bar .tx-crit-title {
+.tx-crit-title {
     font-size: 11px;
     font-weight: 900;
-    color: #ef4444;
+    color: #dc2626;
     text-transform: uppercase;
     letter-spacing: 1.5px;
     white-space: nowrap;
     padding-right: 12px;
     border-right: 1px solid var(--line);
     flex-shrink: 0;
-    text-shadow: 0 0 10px rgba(239,68,68,.5);
 }
+html[data-theme="dark"] .tx-crit-title { color: #ef4444; }
 
 .tx-crit-chip {
     display: flex;
     align-items: center;
     gap: 8px;
     padding: 6px 12px;
-    background: rgba(239, 68, 68, 0.1);
-    border: 1px solid rgba(239, 68, 68, 0.35);
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.3);
     border-radius: 8px;
     white-space: nowrap;
     flex-shrink: 0;
     transition: all 0.2s;
 }
-.tx-crit-chip:hover {
-    background: rgba(239, 68, 68, 0.2);
-    box-shadow: 0 0 16px rgba(239,68,68,.4);
+html[data-theme="light"] .tx-crit-chip {
+    background: rgba(239, 68, 68, 0.06);
+    border-color: rgba(220, 38, 38, 0.35);
 }
-.tx-crit-chip.critical {
+.tx-crit-chip:hover { background: rgba(239, 68, 68, 0.16); }
+
+/* Blink only in dark mode (light mode me border-blank lagega) */
+html[data-theme="dark"] .tx-crit-chip.critical {
     animation: txChipBlink 2s ease-in-out infinite;
 }
 @keyframes txChipBlink {
     0%, 100% { box-shadow: 0 0 0 rgba(239,68,68,0); }
-    50%      { box-shadow: 0 0 18px rgba(239,68,68,.6); }
+    50%      { box-shadow: 0 0 18px rgba(239,68,68,.55); }
 }
+
 .tx-crit-chip .name {
     font-size: 13px;
     font-weight: 700;
@@ -324,12 +300,12 @@ html[data-theme="dark"] .tx-timer {
     font-family: 'Courier New', monospace;
     font-size: 18px;
     font-weight: 900;
-    color: #ef4444;
-    text-shadow: 0 0 10px rgba(239,68,68,.5);
+    color: #dc2626;
 }
+html[data-theme="dark"] .tx-crit-chip .pct { color: #ef4444; }
 
 /* ================================================================
-   CHART AREA — fills remaining space
+   CHART AREA
    ================================================================ */
 .tx-chart-area {
     flex: 1;
@@ -343,7 +319,6 @@ html[data-theme="dark"] .tx-timer {
     background: var(--card);
     border: 1px solid var(--line);
     border-radius: 10px;
-    box-shadow: 0 0 24px rgba(99,102,241,.12);
     position: relative;
 }
 
@@ -372,10 +347,8 @@ html[data-theme="dark"] .tx-timer {
 
 <div class="new-wrapper">
 
-    <!-- ============ TOP STRIP: timer | KPI | severity/live/logs ============ -->
+    <!-- ============ TOP STRIP ============ -->
     <div class="tx-top-strip">
-
-        <!-- Left: timer -->
         <div class="tx-timer-block">
             <div class="tx-timer-label">
                 Auto Refresh In
@@ -385,7 +358,6 @@ html[data-theme="dark"] .tx-timer {
             <div class="tx-timer" id="ten-countdown">10:00</div>
         </div>
 
-        <!-- Middle: KPI row -->
         <div class="tx-kpi-row">
             <div class="tx-kpi">
                 <div class="tx-kpi-label">Endpoints</div>
@@ -405,7 +377,6 @@ html[data-theme="dark"] .tx-timer {
             </div>
         </div>
 
-        <!-- Right: severity chips + live + view logs -->
         <div class="tx-right-block">
             <div class="tx-sev-chips">
                 <div class="tx-sev-chip"><span class="tx-sev-dot" style="background:#ef4444;"></span>&gt;5%</div>
@@ -413,14 +384,12 @@ html[data-theme="dark"] .tx-timer {
                 <div class="tx-sev-chip"><span class="tx-sev-dot" style="background:#8b5cf6;"></span>1-2%</div>
                 <div class="tx-sev-chip"><span class="tx-sev-dot" style="background:#10b981;"></span>&lt;1%</div>
             </div>
-            <div class="tx-live-badge">
-                <span class="pulse"></span> LIVE
-            </div>
+            <div class="tx-live-badge"><span class="pulse"></span> LIVE</div>
             <button class="tx-logs-btn" id="openPopup1">View Logs</button>
         </div>
     </div>
 
-    <!-- ============ TOP CRITICAL CHIPS ============ -->
+    <!-- ============ TOP CRITICAL ============ -->
     <div class="tx-crit-bar" id="txCritBar">
         <span class="tx-crit-title">Top Critical</span>
     </div>
@@ -464,7 +433,7 @@ document.addEventListener('DOMContentLoaded', function(){
 </script>
 
 <%
-/* ============ BACKEND (tumhara wala) ============ */
+/* ============ BACKEND ============ */
 response.setIntHeader("Refresh", 600);
 
 Connection conn = null;
@@ -494,11 +463,12 @@ try {
         int    totalHit = resultSet.getInt("total_hits");
         double pct      = resultSet.getDouble("td_percent");
 
-        String name = "<p style='color:#ff9933; font-weight: bolder; font-size:20px; text-shadow:0 0 6px rgba(255,153,51,.6);'>" + tdCount + "</p>"
-            + "<br><p style='color:#FFFFFF; font-weight: bolder; font-size:18px; text-shadow:0 0 6px rgba(255,255,255,.3);'>"
-            + rawName.replaceAll("_", "</p><br><p style='color:#FFFFFF; font-weight: bolder; font-size:18px; text-shadow:0 0 6px rgba(255,255,255,.3);'>")
+        // NOTE: text colors yaha hardcode NAHI karenge — JS me theme-aware karenge via class
+        String name = "<p class='lbl-td' style='font-weight: bolder; font-size:20px;'>" + tdCount + "</p>"
+            + "<br><p class='lbl-ep' style='font-weight: bolder; font-size:18px;'>"
+            + rawName.replaceAll("_", "</p><br><p class='lbl-ep' style='font-weight: bolder; font-size:18px;'>")
             + "</p><br>"
-            + "<p style='color:#32CD32; font-weight: bolder; font-size:18px; text-shadow:0 0 6px rgba(50,205,50,.6);'>" + totalHit + "</p>";
+            + "<p class='lbl-hit' style='font-weight: bolder; font-size:18px;'>" + totalHit + "</p>";
 
         labels.add(name);
         rawNames.add(rawName);
@@ -574,7 +544,25 @@ for (int k = 0; k < totalHits.size(); k++) {
    Theme detection
    ============================================================ */
 var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-var chartBg        = isDark ? '#000000' : '#FFFFFF';
+
+/* ============================================================
+   FIX: colored labels in chart — theme-aware
+   ============================================================ */
+(function fixChartLabels() {
+    var epColor = isDark ? '#FFFFFF' : '#0A0A0A';
+    var style = document.createElement('style');
+    style.textContent =
+        '.lbl-td  { color: #ff9933 !important; }' +
+        '.lbl-ep  { color: ' + epColor + ' !important; }' +
+        '.lbl-hit { color: #16a34a !important; }' +
+        'html[data-theme="dark"] .lbl-hit { color: #32CD32 !important; }';
+    document.head.appendChild(style);
+})();
+
+/* ============================================================
+   Chart theme-aware colors
+   ============================================================ */
+var chartBg        = isDark ? '#0d1018' : '#FFFFFF';
 var chartText      = isDark ? '#FFFFFF' : '#0A0A0A';
 var chartMuted     = isDark ? '#9CA3AF' : '#6B7280';
 var chartGridLine  = isDark ? '#333333' : '#E5E7EB';
@@ -649,7 +637,7 @@ var barColors = valueArr.map(function(v) {
 });
 
 /* ============================================================
-   Chart config — 3D depth + severity colors + theme aware
+   Chart config — theme-aware, no glow in light, glow in dark
    ============================================================ */
 var chartConfig = {
     type: "bar3d",
@@ -679,9 +667,9 @@ var chartConfig = {
         item: { fontColor: chartText, fontSize: "22px" },
         tick: { alpha: 0.2, lineColor: chartTickColor },
         label: {
-            text: '<p style="color:#ff9933;font-size:18px;font-weight:800;margin:3px 0;text-shadow:0 0 6px rgba(255,153,51,.6);">TD FAILURE</p>'
+            text: '<p style="color:#ff9933;font-size:18px;font-weight:800;margin:3px 0;">TD FAILURE</p>'
                 + '<p style="color:' + chartText + ';font-size:18px;font-weight:800;margin:3px 0;">END POINT</p>'
-                + '<p style="color:#32CD32;font-size:18px;font-weight:800;margin:3px 0;text-shadow:0 0 6px rgba(50,205,50,.6);">TOTAL HITS</p>',
+                + '<p style="color:' + (isDark ? '#32CD32' : '#16a34a') + ';font-size:18px;font-weight:800;margin:3px 0;">TOTAL HITS</p>',
             color: chartText,
             offsetX: '-90px'
         }
@@ -711,28 +699,25 @@ var chartConfig = {
             "font-weight": "bold",
             "offset-y": -6,
             rules: [
-                { rule: "%v >= 5", "font-color": "#ff5252" },
-                { rule: "%v >= 2", "font-color": "#fbc04b" },
-                { rule: "%v >= 1", "font-color": "#b794ff" }
+                { rule: "%v >= 5", "font-color": isDark ? "#ff5252" : "#dc2626" },
+                { rule: "%v >= 2", "font-color": isDark ? "#fbc04b" : "#d97706" },
+                { rule: "%v >= 1", "font-color": isDark ? "#b794ff" : "#7c3aed" }
             ]
         },
         tooltip: {
-            backgroundColor: "#1c2030",
-            borderColor: "#6366f1",
+            backgroundColor: isDark ? "#1c2030" : "#FFFFFF",
+            borderColor: isDark ? "#6366f1" : "#cbd5e1",
             borderWidth: 1,
             borderRadius: "6px",
             fontSize: "16px",
             padding: "10px 14px",
             shadow: false,
-            fontColor: "#fff"
+            fontColor: isDark ? "#fff" : "#0A0A0A"
         },
         styles: barColors,
         backgroundColor: "#673AB7",
-        borderColor: chartBorder,
-        borderWidth: 1,
-        "effects": [
-            { "effect": "SHADOW", "offsetX": 4, "offsetY": 4, "blur": 12, "color": "rgba(0,0,0,0.5)" }
-        ]
+        borderColor: isDark ? "#333" : "#fff",
+        borderWidth: 1
     }]
 };
 
@@ -765,14 +750,12 @@ setInterval(function() {
 }, 500);
 </script>
 
-<!-- ============ COUNTDOWN (tumhara wala) ============ -->
+<!-- ============ COUNTDOWN ============ -->
 <script>
 function countdown(elementName, minutes, seconds) {
     var element, endTime;
 
-    function twoDigits(n) {
-        return (n <= 9 ? "0" + n : n);
-    }
+    function twoDigits(n) { return (n <= 9 ? "0" + n : n); }
 
     function updateTimer() {
         var msLeft = endTime - (+new Date);
