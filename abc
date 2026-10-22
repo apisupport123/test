@@ -20,94 +20,8 @@
 
 <style>
 /* ================================================================
-   ORIGINAL STYLES — THEME-AWARE
+   THEME-AWARE OVERRIDES (tumhare original se)
    ================================================================ */
-.chart--container {
-    min-height: 620px;
-    width: 100%;
-    height: 100%;
-}
-
-/* ✅ Blink — theme aware (pehle color:white tha, gayab ho jata light me) */
-.blink {
-    animation: blinker 0s linear infinite;
-    font-family: sans-serif;
-    font-size: larger;
-    text-align-last: center;
-    font-weight: 900;
-    color: var(--ink) !important;
-}
-
-@keyframes blinker {
-    50% { opacity: 0; }
-}
-
-.modal {
-    display: none;
-    position: fixed;
-    z-index: 1;
-    padding-top: 100px;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    overflow: auto;
-    background-color: rgba(0,0,0,0.4);
-}
-.modal-content {
-    position: relative;
-    background-color: var(--card);
-    margin: auto;
-    padding: 0;
-    border: 1px solid var(--line);
-    width: 80%;
-    box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19);
-    color: var(--ink);
-}
-.modal-header {
-    padding: 2px 16px;
-    background-color: #AB5AF3;
-    color: white;
-}
-.modal-body { padding: 2px 16px; font-size: large; color: var(--ink); }
-.modal-footer { padding: 2px 16px; background-color: #AB5AF3; color: white; }
-
-/* ✅ Timer — theme aware */
-.timer {
-    border: 5px solid var(--brand);
-    display: inline;
-    padding: 5px;
-    color: var(--brand) !important;
-    font-family: Verdana, sans-serif, Arial;
-    font-size: 40px;
-    height: 50px;
-    font-weight: bold;
-    text-decoration: none;
-    border-radius: 8px;
-    background: var(--brand-light);
-}
-html[data-theme="dark"] .timer {
-    background: rgba(248,111,3,.15);
-}
-
-.button-container {
-    display: flex;
-    justify-content: flex-end;
-    margin-right: 10px;
-}
-.button {
-    padding: 10px 20px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    margin-right: 10px;
-}
-
-/* ================================================================
-   THEME-AWARE OVERRIDES
-   ================================================================ */
-
-/* ✅ Body theme-aware */
 body {
     background-color: var(--bg) !important;
     color: var(--ink) !important;
@@ -116,7 +30,6 @@ body {
     transition: background .3s ease, color .3s ease;
 }
 
-/* ✅ Topnav theme-aware */
 .topnav {
     background: var(--topnav-bg) !important;
     border-bottom: 1px solid var(--line) !important;
@@ -160,37 +73,296 @@ body {
     color: var(--ink) !important;
 }
 
-/* ✅ Content wrapper */
+/* ================================================================
+   WRAPPER
+   ================================================================ */
 .new-wrapper {
     padding-top: 64px !important;
     margin-left: 260px !important;
     background-color: var(--bg);
     min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    box-sizing: border-box;
     transition: margin-left .3s cubic-bezier(.4,0,.2,1), background .3s ease;
 }
 html.sb-collapsed .new-wrapper {
     margin-left: 0 !important;
 }
 
-/* ✅ Blink <p> */
-.new-wrapper .blink {
-    margin: 0 !important;
-    padding: 16px 20px 8px 20px !important;
-    color: var(--ink) !important;
+/* ================================================================
+   TOP STRIP — timer | KPI | severity | live | view-logs
+   ================================================================ */
+.tx-top-strip {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 16px;
+    padding: 10px 20px;
+    background: var(--card);
+    border-bottom: 1px solid var(--line);
+    flex-shrink: 0;
 }
 
-/* ✅ Button container */
-.new-wrapper .button-container {
-    margin: 6px 20px 20px 20px !important;
+.tx-timer-block {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.tx-timer-label {
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    line-height: 1.25;
+}
+.tx-timer {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 100px;
+    padding: 6px 14px;
+    border: 3px solid var(--brand);
+    border-radius: 8px;
+    color: var(--brand) !important;
+    font-family: 'Courier New', monospace;
+    font-size: 28px;
+    font-weight: 900;
+    background: var(--brand-light);
+    letter-spacing: 1px;
+    line-height: 1;
+    box-shadow: 0 0 12px rgba(248,111,3,.3);
+}
+html[data-theme="dark"] .tx-timer {
+    background: rgba(248,111,3,.15);
 }
 
-/* ✅ Chart container */
-.new-wrapper .chart--container {
-    margin-top: 20px !important;
-    padding: 0 20px !important;
-    height: 800px !important;
-    zoom: 85%;
+/* KPI row */
+.tx-kpi-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+    min-width: 0;
+}
+.tx-kpi {
+    background: var(--card);
+    padding: 8px 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 0;
+}
+.tx-kpi-label {
+    font-size: 10px;
+    font-weight: 800;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    white-space: nowrap;
+}
+.tx-kpi-value {
+    font-family: 'Courier New', monospace;
+    font-size: 30px;
+    font-weight: 900;
+    line-height: 1;
+    margin-top: 3px;
+    color: var(--ink);
+    letter-spacing: -1px;
+}
+.tx-kpi-value.red    { color: #ef4444; text-shadow: 0 0 12px rgba(239,68,68,.4); }
+.tx-kpi-value.orange { color: #f59e0b; text-shadow: 0 0 12px rgba(245,158,11,.4); }
+.tx-kpi-value.green  { color: #10b981; text-shadow: 0 0 12px rgba(16,185,129,.4); }
+
+.tx-blink-red {
+    animation: txBlinkRed 1.4s ease-in-out infinite;
+}
+@keyframes txBlinkRed {
+    0%, 100% { opacity: 1; text-shadow: 0 0 14px rgba(239,68,68,.7); }
+    50%      { opacity: 0.4; text-shadow: 0 0 28px rgba(239,68,68,1); }
+}
+
+/* Right block */
+.tx-right-block {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.tx-sev-chips { display: flex; gap: 6px; }
+.tx-sev-chip {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 10px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--ink);
+    white-space: nowrap;
+}
+.tx-sev-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 2px;
+}
+
+.tx-live-badge {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 14px;
+    background: rgba(16, 185, 129, 0.14);
+    border: 1px solid rgba(16, 185, 129, 0.4);
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 800;
+    color: #10b981;
+    letter-spacing: 1.5px;
+    box-shadow: 0 0 12px rgba(16, 185, 129, 0.25);
+}
+.tx-live-badge .pulse {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #10b981;
+    box-shadow: 0 0 10px #10b981;
+    animation: txPulse 1.6s infinite;
+}
+@keyframes txPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: .4; transform: scale(.8); }
+}
+
+.tx-logs-btn {
+    padding: 8px 16px;
+    background: #008CBA;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all .2s;
+    white-space: nowrap;
+    text-transform: uppercase;
+}
+.tx-logs-btn:hover {
+    background: #00a4dc;
+    box-shadow: 0 0 16px rgba(0,140,186,.5);
+    transform: translateY(-1px);
+}
+
+/* ================================================================
+   TOP CRITICAL BAR (horizontal chips)
+   ================================================================ */
+.tx-crit-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 20px;
+    background: var(--card);
+    border-bottom: 1px solid var(--line);
+    flex-shrink: 0;
+    overflow-x: auto;
+}
+.tx-crit-bar::-webkit-scrollbar { height: 4px; }
+.tx-crit-bar::-webkit-scrollbar-thumb { background: var(--line); border-radius: 2px; }
+
+.tx-crit-bar .tx-crit-title {
+    font-size: 11px;
+    font-weight: 900;
+    color: #ef4444;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    white-space: nowrap;
+    padding-right: 12px;
+    border-right: 1px solid var(--line);
+    flex-shrink: 0;
+    text-shadow: 0 0 10px rgba(239,68,68,.5);
+}
+
+.tx-crit-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    border-radius: 8px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: all 0.2s;
+}
+.tx-crit-chip:hover {
+    background: rgba(239, 68, 68, 0.2);
+    box-shadow: 0 0 16px rgba(239,68,68,.4);
+}
+.tx-crit-chip.critical {
+    animation: txChipBlink 2s ease-in-out infinite;
+}
+@keyframes txChipBlink {
+    0%, 100% { box-shadow: 0 0 0 rgba(239,68,68,0); }
+    50%      { box-shadow: 0 0 18px rgba(239,68,68,.6); }
+}
+.tx-crit-chip .name {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--ink);
+    max-width: 170px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.tx-crit-chip .pct {
+    font-family: 'Courier New', monospace;
+    font-size: 18px;
+    font-weight: 900;
+    color: #ef4444;
+    text-shadow: 0 0 10px rgba(239,68,68,.5);
+}
+
+/* ================================================================
+   CHART AREA — fills remaining space
+   ================================================================ */
+.tx-chart-area {
+    flex: 1;
+    min-height: 0;
+    padding: 8px 12px 12px;
+    background: var(--bg);
+}
+#myChart {
+    width: 100%;
+    height: 100%;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    box-shadow: 0 0 24px rgba(99,102,241,.12);
     position: relative;
+}
+
+/* ================================================================
+   RESPONSIVE
+   ================================================================ */
+@media (max-width: 1280px) {
+    .tx-timer-label { font-size: 11px; }
+    .tx-timer { font-size: 22px; min-width: 85px; padding: 5px 10px; }
+    .tx-kpi-value { font-size: 24px; }
+    .tx-kpi { padding: 6px 10px; }
+    .tx-sev-chip { padding: 4px 7px; font-size: 10px; }
+    .tx-logs-btn { padding: 6px 12px; font-size: 11px; }
+}
+@media (max-width: 900px) {
+    .tx-top-strip { grid-template-columns: 1fr auto; gap: 10px; }
+    .tx-kpi-row { grid-column: span 2; }
+    .tx-right-block .tx-sev-chips { display: none; }
+    .new-wrapper { margin-left: 0 !important; }
 }
 </style>
 </head>
@@ -200,66 +372,208 @@ html.sb-collapsed .new-wrapper {
 
 <div class="new-wrapper">
 
-<p class="blink" style="font-size: 30px;"> This Data get Auto Refresh after <span class="timer" id="ten-countdown"></span> Minutes
-</p>
+    <!-- ============ TOP STRIP: timer | KPI | severity/live/logs ============ -->
+    <div class="tx-top-strip">
 
-<div class="button-container">
-    <input type="button" class="button" id="openPopup1" style="background-color: #008CBA; color: white;" value="View Logs">
+        <!-- Left: timer -->
+        <div class="tx-timer-block">
+            <div class="tx-timer-label">
+                Auto Refresh In
+                <br>
+                <span style="font-size:10px;color:var(--muted);font-weight:600;" id="txTimeRange"></span>
+            </div>
+            <div class="tx-timer" id="ten-countdown">10:00</div>
+        </div>
+
+        <!-- Middle: KPI row -->
+        <div class="tx-kpi-row">
+            <div class="tx-kpi">
+                <div class="tx-kpi-label">Endpoints</div>
+                <div class="tx-kpi-value" id="txStatTotal">—</div>
+            </div>
+            <div class="tx-kpi">
+                <div class="tx-kpi-label">Critical &gt; 5%</div>
+                <div class="tx-kpi-value red" id="txStatCritical">—</div>
+            </div>
+            <div class="tx-kpi">
+                <div class="tx-kpi-label">High / Medium</div>
+                <div class="tx-kpi-value orange" id="txStatWarning">—</div>
+            </div>
+            <div class="tx-kpi">
+                <div class="tx-kpi-label">Highest %</div>
+                <div class="tx-kpi-value" id="txStatMax">—</div>
+            </div>
+        </div>
+
+        <!-- Right: severity chips + live + view logs -->
+        <div class="tx-right-block">
+            <div class="tx-sev-chips">
+                <div class="tx-sev-chip"><span class="tx-sev-dot" style="background:#ef4444;"></span>&gt;5%</div>
+                <div class="tx-sev-chip"><span class="tx-sev-dot" style="background:#f59e0b;"></span>2-5%</div>
+                <div class="tx-sev-chip"><span class="tx-sev-dot" style="background:#8b5cf6;"></span>1-2%</div>
+                <div class="tx-sev-chip"><span class="tx-sev-dot" style="background:#10b981;"></span>&lt;1%</div>
+            </div>
+            <div class="tx-live-badge">
+                <span class="pulse"></span> LIVE
+            </div>
+            <button class="tx-logs-btn" id="openPopup1">View Logs</button>
+        </div>
+    </div>
+
+    <!-- ============ TOP CRITICAL CHIPS ============ -->
+    <div class="tx-crit-bar" id="txCritBar">
+        <span class="tx-crit-title">Top Critical</span>
+    </div>
+
+    <!-- ============ CHART ============ -->
+    <div class="tx-chart-area">
+        <div id="myChart"></div>
+    </div>
+
 </div>
 
-<div id="myChart" class="chart--container"></div>
-
+<!-- ============ CLIENT SCRIPTS ============ -->
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+    var now = new Date();
+    var past = new Date();
+    past.setMinutes(now.getMinutes() - 10);
+    function fmt(d) {
+        var h = d.getHours(), m = d.getMinutes();
+        return (h < 10 ? '0' + h : h) + ':' + (m < 10 ? '0' + m : m);
+    }
+    var tr = document.getElementById('txTimeRange');
+    if (tr) tr.textContent = fmt(past) + ' → ' + fmt(now);
+});
+
 function openPopup1() {
-    var width=800;
-    var height=600;
-    var left= (window.innerWidth - width) / 2;
-    var top= (window.innerHeight - height) / 2;
-    var popupWindow = window.open('TransactionEndPointDataBank.jsp', 'DataPopup', 'width='+ width +', height='+ height +', left='+ left +', top='+top);
-    popupWindow.focus();
+    var width = 800, height = 600;
+    var left = (window.innerWidth - width) / 2;
+    var top = (window.innerHeight - height) / 2;
+    var popupWindow = window.open(
+        'TransactionEndPointDataBank.jsp',
+        'DataPopup',
+        'width=' + width + ', height=' + height + ', left=' + left + ', top=' + top
+    );
+    if (popupWindow) popupWindow.focus();
 }
 document.addEventListener('DOMContentLoaded', function(){
-    document.getElementById('openPopup1').addEventListener('click', openPopup1);
+    var b = document.getElementById('openPopup1');
+    if (b) b.addEventListener('click', openPopup1);
 });
 </script>
 
-<script>
-var Arr = new Array();
 <%
-String m_strtxnArray="";
+/* ============ BACKEND (tumhara wala) ============ */
 response.setIntHeader("Refresh", 600);
 
-Connection conn=DBUtilityAuto.getReportDBConnection();
+Connection conn = null;
+Statement statement = null;
+ResultSet resultSet = null;
 
-String sql="SELECT txn_endpoint, total_hits, td_count, td_percent from ( SELECT txn_endpoint, total_hits, td_count, td_percent from txnendpoint WHERE time >= SYSTIMESTAMP - INTERVAL '10' MINUTE order by td_percent desc) where rownum <= 12";
+List<String> labels    = new ArrayList<String>();
+List<String> rawNames  = new ArrayList<String>();
+List<Double> failure   = new ArrayList<Double>();
+List<Integer> tdCounts = new ArrayList<Integer>();
+List<Integer> totalHits = new ArrayList<Integer>();
 
-System.out.println(sql);
-Statement statement=conn.createStatement();
-ResultSet resultSet= statement.executeQuery(sql);
+try {
+    conn = DBUtilityAuto.getReportDBConnection();
 
-List<String> labels= new ArrayList<String>();
-List<Double> failure= new ArrayList<Double>();
-int j=0;
-while(resultSet.next()){
-    /* ✅ Label colors — theme ke saath match honge (JS me handle karenge) */
-    String name="<p style='color:#ff9933; font-weight: bolder; '>"+Integer.toString(resultSet.getInt("td_count"))+"</p><br><p class='ep-label' style='font-weight: bolder;'>"+resultSet.getString("txn_endpoint").replaceAll("_", "</p><br><p class='ep-label' style='font-weight: bolder;'>")+"</p><br>"+"<p style='color:#32CD32; font-weight: bolder;'>"+Integer.toString(resultSet.getInt("total_hits")) +"</p>";
-%>
-Arr[<%=j %>] = '<%=resultSet.getString("txn_endpoint") %>';
-<%
-    double value= resultSet.getDouble("td_percent");
-    labels.add(name);
-    failure.add(value);
-    j++;
+    String sql = "SELECT txn_endpoint, total_hits, td_count, td_percent from ( "
+               + "SELECT txn_endpoint, total_hits, td_count, td_percent from txnendpoint "
+               + "WHERE time >= SYSTIMESTAMP - INTERVAL '10' MINUTE "
+               + "order by td_percent desc) where rownum <= 12";
+
+    statement = conn.createStatement();
+    resultSet = statement.executeQuery(sql);
+
+    while (resultSet.next()) {
+        String rawName  = resultSet.getString("txn_endpoint");
+        int    tdCount  = resultSet.getInt("td_count");
+        int    totalHit = resultSet.getInt("total_hits");
+        double pct      = resultSet.getDouble("td_percent");
+
+        String name = "<p style='color:#ff9933; font-weight: bolder; font-size:20px; text-shadow:0 0 6px rgba(255,153,51,.6);'>" + tdCount + "</p>"
+            + "<br><p style='color:#FFFFFF; font-weight: bolder; font-size:18px; text-shadow:0 0 6px rgba(255,255,255,.3);'>"
+            + rawName.replaceAll("_", "</p><br><p style='color:#FFFFFF; font-weight: bolder; font-size:18px; text-shadow:0 0 6px rgba(255,255,255,.3);'>")
+            + "</p><br>"
+            + "<p style='color:#32CD32; font-weight: bolder; font-size:18px; text-shadow:0 0 6px rgba(50,205,50,.6);'>" + totalHit + "</p>";
+
+        labels.add(name);
+        rawNames.add(rawName);
+        failure.add(pct);
+        tdCounts.add(tdCount);
+        totalHits.add(totalHit);
+    }
+} catch (Exception e) {
+    e.printStackTrace();
+} finally {
+    try { if (resultSet != null) resultSet.close(); } catch (Exception ignored) {}
+    try { if (statement != null) statement.close(); } catch (Exception ignored) {}
+    try { if (conn != null) conn.close(); } catch (Exception ignored) {}
 }
-resultSet.close();
-statement.close();
-conn.close();
+
+while (labels.size() < 5) {
+    labels.add("&nbsp;");
+    rawNames.add("");
+    failure.add(0.0);
+    tdCounts.add(0);
+    totalHits.add(0);
+}
 %>
 
-/* ✅ Theme detection */
-var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+<script>
+/* ============================================================
+   Server data → JS arrays
+   ============================================================ */
+var labelArr = [
+<%
+for (int k = 0; k < labels.size(); k++) {
+    String lbl = labels.get(k).replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "").replace("\r", "");
+    out.print("\"" + lbl + "\"");
+    if (k < labels.size() - 1) out.print(",");
+}
+%>
+];
+var nameArr = [
+<%
+for (int k = 0; k < rawNames.size(); k++) {
+    String n = rawNames.get(k).replace("\\", "\\\\").replace("\"", "\\\"");
+    out.print("\"" + n + "\"");
+    if (k < rawNames.size() - 1) out.print(",");
+}
+%>
+];
+var valueArr = [
+<%
+for (int k = 0; k < failure.size(); k++) {
+    out.print(failure.get(k));
+    if (k < failure.size() - 1) out.print(",");
+}
+%>
+];
+var tdArr = [
+<%
+for (int k = 0; k < tdCounts.size(); k++) {
+    out.print(tdCounts.get(k));
+    if (k < tdCounts.size() - 1) out.print(",");
+}
+%>
+];
+var totalArr = [
+<%
+for (int k = 0; k < totalHits.size(); k++) {
+    out.print(totalHits.get(k));
+    if (k < totalHits.size() - 1) out.print(",");
+}
+%>
+];
 
-/* ✅ Theme-based colors */
+/* ============================================================
+   Theme detection
+   ============================================================ */
+var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
 var chartBg        = isDark ? '#000000' : '#FFFFFF';
 var chartText      = isDark ? '#FFFFFF' : '#0A0A0A';
 var chartMuted     = isDark ? '#9CA3AF' : '#6B7280';
@@ -267,60 +581,109 @@ var chartGridLine  = isDark ? '#333333' : '#E5E7EB';
 var chartTickColor = isDark ? '#333333' : '#D1D5DB';
 var chartBorder    = isDark ? '#333333' : '#CCCCCC';
 
-let chartConfig = {
+/* ============================================================
+   KPI compute + blink
+   ============================================================ */
+(function computeStats() {
+    var total = 0, critical = 0, warning = 0, maxVal = 0;
+    for (var i = 0; i < nameArr.length; i++) {
+        if (!nameArr[i]) continue;
+        total++;
+        if (valueArr[i] >= 5) critical++;
+        else if (valueArr[i] >= 1) warning++;
+        if (valueArr[i] > maxVal) maxVal = valueArr[i];
+    }
+    document.getElementById('txStatTotal').textContent = total;
+
+    var critEl = document.getElementById('txStatCritical');
+    critEl.textContent = critical;
+    if (critical > 0) critEl.classList.add('tx-blink-red');
+
+    document.getElementById('txStatWarning').textContent = warning;
+
+    var maxEl = document.getElementById('txStatMax');
+    maxEl.textContent = maxVal.toFixed(2) + '%';
+    maxEl.className = 'tx-kpi-value ' + (maxVal >= 5 ? 'red' : (maxVal >= 2 ? 'orange' : 'green'));
+    if (maxVal >= 5) maxEl.classList.add('tx-blink-red');
+})();
+
+/* ============================================================
+   Top critical chips
+   ============================================================ */
+(function buildCritBar() {
+    var items = [];
+    for (var k = 0; k < nameArr.length; k++) {
+        if (nameArr[k] && valueArr[k] > 0) {
+            items.push({ name: nameArr[k], pct: valueArr[k] });
+        }
+    }
+    items.sort(function(a, b) { return b.pct - a.pct; });
+    var top = items.slice(0, 5);
+    var bar = document.getElementById('txCritBar');
+
+    if (!top.length) {
+        var empty = document.createElement('span');
+        empty.style.cssText = 'color:var(--muted);font-family:Courier New,monospace;font-size:13px;font-weight:700;';
+        empty.textContent = 'all clear ✓';
+        bar.appendChild(empty);
+        return;
+    }
+
+    top.forEach(function(it) {
+        var chip = document.createElement('div');
+        chip.className = 'tx-crit-chip' + (it.pct >= 5 ? ' critical' : '');
+        chip.innerHTML = '<span class="name" title="' + it.name + '">' + it.name + '</span>'
+                       + '<span class="pct">' + it.pct + '%</span>';
+        bar.appendChild(chip);
+    });
+})();
+
+/* ============================================================
+   Severity colors per bar
+   ============================================================ */
+var barColors = valueArr.map(function(v) {
+    if (v >= 5) return "#ef4444";
+    if (v >= 2) return "#f59e0b";
+    if (v >= 1) return "#8b5cf6";
+    return "#10b981";
+});
+
+/* ============================================================
+   Chart config — 3D depth + severity colors + theme aware
+   ============================================================ */
+var chartConfig = {
     type: "bar3d",
-    "3dAspect": { depth: 30, true3d: 0, yAngle: 10 },
+    "3dAspect": { depth: 45, true3d: 0, yAngle: 15 },
     backgroundColor: chartBg,
+    globals: { fontFamily: "Inter, sans-serif" },
     title: {
         text: "Failure %   End Point Wise",
         fontWeight: "bold",
         height: "25px",
         color: chartText,
-        fontSize: "40px",
-        fontFamily: "Times New Roman",
+        fontSize: "34px",
+        fontFamily: "Inter, sans-serif"
     },
     plotarea: {
         alpha: 0.3,
         backgroundColor: chartBg,
-        margin: "50px 35px 250px 200px",
+        margin: "50px 35px 190px 170px"
     },
     scaleX: {
-        values: [<%
-            if(labels.size()<=5){
-                for(String label: labels){
-                    out.print("\""+label+"\",");
-                }
-                for(int i=labels.size();i<5;i++)
-                {
-                    out.print("\""+" "+"\",");
-                }
-            }
-            else
-            {
-                for(String label: labels){
-                    out.print("\""+label+"\",");
-                }
-            }
-        %>],
+        values: labelArr,
         alpha: 0.5,
         backgroundColor: chartBg,
         borderColor: chartBorder,
         borderWidth: "1px",
         guide: { visible: false },
-        item: { fontColor: chartText, fontSize: "30px" },
+        item: { fontColor: chartText, fontSize: "22px" },
         tick: { alpha: 0.2, lineColor: chartTickColor },
         label: {
-            text: '<p style="color:#ff9933;">TD FAILURE, </p><p style="color:' + chartText + ';"> END POINT, </p><p style="color:#32CD32;">TOTAL HITS</p>',
+            text: '<p style="color:#ff9933;font-size:18px;font-weight:800;margin:3px 0;text-shadow:0 0 6px rgba(255,153,51,.6);">TD FAILURE</p>'
+                + '<p style="color:' + chartText + ';font-size:18px;font-weight:800;margin:3px 0;">END POINT</p>'
+                + '<p style="color:#32CD32;font-size:18px;font-weight:800;margin:3px 0;text-shadow:0 0 6px rgba(50,205,50,.6);">TOTAL HITS</p>',
             color: chartText,
-            fontSize: "30",
-            offsetX: '-100px',
-        },
-        item: { 'font-size': 30 },
-        guide: {
-            visible: true,
-            'line-color': chartGridLine,
-            'line-style': "dotted",
-            alpha: 1
+            offsetX: '-90px'
         }
     },
     scaleY: {
@@ -328,130 +691,109 @@ let chartConfig = {
         backgroundColor: chartBg,
         borderColor: chartBorder,
         borderWidth: "1px",
-        guide: { alpha: 0.2, lineColor: chartGridLine, lineStyle: "solid" },
-        item: { fontColor: chartText, paddingRight: "10px" },
+        guide: { alpha: 0.25, lineColor: chartGridLine, lineStyle: "solid" },
+        item: { fontColor: chartText, paddingRight: "10px", fontSize: "18px" },
         tick: { alpha: 0.2, lineColor: chartTickColor },
         label: {
             text: "Failure Percentage",
-            color: chartText,
-            fontSize: "30",
-        },
-        item: { 'font-size': 30 },
-        guide: {
-            visible: true,
-            'line-color': chartGridLine,
-            'line-style': "dotted",
-            alpha: 1
+            color: chartMuted,
+            fontSize: "18"
         }
     },
-    series: [
-        {
-            text: "Product 2",
-            values: [<%
-                for(Double value: failure)
-                {
-                    out.print(value+",");
-                }
-            %>],
-            "value-box": {
-                "text": "%v %",
-                "placement": "top",
-                "font-color": chartText,
-                "font-size": "30px",
-                "font-weight": "bold",
-                "offset-y": -10,
-            },
-            tooltip: {
-                backgroundColor: "#673AB7",
-                borderColor: "none",
-                borderRadius: "5px",
-                fontSize: "20px",
-                padding: "6px 12px",
-                shadow: false,
-            },
-            backgroundColor: "#673AB7 #9575CD",
-            borderColor: "#fff",
-            legendMarker: { borderColor: "#673AB7" },
+    series: [{
+        text: "Failure %",
+        values: valueArr,
+        "value-box": {
+            text: "%v %",
+            placement: "top",
+            "font-color": chartText,
+            "font-size": "22px",
+            "font-weight": "bold",
+            "offset-y": -6,
+            rules: [
+                { rule: "%v >= 5", "font-color": "#ff5252" },
+                { rule: "%v >= 2", "font-color": "#fbc04b" },
+                { rule: "%v >= 1", "font-color": "#b794ff" }
+            ]
         },
-    ],
+        tooltip: {
+            backgroundColor: "#1c2030",
+            borderColor: "#6366f1",
+            borderWidth: 1,
+            borderRadius: "6px",
+            fontSize: "16px",
+            padding: "10px 14px",
+            shadow: false,
+            fontColor: "#fff"
+        },
+        styles: barColors,
+        backgroundColor: "#673AB7",
+        borderColor: chartBorder,
+        borderWidth: 1,
+        "effects": [
+            { "effect": "SHADOW", "offsetX": 4, "offsetY": 4, "blur": 12, "color": "rgba(0,0,0,0.5)" }
+        ]
+    }]
 };
 
-let updateChart = (p) => {
-    initState = zingchart.exec(p.id, 'getdata');
-};
+function updateChart(p) {
+    var idx = p.nodeindex;
+    if (!nameArr[idx]) return;
+    var url = '<%=request.getContextPath() + "/jsp/TransactionEndpointWiseService.jsp?txnEndPoint="%>' + encodeURIComponent(nameArr[idx]);
+    window.open(url, '_blank');
+}
 
 zingchart.render({
     id: 'myChart',
     data: chartConfig,
     height: '100%',
-    width: '100%',
+    width: '100%'
 });
 
 zingchart.bind('myChart', 'node_click', updateChart);
 
-/* ✅ Theme change pe reload (chart re-render ke liye) */
+/* ============================================================
+   Theme change → reload (tumhara original behaviour)
+   ============================================================ */
 var _lastTheme = isDark ? 'dark' : 'light';
-setInterval(function(){
+setInterval(function() {
     var now = document.documentElement.getAttribute('data-theme') || 'light';
-    if(now !== _lastTheme){
+    if (now !== _lastTheme) {
         _lastTheme = now;
         location.reload();
     }
 }, 500);
-
-/* ✅ Fix: chart labels me class se color set karo — light/dark ke saath match */
-setTimeout(function(){
-    var labels = document.querySelectorAll('.ep-label');
-    var color = isDark ? '#FFFFFF' : '#0A0A0A';
-    labels.forEach(function(el){ el.style.color = color; });
-}, 200);
-
-var modal = document.getElementById("myModal");
-var btn = document.getElementById("myBtn");
-var span = document.getElementsByClassName("close")[0];
-if(btn){
-    btn.onclick = function() { modal.style.display = "block"; }
-}
-if(span){
-    span.onclick = function() { modal.style.display = "none"; }
-}
-window.onclick = function(event) {
-    if (event.target == modal) { modal.style.display = "none"; }
-}
 </script>
 
+<!-- ============ COUNTDOWN (tumhara wala) ============ -->
 <script>
-function countdown( elementName, minutes, seconds )
-{
-    var element, endTime, hours, mins, msLeft, time;
+function countdown(elementName, minutes, seconds) {
+    var element, endTime;
 
-    function twoDigits( n )
-    {
+    function twoDigits(n) {
         return (n <= 9 ? "0" + n : n);
     }
 
-    function updateTimer()
-    {
-        msLeft = endTime - (+new Date);
-        if ( msLeft < 1000 ) {
-            element.innerHTML = "Please Wait Fetching the Latest Data!";
+    function updateTimer() {
+        var msLeft = endTime - (+new Date);
+        if (msLeft < 1000) {
+            element.innerHTML = "Refreshing…";
         } else {
-            time = new Date( msLeft );
-            hours = time.getUTCHours();
-            mins = time.getUTCMinutes();
-            element.innerHTML = (hours ? hours + ':' + twoDigits( mins ) : mins) + ':' + twoDigits( time.getUTCSeconds() );
-            setTimeout( updateTimer, time.getUTCMilliseconds() + 500 );
+            var time = new Date(msLeft);
+            var hours = time.getUTCHours();
+            var mins = time.getUTCMinutes();
+            element.innerHTML = (hours ? hours + ':' + twoDigits(mins) : mins) + ':' + twoDigits(time.getUTCSeconds());
+            setTimeout(updateTimer, time.getUTCMilliseconds() + 500);
         }
     }
 
-    element = document.getElementById( elementName );
-    endTime = (+new Date) + 1000 * (60*minutes + seconds) + 500;
+    element = document.getElementById(elementName);
+    endTime = (+new Date) + 1000 * (60 * minutes + seconds) + 500;
     updateTimer();
 }
 
-countdown( "ten-countdown", 10, 0 );
+countdown("ten-countdown", 10, 0);
 </script>
 
-</div>
 </body>
 </html>
