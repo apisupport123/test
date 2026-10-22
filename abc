@@ -46,12 +46,12 @@
     --brand: #6366f1;
     --brand-glow: rgba(99, 102, 241, 0.35);
 
-    /* severity palette */
-    --critical: #dc2626;      /* crimson */
-    --critical-soft: rgba(220, 38, 38, 0.10);
-    --critical-border: rgba(220, 38, 38, 0.40);
-    --warning: #f59e0b;       /* amber */
-    --ok: #10b981;            /* emerald */
+    /* severity palette — ✅ #ff1a1a red */
+    --critical: #ff1a1a;
+    --critical-soft: rgba(255, 26, 26, 0.10);
+    --critical-border: rgba(255, 26, 26, 0.45);
+    --warning: #f59e0b;
+    --ok: #10b981;
 
     --chart-bg: #0a0d15;
     --chart-border: #1c2030;
@@ -72,9 +72,9 @@
     --brand: #4f46e5;
     --brand-glow: rgba(79, 70, 229, 0.25);
 
-    --critical: #dc2626;
-    --critical-soft: rgba(220, 38, 38, 0.08);
-    --critical-border: rgba(220, 38, 38, 0.35);
+    --critical: #e60000;                  /* slightly darker for light bg readability */
+    --critical-soft: rgba(255, 26, 26, 0.08);
+    --critical-border: rgba(255, 26, 26, 0.40);
     --warning: #f59e0b;
     --ok: #10b981;
 
@@ -119,7 +119,6 @@
     transition: background .3s ease, border-color .3s ease;
   }
 
-  /* Timer */
   .timer-block {
     display: flex;
     align-items: center;
@@ -151,7 +150,6 @@
     line-height: 1;
   }
 
-  /* KPI row */
   .kpi-row {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -199,7 +197,6 @@
     50%      { opacity: 0.4; }
   }
 
-  /* Right block */
   .right-block {
     display: flex;
     align-items: center;
@@ -250,7 +247,6 @@
     50%      { opacity: 0.4; transform: scale(0.8); }
   }
 
-  /* Theme toggle */
   .theme-toggle {
     display: inline-flex;
     align-items: center;
@@ -314,14 +310,14 @@
     transition: all 0.2s;
   }
   .crit-chip:hover {
-    background: rgba(220, 38, 38, 0.18);
+    background: rgba(255, 26, 26, 0.18);
   }
   .crit-chip.critical {
     animation: chipBlink 2s ease-in-out infinite;
   }
   @keyframes chipBlink {
-    0%, 100% { box-shadow: 0 0 0 rgba(220,38,38,0); }
-    50%      { box-shadow: 0 0 16px rgba(220,38,38,.55); }
+    0%, 100% { box-shadow: 0 0 0 rgba(255,26,26,0); }
+    50%      { box-shadow: 0 0 16px rgba(255,26,26,.6); }
   }
   .crit-chip .name {
     font-size: 14px;
@@ -413,7 +409,7 @@
       <div class="sev-chips">
         <div class="sev-chip"><span class="sev-dot" style="background:#10b981;"></span>&lt;1%</div>
         <div class="sev-chip"><span class="sev-dot" style="background:#f59e0b;"></span>1-5%</div>
-        <div class="sev-chip"><span class="sev-dot" style="background:#dc2626;"></span>&gt;5%</div>
+        <div class="sev-chip"><span class="sev-dot" style="background:#ff1a1a;"></span>&gt;5%</div>
       </div>
       <div class="live-badge">
         <span class="pulse"></span> LIVE
@@ -450,7 +446,6 @@
         html.setAttribute('data-theme', now);
         try { localStorage.setItem('tx-theme', now); } catch (e) {}
         btn.textContent = now === 'dark' ? '🌙' : '☀️';
-        // Chart reload karo — colors theme ke hisaab se
         setTimeout(function() { location.reload(); }, 120);
     });
 })();
@@ -517,7 +512,6 @@ try {
         int    totalHit = resultSet.getInt("TOTAL_HITS");
         double pct      = resultSet.getDouble("TD_PERCENT");
 
-        /* ✅ theme-aware label — class "tx-ep-label" se JS color inject karega */
         String name = "<p style='color:#ff9933; font-weight: bolder; font-size:20px;'>" + tdCount + "</p>"
             + "<br><p class='tx-ep-label' style='font-weight: bolder; font-size:18px;'>"
             + rawName.replaceAll("_", "</p><br><p class='tx-ep-label' style='font-weight: bolder; font-size:18px;'>")
@@ -617,11 +611,11 @@ labelArr = labelArr.map(function(lbl) {
 });
 
 // ============================================================
-// ✅ SEVERITY PALETTE — crimson / amber / emerald
+// ✅ SEVERITY PALETTE — #ff1a1a red / amber / emerald
 // ============================================================
 var COLOR_LOW      = "#10b981";
 var COLOR_MEDIUM   = "#f59e0b";
-var COLOR_CRITICAL = "#dc2626";
+var COLOR_CRITICAL = "#ff1a1a";   /* ✅ tumhara chuna hua red */
 
 function severityColor(v) {
     if (v > 5) return COLOR_CRITICAL;
