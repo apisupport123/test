@@ -1,1167 +1,587 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
-<%@ page import="java.sql.*, java.util.*, java.text.*" %>
-<%@ page import="com.jdbc.DBUtilityAuto" %>
-<%!
-String getPartition() {
-    Calendar cal = Calendar.getInstance();
-    String month = new SimpleDateFormat("MMM", Locale.US).format(cal.getTime()).toUpperCase();
-    String year = new SimpleDateFormat("yy", Locale.US).format(cal.getTime());
-    return month + "_" + year;
-}
-%>
-<%
-// ============================================================
-// AUTH GUARD
-// ============================================================
-String __role = (session != null) ? (String) session.getAttribute("role") : null;
-if (__role == null || __role.trim().isEmpty()) {
-    response.sendRedirect(request.getContextPath() + "/login.action");
-    return;
-}
-
-// ============================================================
-// AJAX ENDPOINT
-// ============================================================
-String action = request.getParameter("action");
-
-if ("fetchSourceStatus".equals(action)) {
-    response.setContentType("application/json");
-    response.setHeader("Cache-Control", "no-cache");
-    Connection conn = null;
-    Statement stmt = null;
-    ResultSet rs = null;
-    StringBuilder json = new StringBuilder();
-
-    try {
-        conn = DBUtilityAuto.getIIBDBConnection();
-        String partition = getPartition();
-
-        String query =
-            "WITH FOUND_SOURCES AS ( " +
-            "   SELECT /*+ parallel(04) */ a.source_id " +
-            "   FROM eisapp.api_log PARTITION(" + partition + ") a " +
-            "   WHERE a.source_id IN ('AK','CA','CC','CK','CR','FA','FS','I4','IN','KA','MB','NB','ON','RL','SA','SK','SQ','UP','WB','Y2') " +
-            "   AND a.request_date_time >= SYSDATE - INTERVAL '10' MINUTE " +
-            "   GROUP BY a.source_id " +
-            ") " +
-            "SELECT s.source_id, " +
-            "CASE WHEN f.source_id IS NOT NULL THEN 'Y' ELSE 'N' END AS flag " +
-            "FROM ( " +
-            "   SELECT 'SA' AS source_id FROM DUAL UNION ALL " +
-            "   SELECT 'FS' FROM DUAL UNION ALL " +
-            "   SELECT 'I4' FROM DUAL UNION ALL " +
-            "   SELECT 'Y2' FROM DUAL UNION ALL " +
-            "   SELECT 'KA' FROM DUAL UNION ALL " +
-            "   SELECT 'FA' FROM DUAL UNION ALL " +
-            "   SELECT 'WB' FROM DUAL UNION ALL " +
-            "   SELECT 'ON' FROM DUAL UNION ALL " +
-            "   SELECT 'CC' FROM DUAL UNION ALL " +
-            "   SELECT 'CK' FROM DUAL UNION ALL " +
-            "   SELECT 'CR' FROM DUAL UNION ALL " +
-            "   SELECT 'SQ' FROM DUAL UNION ALL " +
-            "   SELECT 'RL' FROM DUAL UNION ALL " +
-            "   SELECT 'UP' FROM DUAL UNION ALL " +
-            "   SELECT 'CA' FROM DUAL UNION ALL " +
-            "   SELECT 'AK' FROM DUAL UNION ALL " +
-            "   SELECT 'NB' FROM DUAL UNION ALL " +
-            "   SELECT 'IN' FROM DUAL UNION ALL " +
-            "   SELECT 'MB' FROM DUAL UNION ALL " +
-            "   SELECT 'SK' FROM DUAL " +
-            ") s " +
-            "LEFT JOIN FOUND_SOURCES f ON f.source_id = s.source_id " +
-            "ORDER BY s.source_id";
-
-        stmt = conn.createStatement();
-        stmt.setQueryTimeout(1200);
-        rs = stmt.executeQuery(query);
-
-        json.append("[");
-        boolean first = true;
-        while (rs.next()) {
-            if (!first) json.append(",");
-            json.append("{");
-            json.append("\"source_id\":\"").append(rs.getString("source_id")).append("\",");
-            json.append("\"flag\":\"").append(rs.getString("flag")).append("\"");
-            json.append("}");
-            first = false;
-        }
-        json.append("]");
-        out.print(json.toString());
-
-    } catch (Exception e) {
-        String errorMsg = e.getMessage();
-        if (errorMsg == null) errorMsg = "Unknown error";
-        errorMsg = errorMsg.replace("\"", "'").replace("\n", " ");
-        out.print("{\"error\":\"" + errorMsg + "\"}");
-        e.printStackTrace();
-    } finally {
-        try { if (rs != null) rs.close(); } catch(Exception e) {}
-        try { if (stmt != null) stmt.close(); } catch(Exception e) {}
-        try { if (conn != null) conn.close(); } catch(Exception e) {}
-    }
-    return;
-}
-%>
+<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%@page import="java.util.*"%>
+<%@page import="java.sql.*"%> 
+<%@page import="com.jdbc.DBUtilityAuto" %>   
+<%@page import="com.jdbc.DBUtility" %>  
+<%@page import=" java.time.ZoneId, java.time.ZonedDateTime , java.time.format.DateTimeFormatter, java.util.Locale" %> 
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>Source Monitor — EIS Portal</title>
-<script src="<%=request.getContextPath()%>/js/jquery.min.js"></script>
-<style>
-:root{
-  --brand:#F86F03;
-  --brand-2:#FF9A3D;
-  --brand-light:#FFF4EC;
-  --brand-glow:rgba(248,111,3,.4);
-  --ink:#0A0A0A;
-  --muted:#6B7280;
-  --line:#EAEAEA;
-  --bg:#F7F7F5;
-  --card:#FFFFFF;
-  --hero-dark:#1A1A1A;
-  --hero-dark-2:#2A2A2A;
-  --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --sidebar-w:260px;
-  --topnav-h:64px;
-  --green:#10B981;
-  --blue:#3B82F6;
-  --purple:#8B5CF6;
-  --pink:#EC4899;
-  --amber:#F59E0B;
-  --cyan:#06B6D4;
-  --red:#EF4444;
-}
-html[data-theme="dark"]{
-  --ink:#F5F5F5;
-  --muted:#9CA3AF;
-  --line:#272727;
-  --bg:#0F0F0F;
-  --card:#161616;
-  --hero-dark:#0B0B0B;
-  --hero-dark-2:#1A1A1A;
-}
-*{margin:0;padding:0;box-sizing:border-box}
-body{
-  font-family:var(--font-stack);
-  font-weight:700;
-  background:var(--bg);
-  color:var(--ink);
-  -webkit-font-smoothing:antialiased;
-  min-height:100vh;
-  transition:background .3s ease,color .3s ease;
-}
-a{color:inherit;text-decoration:none}
-h1,h2,h3,h4,h5,h6,strong,b{font-weight:800;letter-spacing:-.3px}
+<meta charset="ISO-8859-1" >
+<title>Transaction End Point</title>
+ <script nonce="undefined" src="../js/zingchart.min.js"></script>
+ <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="../js/LdapAuth.js"></script>
+  <style>
+    .chart--container {
+      min-height: 620px;
+      width: 100%;
+      height: 100%;
 
-.icon-svg{
-  width:16px;height:16px;
-  display:inline-block;flex-shrink:0;
-  stroke:currentColor;fill:none;
-  stroke-width:2.2;
-  stroke-linecap:round;stroke-linejoin:round;
-}
-
-/* ============ WRAPPER ============ */
-.new-wrapper{
-  margin-left:var(--sidebar-w);
-  padding-top:var(--topnav-h);
-  transition:margin-left .3s cubic-bezier(.4,0,.2,1);
-  min-height:100vh;
-}
-html.sb-collapsed .new-wrapper{margin-left:0}
-.dash-wrap{
-  max-width:1500px;
-  margin:0 auto;
-  padding:28px 28px 60px;
-}
-
-/* ============ PAGE HEAD ============ */
-.page-head{
-  display:flex;
-  justify-content:space-between;
-  align-items:flex-start;
-  gap:16px;
-  margin-bottom:24px;
-  flex-wrap:wrap;
-}
-.page-head .ttl-wrap{flex:1;min-width:260px;}
-.page-head .ttl{
-  display:flex;
-  align-items:center;
-  gap:14px;
-  font-size:1.65rem;
-  font-weight:900;
-  letter-spacing:-.6px;
-  line-height:1.2;
-  margin-bottom:6px;
-}
-.page-head .ttl .ttl-icon{
-  width:48px;height:48px;
-  display:grid;place-items:center;
-  background:linear-gradient(135deg,var(--brand),var(--brand-2));
-  color:#fff;
-  border-radius:14px;
-  font-size:1.2rem;
-  flex-shrink:0;
-  box-shadow:0 8px 22px -6px var(--brand-glow);
-}
-.page-head .ttl .ttl-icon .icon-svg{width:22px;height:22px;stroke-width:2.4;}
-.page-head .sub{
-  color:var(--muted);
-  font-size:.85rem;
-  margin-left:62px;
-  font-weight:600;
-  display:flex;
-  align-items:center;
-  gap:10px;
-  flex-wrap:wrap;
-}
-.page-head .sub .partition-badge{
-  display:inline-flex;
-  align-items:center;
-  gap:6px;
-  padding:4px 12px;
-  background:var(--card);
-  border:1px solid var(--line);
-  border-radius:999px;
-  font-family:'JetBrains Mono',Consolas,monospace;
-  font-size:.72rem;
-  font-weight:800;
-  color:var(--brand);
-  letter-spacing:.3px;
-}
-
-/* ============ HEADER ACTIONS ============ */
-.head-actions{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  flex-wrap:wrap;
-}
-.live-badge{
-  display:flex;
-  align-items:center;
-  gap:8px;
-  padding:10px 16px;
-  background:var(--card);
-  border:1px solid var(--line);
-  border-radius:12px;
-  font-size:.72rem;
-  font-weight:800;
-  color:var(--green);
-  text-transform:uppercase;
-  letter-spacing:.5px;
-}
-.live-badge .dot{
-  width:8px;height:8px;
-  border-radius:50%;
-  background:var(--green);
-  animation:pulseDot 1.5s ease-in-out infinite;
-  box-shadow:0 0 10px var(--green);
-}
-@keyframes pulseDot{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.4;transform:scale(.85);}}
-
-.timer-badge{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  padding:10px 16px;
-  background:var(--card);
-  border:1px solid var(--line);
-  border-radius:12px;
-}
-.timer-badge .icon-svg{color:var(--brand);width:16px;height:16px;}
-.timer-badge .time{
-  font-family:'JetBrains Mono',Consolas,monospace;
-  font-size:.95rem;
-  font-weight:800;
-  color:var(--ink);
-  letter-spacing:-.3px;
-  font-variant-numeric:tabular-nums;
-}
-.timer-badge .lbl{
-  font-size:.65rem;
-  color:var(--muted);
-  font-weight:700;
-  text-transform:uppercase;
-  letter-spacing:.4px;
-}
-
-/* ============ STATS ROW ============ */
-.stats-row{
-  display:grid;
-  grid-template-columns:repeat(4,1fr);
-  gap:14px;
-  margin-bottom:24px;
-}
-.stat-card{
-  background:var(--card);
-  border:1px solid var(--line);
-  border-radius:16px;
-  padding:18px;
-  display:flex;
-  align-items:center;
-  gap:14px;
-  transition:all .25s ease;
-}
-.stat-card:hover{
-  transform:translateY(-3px);
-  box-shadow:0 12px 32px -10px rgba(0,0,0,.15);
-  border-color:var(--brand);
-}
-.stat-card .sicon{
-  width:46px;height:46px;
-  border-radius:12px;
-  display:grid;place-items:center;
-  flex-shrink:0;
-}
-.stat-card .sicon .icon-svg{width:20px;height:20px;stroke-width:2.4;}
-.stat-card .stext{flex:1;min-width:0;}
-.stat-card .snum{
-  font-size:1.4rem;
-  font-weight:900;
-  letter-spacing:-.6px;
-  line-height:1;
-  color:var(--ink);
-  display:flex;
-  align-items:baseline;
-  gap:4px;
-}
-.stat-card .snum small{font-size:.75rem;font-weight:700;color:var(--muted);}
-.stat-card .slabel{
-  font-size:.72rem;
-  color:var(--muted);
-  font-weight:700;
-  text-transform:uppercase;
-  letter-spacing:.4px;
-  margin-top:3px;
-}
-.stat-card.s-green .sicon{background:rgba(16,185,129,.12);color:var(--green);}
-.stat-card.s-red .sicon{background:rgba(239,68,68,.12);color:var(--red);}
-.stat-card.s-blue .sicon{background:rgba(59,130,246,.12);color:var(--blue);}
-.stat-card.s-amber .sicon{background:rgba(245,158,11,.12);color:var(--amber);}
-
-/* ============ MAIN LAYOUT ============ */
-.monitor-main{
-  display:grid;
-  grid-template-columns:1fr 340px;
-  gap:16px;
-  min-height:600px;
-  margin-bottom:24px;
-}
-
-/* ============ PANEL ============ */
-.panel{
-  background:var(--card);
-  border:1px solid var(--line);
-  border-radius:20px;
-  display:flex;
-  flex-direction:column;
-  overflow:hidden;
-  box-shadow:0 2px 8px rgba(0,0,0,.03);
-}
-.panel-header{
-  padding:16px 20px;
-  border-bottom:1px solid var(--line);
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:12px;
-  flex-wrap:wrap;
-}
-.panel-header .panel-title{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  font-size:.85rem;
-  font-weight:900;
-  text-transform:uppercase;
-  letter-spacing:.8px;
-  color:var(--ink);
-}
-.panel-header .panel-title .icon-svg{color:var(--brand);width:16px;height:16px;}
-.panel-header .count-badge{
-  padding:3px 10px;
-  background:var(--brand-light);
-  color:var(--brand);
-  border-radius:999px;
-  font-size:.65rem;
-  font-weight:800;
-  font-variant-numeric:tabular-nums;
-}
-html[data-theme="dark"] .panel-header .count-badge{background:rgba(248,111,3,.15);}
-.panel-legend{
-  display:flex;
-  gap:14px;
-  font-size:.68rem;
-  color:var(--muted);
-  font-weight:700;
-  text-transform:uppercase;
-  letter-spacing:.4px;
-}
-.panel-legend .legend-item{
-  display:flex;
-  align-items:center;
-  gap:6px;
-}
-.panel-legend .swatch{
-  width:8px;height:8px;border-radius:2px;
-}
-.panel-legend .swatch.on{background:var(--green);}
-.panel-legend .swatch.off{background:var(--red);}
-
-/* ============ SOURCES GRID ============ */
-.sources-grid{
-  flex:1;
-  overflow-y:auto;
-  padding:16px;
-  display:grid;
-  grid-template-columns:repeat(auto-fill, minmax(150px, 1fr));
-  gap:12px;
-  align-content:start;
-}
-.sources-grid::-webkit-scrollbar{width:6px;}
-.sources-grid::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px;}
-
-/* ============ SOURCE CARD ============ */
-.source-card{
-  background:var(--bg);
-  border:1.5px solid var(--line);
-  border-radius:16px;
-  padding:18px 12px 16px;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  gap:8px;
-  position:relative;
-  transition:all .25s cubic-bezier(.4,0,.2,1);
-  cursor:default;
-  overflow:hidden;
-  min-height:130px;
-}
-.source-card.active{
-  border-color:rgba(16,185,129,.3);
-  background:linear-gradient(180deg, rgba(16,185,129,.08) 0%, var(--card) 60%);
-}
-.source-card.inactive{
-  opacity:.7;
-}
-.source-card:hover{
-  transform:translateY(-3px);
-  box-shadow:0 12px 32px -10px rgba(0,0,0,.15);
-}
-.source-card.active:hover{
-  border-color:var(--green);
-  box-shadow:0 12px 32px -10px rgba(16,185,129,.3);
-}
-.source-card.inactive:hover{
-  border-color:var(--red);
-  opacity:1;
-}
-
-.source-status-indicator{
-  position:absolute;
-  top:12px;right:12px;
-  width:9px;height:9px;
-  border-radius:50%;
-}
-.source-card.active .source-status-indicator{
-  background:var(--green);
-  box-shadow:0 0 0 4px rgba(16,185,129,.15);
-  animation:pulseDot 1.8s ease-in-out infinite;
-}
-.source-card.inactive .source-status-indicator{
-  background:var(--red);
-  box-shadow:0 0 0 4px rgba(239,68,68,.12);
-}
-
-.source-code{
-  font-family:'JetBrains Mono',Consolas,monospace;
-  font-size:1.9rem;
-  font-weight:800;
-  letter-spacing:-.5px;
-  line-height:1;
-  color:var(--ink);
-  transition:color .2s ease;
-}
-.source-card.active .source-code{color:var(--green);}
-.source-card.inactive .source-code{color:var(--muted);}
-
-.source-status-text{
-  font-size:.6rem;
-  font-weight:900;
-  letter-spacing:1px;
-  text-transform:uppercase;
-  padding:4px 10px;
-  border-radius:999px;
-}
-.source-card.active .source-status-text{
-  background:rgba(16,185,129,.12);
-  color:var(--green);
-}
-.source-card.inactive .source-status-text{
-  background:rgba(239,68,68,.1);
-  color:var(--red);
-}
-
-.source-hits{
-  font-family:'JetBrains Mono',Consolas,monospace;
-  font-size:.65rem;
-  font-weight:700;
-  color:var(--muted);
-  padding:3px 8px;
-  background:var(--card);
-  border-radius:6px;
-  border:1px solid var(--line);
-}
-.source-card.active .source-hits{
-  color:var(--green);
-  background:rgba(16,185,129,.08);
-  border-color:rgba(16,185,129,.2);
-}
-
-/* ============ ACTIVITY LOG ============ */
-.activity-list{
-  flex:1;
-  overflow-y:auto;
-  padding:10px 12px;
-  display:flex;
-  flex-direction:column;
-  gap:6px;
-}
-.activity-list::-webkit-scrollbar{width:5px;}
-.activity-list::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px;}
-
-.activity-item{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  padding:10px 12px;
-  background:var(--bg);
-  border:1px solid var(--line);
-  border-left:3px solid transparent;
-  border-radius:10px;
-  font-size:.75rem;
-  font-weight:700;
-  animation:slideIn .3s ease;
-}
-@keyframes slideIn{
-  from{transform:translateX(-8px);opacity:0;}
-  to{transform:translateX(0);opacity:1;}
-}
-.activity-item.on{border-left-color:var(--green);}
-.activity-item.off{border-left-color:var(--red);opacity:.7;}
-
-.activity-time{
-  font-family:'JetBrains Mono',Consolas,monospace;
-  font-size:.68rem;
-  font-weight:700;
-  color:var(--muted);
-  flex-shrink:0;
-  font-variant-numeric:tabular-nums;
-}
-.activity-source{
-  font-family:'JetBrains Mono',Consolas,monospace;
-  font-size:.75rem;
-  font-weight:800;
-  color:var(--ink);
-  letter-spacing:-.2px;
-}
-.activity-status{
-  margin-left:auto;
-  font-size:.6rem;
-  font-weight:900;
-  text-transform:uppercase;
-  letter-spacing:.6px;
-  padding:3px 8px;
-  border-radius:6px;
-  flex-shrink:0;
-}
-.activity-status.on{
-  background:rgba(16,185,129,.12);
-  color:var(--green);
-}
-.activity-status.off{
-  background:rgba(239,68,68,.1);
-  color:var(--red);
-}
-
-.activity-empty{
-  text-align:center;
-  padding:40px 20px;
-  color:var(--muted);
-  font-size:.8rem;
-  font-weight:600;
-}
-.activity-empty .icon-svg{
-  width:36px;height:36px;
-  opacity:.4;
-  margin-bottom:12px;
-}
-
-/* ============ FOOTER ============ */
-.foot{
-  margin-top:32px;
-  padding-top:24px;
-  border-top:1px solid var(--line);
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  font-size:.75rem;
-  color:var(--muted);
-  font-weight:600;
-  flex-wrap:wrap;
-  gap:12px;
-}
-.foot .brandline b{color:var(--brand);}
-
-/* ============ LOADING OVERLAY ============ */
-.loading-overlay{
-  position:fixed;
-  inset:0;
-  background:var(--bg);
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  z-index:9999;
-  transition:opacity .5s ease;
-  gap:20px;
-}
-.loading-overlay.hide{
-  opacity:0;
-  pointer-events:none;
-}
-.loader-cyber{
-  width:64px;
-  height:64px;
-  position:relative;
-}
-.loader-cyber::before,
-.loader-cyber::after{
-  content:"";
-  position:absolute;
-  border-radius:50%;
-  animation:cyberSpin 1.2s ease-in-out infinite;
-}
-.loader-cyber::before{
-  inset:0;
-  border:3px solid transparent;
-  border-top-color:var(--brand);
-  border-bottom-color:var(--brand-2);
-}
-.loader-cyber::after{
-  inset:12px;
-  border:3px solid transparent;
-  border-left-color:var(--green);
-  border-right-color:var(--red);
-  animation-delay:.3s;
-  animation-direction:reverse;
-}
-@keyframes cyberSpin{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
-
-.loader-text{
-  font-family:'JetBrains Mono',Consolas,monospace;
-  font-size:.85rem;
-  font-weight:800;
-  letter-spacing:4px;
-  color:var(--ink);
-  animation:pulseText 1.5s ease-in-out infinite;
-}
-@keyframes pulseText{0%,100%{opacity:1;}50%{opacity:.3;}}
-
-.loader-sub{
-  font-size:.75rem;
-  color:var(--muted);
-  font-weight:600;
-  letter-spacing:1px;
-}
-
-/* ============ ERROR BANNER ============ */
-.error-banner{
-  position:fixed;
-  bottom:24px;
-  left:50%;
-  transform:translateX(-50%);
-  background:rgba(239,68,68,.1);
-  border:1px solid rgba(239,68,68,.3);
-  color:var(--red);
-  padding:12px 20px;
-  border-radius:14px;
-  font-size:.8rem;
-  font-weight:700;
-  z-index:999;
-  box-shadow:0 12px 32px -8px rgba(0,0,0,.15);
-  display:none;
-  align-items:center;
-  gap:10px;
-  max-width:90%;
-  backdrop-filter:blur(10px);
-}
-.error-banner.show{
-  display:flex;
-  animation:slideUp .4s ease;
-}
-@keyframes slideUp{
-  from{transform:translateX(-50%) translateY(20px);opacity:0;}
-  to{transform:translateX(-50%) translateY(0);opacity:1;}
-}
-
-/* ============ RESPONSIVE ============ */
-@media (max-width:1200px){
-  .monitor-main{grid-template-columns:1fr 280px;}
-}
-@media (max-width:992px){
-  .monitor-main{grid-template-columns:1fr;}
-  .activity-panel{max-height:300px;}
-  .stats-row{grid-template-columns:repeat(2,1fr);}
-}
-@media (max-width:900px){
-  .new-wrapper{margin-left:0;}
-  .dash-wrap{padding:20px 16px 40px;}
-  .stats-row{grid-template-columns:repeat(2,1fr);}
-  .page-head .ttl{font-size:1.3rem;}
-  .page-head .ttl .ttl-icon{width:40px;height:40px;}
-  .page-head .sub{margin-left:52px;font-size:.78rem;}
-}
-@media (max-width:640px){
-  .dash-wrap{padding:16px 12px 32px;}
-  .stats-row{grid-template-columns:1fr;}
-  .sources-grid{grid-template-columns:repeat(2,1fr);gap:8px;padding:12px;}
-  .source-card{min-height:110px;padding:14px 8px;}
-  .source-code{font-size:1.5rem;}
-  .head-actions{width:100%;}
-  .live-badge, .timer-badge{flex:1;justify-content:center;}
-}
-</style>
-</head>
-<body>
-
-<jsp:include page="./roleHeader.jsp" />
-
-<%
-  String roleForDisplay = (String) session.getAttribute("role");
-  String __user = (String) session.getAttribute("username");
-  if (__user == null || __user.trim().isEmpty()) __user = "User";
-  String userInitial = (__user.length() > 0) ? __user.substring(0,1).toUpperCase() : "U";
-%>
-
-<!-- ============ LOADING OVERLAY ============ -->
-<div class="loading-overlay" id="loadingOverlay">
-  <div class="loader-cyber"></div>
-  <div class="loader-text">LOADING</div>
-  <div class="loader-sub">Establishing secure connection...</div>
-</div>
-
-<div class="new-wrapper">
-<div class="dash-wrap">
-
-  <!-- ============ PAGE HEAD ============ -->
-  <section class="page-head">
-    <div class="ttl-wrap">
-      <h1 class="ttl">
-        <span class="ttl-icon">
-          <svg class="icon-svg" viewBox="0 0 24 24"><path d="M4.93 4.93a10 10 0 0 0 0 14.14M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M8.46 8.46a5 5 0 0 0 0 7.07M15.54 8.46a5 5 0 0 1 0 7.07"/><circle cx="12" cy="12" r="1.5"/></svg>
-        </span>
-        Source Monitor
-      </h1>
-      <p class="sub">
-        Real-time source tracking
-        <span class="partition-badge" id="partitionBadge">LOADING</span>
-      </p>
-    </div>
-    <div class="head-actions">
-      <div class="live-badge" id="liveBadge" style="display:none;">
-        <span class="dot"></span>
-        LIVE
-      </div>
-      <div class="timer-badge" id="timerBadge" style="display:none;">
-        <svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        <div>
-          <div class="time" id="timerDisplay">10:00</div>
-          <div class="lbl">Next Refresh</div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============ STATS ROW ============ -->
-  <section class="stats-row" id="statsRow" style="display:none;">
-    <div class="stat-card s-green">
-      <div class="sicon">
-        <svg class="icon-svg" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-      </div>
-      <div class="stext">
-        <div class="snum" id="activeCount">0</div>
-        <div class="slabel">Active Sources</div>
-      </div>
-    </div>
-    <div class="stat-card s-red">
-      <div class="sicon">
-        <svg class="icon-svg" viewBox="0 0 24 24"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
-      </div>
-      <div class="stext">
-        <div class="snum" id="inactiveCount">0</div>
-        <div class="slabel">Inactive Sources</div>
-      </div>
-    </div>
-    <div class="stat-card s-blue">
-      <div class="sicon">
-        <svg class="icon-svg" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
-      </div>
-      <div class="stext">
-        <div class="snum" id="totalSources">0</div>
-        <div class="slabel">Total Sources</div>
-      </div>
-    </div>
-    <div class="stat-card s-amber">
-      <div class="sicon">
-        <svg class="icon-svg" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-      </div>
-      <div class="stext">
-        <div class="snum" id="uptimePercent">0<small>%</small></div>
-        <div class="slabel">Uptime Rate</div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============ MAIN LAYOUT ============ -->
-  <div class="monitor-main" id="mainGrid" style="display:none;">
-
-    <!-- SOURCES PANEL -->
-    <div class="panel">
-      <div class="panel-header">
-        <div class="panel-title">
-          <svg class="icon-svg" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/></svg>
-          Sources
-          <span class="count-badge" id="sourceCount">0/0</span>
-        </div>
-        <div class="panel-legend">
-          <span class="legend-item"><span class="swatch on"></span>Active</span>
-          <span class="legend-item"><span class="swatch off"></span>Inactive</span>
-        </div>
-      </div>
-      <div class="sources-grid" id="sourcesGrid"></div>
-    </div>
-
-    <!-- ACTIVITY PANEL -->
-    <div class="panel">
-      <div class="panel-header">
-        <div class="panel-title">
-          <svg class="icon-svg" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-          Activity Log
-        </div>
-        <span style="font-size:.6rem;color:var(--muted);font-family:'JetBrains Mono',monospace;font-weight:800;letter-spacing:.5px;">LIVE</span>
-      </div>
-      <div class="activity-list" id="activityList">
-        <div class="activity-empty">
-          <svg class="icon-svg" viewBox="0 0 24 24"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
-          <div>Waiting for signal...</div>
-        </div>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- ============ FOOTER ============ -->
-  <footer class="foot">
-    <div class="brandline"><b>EIS Portal</b> · Source Monitor</div>
-    <div id="footTime">Loading...</div>
-    <div>Designed &amp; Developed by EIS Automation Team</div>
-  </footer>
-
-</div>
-</div>
-
-<!-- ============ ERROR BANNER ============ -->
-<div class="error-banner" id="errorBanner">
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-  <span id="errorMessage">Connection Error</span>
-</div>
-
-<script>
-/* ============================================================
-   STATE
-   ============================================================ */
-var sourceData = {};
-var activityLog = [];
-var MAX_ACTIVITY = 30;
-var timerSeconds = 600;
-var timerInterval;
-var retryCount = 0;
-var maxRetries = 3;
-
-/* ============================================================
-   HELPERS
-   ============================================================ */
-function getPartition() {
-  var months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
-  var now = new Date();
-  return months[now.getMonth()] + '_' + String(now.getFullYear()).slice(-2);
-}
-
-function formatTime(s) {
-  var m = Math.floor(s / 60);
-  var sec = s % 60;
-  return String(m).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
-}
-
-function updateTimer() {
-  timerSeconds--;
-  var el = document.getElementById('timerDisplay');
-  if (el) el.textContent = formatTime(timerSeconds);
-  if (timerSeconds <= 0) {
-    location.reload();
-  }
-}
-
-function updateFootTime() {
-  var now = new Date();
-  var hh = String(now.getHours()).padStart(2,'0');
-  var mm = String(now.getMinutes()).padStart(2,'0');
-  var footEl = document.getElementById('footTime');
-  if (footEl) footEl.textContent = 'Session active · ' + hh + ':' + mm;
-}
-
-/* ============================================================
-   ACTIVITY LOG
-   ============================================================ */
-function addActivity(source, status) {
-  var now = new Date();
-  var t = now.getHours().toString().padStart(2,'0') + ':' +
-          now.getMinutes().toString().padStart(2,'0') + ':' +
-          now.getSeconds().toString().padStart(2,'0');
-  activityLog.unshift({ time: t, source: source, status: status });
-  if (activityLog.length > MAX_ACTIVITY) activityLog.pop();
-  renderActivity();
-}
-
-function renderActivity() {
-  var c = document.getElementById('activityList');
-  if (!c) return;
-
-  if (activityLog.length === 0) {
-    c.innerHTML = '<div class="activity-empty">' +
-      '<svg class="icon-svg" viewBox="0 0 24 24"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>' +
-      '<div>Waiting for signal...</div></div>';
-    return;
-  }
-
-  var html = '';
-  for (var i = 0; i < Math.min(activityLog.length, 20); i++) {
-    var item = activityLog[i];
-    var cls = item.status === 'Y' ? 'on' : 'off';
-    var txt = item.status === 'Y' ? 'ON' : 'OFF';
-    html += '<div class="activity-item ' + cls + '">' +
-      '<span class="activity-time">' + item.time + '</span>' +
-      '<span class="activity-source">' + item.source + '</span>' +
-      '<span class="activity-status ' + cls + '">' + txt + '</span>' +
-      '</div>';
-  }
-  c.innerHTML = html;
-}
-
-/* ============================================================
-   HIDE LOADING
-   ============================================================ */
-function hideLoading() {
-  var overlay = document.getElementById('loadingOverlay');
-  if (overlay) overlay.classList.add('hide');
-
-  var liveBadge = document.getElementById('liveBadge');
-  if (liveBadge) liveBadge.style.display = 'flex';
-
-  var timerBadge = document.getElementById('timerBadge');
-  if (timerBadge) timerBadge.style.display = 'flex';
-
-  var statsRow = document.getElementById('statsRow');
-  if (statsRow) statsRow.style.display = 'grid';
-
-  var mainGrid = document.getElementById('mainGrid');
-  if (mainGrid) mainGrid.style.display = 'grid';
-
-  var part = document.getElementById('partitionBadge');
-  if (part) part.textContent = getPartition();
-
-  var timerDisp = document.getElementById('timerDisplay');
-  if (timerDisp) timerDisp.textContent = formatTime(timerSeconds);
-
-  if (!timerInterval) {
-    timerInterval = setInterval(updateTimer, 1000);
-    setInterval(updateFootTime, 30000);
-    updateFootTime();
-  }
-}
-
-/* ============================================================
-   ERROR BANNER
-   ============================================================ */
-function showError(msg) {
-  var banner = document.getElementById('errorBanner');
-  var msgEl = document.getElementById('errorMessage');
-  if (msgEl) msgEl.textContent = msg || 'Connection Error - Retrying...';
-  if (banner) banner.classList.add('show');
-
-  setTimeout(function() {
-    if (banner) banner.classList.remove('show');
-  }, 5000);
-}
-
-/* ============================================================
-   FETCH DATA
-   ============================================================ */
-function fetchData() {
-  var url = '?action=fetchSourceStatus';
-  console.log('Fetching: ' + url);
-
-  fetch(url, {
-    method: 'GET',
-    cache: 'no-cache',
-    headers: { 'Content-Type': 'application/json' }
-  })
-  .then(function(response) {
-    if (!response.ok) {
-      throw new Error('HTTP ' + response.status);
     }
-    return response.json();
-  })
-  .then(function(data) {
-    retryCount = 0;
-    if (data.error) {
-      showError('DB Error: ' + data.error);
-      return;
-    }
-    renderSources(data);
-    updateStats(data);
-    updateActivity(data);
-    hideLoading();
-  })
-  .catch(function(e) {
-    console.error('Fetch Error:', e);
-    retryCount++;
 
-    if (retryCount <= maxRetries) {
-      showError('Connection failed (Attempt ' + retryCount + '/' + maxRetries + ') - Retrying...');
-      setTimeout(function() {
-        fetchData();
-      }, 3000);
-    } else {
-      showError('Connection Error - Please refresh the page');
-      hideLoading();
-      var grid = document.getElementById('sourcesGrid');
-      if (grid) {
-        grid.innerHTML =
-          '<div style="text-align:center;padding:40px 20px;color:var(--red);grid-column:1/-1;">' +
-          '<div style="font-size:1rem;font-weight:800;margin-bottom:4px;">Connection Lost</div>' +
-          '<div style="font-size:.78rem;color:var(--muted);margin-bottom:16px;">Please refresh the page</div>' +
-          '<button onclick="location.reload()" style="padding:10px 24px;background:var(--brand);color:#fff;border:none;border-radius:10px;font-weight:800;font-size:.78rem;cursor:pointer;text-transform:uppercase;letter-spacing:.5px;">Refresh</button>' +
-          '</div>';
+    .blink {
+      animation: blinker 0s linear infinite;
+      color: white;
+      font-family: sans-serif;
+      font-size: larger;
+      text-align-last: center;
+      font-weight: 900;
+    }
+    
+    .footer {
+   position: relative;
+   left: 0;
+   bottom: 0;
+   width: 100%;
+   color: white;
+   text-align: center;
+}
+
+    @keyframes blinker {
+      50% {
+        opacity: 0;
       }
     }
-  });
+    
+    
+    
+    
+    
+    
+/* The Modal (background) */
+.modal {
+  display: none; /* Hidden by default */
+  position: fixed; /* Stay in place */
+  z-index: 1; /* Sit on top */
+  padding-top: 100px; /* Location of the box */
+  left: 0;
+  top: 0;
+  width: 100%; /* Full width */
+  height: 100%; /* Full height */
+  overflow: auto; /* Enable scroll if needed */
+  background-color: rgb(0,0,0); /* Fallback color */
+  background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
 }
 
-/* ============================================================
-   RENDER SOURCES
-   ============================================================ */
-function renderSources(data) {
-  var c = document.getElementById('sourcesGrid');
-  if (!c) return;
-
-  if (!data || data.length === 0) {
-    c.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--muted);grid-column:1/-1;">' +
-      '<div style="font-size:.85rem;font-weight:700;">No data available</div>' +
-      '</div>';
-    return;
-  }
-
-  var html = '';
-  var active = 0;
-  for (var i = 0; i < data.length; i++) {
-    var item = data[i];
-    var isActive = item.flag === 'Y';
-    if (isActive) active++;
-    var cls = isActive ? 'active' : 'inactive';
-    var status = isActive ? 'ONLINE' : 'OFFLINE';
-    var hits = isActive ? Math.floor(Math.random() * 50 + 10) : 0;
-
-    html += '<div class="source-card ' + cls + '">' +
-      '<span class="source-status-indicator"></span>' +
-      '<div class="source-code">' + item.source_id + '</div>' +
-      '<div class="source-status-text">' + status + '</div>' +
-      '<span class="source-hits">' + (isActive ? '⚡ ' + hits : '⏸') + '</span>' +
-      '</div>';
-  }
-  c.innerHTML = html;
-
-  var countEl = document.getElementById('sourceCount');
-  if (countEl) countEl.textContent = active + '/' + data.length;
+/* Modal Content */
+.modal-content {
+  position: relative;
+  background-color: #fefefe;
+  margin: auto;
+  padding: 0;
+  border: 1px solid #888;
+  width: 80%;
+  box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19);
+  -webkit-animation-name: animatetop;
+  -webkit-animation-duration: 0.4s;
+  animation-name: animatetop;
+  animation-duration: 0.4s
 }
 
-/* ============================================================
-   UPDATE STATS
-   ============================================================ */
-function updateStats(data) {
-  var active = 0, inactive = 0;
-  for (var i = 0; i < data.length; i++) {
-    if (data[i].flag === 'Y') active++;
-    else inactive++;
-  }
-
-  var activeEl = document.getElementById('activeCount');
-  if (activeEl) activeEl.textContent = active;
-
-  var inactiveEl = document.getElementById('inactiveCount');
-  if (inactiveEl) inactiveEl.textContent = inactive;
-
-  var totalEl = document.getElementById('totalSources');
-  if (totalEl) totalEl.textContent = data.length;
-
-  var uptime = data.length > 0 ? Math.round((active / data.length) * 100) : 0;
-  var uptimeEl = document.getElementById('uptimePercent');
-  if (uptimeEl) uptimeEl.innerHTML = uptime + '<small>%</small>';
+/* Add Animation */
+@-webkit-keyframes animatetop {
+  from {top:-300px; opacity:0} 
+  to {top:0; opacity:1}
 }
 
-/* ============================================================
-   UPDATE ACTIVITY
-   ============================================================ */
-function updateActivity(data) {
-  var current = {};
-  for (var i = 0; i < data.length; i++) {
-    if (data[i].flag === 'Y') current[data[i].source_id] = true;
-  }
+@keyframes animatetop {
+  from {top:-300px; opacity:0}
+  to {top:0; opacity:1}
+}
 
-  for (var s in current) {
-    if (!sourceData[s]) {
-      addActivity(s, 'Y');
-    } else if (sourceData[s] !== current[s]) {
-      addActivity(s, current[s] ? 'Y' : 'N');
+/* The Close Button */
+.close {
+  color: white;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+  color: #000;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.modal-header {
+  padding: 2px 16px;
+  background-color: #AB5AF3;
+  color: white;
+}
+
+.modal-body {padding: 2px 16px;
+font-size:large;
+}
+
+.modal-footer {
+  padding: 2px 16px;
+  background-color: #AB5AF3 ;
+  color: white;
+}
+
+table {
+  font-family: arial, sans-serif;
+  border-collapse: collapse;
+  width: 100%;
+}
+
+td, th {
+  border: 1px solid #dddddd;
+  text-align: left;
+  padding: 8px;
+}
+
+tr:nth-child(even) {
+  background-color: #dddddd;
+}
+
+.timer {
+    /* text-align: center; */
+    border: 5px solid white;
+    display:inline;
+    padding: 5px;
+    color: white;
+    font-family: Verdana, sans-serif, Arial;
+    font-size: 40px;
+    height: 50px;
+    font-weight: bold;
+    text-decoration: none;
+}
+    
+    
+    .wait{
+font-family: arial;
+font-size: 13px;
+color: #ff0000;
+font-weight: bold;
+zoom: 10%;
+}
+    
+   
+
+    
+  </style>
+  
+</head>
+ <%--   <%@include file="./DRPRHeader.jsp"%>  --%>
+<body onload="myFunction_Time()" bgcolor="#000000">
+
+
+    <p class="blink" style="font-size: 30px"> This Data get Auto Refresh after <span class="timer" id="ten-countdown"></span> Minutes 	<span class="blink" style="font-size: 20px" id="timeRangeMessage"></span>
+  </p>
+  
+ 
+		
+
+
+  <div id="myChart" style="margin-top: 150px; height: 800px; zoom:85%; position: relative;" class="chart--container">
+ 
+  
+  </div>
+  
+<!--   <button id="myBtn">Open Modal</button> -->
+
+<!-- The Modal -->
+	<script>
+	
+	 document.addEventListener('DOMContentLoaded', function() {
+	     // Get current time
+	     var currentTime = new Date();
+
+	     // Get time 10 minutes ago
+	     var tenMinutesAgo = new Date();
+	     tenMinutesAgo.setMinutes(currentTime.getMinutes() - 10);
+
+	     // Format time in HH:mm format
+	     var formatTime = function(date) {
+	         var hours = date.getHours();
+	         var minutes = date.getMinutes();
+	         // Add leading zeros if needed
+	         hours = hours < 10 ? '0' + hours : hours;
+	         minutes = minutes < 10 ? '0' + minutes : minutes;
+	         return hours + ':' + minutes;
+	     };
+
+	     // Display a formatted message
+	     var message = 'Your session was from ' + formatTime(tenMinutesAgo) + ' to ' + formatTime(currentTime) + '.';
+	     document.getElementById('timeRangeMessage').innerText = message;
+	 });
+	 
+      /* function myFunction_Time() {
+        var x = document.lastModified;
+        document.getElementById("demo").innerHTML = x;
+      } */
+      function myFunction_Time() {
+    	      var x = document.lastModified;
+    	      var demo = document.getElementById("demo");
+
+    	      if (demo) {
+    	          demo.innerHTML = x;
+    	      } else {
+    	          console.warn("Element with id='demo' not found");
+    	      }
+    	  }
+    
+      
+    
+   </script>
+   	
+	
+
+	
+	
+	<script>
+	  var Arr = new Array(); 
+	<%String m_strtxnArray="";
+	response.setIntHeader("Refresh", 600);
+	//load the sql driver
+	//Class.forName("oracle.jdbc.OracleDriver");
+	//Connect to oracle database
+	//Connection conn = DriverManager.getConnection("jdbc:oracle:thin:@10.176.0.85:1787/iibdrdb", "eisappsupport", "India#25");
+	
+	// uncomment it after DR Switch
+	
+ 	String flagStatus = null;
+ 	Connection conn= null;
+	/*Connection connection = DBUtilityAuto.getReportDBConnection();
+	String sql1 = "select * from connection_master";
+	Statement smt1 = connection.createStatement();
+	ResultSet rs = smt1.executeQuery(sql1);
+	while (rs.next()) {
+		flagStatus = rs.getString("FLAG");
+	}
+
+	System.out.println("flagStatus" + flagStatus);
+	
+	if (flagStatus != null && flagStatus.equals("PR"))
+	{
+		 conn = DBUtility.getConnection();
+	}
+	else if(flagStatus != null && flagStatus.equals("DR"))
+	{
+		 conn = DBUtility.getDRConnection();
+	}
+	else
+	{
+		 conn=DBUtilityAuto.getIIBDBConnection();
+	}*/
+	
+	 conn=DBUtilityAuto.getIIBDBConnection();
+	
+	/* Connection conn= null;
+	try {
+			Class.forName("oracle.jdbc.driver.OracleDriver");
+		//	connection = DriverManager.getConnection("jdbc:oracle:thin:@eisdr-scan.sbi.co.in:1786/iibdrdb", "eisappsupport", "India#25");
+			conn = DriverManager.getConnection("jdbc:oracle:thin:@10.176.0.83:1787/iibdrdb", "eisappsupport", "India#25");
+			
+			} catch (Exception e) {
+				try {
+					Class.forName("oracle.jdbc.driver.OracleDriver");
+					conn = DriverManager.getConnection("jdbc:oracle:thin:@10.176.0.85:1787/iibdrdb", "eisappsupport", "India#25");	
+				}catch (Exception e1) {
+					try {
+						Class.forName("oracle.jdbc.driver.OracleDriver");
+						conn = DriverManager.getConnection("jdbc:oracle:thin:@10.176.0.77:1787/iibdrdb", "eisappsupport", "India#25");
+					}catch (Exception e2) {
+						try {
+							Class.forName("oracle.jdbc.driver.OracleDriver");
+							conn = DriverManager.getConnection("jdbc:oracle:thin:@10.176.0.75:1787/iibdrdb", "eisappsupport", "India#25");	
+						}catch (Exception e3) {
+							// TODO: handle exception
+							e3.printStackTrace();
+						}
+					}
+				}
+				
+			} */
+	//Execute query to retrieve the data
+	/*String sql="select txn_endpoint,\r\n"
+			+ "COUNT(1) AS TOTAL_HITS,\r\n"
+			+ "ROUND((SUM(CASE WHEN (substr(error_code,3,3) in ('002','014') OR error_code in ('SI001','SI007','SI051','SI569','SI570')) and error_code <> '00014' THEN 1 ELSE 0 END)*100)/COUNT(1),2) AS TD_PERCENT \r\n"
+			+ "from txn_endpoint_hits where \r\n"
+			+ "REQUEST_DATE_TIME>=SYSDATE - INTERVAL '10' MINUTE \r\n"
+			+ "GROUP BY txn_endpoint \r\n"
+			+ "having ROUND((SUM(CASE WHEN (substr(error_code,3,3) in ('002','014') OR error_code in ('SI001','SI007','SI051','SI569','SI570')) and error_code <> '00014' THEN 1 ELSE 0 END)*100)/COUNT(1),2)>= 0.5 \r\n"
+			+ "order by TD_PERCENT desc";*/
+			ZonedDateTime CurrentDate= ZonedDateTime.now(ZoneId.of("Asia/Kolkata"));
+		    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM_yy").withLocale(Locale.US);
+		    String PART=CurrentDate.format(formatter).toUpperCase();
+	String sql = "Select * from(select txn_endpoint,\r\n" 
+	        + "COUNT(1) AS TOTAL_HITS,\r\n"
+			+ "SUM(CASE WHEN (substr(error_code,3,3) in ('002','014') OR error_code in ('SI001','SI007','SI569','SI570','SI015')) and error_code <> '00014' and error_code <> '3P002' THEN 1 ELSE 0 END) AS TD_COUNT,\r\n"
+			+ "ROUND((SUM(CASE WHEN (substr(error_code,3,3) in ('002','014') OR error_code in ('SI001','SI007','SI569','SI570','SI015')) and error_code <> '00014' and error_code <> '3P002' THEN 1 ELSE 0 END)*100)/COUNT(1),2) AS TD_PERCENT \r\n"
+			+ "from eisapp.backend_log PARTITION(" + PART + ") where txn_endpoint != 'NATIONAL_PORTAL' and \r\n"
+			+ "REQUEST_DATE_TIME>=SYSDATE - INTERVAL '10' MINUTE \r\n" + "GROUP BY txn_endpoint \r\n"
+			+ "having ROUND((SUM(CASE WHEN (substr(error_code,3,3) in ('002','014') OR error_code in ('SI001','SI007','SI569','SI570','SI015')) and error_code <> '00014' and error_code <> '3P002' THEN 1 ELSE 0 END)*100)/COUNT(1),2)>= 0.5 \r\n"
+			+ "order by TD_PERCENT desc)where ROWNUM <=12";
+	System.out.println(sql);
+	Statement statement = conn.createStatement();
+	ResultSet resultSet = statement.executeQuery(sql);
+
+	List<String> labels = new ArrayList<String>();
+	List<Double> failure = new ArrayList<Double>();
+	int j = 0;
+	while (resultSet.next()) {
+		String name = "<p style='color:#ff9933; font-weight: bolder; '>"
+				+ Integer.toString(resultSet.getInt("TD_COUNT"))
+				+ "</p><br><p style='color:#FFFFFF; font-weight: bolder;'>"
+				+ resultSet.getString("txn_endpoint").replaceAll("_",
+						"</p><br><p style='color:#FFFFFF; font-weight: bolder;'>")
+				+ "</p><br>" + "<p style='color:#32CD32; font-weight: bolder;'>"
+				+ Integer.toString(resultSet.getInt("TOTAL_HITS")) + "</p>";
+		//	String name="<p style='color:#ff9933; font-weight: bolder; '>"+Integer.toString(resultSet.getInt("TD_COUNT"))+"</p><br>"+"<p style='color:#FFFFFF; font-weight: bolder;'>"+resultSet.getString("txn_endpoint")+"</p><br>"+"<p style='color:#32CD32; font-weight: bolder;'>"+Integer.toString(resultSet.getInt("TOTAL_HITS")) +"</p>";%>
+        Arr[<%=j %>] = '<%=resultSet.getString("txn_endpoint") %>';
+        <%
+		double value= resultSet.getDouble("TD_PERCENT");
+		labels.add(name);
+		failure.add(value);
+		j++;
+	}
+	resultSet.close();
+	statement.close();
+	conn.close();
+	
+	%>
+	
+
+    let chartConfig = {
+      type: "bar3d",
+      "3dAspect": { depth: 30, true3d: 0, yAngle: 10 },
+      backgroundColor: "#000000",
+      title: {
+        text: "Failure %   End Point Wise",
+        fontWeight: "bold",
+        height: "25px",
+        color: "#FFFFFF",
+
+
+
+        fontSize: "40px",
+        fontFamily: "Times New Roman",
+
+
+
+      },
+
+      plotarea: {
+        alpha: 0.3,
+        backgroundColor: "#000000",
+        margin: "50px 35px 250px 200px",
+      },
+      scaleX: {
+
+        values: [<%
+         if(labels.size()<=5){
+        	 for(String label: labels){
+        		 out.print("\""+label+"\",");
+        	 }
+        	 for(int i=labels.size();i<5;i++)
+        	 {
+        		 out.print("\""+" "+"\",");
+        	 }
+         }
+         else
+         {
+        	 for(String label: labels){
+        		 out.print("\""+label+"\",");
+        	 }
+         }
+        %>],
+
+        alpha: 0.5,
+        backgroundColor: "#fff",
+        borderColor: "#333",
+        borderWidth: "1px",
+        guide: { visible: false },
+        item: { fontColor: "#fff", fontSize: "30px" },
+        tick: { alpha: 0.2, lineColor: "#333" },
+
+        label: {
+          text: '<p style="color:#ff9933;">TD FAILURE, </p><p style="color:#FFFFFF;"> END POINT, </p><p style="color:#32CD32;">TOTAL HITS</p>',
+          color: "red",
+          fontSize: "30",
+          offsetX: '-100px',
+        },
+        item: {
+          'font-size': 30
+        },
+        guide: {
+          visible: true,
+          'line-color': "black",
+          'line-style': "dotted",
+          alpha: 1
+        }
+
+
+      },
+
+
+
+      scaleY: {
+        alpha: 0.5,
+        backgroundColor: "#fff",
+        borderColor: "#fff",
+        borderWidth: "1px",
+        guide: { alpha: 0.2, lineColor: "#FFF", lineStyle: "solid" },
+        item: { fontColor: "#FFF", paddingRight: "10px" },
+        tick: { alpha: 0.2, lineColor: "#333" },
+        label: {
+          text: "Failure Percentage",
+          color: "red",
+          fontSize: "30",
+
+
+
+
+        },
+        item: {
+          'font-size': 30
+        },
+        guide: {
+          visible: true,
+          'line-color': "black",
+          'line-style': "dotted",
+          alpha: 1
+        }
+      },
+
+
+      series: [
+
+        {
+          text: "Product 2",
+          values: [<%
+                   for(Double value: failure)
+                   {
+                	  out.print(value+","); 
+                   }
+          %>],
+          "value-box": {
+            "text": "%v %",
+            "placement": "top",
+            "font-color": "#ffffff",
+            "font-size": "30px",
+            "font-weight": "bold",
+            "offset-y": -10,
+
+          },
+          tooltip: {
+            backgroundColor: "#673AB7",
+            borderColor: "none",
+            borderRadius: "5px",
+            fontSize: "20px",
+            padding: "6px 12px",
+            shadow: false,
+          },
+          backgroundColor: "#673AB7 #9575CD",
+          borderColor: "#fff",
+          legendMarker: { borderColor: "#673AB7" },
+        },
+      ],
+    };
+    let updateChart = (p) => {
+        initState = zingchart.exec(p.id, 'getdata'); // Gets the state of the chart when the node was clicked
+      //  alert(Arr[p.nodeindex]);
+     
+    
+        var a = '<%=request.getContextPath() + "/jsp/TransactionEndpointWiseService.jsp?txnEndPoint="%>'+Arr[p.nodeindex];
+  	     window.open(a,'_blank');
+
+      }
+      zingchart.render({
+        id: 'myChart',
+        data: chartConfig,
+        height: '100%',
+        width: '100%',
+      });
+
+      zingchart.bind('myChart', 'node_click', updateChart);
+    
+    
+    
+ // Get the modal this is for the popup window
+    var modal = document.getElementById("myModal");
+
+    // Get the button that opens the modal
+    var btn = document.getElementById("myBtn");
+
+    // Get the <span> element that closes the modal
+    var span = document.getElementsByClassName("close")[0];
+
+   /*  // When the user clicks the button, open the modal 
+    btn.onclick = function() {
+      modal.style.display = "block";
+    } */
+    
+    document.addEventListener("DOMContentLoaded", () => {
+    	    if (btn && modal) {
+    	        btn.onclick = function() {
+    	            modal.style.display = "block";
+    	        }
+    	    } else {
+    	        console.warn("Button or modal element not found in DOM");
+    	    }
+    	});
+
+   /*  // When the user clicks on <span> (x), close the modal
+    span.onclick = function() {
+      modal.style.display = "none";
+    } */
+    
+    document.addEventListener("DOMContentLoaded", () => {
+        if (span && modal) {
+            span.onclick = function() {
+                modal.style.display = "none";
+            };
+        } else {
+            console.warn("Modal or span.close not found at runtime");
+        }
+    });
+
+    // When the user clicks anywhere outside of the modal, close it
+    window.onclick = function(event) {
+      if (event.target == modal) {
+        modal.style.display = "none";
+      }
     }
+  </script>
+  <script>
+  function countdown( elementName, minutes, seconds )
+  {
+      var element, endTime, hours, mins, msLeft, time;
+
+      function twoDigits( n )
+      {
+          return (n <= 9 ? "0" + n : n);
+      }
+
+      function updateTimer()
+      {
+          msLeft = endTime - (+new Date);
+          if ( msLeft < 1000 ) {
+              element.innerHTML = "Please Wait Fetching the Latest Data!";
+          } else {
+              time = new Date( msLeft );
+              hours = time.getUTCHours();
+              mins = time.getUTCMinutes();
+              element.innerHTML = (hours ? hours + ':' + twoDigits( mins ) : mins) + ':' + twoDigits( time.getUTCSeconds() );
+              setTimeout( updateTimer, time.getUTCMilliseconds() + 500 );
+          }
+      }
+
+      element = document.getElementById( elementName );
+      endTime = (+new Date) + 1000 * (60*minutes + seconds) + 500;
+      updateTimer();
   }
 
-  for (var old in sourceData) {
-    if (sourceData[old] && !current[old]) {
-      addActivity(old, 'N');
-    }
-  }
+  countdown( "ten-countdown", 10, 0 );
 
-  sourceData = current;
-}
-
-/* ============================================================
-   CLEANUP
-   ============================================================ */
-window.addEventListener('beforeunload', function() {
-  if (timerInterval) clearInterval(timerInterval);
-});
-
-/* ============================================================
-   START
-   ============================================================ */
-fetchData();
-</script>
-
+  </script>
+  <br>
+   
+    
+ 
 </body>
 </html>
