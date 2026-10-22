@@ -9,69 +9,97 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Transaction Endpoint Monitor</title>
+<title>Transaction Monitor</title>
 
 <script nonce="undefined" src="../js/zingchart.min.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 <script src="../js/LdapAuth.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --surface-2: #1a1a24;
+    --border: #26263a;
+    --border-subtle: #1e1e2e;
+    --text: #ededf4;
+    --text-muted: #7a7a95;
+    --accent: #6366f1;
+    --accent-soft: rgba(99, 102, 241, 0.12);
+    --crit: #ef4444;
+    --warn: #f59e0b;
+    --ok: #10b981;
+    --mono: 'JetBrains Mono', 'Courier New', monospace;
+    --sans: 'Space Grotesk', -apple-system, sans-serif;
+  }
+
   html, body {
     height: 100%;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background: #0d1117;
-    color: #e6edf3;
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
     font-size: 14px;
     overflow-x: hidden;
   }
 
-  /* ============ TOP HEADER ============ */
+  /* Grain overlay — 2026 tactile trend */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ============ HEADER ============ */
   .header {
-    background: #161b22;
-    border-bottom: 1px solid #21262d;
-    padding: 12px 24px;
+    position: relative;
+    z-index: 10;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    position: sticky;
-    top: 0;
-    z-index: 100;
+    padding: 16px 28px;
+    border-bottom: 1px solid var(--border-subtle);
+    background: rgba(10, 10, 15, 0.85);
+    backdrop-filter: blur(12px);
   }
 
-  .header-left {
+  .brand {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 12px;
   }
 
-  .header-left .brand-icon {
-    width: 32px;
-    height: 32px;
-    background: #1f6feb;
-    border-radius: 6px;
+  .brand-mark {
+    width: 28px;
+    height: 28px;
+    background: var(--accent);
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
+    font-family: var(--mono);
+    font-size: 13px;
     font-weight: 700;
-    font-size: 16px;
     color: #fff;
   }
 
-  .header-left .title-block h1 {
+  .brand h1 {
     font-size: 15px;
     font-weight: 600;
-    color: #e6edf3;
-    letter-spacing: 0.2px;
+    letter-spacing: -0.2px;
   }
 
-  .header-left .title-block .sub {
+  .brand .sub {
     font-size: 11px;
-    color: #8b949e;
-    margin-top: 2px;
-    letter-spacing: 0.4px;
+    color: var(--text-muted);
+    font-family: var(--mono);
+    margin-top: 1px;
   }
 
   .header-right {
@@ -80,88 +108,181 @@
     gap: 20px;
   }
 
-  .session-info {
-    font-size: 12px;
-    color: #8b949e;
+  .session-badge {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    padding: 6px 10px;
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
   }
-  .session-info b { color: #e6edf3; font-weight: 500; }
+  .session-badge b { color: var(--text); }
 
-  .refresh-badge {
+  .live-pill {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 6px 12px;
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    border-radius: 20px;
+    color: var(--ok);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .live-pill .pulse {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--ok);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .countdown-pill {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-muted);
+    padding: 6px 12px;
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
     display: flex;
     align-items: center;
     gap: 8px;
-    background: #21262d;
-    border: 1px solid #30363d;
-    border-radius: 6px;
-    padding: 6px 12px;
-    font-size: 12px;
-    color: #8b949e;
   }
-  .refresh-badge .countdown {
-    font-family: 'Courier New', monospace;
-    font-weight: 700;
-    color: #58a6ff;
-    font-size: 13px;
-    min-width: 36px;
+  .countdown-pill .num {
+    color: var(--accent);
+    font-weight: 600;
+    min-width: 32px;
     text-align: right;
   }
-  .refresh-badge.low .countdown { color: #f85149; }
+  .countdown-pill .num.low { color: var(--crit); }
 
-  /* Live dot */
-  .live-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: #3fb950;
-    box-shadow: 0 0 0 3px rgba(63, 185, 80, 0.2);
-    animation: livePulse 2s infinite;
-  }
-  @keyframes livePulse {
-    0%, 100% { box-shadow: 0 0 0 3px rgba(63, 185, 80, 0.2); }
-    50%      { box-shadow: 0 0 0 5px rgba(63, 185, 80, 0.05); }
-  }
-
-  /* ============ STATS BAR ============ */
-  .stats-bar {
+  /* ============ KPI ROW (Bento-style) ============ */
+  .kpi-row {
+    position: relative;
+    z-index: 1;
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: 1.4fr 1fr 1fr 1fr;
     gap: 1px;
-    background: #21262d;
-    border-bottom: 1px solid #21262d;
+    background: var(--border-subtle);
+    border-bottom: 1px solid var(--border-subtle);
   }
 
-  .stat {
-    background: #0d1117;
-    padding: 14px 20px;
+  .kpi {
+    background: var(--bg);
+    padding: 18px 24px;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 6px;
   }
-  .stat-label {
-    font-size: 11px;
-    color: #8b949e;
-    text-transform: uppercase;
-    letter-spacing: 0.6px;
-    font-weight: 500;
-  }
-  .stat-value {
-    font-size: 22px;
-    font-weight: 700;
-    color: #e6edf3;
-    font-family: 'Courier New', monospace;
-    line-height: 1;
-  }
-  .stat-value.critical { color: #f85149; }
-  .stat-value.warning  { color: #d29922; }
-  .stat-value.ok       { color: #3fb950; }
 
-  /* ============ MAIN LAYOUT ============ */
+  .kpi-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+  }
+
+  .kpi-value {
+    font-family: var(--mono);
+    font-size: 26px;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: -0.5px;
+  }
+
+  .kpi-value.crit { color: var(--crit); }
+  .kpi-value.warn { color: var(--warn); }
+  .kpi-value.ok { color: var(--ok); }
+
+  .kpi-delta {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-muted);
+  }
+
+  /* ============ MAIN GRID ============ */
   .main {
+    position: relative;
+    z-index: 1;
     display: grid;
-    grid-template-columns: 280px 1fr;
+    grid-template-columns: 1fr 300px;
     gap: 16px;
     padding: 16px 24px 24px;
-    min-height: calc(100vh - 160px);
+    min-height: calc(100vh - 180px);
+  }
+
+  /* ============ CHART PANEL ============ */
+  .chart-panel {
+    background: var(--surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  .chart-panel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0.6;
+  }
+
+  .chart-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 18px 22px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .chart-head h2 {
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: -0.2px;
+  }
+
+  .chart-head p {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 4px;
+    font-family: var(--mono);
+  }
+
+  .chart-head .meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-muted);
+  }
+
+  .meta-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--ok);
+  }
+
+  #myChart {
+    flex: 1;
+    min-height: 580px;
+    width: 100%;
   }
 
   /* ============ SIDE PANEL ============ */
@@ -171,160 +292,145 @@
     gap: 16px;
   }
 
-  .panel {
-    background: #161b22;
-    border: 1px solid #21262d;
-    border-radius: 8px;
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
     overflow: hidden;
   }
 
-  .panel-head {
-    padding: 10px 14px;
-    background: #0d1117;
-    border-bottom: 1px solid #21262d;
-    font-size: 11px;
-    font-weight: 600;
-    color: #8b949e;
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
-  }
-
-  .panel-body {
-    padding: 12px 14px;
-  }
-
-  /* Legend */
-  .legend-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 7px 0;
-    font-size: 12px;
-    color: #c9d1d9;
-  }
-  .legend-item + .legend-item { border-top: 1px solid #21262d; }
-  .legend-left {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .legend-swatch {
-    width: 12px;
-    height: 12px;
-    border-radius: 2px;
-  }
-  .legend-range {
-    color: #8b949e;
-    font-family: 'Courier New', monospace;
-    font-size: 11px;
-  }
-
-  /* Critical list */
-  .crit-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 9px 0;
-    font-size: 12px;
-    border-bottom: 1px solid #21262d;
-  }
-  .crit-item:last-child { border-bottom: none; }
-  .crit-item .name {
-    color: #c9d1d9;
-    font-weight: 500;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    max-width: 160px;
-  }
-  .crit-item .val {
-    color: #f85149;
-    font-weight: 700;
-    font-family: 'Courier New', monospace;
-    font-size: 12px;
-  }
-
-  .empty-note {
-    color: #6e7681;
-    font-size: 12px;
-    text-align: center;
-    padding: 14px 0;
-  }
-
-  .help-text {
-    font-size: 12px;
-    line-height: 1.7;
-    color: #8b949e;
-  }
-  .help-text b { color: #e6edf3; font-weight: 600; }
-
-  /* ============ CHART PANEL ============ */
-  .chart-panel {
-    background: #161b22;
-    border: 1px solid #21262d;
-    border-radius: 8px;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .chart-head {
+  .card-head {
     padding: 12px 16px;
-    border-bottom: 1px solid #21262d;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-  .chart-head-left h2 {
-    font-size: 14px;
+    border-bottom: 1px solid var(--border-subtle);
+    font-size: 10px;
     font-weight: 600;
-    color: #e6edf3;
-  }
-  .chart-head-left p {
-    font-size: 11px;
-    color: #8b949e;
-    margin-top: 3px;
-    letter-spacing: 0.3px;
-  }
-  .chart-head-right {
-    font-size: 11px;
-    color: #8b949e;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--text-muted);
     display: flex;
     align-items: center;
     gap: 8px;
   }
 
-  #myChart {
-    width: 100%;
-    flex: 1;
-    min-height: 620px;
+  .card-head::before {
+    content: '';
+    width: 3px;
+    height: 10px;
+    background: var(--accent);
+    border-radius: 2px;
   }
 
-  /* ============ TOP PROGRESS BAR (refresh) ============ */
+  .card-body {
+    padding: 14px 16px;
+  }
+
+  /* Severity list */
+  .sev-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+    font-size: 12px;
+  }
+  .sev-row + .sev-row { border-top: 1px solid var(--border-subtle); }
+
+  .sev-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text);
+  }
+
+  .sev-bar {
+    width: 3px;
+    height: 14px;
+    border-radius: 2px;
+  }
+
+  .sev-range {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-muted);
+  }
+
+  /* Critical list */
+  .crit-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 9px 0;
+    font-size: 12px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .crit-row:last-child { border-bottom: none; }
+
+  .crit-name {
+    color: var(--text);
+    font-weight: 500;
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .crit-pct {
+    font-family: var(--mono);
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--crit);
+  }
+
+  .empty-msg {
+    font-size: 12px;
+    color: var(--text-muted);
+    text-align: center;
+    padding: 12px 0;
+    font-family: var(--mono);
+  }
+
+  /* Help */
+  .help-line {
+    font-size: 11px;
+    line-height: 1.8;
+    color: var(--text-muted);
+  }
+  .help-line b { color: var(--text); font-weight: 600; }
+  .help-line .dot-orange { color: #f59e0b; }
+  .help-line .dot-green { color: #10b981; }
+  .help-line .dot-white { color: #ededf4; }
+
+  /* ============ TOP PROGRESS ============ */
   .top-progress {
     position: fixed;
     top: 0;
     left: 0;
     height: 2px;
     width: 0;
-    background: #58a6ff;
-    z-index: 200;
-    transition: width 0.9s linear;
+    background: var(--accent);
+    z-index: 999;
+    box-shadow: 0 0 8px var(--accent);
   }
   .top-progress.active {
     animation: loadBar 0.8s ease-in-out infinite;
   }
   @keyframes loadBar {
-    0%   { width: 5%;  opacity: 1; }
-    50%  { width: 70%; opacity: 1; }
-    100% { width: 95%; opacity: 0.4; }
+    0% { width: 5%; opacity: 1; }
+    50% { width: 70%; opacity: 1; }
+    100% { width: 95%; opacity: 0.3; }
   }
 
-  /* Responsive */
-  @media (max-width: 1000px) {
+  /* ============ RESPONSIVE ============ */
+  @media (max-width: 1100px) {
     .main { grid-template-columns: 1fr; }
-    .stats-bar { grid-template-columns: repeat(2, 1fr); }
-    .session-info { display: none; }
+    .side { display: grid; grid-template-columns: repeat(3, 1fr); }
+    .kpi-row { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 700px) {
+    .side { grid-template-columns: 1fr; }
+    .kpi-row { grid-template-columns: 1fr 1fr; }
+    .session-badge { display: none; }
+    .header { padding: 12px 16px; }
+    .main { padding: 12px 16px 20px; }
   }
 </style>
 </head>
@@ -335,136 +441,124 @@
 
 <!-- ============ HEADER ============ -->
 <header class="header">
-  <div class="header-left">
-    <div class="brand-icon">T</div>
-    <div class="title-block">
-      <h1>Transaction Endpoint Monitor</h1>
-      <div class="sub">Failure analytics &middot; Last 10 minutes &middot; Auto-refresh</div>
+  <div class="brand">
+    <div class="brand-mark">T</div>
+    <div>
+      <h1>Transaction Monitor</h1>
+      <div class="sub">endpoint_failure_analytics</div>
     </div>
   </div>
 
   <div class="header-right">
-    <div class="session-info" id="timeRangeMessage"></div>
-    <div class="refresh-badge" id="refreshBadge">
-      <span class="live-dot"></span>
-      <span>Next refresh</span>
-      <span class="countdown" id="countdownNum">10:00</span>
+    <div class="session-badge" id="timeRangeMessage"></div>
+    <div class="live-pill">
+      <span class="pulse"></span>
+      Live
+    </div>
+    <div class="countdown-pill">
+      <span>refresh</span>
+      <span class="num" id="countdownNum">10:00</span>
     </div>
   </div>
 </header>
 
-<!-- ============ STATS BAR ============ -->
-<div class="stats-bar">
-  <div class="stat">
-    <div class="stat-label">Total Endpoints</div>
-    <div class="stat-value" id="statTotal">—</div>
+<!-- ============ KPI ROW ============ -->
+<div class="kpi-row">
+  <div class="kpi">
+    <div class="kpi-label">Endpoints Monitored</div>
+    <div class="kpi-value" id="statTotal">—</div>
+    <div class="kpi-delta">last 10 min window</div>
   </div>
-  <div class="stat">
-    <div class="stat-label">Critical (&gt;5%)</div>
-    <div class="stat-value critical" id="statCritical">—</div>
+  <div class="kpi">
+    <div class="kpi-label">Critical &gt; 5%</div>
+    <div class="kpi-value crit" id="statCritical">—</div>
+    <div class="kpi-delta">immediate action</div>
   </div>
-  <div class="stat">
-    <div class="stat-label">High / Medium</div>
-    <div class="stat-value warning" id="statWarning">—</div>
+  <div class="kpi">
+    <div class="kpi-label">High / Medium</div>
+    <div class="kpi-value warn" id="statWarning">—</div>
+    <div class="kpi-delta">monitor closely</div>
   </div>
-  <div class="stat">
-    <div class="stat-label">Highest Failure</div>
-    <div class="stat-value" id="statMax">—</div>
+  <div class="kpi">
+    <div class="kpi-label">Highest Failure</div>
+    <div class="kpi-value" id="statMax">—</div>
+    <div class="kpi-delta">worst performer</div>
   </div>
 </div>
 
 <!-- ============ MAIN ============ -->
 <div class="main">
 
-  <!-- SIDE PANEL -->
-  <aside class="side">
-    <div class="panel">
-      <div class="panel-head">Severity Scale</div>
-      <div class="panel-body">
-        <div class="legend-item">
-          <div class="legend-left">
-            <span class="legend-swatch" style="background:#f85149;"></span>
-            <span>Critical</span>
-          </div>
-          <span class="legend-range">&gt; 5.0%</span>
-        </div>
-        <div class="legend-item">
-          <div class="legend-left">
-            <span class="legend-swatch" style="background:#d29922;"></span>
-            <span>High</span>
-          </div>
-          <span class="legend-range">2.0 – 5.0%</span>
-        </div>
-        <div class="legend-item">
-          <div class="legend-left">
-            <span class="legend-swatch" style="background:#a371f7;"></span>
-            <span>Medium</span>
-          </div>
-          <span class="legend-range">1.0 – 2.0%</span>
-        </div>
-        <div class="legend-item">
-          <div class="legend-left">
-            <span class="legend-swatch" style="background:#3fb950;"></span>
-            <span>Low</span>
-          </div>
-          <span class="legend-range">&lt; 1.0%</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="panel">
-      <div class="panel-head">Top Critical Endpoints</div>
-      <div class="panel-body" id="critList">
-        <div class="empty-note">Loading…</div>
-      </div>
-    </div>
-
-    <div class="panel">
-      <div class="panel-head">Reading Guide</div>
-      <div class="panel-body">
-        <div class="help-text">
-          Chart bar height = <b>failure %</b>.<br>
-          Bar color = <b>severity</b>.<br>
-          X-axis label shows:<br>
-          &nbsp;&nbsp;<b style="color:#d29922;">Orange</b> – TD count<br>
-          &nbsp;&nbsp;<b style="color:#e6edf3;">White</b> – Endpoint<br>
-          &nbsp;&nbsp;<b style="color:#3fb950;">Green</b> – Total hits<br>
-          <span style="display:block;margin-top:8px;color:#58a6ff;">Click a bar to drill down.</span>
-        </div>
-      </div>
-    </div>
-  </aside>
-
-  <!-- CHART -->
   <section class="chart-panel">
     <div class="chart-head">
-      <div class="chart-head-left">
+      <div>
         <h2>Failure % by Endpoint</h2>
-        <p>Top 12 endpoints sorted by failure rate</p>
+        <p>top 12 · sorted desc</p>
       </div>
-      <div class="chart-head-right">
-        <span class="live-dot"></span>
-        <span>Live</span>
+      <div class="meta">
+        <span class="meta-dot"></span>
+        <span>auto-refresh 10m</span>
       </div>
     </div>
     <div id="myChart"></div>
   </section>
+
+  <aside class="side">
+    <div class="card">
+      <div class="card-head">Severity</div>
+      <div class="card-body">
+        <div class="sev-row">
+          <div class="sev-left"><span class="sev-bar" style="background:#ef4444;"></span>Critical</div>
+          <span class="sev-range">&gt; 5%</span>
+        </div>
+        <div class="sev-row">
+          <div class="sev-left"><span class="sev-bar" style="background:#f59e0b;"></span>High</div>
+          <span class="sev-range">2–5%</span>
+        </div>
+        <div class="sev-row">
+          <div class="sev-left"><span class="sev-bar" style="background:#8b5cf6;"></span>Medium</div>
+          <span class="sev-range">1–2%</span>
+        </div>
+        <div class="sev-row">
+          <div class="sev-left"><span class="sev-bar" style="background:#10b981;"></span>Low</div>
+          <span class="sev-range">&lt; 1%</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">Top Critical</div>
+      <div class="card-body" id="critList">
+        <div class="empty-msg">loading…</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">Reading Guide</div>
+      <div class="card-body">
+        <div class="help-line">
+          Bar height = <b>failure %</b><br>
+          Bar color = <b>severity</b><br>
+          X-label: <span class="dot-orange">TD</span> / <span class="dot-white">name</span> / <span class="dot-green">hits</span><br>
+          <span style="color:var(--accent);">click bar → drill-down</span>
+        </div>
+      </div>
+    </div>
+  </aside>
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-  var currentTime = new Date();
-  var tenMinutesAgo = new Date();
-  tenMinutesAgo.setMinutes(currentTime.getMinutes() - 10);
-
+document.addEventListener('DOMContentLoaded', function() {
+  var now = new Date();
+  var past = new Date();
+  past.setMinutes(now.getMinutes() - 10);
   function fmt(d) {
     var h = d.getHours(), m = d.getMinutes();
     return (h < 10 ? '0' + h : h) + ':' + (m < 10 ? '0' + m : m);
   }
   document.getElementById('timeRangeMessage').innerHTML =
-    'Session <b>' + fmt(tenMinutesAgo) + '</b> &rarr; <b>' + fmt(currentTime) + '</b>';
+    'session <b>' + fmt(past) + '</b> → <b>' + fmt(now) + '</b>';
 });
-
 function myFunction_Time() {
   var demo = document.getElementById("demo");
   if (demo) demo.innerHTML = document.lastModified;
@@ -472,18 +566,16 @@ function myFunction_Time() {
 </script>
 
 <%
-/* ============================================================
-   BACKEND: Fetch data from Oracle DB
-   ============================================================ */
+/* ============ BACKEND ============ */
 response.setIntHeader("Refresh", 600);
 
 Connection conn = null;
 Statement statement = null;
 ResultSet resultSet = null;
 
-List<String> labels    = new ArrayList<String>();
-List<String> rawNames  = new ArrayList<String>();
-List<Double> failure   = new ArrayList<Double>();
+List<String> labels = new ArrayList<String>();
+List<String> rawNames = new ArrayList<String>();
+List<Double> failure = new ArrayList<Double>();
 List<Integer> tdCounts = new ArrayList<Integer>();
 List<Integer> totalHits = new ArrayList<Integer>();
 
@@ -511,15 +603,15 @@ try {
     resultSet = statement.executeQuery(sql);
 
     while (resultSet.next()) {
-        String rawName  = resultSet.getString("txn_endpoint");
-        int    tdCount  = resultSet.getInt("TD_COUNT");
-        int    totalHit = resultSet.getInt("TOTAL_HITS");
-        double pct      = resultSet.getDouble("TD_PERCENT");
+        String rawName = resultSet.getString("txn_endpoint");
+        int tdCount = resultSet.getInt("TD_COUNT");
+        int totalHit = resultSet.getInt("TOTAL_HITS");
+        double pct = resultSet.getDouble("TD_PERCENT");
 
-        String label = "<span style='color:#d29922;font-weight:600;font-size:13px;'>" + tdCount + "</span>"
-            + "<br><span style='color:#e6edf3;font-weight:500;font-size:11px;'>"
+        String label = "<span style='color:#f59e0b;font-weight:600;font-size:12px;font-family:JetBrains Mono,monospace;'>" + tdCount + "</span>"
+            + "<br><span style='color:#ededf4;font-weight:500;font-size:11px;'>"
             + rawName.replaceAll("_", "_<br>") + "</span>"
-            + "<br><span style='color:#3fb950;font-weight:600;font-size:12px;'>" + totalHit + "</span>";
+            + "<br><span style='color:#10b981;font-weight:600;font-size:11px;font-family:JetBrains Mono,monospace;'>" + totalHit + "</span>";
 
         labels.add(label);
         rawNames.add(rawName);
@@ -545,9 +637,6 @@ while (labels.size() < 5) {
 %>
 
 <script>
-// ============================================================
-// JS arrays from server data
-// ============================================================
 var labelArr = [
 <%
 for (int k = 0; k < labels.size(); k++) {
@@ -595,9 +684,7 @@ for (int k = 0; k < totalHits.size(); k++) {
 %>
 ];
 
-// ============================================================
-// Stats bar
-// ============================================================
+/* ============ STATS ============ */
 (function computeStats() {
   var totalEndpoints = 0, critical = 0, warning = 0, maxVal = 0;
   for (var i = 0; i < nameArr.length; i++) {
@@ -607,113 +694,109 @@ for (int k = 0; k < totalHits.size(); k++) {
     else if (valueArr[i] >= 1) warning++;
     if (valueArr[i] > maxVal) maxVal = valueArr[i];
   }
-  document.getElementById('statTotal').textContent    = totalEndpoints;
+  document.getElementById('statTotal').textContent = totalEndpoints;
   document.getElementById('statCritical').textContent = critical;
-  document.getElementById('statWarning').textContent  = warning;
-  document.getElementById('statMax').textContent      = maxVal.toFixed(2) + '%';
-  document.getElementById('statMax').className =
-    'stat-value ' + (maxVal >= 5 ? 'critical' : (maxVal >= 2 ? 'warning' : 'ok'));
+  document.getElementById('statWarning').textContent = warning;
+  var maxEl = document.getElementById('statMax');
+  maxEl.textContent = maxVal.toFixed(2) + '%';
+  maxEl.className = 'kpi-value ' + (maxVal >= 5 ? 'crit' : (maxVal >= 2 ? 'warn' : 'ok'));
 })();
 
-// ============================================================
-// Top critical list
-// ============================================================
+/* ============ CRITICAL LIST ============ */
 (function buildCritList() {
   var items = [];
   for (var k = 0; k < nameArr.length; k++) {
     if (nameArr[k] && valueArr[k] > 0) {
-      items.push({ name: nameArr[k], pct: valueArr[k], td: tdArr[k] });
+      items.push({ name: nameArr[k], pct: valueArr[k] });
     }
   }
-  items.sort(function (a, b) { return b.pct - a.pct; });
+  items.sort(function(a, b) { return b.pct - a.pct; });
   var top = items.slice(0, 5);
   var box = document.getElementById('critList');
   if (!top.length) {
-    box.innerHTML = '<div class="empty-note">All clear &middot; No failures detected</div>';
+    box.innerHTML = '<div class="empty-msg">all_clear ✓</div>';
     return;
   }
-  box.innerHTML = top.map(function (it) {
-    return '<div class="crit-item">'
-         + '<span class="name" title="' + it.name + '">' + it.name + '</span>'
-         + '<span class="val">' + it.pct + '%</span>'
-         + '</div>';
+  box.innerHTML = top.map(function(it) {
+    return '<div class="crit-row">'
+      + '<span class="crit-name" title="' + it.name + '">' + it.name + '</span>'
+      + '<span class="crit-pct">' + it.pct + '%</span>'
+      + '</div>';
   }).join('');
 })();
 
-// ============================================================
-// Bar colors by severity
-// ============================================================
-var barColors = valueArr.map(function (v) {
-  if (v >= 5) return "#f85149";   // critical - red
-  if (v >= 2) return "#d29922";   // high - amber
-  if (v >= 1) return "#a371f7";   // medium - purple
-  return "#3fb950";               // low - green
+/* ============ BAR COLORS ============ */
+var barColors = valueArr.map(function(v) {
+  if (v >= 5) return "#ef4444";
+  if (v >= 2) return "#f59e0b";
+  if (v >= 1) return "#8b5cf6";
+  return "#10b981";
 });
 
-// ============================================================
-// ZingChart config — clean enterprise look
-// ============================================================
+/* ============ CHART ============ */
 var chartConfig = {
   type: "bar3d",
-  "3dAspect": { depth: 22, true3d: 0, yAngle: 8 },
+  "3dAspect": { depth: 18, true3d: 0, yAngle: 6 },
   backgroundColor: "transparent",
   plotarea: {
     backgroundColor: "transparent",
-    margin: "70px 40px 170px 80px"
+    margin: "60px 36px 150px 72px"
   },
   globals: {
-    fontFamily: "Inter, sans-serif"
+    fontFamily: "Space Grotesk, sans-serif"
   },
   scaleX: {
     values: labelArr,
-    lineColor: "#30363d",
+    lineColor: "#26263a",
     tick: { visible: false },
-    item: { fontColor: "#e6edf3", fontSize: 12 },
+    item: { fontColor: "#ededf4", fontSize: 11 },
     guide: { visible: false }
   },
   scaleY: {
-    lineColor: "#30363d",
+    lineColor: "#26263a",
     guide: {
       visible: true,
-      lineColor: "#21262d",
+      lineColor: "#1e1e2e",
       lineStyle: "solid"
     },
-    tick: { lineColor: "#30363d", visible: true },
-    item: { fontColor: "#8b949e", fontSize: 11, paddingRight: 8 },
+    tick: { lineColor: "#26263a", visible: true },
+    item: { fontColor: "#7a7a95", fontSize: 10, paddingRight: 6 },
     label: {
-      text: "Failure %",
-      fontColor: "#8b949e",
-      fontSize: 11,
-      offsetX: -10
+      text: "failure %",
+      fontColor: "#7a7a95",
+      fontSize: 10,
+      fontFamily: "JetBrains Mono, monospace",
+      offsetX: -8
     }
   },
   plot: {
-    animation: { effect: "ANIMATION_SLIDE_BOTTOM", speed: 600, delay: 40, sequence: "ANIMATION_BY_NODE" },
+    animation: { effect: "ANIMATION_SLIDE_BOTTOM", speed: 500, delay: 30, sequence: "ANIMATION_BY_NODE" },
     tooltip: {
-      text: "<b>%kl</b><br>Failure: %v%",
-      backgroundColor: "#21262d",
-      borderColor: "#30363d",
+      text: "<b>%kl</b><br>failure: %v%",
+      backgroundColor: "#1a1a24",
+      borderColor: "#26263a",
       borderWidth: 1,
-      borderRadius: "4px",
-      fontColor: "#e6edf3",
-      fontSize: 12,
+      borderRadius: "6px",
+      fontColor: "#ededf4",
+      fontSize: 11,
       padding: "8px 12px",
       shadow: false
     },
-    barWidth: "42%",
+    barWidth: "38%",
     borderWidth: 0,
     styles: barColors
   },
   series: [{
     values: valueArr,
-    lineColor: "#58a6ff",
+    lineColor: "#6366f1",
     lineWidth: 1,
     "value-box": {
       visible: true,
       text: "%v%",
       placement: "top",
-      fontColor: "#e6edf3",
-      fontSize: 12,
+      fontColor: "#ededf4",
+      fontSize: 10,
+      fontFamily: "JetBrains Mono, monospace",
       fontWeight: "600",
       offsetY: -4
     }
@@ -737,14 +820,12 @@ zingchart.render({
 zingchart.bind('myChart', 'node_click', updateChart);
 </script>
 
-<!-- ============ COUNTDOWN ============ -->
 <script>
 (function countdown() {
   var total = 10 * 60;
   var left = total;
-  var badge = document.getElementById('refreshBadge');
-  var num   = document.getElementById('countdownNum');
-  var bar   = document.getElementById('topProgress');
+  var num = document.getElementById('countdownNum');
+  var bar = document.getElementById('topProgress');
 
   function tick() {
     left--;
@@ -755,7 +836,7 @@ zingchart.bind('myChart', 'node_click', updateChart);
     var m = Math.floor(left / 60);
     var s = left % 60;
     num.textContent = m + ':' + (s < 10 ? '0' + s : s);
-    if (left <= 60) badge.classList.add('low');
+    if (left <= 60) num.classList.add('low');
   }
   setInterval(tick, 1000);
 })();
