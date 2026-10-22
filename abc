@@ -36,7 +36,7 @@
   }
 
   /* ============================================================
-     TOP BAR — theme aware
+     TOP BAR
      ============================================================ */
   .topbar {
     display: grid;
@@ -50,7 +50,6 @@
     box-shadow: 0 2px 20px rgba(99, 102, 241, 0.08);
   }
 
-  /* Timer */
   .timer-block {
     display: flex;
     align-items: center;
@@ -85,7 +84,6 @@
     background: rgba(99, 102, 241, 0.15);
   }
 
-  /* KPI row */
   .kpi-row {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -120,12 +118,11 @@
     color: var(--ink, #fff);
     letter-spacing: -1px;
   }
-  /* ✅ 3-level severity — crimson / amber / emerald */
+  /* 3-level severity — crimson / amber / emerald */
   .kpi-value.red    { color: #dc2626; }
   .kpi-value.orange { color: #f59e0b; }
   .kpi-value.green  { color: #10b981; }
 
-  /* Blinking critical KPI */
   .blink-red {
     animation: blinkRed 1.4s ease-in-out infinite;
   }
@@ -134,7 +131,6 @@
     50%      { opacity: 0.4; }
   }
 
-  /* Right block */
   .right-block {
     display: flex;
     align-items: center;
@@ -188,7 +184,7 @@
   }
 
   /* ============================================================
-     TOP CRITICAL BAR — crimson theme
+     TOP CRITICAL BAR
      ============================================================ */
   .crit-bar {
     display: flex;
@@ -206,7 +202,7 @@
   .crit-bar .title {
     font-size: 12px;
     font-weight: 800;
-    color: #dc2626;                    /* crimson */
+    color: #dc2626;
     text-transform: uppercase;
     letter-spacing: 1.5px;
     white-space: nowrap;
@@ -249,11 +245,11 @@
     font-family: 'Courier New', monospace;
     font-size: 20px;
     font-weight: 900;
-    color: #dc2626;                    /* crimson */
+    color: #dc2626;
   }
 
   /* ============================================================
-     CHART HEADER — always visible
+     CHART HEADER
      ============================================================ */
   .chart-header {
     flex-shrink: 0;
@@ -534,18 +530,18 @@ var chartGridLine  = isDark ? '#2a2f45' : '#E5E7EB';
 var chartTickColor = isDark ? '#1c2030' : '#D1D5DB';
 var chartBorder    = isDark ? '#1c2030' : '#CCCCCC';
 
-/* ✅ Fix labelArr — theme ke hisaab se endpoint names visible */
+/* Fix labelArr — theme-aware endpoint name color */
 labelArr = labelArr.map(function(lbl) {
   return lbl.replace(/class='tx-ep-label' style='font-weight: bolder; font-size:18px;'/g,
                      "style='color:" + chartText + ";font-weight:bolder;font-size:18px;'");
 });
 
 // ============================================================
-// ✅ 3-LEVEL SEVERITY — crimson / amber / emerald
+// 3-LEVEL SEVERITY — crimson / amber / emerald
 // ============================================================
-var COLOR_LOW      = "#10b981";   /* < 1%  — emerald */
-var COLOR_MEDIUM   = "#f59e0b";   /* 1-5%  — amber */
-var COLOR_CRITICAL = "#dc2626";   /* > 5%  — crimson dark red */
+var COLOR_LOW      = "#10b981";
+var COLOR_MEDIUM   = "#f59e0b";
+var COLOR_CRITICAL = "#dc2626";
 
 function severityColor(v) {
   if (v > 5) return COLOR_CRITICAL;
@@ -611,16 +607,17 @@ function severityColor(v) {
 })();
 
 // ============================================================
-// Bars color — 3 levels only
+// Bars color — 3 levels
 // ============================================================
 var barColors = valueArr.map(severityColor);
 
 // ============================================================
-// CHART — 3D + theme-aware + severity colors
+// ✅ CHART CONFIG — 3D white face FIXED
 // ============================================================
 var chartConfig = {
   type: "bar3d",
-  "3dAspect": { depth: 45, true3d: 0, yAngle: 15 },
+  /* ✅ FIX 1: yAngle 0 — side face white peek 100% gone */
+  "3dAspect": { depth: 40, true3d: 0, yAngle: 0 },
   backgroundColor: chartBg,
   globals: { fontFamily: "Inter, sans-serif" },
   plotarea: {
@@ -680,11 +677,14 @@ var chartConfig = {
       fontColor: chartText
     },
     styles: barColors,
-    backgroundColor: COLOR_MEDIUM,
-    borderColor: chartBorder,
-    borderWidth: 1,
+    /* ✅ FIX 2: 3D top face white — all transparent */
+    "alpha": 1,
+    "borderColor": "transparent",
+    "borderWidth": 0,
+    "backgroundColor": "transparent",
+    /* ✅ FIX 3: dark shadow for 3D depth (no white) */
     "effects": [
-      { "effect": "SHADOW", "offsetX": 4, "offsetY": 4, "blur": 12, "color": "rgba(0,0,0,0.4)" }
+      { "effect": "SHADOW", "offsetX": 3, "offsetY": 3, "blur": 8, "color": "rgba(0,0,0,0.35)" }
     ]
   }]
 };
