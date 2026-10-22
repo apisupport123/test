@@ -19,78 +19,150 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   html, body {
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;                 /* ⛔ no scroll */
     background: #05060a;
-    color: #ffffff;
+    color: #fff;
     font-family: 'Inter', sans-serif;
-    min-height: 100vh;
-    overflow-x: hidden;
   }
 
-  /* ============ HEADER / TIMER STRIP ============ */
-  .top-strip {
+  .app {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100vw;
+  }
+
+  /* ============================================================
+     TOP BAR — timer | KPI | severity | live
+     ============================================================ */
+  .topbar {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 20px;
+    padding: 12px 22px;
     background: #0d1018;
     border-bottom: 1px solid #1c2030;
-    padding: 18px 28px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 16px;
+    flex-shrink: 0;
   }
 
+  /* Timer block */
   .timer-block {
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 14px;
   }
-
   .timer-label {
-    font-size: 20px;
+    font-size: 15px;
     font-weight: 700;
-    color: #b8bcd4;
-    letter-spacing: 0.3px;
+    color: #8b90b0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    line-height: 1.2;
   }
-
   .timer {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 130px;
-    padding: 8px 18px;
+    min-width: 110px;
+    padding: 6px 14px;
     border: 3px solid #6366f1;
-    border-radius: 10px;
-    color: #ffffff;
+    border-radius: 8px;
+    color: #fff;
     font-family: 'Courier New', monospace;
-    font-size: 38px;
+    font-size: 32px;
     font-weight: 900;
     background: rgba(99, 102, 241, 0.08);
     letter-spacing: 1px;
+    line-height: 1;
   }
 
-  .time-range {
-    font-size: 16px;
-    font-weight: 600;
+  /* KPI row in middle */
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: #1c2030;
+    border-left: 1px solid #1c2030;
+    border-right: 1px solid #1c2030;
+    height: 100%;
+  }
+  .kpi {
+    background: #0a0d15;
+    padding: 8px 18px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 0;
+  }
+  .kpi-label {
+    font-size: 11px;
+    font-weight: 700;
     color: #8b90b0;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    white-space: nowrap;
+  }
+  .kpi-value {
     font-family: 'Courier New', monospace;
+    font-size: 34px;
+    font-weight: 900;
+    line-height: 1;
+    margin-top: 4px;
+    color: #fff;
+    letter-spacing: -1px;
+  }
+  .kpi-value.red    { color: #ef4444; }
+  .kpi-value.orange { color: #f59e0b; }
+  .kpi-value.green  { color: #10b981; }
+
+  /* Right side: severity + live */
+  .right-block {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .sev-chips {
+    display: flex;
+    gap: 8px;
+  }
+  .sev-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: #0a0d15;
+    border: 1px solid #1c2030;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #fff;
+    white-space: nowrap;
+  }
+  .sev-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
   }
 
   .live-badge {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 10px 20px;
+    gap: 8px;
+    padding: 8px 16px;
     background: rgba(16, 185, 129, 0.12);
     border: 1px solid rgba(16, 185, 129, 0.3);
-    border-radius: 8px;
-    font-size: 15px;
-    font-weight: 700;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 800;
     color: #10b981;
     letter-spacing: 1.5px;
   }
-
   .live-badge .pulse {
-    width: 10px;
-    height: 10px;
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
     background: #10b981;
     animation: pulse 2s infinite;
@@ -100,209 +172,92 @@
     50% { opacity: 0.3; }
   }
 
-  /* ============ KPI STRIP ============ */
-  .kpi-strip {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 1px;
-    background: #1c2030;
-    border-bottom: 1px solid #1c2030;
-  }
-
-  .kpi {
-    background: #0a0d15;
-    padding: 22px 28px;
-  }
-
-  .kpi-label {
-    font-size: 14px;
-    font-weight: 700;
-    color: #8b90b0;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    margin-bottom: 10px;
-  }
-
-  .kpi-value {
-    font-family: 'Courier New', monospace;
-    font-size: 52px;
-    font-weight: 900;
-    line-height: 1;
-    letter-spacing: -1px;
-    color: #ffffff;
-  }
-
-  .kpi-value.red    { color: #ef4444; }
-  .kpi-value.orange { color: #f59e0b; }
-  .kpi-value.green  { color: #10b981; }
-
-  .kpi-sub {
-    font-size: 12px;
-    color: #5c6183;
-    font-family: 'Courier New', monospace;
-    margin-top: 8px;
-  }
-
-  /* ============ MAIN LAYOUT ============ */
-  .main {
-    display: grid;
-    grid-template-columns: 1fr 340px;
-    gap: 16px;
-    padding: 20px 24px 24px;
-  }
-
-  .chart-wrap {
-    background: #0d1018;
-    border: 1px solid #1c2030;
-    border-radius: 12px;
-    padding: 8px;
-    min-height: 820px;
-  }
-
-  #myChart {
-    width: 100%;
-    height: 800px;
-    position: relative;
-  }
-
-  /* ============ SIDE PANEL ============ */
-  .side {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  .panel {
-    background: #0d1018;
-    border: 1px solid #1c2030;
-    border-radius: 12px;
-    overflow: hidden;
-  }
-
-  .panel-head {
-    padding: 16px 20px;
-    border-bottom: 1px solid #1c2030;
-    font-size: 14px;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    color: #8b90b0;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .panel-head::before {
-    content: '';
-    width: 4px;
-    height: 16px;
-    background: #6366f1;
-    border-radius: 2px;
-  }
-
-  .panel-body {
-    padding: 16px 20px;
-  }
-
-  /* Severity rows */
-  .sev {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 14px 0;
-    font-size: 17px;
-    font-weight: 700;
-  }
-  .sev + .sev { border-top: 1px solid #1c2030; }
-
-  .sev-left {
+  /* ============================================================
+     SECOND BAR — Top critical chips horizontal
+     ============================================================ */
+  .crit-bar {
     display: flex;
     align-items: center;
     gap: 14px;
-  }
-
-  .sev-swatch {
-    width: 8px;
-    height: 32px;
-    border-radius: 4px;
-  }
-
-  .sev-range {
-    font-family: 'Courier New', monospace;
-    font-size: 15px;
-    color: #8b90b0;
-    font-weight: 700;
-  }
-
-  /* Critical list */
-  .crit-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 14px 0;
+    padding: 10px 22px;
+    background: #0d1018;
     border-bottom: 1px solid #1c2030;
+    flex-shrink: 0;
+    overflow-x: auto;
   }
-  .crit-row:last-child { border-bottom: none; }
+  .crit-bar::-webkit-scrollbar { height: 4px; }
+  .crit-bar::-webkit-scrollbar-thumb { background: #1c2030; border-radius: 2px; }
 
-  .crit-name {
-    font-size: 16px;
+  .crit-bar .title {
+    font-size: 12px;
+    font-weight: 800;
+    color: #ef4444;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    white-space: nowrap;
+    padding-right: 12px;
+    border-right: 1px solid #1c2030;
+    flex-shrink: 0;
+  }
+
+  .crit-chip {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 14px;
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    border-radius: 8px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .crit-chip .name {
+    font-size: 14px;
     font-weight: 700;
-    color: #ffffff;
+    color: #fff;
+    max-width: 180px;
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
-    max-width: 200px;
   }
-
-  .crit-pct {
+  .crit-chip .pct {
     font-family: 'Courier New', monospace;
-    font-size: 24px;
+    font-size: 20px;
     font-weight: 900;
     color: #ef4444;
   }
 
-  .empty-msg {
-    font-size: 16px;
-    color: #5c6183;
-    text-align: center;
-    padding: 24px 0;
-    font-family: 'Courier New', monospace;
-    font-weight: 700;
+  /* ============================================================
+     CHART — fills remaining viewport
+     ============================================================ */
+  .chart-area {
+    flex: 1;
+    min-height: 0;
+    padding: 8px;
+    background: #05060a;
+  }
+  #myChart {
+    width: 100%;
+    height: 100%;
+    background: #0d1018;
+    border: 1px solid #1c2030;
+    border-radius: 10px;
   }
 
-  /* Help */
-  .help {
-    font-size: 15px;
-    line-height: 2.1;
-    color: #8b90b0;
-    font-weight: 500;
+  /* ============================================================
+     Responsive fallbacks for small screens
+     ============================================================ */
+  @media (max-width: 1280px) {
+    .timer-label { font-size: 13px; }
+    .timer { font-size: 26px; min-width: 95px; }
+    .kpi-value { font-size: 28px; }
+    .kpi { padding: 6px 12px; }
+    .sev-chip { padding: 4px 8px; font-size: 11px; }
   }
-  .help b { color: #ffffff; font-weight: 800; }
-
-  .footer {
-    text-align: center;
-    color: #5c6183;
-    font-size: 13px;
-    padding: 20px;
-    font-family: 'Courier New', monospace;
-  }
-
-  /* Responsive */
-  @media (max-width: 1100px) {
-    .main { grid-template-columns: 1fr; }
-    .side { display: grid; grid-template-columns: repeat(3, 1fr); }
-    .kpi-strip { grid-template-columns: repeat(2, 1fr); }
-    .kpi-value { font-size: 40px; }
-    .timer { font-size: 30px; min-width: 110px; }
-  }
-  @media (max-width: 700px) {
-    .side { grid-template-columns: 1fr; }
-    .kpi-strip { grid-template-columns: 1fr 1fr; }
-    .kpi-value { font-size: 32px; }
-    .kpi { padding: 16px; }
-    .timer-label { font-size: 16px; }
-    .timer { font-size: 24px; min-width: 90px; padding: 6px 12px; }
-    #myChart { height: 640px; }
+  @media (max-width: 900px) {
+    .topbar { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .right-block { display: none; }
+    .kpi-row { grid-column: span 2; }
+    .sev-chips { display: none; }
   }
 </style>
 
@@ -310,108 +265,66 @@
 
 <body onload="myFunction_Time()">
 
-<!-- ============ TOP STRIP: TIMER + LIVE ============ -->
-<div class="top-strip">
-  <div class="timer-block">
-    <span class="timer-label">Auto Refresh In</span>
-    <span class="timer" id="ten-countdown">10:00</span>
-    <span class="time-range" id="timeRangeMessage"></span>
-  </div>
-  <div class="live-badge">
-    <span class="pulse"></span> LIVE
-  </div>
-</div>
+<div class="app">
 
-<!-- ============ KPI STRIP ============ -->
-<div class="kpi-strip">
-  <div class="kpi">
-    <div class="kpi-label">Endpoints Monitored</div>
-    <div class="kpi-value" id="statTotal">—</div>
-    <div class="kpi-sub">with failures &gt; 0.5%</div>
-  </div>
-  <div class="kpi">
-    <div class="kpi-label">Critical &gt; 5%</div>
-    <div class="kpi-value red" id="statCritical">—</div>
-    <div class="kpi-sub">action required</div>
-  </div>
-  <div class="kpi">
-    <div class="kpi-label">High / Medium</div>
-    <div class="kpi-value orange" id="statWarning">—</div>
-    <div class="kpi-sub">2–5% and 1–2%</div>
-  </div>
-  <div class="kpi">
-    <div class="kpi-label">Highest Failure</div>
-    <div class="kpi-value" id="statMax">—</div>
-    <div class="kpi-sub">worst endpoint</div>
-  </div>
-</div>
+  <!-- ============ TOP BAR ============ -->
+  <div class="topbar">
+    <!-- Left: Timer -->
+    <div class="timer-block">
+      <div class="timer-label">
+        Auto Refresh In
+        <br>
+        <span style="font-size:11px;color:#5c6183;font-weight:600;" id="timeRangeMessage"></span>
+      </div>
+      <div class="timer" id="ten-countdown">10:00</div>
+    </div>
 
-<!-- ============ MAIN ============ -->
-<div class="main">
+    <!-- Middle: KPI row -->
+    <div class="kpi-row">
+      <div class="kpi">
+        <div class="kpi-label">Endpoints</div>
+        <div class="kpi-value" id="statTotal">—</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Critical &gt; 5%</div>
+        <div class="kpi-value red" id="statCritical">—</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">High / Medium</div>
+        <div class="kpi-value orange" id="statWarning">—</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Highest %</div>
+        <div class="kpi-value" id="statMax">—</div>
+      </div>
+    </div>
 
-  <div class="chart-wrap">
+    <!-- Right: Severity + Live -->
+    <div class="right-block">
+      <div class="sev-chips">
+        <div class="sev-chip"><span class="sev-dot" style="background:#ef4444;"></span>&gt;5%</div>
+        <div class="sev-chip"><span class="sev-dot" style="background:#f59e0b;"></span>2-5%</div>
+        <div class="sev-chip"><span class="sev-dot" style="background:#8b5cf6;"></span>1-2%</div>
+        <div class="sev-chip"><span class="sev-dot" style="background:#10b981;"></span>&lt;1%</div>
+      </div>
+      <div class="live-badge">
+        <span class="pulse"></span> LIVE
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ TOP CRITICAL BAR ============ -->
+  <div class="crit-bar" id="critBar">
+    <span class="title">Top Critical</span>
+    <!-- chips injected by JS -->
+  </div>
+
+  <!-- ============ CHART ============ -->
+  <div class="chart-area">
     <div id="myChart"></div>
   </div>
 
-  <aside class="side">
-    <div class="panel">
-      <div class="panel-head">Severity Scale</div>
-      <div class="panel-body">
-        <div class="sev">
-          <div class="sev-left">
-            <span class="sev-swatch" style="background:#ef4444;"></span>
-            <span>Critical</span>
-          </div>
-          <span class="sev-range">&gt; 5%</span>
-        </div>
-        <div class="sev">
-          <div class="sev-left">
-            <span class="sev-swatch" style="background:#f59e0b;"></span>
-            <span>High</span>
-          </div>
-          <span class="sev-range">2 – 5%</span>
-        </div>
-        <div class="sev">
-          <div class="sev-left">
-            <span class="sev-swatch" style="background:#8b5cf6;"></span>
-            <span>Medium</span>
-          </div>
-          <span class="sev-range">1 – 2%</span>
-        </div>
-        <div class="sev">
-          <div class="sev-left">
-            <span class="sev-swatch" style="background:#10b981;"></span>
-            <span>Low</span>
-          </div>
-          <span class="sev-range">&lt; 1%</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="panel">
-      <div class="panel-head">Top Critical</div>
-      <div class="panel-body" id="critList">
-        <div class="empty-msg">loading…</div>
-      </div>
-    </div>
-
-    <div class="panel">
-      <div class="panel-head">Legend</div>
-      <div class="panel-body">
-        <div class="help">
-          Bar height = <b>failure %</b><br>
-          Bar color = <b>severity</b><br>
-          <b style="color:#ff9933;">Orange</b> → TD Count<br>
-          <b style="color:#ffffff;">White</b> → Endpoint<br>
-          <b style="color:#32CD32;">Green</b> → Total Hits<br>
-          <span style="color:#6366f1;">Click bar → drill-down</span>
-        </div>
-      </div>
-    </div>
-  </aside>
 </div>
-
-<div class="footer">Transaction Endpoint Monitor &middot; Auto refresh 10 min</div>
 
 <!-- ============ CLIENT SCRIPTS ============ -->
 <script>
@@ -425,7 +338,7 @@ document.addEventListener('DOMContentLoaded', function() {
     return (h < 10 ? '0' + h : h) + ':' + (m < 10 ? '0' + m : m);
   }
   document.getElementById('timeRangeMessage').textContent =
-    '(' + fmt(tenMinutesAgo) + ' → ' + fmt(currentTime) + ')';
+    fmt(tenMinutesAgo) + ' → ' + fmt(currentTime);
 });
 
 function myFunction_Time() {
@@ -435,7 +348,7 @@ function myFunction_Time() {
 </script>
 
 <%
-/* ============ BACKEND (tumhara wala, cleaned) ============ */
+/* ============ BACKEND ============ */
 response.setIntHeader("Refresh", 600);
 
 Connection conn = null;
@@ -474,11 +387,11 @@ try {
         int    totalHit = resultSet.getInt("TOTAL_HITS");
         double pct      = resultSet.getDouble("TD_PERCENT");
 
-        String name = "<p style='color:#ff9933; font-weight: bolder; font-size:22px;'>" + tdCount + "</p>"
-            + "<br><p style='color:#FFFFFF; font-weight: bolder; font-size:20px;'>"
-            + rawName.replaceAll("_", "</p><br><p style='color:#FFFFFF; font-weight: bolder; font-size:20px;'>")
+        String name = "<p style='color:#ff9933; font-weight: bolder; font-size:20px;'>" + tdCount + "</p>"
+            + "<br><p style='color:#FFFFFF; font-weight: bolder; font-size:18px;'>"
+            + rawName.replaceAll("_", "</p><br><p style='color:#FFFFFF; font-weight: bolder; font-size:18px;'>")
             + "</p><br>"
-            + "<p style='color:#32CD32; font-weight: bolder; font-size:20px;'>" + totalHit + "</p>";
+            + "<p style='color:#32CD32; font-weight: bolder; font-size:18px;'>" + totalHit + "</p>";
 
         labels.add(name);
         rawNames.add(rawName);
@@ -494,7 +407,6 @@ try {
     try { if (conn != null) conn.close(); } catch (Exception ignored) {}
 }
 
-/* Pad to 5 for chart consistency */
 while (labels.size() < 5) {
     labels.add("&nbsp;");
     rawNames.add("");
@@ -506,7 +418,7 @@ while (labels.size() < 5) {
 
 <script>
 // ============================================================
-// JS arrays from server
+// Server-side data → JS arrays
 // ============================================================
 var labelArr = [
 <%
@@ -556,7 +468,7 @@ for (int k = 0; k < totalHits.size(); k++) {
 ];
 
 // ============================================================
-// KPI stats
+// KPI compute
 // ============================================================
 (function computeStats() {
   var total = 0, critical = 0, warning = 0, maxVal = 0;
@@ -576,9 +488,9 @@ for (int k = 0; k < totalHits.size(); k++) {
 })();
 
 // ============================================================
-// Top critical list
+// Top Critical chips in the horizontal bar
 // ============================================================
-(function buildCritList() {
+(function buildCritBar() {
   var items = [];
   for (var k = 0; k < nameArr.length; k++) {
     if (nameArr[k] && valueArr[k] > 0) {
@@ -587,21 +499,27 @@ for (int k = 0; k < totalHits.size(); k++) {
   }
   items.sort(function(a, b) { return b.pct - a.pct; });
   var top = items.slice(0, 5);
-  var box = document.getElementById('critList');
+  var bar = document.getElementById('critBar');
+
   if (!top.length) {
-    box.innerHTML = '<div class="empty-msg">all clear ✓</div>';
+    var empty = document.createElement('span');
+    empty.style.cssText = 'color:#5c6183;font-family:Courier New,monospace;font-size:14px;font-weight:700;';
+    empty.textContent = 'all clear ✓';
+    bar.appendChild(empty);
     return;
   }
-  box.innerHTML = top.map(function(it) {
-    return '<div class="crit-row">'
-      + '<span class="crit-name" title="' + it.name + '">' + it.name + '</span>'
-      + '<span class="crit-pct">' + it.pct + '%</span>'
-      + '</div>';
-  }).join('');
+
+  top.forEach(function(it) {
+    var chip = document.createElement('div');
+    chip.className = 'crit-chip';
+    chip.innerHTML = '<span class="name" title="' + it.name + '">' + it.name + '</span>'
+                   + '<span class="pct">' + it.pct + '%</span>';
+    bar.appendChild(chip);
+  });
 })();
 
 // ============================================================
-// Per-bar severity colors (3D bars, same tumhara style)
+// Severity colors per bar
 // ============================================================
 var barColors = valueArr.map(function(v) {
   if (v >= 5) return "#ef4444";
@@ -611,79 +529,70 @@ var barColors = valueArr.map(function(v) {
 });
 
 // ============================================================
-// CHART — tumhara bar3d + bade fonts, bas colors severity-wise
+// Chart config — bar3d, tumhara original style + severity colors
 // ============================================================
 var chartConfig = {
   type: "bar3d",
-  "3dAspect": { depth: 30, true3d: 0, yAngle: 10 },
+  "3dAspect": { depth: 26, true3d: 0, yAngle: 10 },
   backgroundColor: "#0d1018",
-  title: {
-    text: "Failure %  End Point Wise",
-    fontWeight: "bold",
-    height: "25px",
-    color: "#FFFFFF",
-    fontSize: "40px",
+  globals: {
     fontFamily: "Inter, sans-serif"
   },
   plotarea: {
-    alpha: 0.3,
-    backgroundColor: "#0d1018",
-    margin: "50px 35px 250px 200px"
+    backgroundColor: "transparent",
+    margin: "55px 40px 190px 170px"
   },
   scaleX: {
     values: labelArr,
-    alpha: 0.5,
     backgroundColor: "transparent",
     borderColor: "#1c2030",
     borderWidth: "1px",
     guide: { visible: false },
-    item: { fontColor: "#fff", fontSize: 28 },
+    item: { fontColor: "#fff", fontSize: 22 },
     tick: { alpha: 0.2, lineColor: "#1c2030" },
     label: {
-      text: '<p style="color:#ff9933;font-size:24px;font-weight:700;">TD FAILURE</p>'
-          + '<p style="color:#FFFFFF;font-size:24px;font-weight:700;">END POINT</p>'
-          + '<p style="color:#32CD32;font-size:24px;font-weight:700;">TOTAL HITS</p>',
-      offsetX: '-100px'
+      text: '<p style="color:#ff9933;font-size:20px;font-weight:800;margin:4px 0;">TD</p>'
+          + '<p style="color:#FFFFFF;font-size:20px;font-weight:800;margin:4px 0;">ENDPOINT</p>'
+          + '<p style="color:#32CD32;font-size:20px;font-weight:800;margin:4px 0;">HITS</p>',
+      offsetX: '-90px'
     }
   },
   scaleY: {
-    alpha: 0.5,
     backgroundColor: "transparent",
     borderColor: "#1c2030",
     borderWidth: "1px",
     guide: { alpha: 0.2, lineColor: "#2a2f45", lineStyle: "solid" },
-    item: { fontColor: "#FFF", paddingRight: "10px", fontSize: 24 },
+    item: { fontColor: "#fff", paddingRight: "10px", fontSize: 18 },
     tick: { alpha: 0.2, lineColor: "#1c2030" },
     label: {
       text: "Failure Percentage",
       color: "#8b90b0",
-      fontSize: "28"
+      fontSize: "20"
     }
   },
   series: [{
-    text: "Failure %",
     values: valueArr,
     "value-box": {
-      text: "%v %",
+      text: "%v%",
       placement: "top",
       "font-color": "#ffffff",
-      "font-size": "28px",
+      "font-size": "22px",
       "font-weight": "bold",
-      "offset-y": -10
+      "offset-y": -6
     },
     tooltip: {
       backgroundColor: "#1c2030",
       borderColor: "#6366f1",
       borderWidth: 1,
       borderRadius: "6px",
-      fontSize: "18px",
+      fontSize: "16px",
       padding: "10px 14px",
       shadow: false,
       fontColor: "#fff"
     },
+    styles: barColors,
     backgroundColor: "#673AB7",
-    borderColor: "#fff",
-    styles: barColors
+    borderColor: "#fff"
   }]
 };
 
@@ -704,23 +613,23 @@ zingchart.render({
 zingchart.bind('myChart', 'node_click', updateChart);
 </script>
 
-<!-- ============ COUNTDOWN (tumhara wala, same style) ============ -->
+<!-- ============ COUNTDOWN ============ -->
 <script>
 function countdown(elementName, minutes, seconds) {
-  var element, endTime, hours, mins, msLeft, time;
+  var element, endTime;
 
   function twoDigits(n) {
     return (n <= 9 ? "0" + n : n);
   }
 
   function updateTimer() {
-    msLeft = endTime - (+new Date);
+    var msLeft = endTime - (+new Date);
     if (msLeft < 1000) {
       element.innerHTML = "Refreshing…";
     } else {
-      time = new Date(msLeft);
-      hours = time.getUTCHours();
-      mins = time.getUTCMinutes();
+      var time = new Date(msLeft);
+      var hours = time.getUTCHours();
+      var mins = time.getUTCMinutes();
       element.innerHTML = (hours ? hours + ':' + twoDigits(mins) : mins) + ':' + twoDigits(time.getUTCSeconds());
       setTimeout(updateTimer, time.getUTCMilliseconds() + 500);
     }
