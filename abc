@@ -27,7 +27,6 @@
     font-family: 'Inter', sans-serif;
   }
 
-  /* subtle radial backdrop for depth */
   body::before {
     content: '';
     position: fixed;
@@ -63,7 +62,6 @@
     box-shadow: 0 4px 20px rgba(0,0,0,0.5);
   }
 
-  /* Timer block */
   .timer-block {
     display: flex;
     align-items: center;
@@ -110,7 +108,6 @@
     50%      { opacity: 0.55; }
   }
 
-  /* KPI row */
   .kpi-row {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -180,7 +177,6 @@
     }
   }
 
-  /* Right block */
   .right-block {
     display: flex;
     align-items: center;
@@ -239,7 +235,7 @@
   }
 
   /* ============================================================
-     CRITICAL CHIPS BAR
+     CRITICAL CHIPS
      ============================================================ */
   .crit-bar {
     display: flex;
@@ -314,26 +310,45 @@
   }
 
   /* ============================================================
-     CHART AREA
+     CHART AREA — added glow container
      ============================================================ */
   .chart-area {
     flex: 1;
     min-height: 0;
     padding: 8px;
     background: #03040a;
+    position: relative;
+  }
+  /* glow behind chart */
+  .chart-area::before {
+    content: '';
+    position: absolute;
+    inset: 8px;
+    border-radius: 10px;
+    background:
+      radial-gradient(ellipse at 50% 90%, rgba(99, 102, 241, 0.18), transparent 55%),
+      radial-gradient(ellipse at 50% 100%, rgba(239, 68, 68, 0.10), transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+    animation: chartGlow 4s ease-in-out infinite;
+  }
+  @keyframes chartGlow {
+    0%, 100% { opacity: 0.7; }
+    50%      { opacity: 1; }
   }
   #myChart {
+    position: relative;
+    z-index: 1;
     width: 100%;
     height: 100%;
     background: radial-gradient(ellipse at 50% 100%, #0d1020 0%, #05070f 100%);
     border: 1px solid #1c2030;
     border-radius: 10px;
     box-shadow:
-      0 0 40px rgba(99, 102, 241, 0.08),
+      0 0 40px rgba(99, 102, 241, 0.15),
       inset 0 0 40px rgba(0, 0, 0, 0.5);
   }
 
-  /* Responsive */
   @media (max-width: 1280px) {
     .timer-label { font-size: 12px; }
     .timer { font-size: 26px; min-width: 95px; }
@@ -353,9 +368,7 @@
 
 <div class="app">
 
-  <!-- ============ TOP BAR ============ -->
   <div class="topbar">
-    <!-- Timer -->
     <div class="timer-block">
       <div class="timer-label">
         Auto Refresh In<br>
@@ -364,7 +377,6 @@
       <div class="timer" id="ten-countdown">10:00</div>
     </div>
 
-    <!-- KPI row -->
     <div class="kpi-row">
       <div class="kpi" id="kpiTotalBox">
         <div class="kpi-label">Endpoints</div>
@@ -384,7 +396,6 @@
       </div>
     </div>
 
-    <!-- Right -->
     <div class="right-block">
       <div class="sev-chips">
         <div class="sev-chip"><span class="sev-dot" style="background:#ef4444;box-shadow:0 0 6px #ef4444;"></span>&gt;5%</div>
@@ -398,12 +409,10 @@
     </div>
   </div>
 
-  <!-- ============ CRITICAL CHIPS ============ -->
   <div class="crit-bar" id="critBar">
     <span class="title">Top Critical</span>
   </div>
 
-  <!-- ============ CHART ============ -->
   <div class="chart-area">
     <div id="myChart"></div>
   </div>
@@ -468,11 +477,14 @@ try {
         int    totalHit = resultSet.getInt("TOTAL_HITS");
         double pct      = resultSet.getDouble("TD_PERCENT");
 
-        String name = "<p style='color:#ff9933; font-weight: bolder; font-size:20px;margin:2px 0;'>" + tdCount + "</p>"
-            + "<p style='color:#FFFFFF; font-weight: bolder; font-size:17px;margin:2px 0;'>"
-            + rawName.replaceAll("_", "</p><p style='color:#FFFFFF; font-weight: bolder; font-size:17px;margin:2px 0;'>")
-            + "</p>"
-            + "<p style='color:#32CD32; font-weight: bolder; font-size:18px;margin:2px 0;'>" + totalHit + "</p>";
+        /* ===== EXACT tumhara original label format ===== */
+        String name = "<p style='color:#ff9933; font-weight: bolder; font-size:20px;margin:2px 0;'>"
+                    + tdCount
+                    + "</p><p style='color:#FFFFFF; font-weight: bolder; font-size:16px;margin:2px 0;'>"
+                    + rawName.replaceAll("_", "</p><p style='color:#FFFFFF; font-weight: bolder; font-size:16px;margin:2px 0;'>")
+                    + "</p><p style='color:#32CD32; font-weight: bolder; font-size:18px;margin:2px 0;'>"
+                    + totalHit
+                    + "</p>";
 
         labels.add(name);
         rawNames.add(rawName);
@@ -549,7 +561,7 @@ for (int k = 0; k < totalHits.size(); k++) {
 ];
 
 // ============================================================
-// KPI compute
+// KPI
 // ============================================================
 (function computeStats() {
   var total = 0, critical = 0, warning = 0, maxVal = 0;
@@ -566,8 +578,6 @@ for (int k = 0; k < totalHits.size(); k++) {
   var maxEl = document.getElementById('statMax');
   maxEl.textContent = maxVal.toFixed(2) + '%';
   maxEl.className = 'kpi-value ' + (maxVal >= 5 ? 'red' : (maxVal >= 2 ? 'orange' : 'green'));
-
-  // KPI box top-bar colors
   document.getElementById('kpiCritBox').classList.add(critical > 0 ? 'crit' : 'good');
   document.getElementById('kpiWarnBox').classList.add(warning > 0 ? 'warn' : 'good');
   document.getElementById('kpiMaxBox').classList.add(maxVal >= 5 ? 'crit' : (maxVal >= 2 ? 'warn' : 'good'));
@@ -586,7 +596,6 @@ for (int k = 0; k < totalHits.size(); k++) {
   items.sort(function(a, b) { return b.pct - a.pct; });
   var top = items.slice(0, 5);
   var bar = document.getElementById('critBar');
-
   if (!top.length) {
     var empty = document.createElement('span');
     empty.style.cssText = 'color:#5c6183;font-family:Courier New,monospace;font-size:14px;font-weight:700;';
@@ -594,7 +603,6 @@ for (int k = 0; k < totalHits.size(); k++) {
     bar.appendChild(empty);
     return;
   }
-
   top.forEach(function(it) {
     var chip = document.createElement('div');
     chip.className = 'crit-chip';
@@ -605,7 +613,7 @@ for (int k = 0; k < totalHits.size(); k++) {
 })();
 
 // ============================================================
-// Severity colors
+// Bar colors
 // ============================================================
 var barColors = valueArr.map(function(v) {
   if (v >= 5) return "#ef4444";
@@ -614,17 +622,23 @@ var barColors = valueArr.map(function(v) {
   return "#10b981";
 });
 
+// Per-bar glow colors (lighter shade for shadow)
+var glowColors = valueArr.map(function(v) {
+  if (v >= 5) return "rgba(239, 68, 68, 0.7)";
+  if (v >= 2) return "rgba(245, 158, 11, 0.7)";
+  if (v >= 1) return "rgba(139, 92, 246, 0.7)";
+  return "rgba(16, 185, 129, 0.7)";
+});
+
 // ============================================================
-// Chart — deep 3D bars with bevel + shadow
+// Chart — 3D bars with strong glow
 // ============================================================
 var chartConfig = {
   type: "bar3d",
   "3dAspect": {
-    depth: 45,        // bada depth = zyada 3D feel
+    depth: 45,
     true3d: 0,
-    yAngle: 18,       // zyada tilt = zyada depth visible
-    xAngle: 0,
-    zAngle: 0
+    yAngle: 18
   },
   backgroundColor: "transparent",
   globals: {
@@ -632,7 +646,7 @@ var chartConfig = {
   },
   plotarea: {
     backgroundColor: "transparent",
-    margin: "50px 40px 200px 170px"
+    margin: "50px 40px 210px 170px"
   },
   scaleX: {
     values: labelArr,
@@ -640,13 +654,14 @@ var chartConfig = {
     borderColor: "#1c2030",
     borderWidth: "1px",
     guide: { visible: false },
-    item: { fontColor: "#fff", fontSize: 20 },
+    item: { fontColor: "#fff", fontSize: 18 },
     tick: { alpha: 0.2, lineColor: "#1c2030" },
+    /* ==== SAME AS YOUR ORIGINAL — TD / ENDPOINT / HITS vertical ==== */
     label: {
-      text: '<p style="color:#ff9933;font-size:19px;font-weight:800;margin:3px 0;">TD</p>'
-          + '<p style="color:#FFFFFF;font-size:19px;font-weight:800;margin:3px 0;">ENDPOINT</p>'
-          + '<p style="color:#32CD32;font-size:19px;font-weight:800;margin:3px 0;">HITS</p>',
-      offsetX: '-90px'
+      text: '<p style="color:#ff9933;font-size:18px;font-weight:800;margin:3px 0;">TD FAILURE</p>'
+          + '<p style="color:#FFFFFF;font-size:18px;font-weight:800;margin:3px 0;">END POINT</p>'
+          + '<p style="color:#32CD32;font-size:18px;font-weight:800;margin:3px 0;">TOTAL HITS</p>',
+      offsetX: '-100px'
     }
   },
   scaleY: {
@@ -657,7 +672,7 @@ var chartConfig = {
     item: { fontColor: "#fff", paddingRight: "10px", fontSize: 17 },
     tick: { alpha: 0.2, lineColor: "#1c2030" },
     label: {
-      text: "Failure %",
+      text: "Failure Percentage",
       color: "#8b90b0",
       fontSize: "18"
     }
@@ -671,7 +686,7 @@ var chartConfig = {
       "font-size": "22px",
       "font-weight": "bold",
       "offset-y": -6,
-      "text-shadow": "0 0 8px rgba(0,0,0,0.9)"
+      "text-shadow": "0 0 10px rgba(0,0,0,0.9)"
     },
     tooltip: {
       backgroundColor: "#0a0d1a",
@@ -686,11 +701,15 @@ var chartConfig = {
     styles: barColors,
     backgroundColor: "#673AB7",
     borderColor: "#fff",
-    "shadow-distance": 8,
-    "shadow-alpha": 0.6,
-    "shadow-color": "#000",
-    "border-left": "2px solid rgba(255,255,255,0.3)",
-    "border-top": "2px solid rgba(255,255,255,0.5)"
+    /* ====== GLOW EFFECT — strong per-bar shadow ====== */
+    "shadow-distance": 12,
+    "shadow-alpha": 0.9,
+    "shadow-color": "rgba(99, 102, 241, 0.8)",
+    "shadow-blur": 20,
+    /* Bevel highlight edges for 3D pop */
+    "border-left": "2px solid rgba(255,255,255,0.45)",
+    "border-top":  "2px solid rgba(255,255,255,0.65)",
+    "border-right":"2px solid rgba(0,0,0,0.4)"
   }]
 };
 
@@ -711,15 +730,10 @@ zingchart.render({
 zingchart.bind('myChart', 'node_click', updateChart);
 </script>
 
-<!-- ============ COUNTDOWN with low-warning blink ============ -->
 <script>
 function countdown(elementName, minutes, seconds) {
   var element, endTime;
-
-  function twoDigits(n) {
-    return (n <= 9 ? "0" + n : n);
-  }
-
+  function twoDigits(n) { return (n <= 9 ? "0" + n : n); }
   function updateTimer() {
     var msLeft = endTime - (+new Date);
     if (msLeft < 1000) {
@@ -729,21 +743,15 @@ function countdown(elementName, minutes, seconds) {
       var hours = time.getUTCHours();
       var mins = time.getUTCMinutes();
       element.innerHTML = (hours ? hours + ':' + twoDigits(mins) : mins) + ':' + twoDigits(time.getUTCSeconds());
-      // Blink when < 1 min
-      if (msLeft < 60000) {
-        element.classList.add('low');
-      } else {
-        element.classList.remove('low');
-      }
+      if (msLeft < 60000) element.classList.add('low');
+      else element.classList.remove('low');
       setTimeout(updateTimer, time.getUTCMilliseconds() + 500);
     }
   }
-
   element = document.getElementById(elementName);
   endTime = (+new Date) + 1000 * (60 * minutes + seconds) + 500;
   updateTimer();
 }
-
 countdown("ten-countdown", 10, 0);
 </script>
 
