@@ -14,27 +14,23 @@
 <script nonce="undefined" src="../js/zingchart.min.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 <script src="../js/LdapAuth.js"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --bg: #0a0a0f;
-    --surface: #12121a;
-    --surface-2: #1a1a24;
-    --border: #26263a;
-    --border-subtle: #1e1e2e;
-    --text: #ededf4;
-    --text-muted: #7a7a95;
-    --accent: #6366f1;
-    --accent-soft: rgba(99, 102, 241, 0.12);
+    --bg: #09090b;
+    --surface: #121215;
+    --surface-2: #18181c;
+    --border: #27272a;
+    --text: #fafafa;
+    --text-muted: #a1a1aa;
     --crit: #ef4444;
     --warn: #f59e0b;
     --ok: #10b981;
-    --mono: 'JetBrains Mono', 'Courier New', monospace;
-    --sans: 'Space Grotesk', -apple-system, sans-serif;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Inter', -apple-system, sans-serif;
   }
 
   html, body {
@@ -42,332 +38,276 @@
     font-family: var(--sans);
     background: var(--bg);
     color: var(--text);
-    font-size: 14px;
+    font-size: 16px;
     overflow-x: hidden;
-  }
-
-  /* Grain overlay — 2026 tactile trend */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
-    pointer-events: none;
-    z-index: 0;
   }
 
   /* ============ HEADER ============ */
   .header {
-    position: relative;
-    z-index: 10;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 16px 28px;
-    border-bottom: 1px solid var(--border-subtle);
-    background: rgba(10, 10, 15, 0.85);
-    backdrop-filter: blur(12px);
+    padding: 20px 32px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
   }
 
   .brand {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 16px;
   }
 
   .brand-mark {
-    width: 28px;
-    height: 28px;
-    background: var(--accent);
-    border-radius: 8px;
+    width: 44px;
+    height: 44px;
+    background: #6366f1;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
     font-family: var(--mono);
-    font-size: 13px;
+    font-size: 20px;
     font-weight: 700;
     color: #fff;
   }
 
   .brand h1 {
-    font-size: 15px;
-    font-weight: 600;
-    letter-spacing: -0.2px;
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
   }
 
   .brand .sub {
-    font-size: 11px;
+    font-size: 13px;
     color: var(--text-muted);
     font-family: var(--mono);
-    margin-top: 1px;
+    margin-top: 2px;
   }
 
   .header-right {
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 28px;
   }
 
-  .session-badge {
+  .session {
     font-family: var(--mono);
-    font-size: 11px;
+    font-size: 14px;
     color: var(--text-muted);
-    padding: 6px 10px;
-    border: 1px solid var(--border-subtle);
-    border-radius: 6px;
   }
-  .session-badge b { color: var(--text); }
+  .session b { color: var(--text); font-size: 16px; }
 
-  .live-pill {
+  .live-badge {
     display: flex;
     align-items: center;
-    gap: 7px;
-    font-size: 11px;
-    font-weight: 600;
-    padding: 6px 12px;
+    gap: 10px;
+    padding: 10px 20px;
     background: rgba(16, 185, 129, 0.1);
-    border: 1px solid rgba(16, 185, 129, 0.2);
-    border-radius: 20px;
+    border: 1px solid rgba(16, 185, 129, 0.25);
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
     color: var(--ok);
     letter-spacing: 0.5px;
-    text-transform: uppercase;
   }
 
-  .live-pill .pulse {
-    width: 6px;
-    height: 6px;
+  .live-badge .dot {
+    width: 10px;
+    height: 10px;
     border-radius: 50%;
     background: var(--ok);
     animation: pulse 2s infinite;
   }
   @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.3; }
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.85); }
   }
 
-  .countdown-pill {
+  .countdown {
     font-family: var(--mono);
-    font-size: 12px;
-    color: var(--text-muted);
-    padding: 6px 12px;
-    border: 1px solid var(--border-subtle);
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    font-size: 18px;
+    font-weight: 700;
+    color: #6366f1;
+    padding: 10px 18px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    min-width: 90px;
+    text-align: center;
   }
-  .countdown-pill .num {
-    color: var(--accent);
-    font-weight: 600;
-    min-width: 32px;
-    text-align: right;
-  }
-  .countdown-pill .num.low { color: var(--crit); }
+  .countdown.low { color: var(--crit); border-color: rgba(239,68,68,0.3); }
 
-  /* ============ KPI ROW (Bento-style) ============ */
+  /* ============ KPI ROW ============ */
   .kpi-row {
-    position: relative;
-    z-index: 1;
     display: grid;
-    grid-template-columns: 1.4fr 1fr 1fr 1fr;
+    grid-template-columns: 1.5fr 1fr 1fr 1fr;
     gap: 1px;
-    background: var(--border-subtle);
-    border-bottom: 1px solid var(--border-subtle);
+    background: var(--border);
+    border-bottom: 1px solid var(--border);
   }
 
   .kpi {
     background: var(--bg);
-    padding: 18px 24px;
+    padding: 28px 32px;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 10px;
   }
 
   .kpi-label {
-    font-size: 10px;
+    font-size: 13px;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 1.2px;
     color: var(--text-muted);
   }
 
   .kpi-value {
     font-family: var(--mono);
-    font-size: 26px;
-    font-weight: 600;
+    font-size: 56px;
+    font-weight: 700;
     line-height: 1;
-    letter-spacing: -0.5px;
+    letter-spacing: -2px;
   }
 
   .kpi-value.crit { color: var(--crit); }
   .kpi-value.warn { color: var(--warn); }
   .kpi-value.ok { color: var(--ok); }
 
-  .kpi-delta {
-    font-family: var(--mono);
-    font-size: 10px;
+  .kpi-sub {
+    font-size: 13px;
     color: var(--text-muted);
+    font-family: var(--mono);
   }
 
-  /* ============ MAIN GRID ============ */
+  /* ============ MAIN ============ */
   .main {
-    position: relative;
-    z-index: 1;
     display: grid;
-    grid-template-columns: 1fr 300px;
-    gap: 16px;
-    padding: 16px 24px 24px;
-    min-height: calc(100vh - 180px);
+    grid-template-columns: 1fr 320px;
+    gap: 20px;
+    padding: 20px 32px 32px;
+    min-height: calc(100vh - 220px);
   }
 
   /* ============ CHART PANEL ============ */
   .chart-panel {
     background: var(--surface);
-    border: 1px solid var(--border-subtle);
-    border-radius: 12px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    position: relative;
-  }
-
-  .chart-panel::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, var(--accent), transparent);
-    opacity: 0.6;
   }
 
   .chart-head {
+    padding: 22px 26px;
+    border-bottom: 1px solid var(--border);
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
-    padding: 18px 22px;
-    border-bottom: 1px solid var(--border-subtle);
+    align-items: center;
   }
 
   .chart-head h2 {
-    font-size: 14px;
-    font-weight: 600;
-    letter-spacing: -0.2px;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
   }
 
   .chart-head p {
-    font-size: 11px;
+    font-size: 13px;
     color: var(--text-muted);
+    font-family: var(--mono);
     margin-top: 4px;
-    font-family: var(--mono);
   }
 
-  .chart-head .meta {
-    display: flex;
-    align-items: center;
-    gap: 12px;
+  .chart-badge {
     font-family: var(--mono);
-    font-size: 10px;
+    font-size: 12px;
     color: var(--text-muted);
-  }
-
-  .meta-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--ok);
+    padding: 8px 14px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
   }
 
   #myChart {
     flex: 1;
-    min-height: 580px;
+    min-height: 600px;
     width: 100%;
   }
 
-  /* ============ SIDE PANEL ============ */
+  /* ============ SIDE ============ */
   .side {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 20px;
   }
 
   .card {
     background: var(--surface);
-    border: 1px solid var(--border-subtle);
-    border-radius: 12px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
     overflow: hidden;
   }
 
   .card-head {
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--border-subtle);
-    font-size: 10px;
-    font-weight: 600;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 1.2px;
+    letter-spacing: 1.5px;
     color: var(--text-muted);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .card-head::before {
-    content: '';
-    width: 3px;
-    height: 10px;
-    background: var(--accent);
-    border-radius: 2px;
   }
 
   .card-body {
-    padding: 14px 16px;
+    padding: 18px 20px;
   }
 
-  /* Severity list */
-  .sev-row {
+  /* Severity rows — thick colored left border */
+  .sev {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 8px 0;
-    font-size: 12px;
+    padding: 14px 0;
+    font-size: 16px;
+    font-weight: 600;
   }
-  .sev-row + .sev-row { border-top: 1px solid var(--border-subtle); }
+  .sev + .sev { border-top: 1px solid var(--border); }
 
   .sev-left {
     display: flex;
     align-items: center;
-    gap: 10px;
-    color: var(--text);
+    gap: 14px;
   }
 
-  .sev-bar {
-    width: 3px;
-    height: 14px;
-    border-radius: 2px;
+  .sev-block {
+    width: 6px;
+    height: 32px;
+    border-radius: 3px;
   }
 
   .sev-range {
     font-family: var(--mono);
-    font-size: 10px;
+    font-size: 14px;
     color: var(--text-muted);
+    font-weight: 500;
   }
 
-  /* Critical list */
+  /* Critical list — big numbers */
   .crit-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 9px 0;
-    font-size: 12px;
-    border-bottom: 1px solid var(--border-subtle);
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
   }
   .crit-row:last-child { border-bottom: none; }
 
   .crit-name {
+    font-size: 15px;
+    font-weight: 600;
     color: var(--text);
-    font-weight: 500;
-    max-width: 160px;
+    max-width: 180px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -375,69 +315,67 @@
 
   .crit-pct {
     font-family: var(--mono);
-    font-weight: 600;
-    font-size: 12px;
+    font-size: 22px;
+    font-weight: 700;
     color: var(--crit);
   }
 
   .empty-msg {
-    font-size: 12px;
+    font-size: 15px;
     color: var(--text-muted);
     text-align: center;
-    padding: 12px 0;
+    padding: 20px 0;
     font-family: var(--mono);
   }
 
   /* Help */
-  .help-line {
-    font-size: 11px;
-    line-height: 1.8;
+  .help {
+    font-size: 14px;
+    line-height: 2;
     color: var(--text-muted);
   }
-  .help-line b { color: var(--text); font-weight: 600; }
-  .help-line .dot-orange { color: #f59e0b; }
-  .help-line .dot-green { color: #10b981; }
-  .help-line .dot-white { color: #ededf4; }
+  .help b { color: var(--text); font-weight: 600; }
 
-  /* ============ TOP PROGRESS ============ */
-  .top-progress {
+  /* Progress bar */
+  .progress-bar {
     position: fixed;
     top: 0;
     left: 0;
-    height: 2px;
+    height: 3px;
     width: 0;
-    background: var(--accent);
+    background: #6366f1;
     z-index: 999;
-    box-shadow: 0 0 8px var(--accent);
   }
-  .top-progress.active {
-    animation: loadBar 0.8s ease-in-out infinite;
+  .progress-bar.active {
+    animation: load 0.8s ease-in-out infinite;
   }
-  @keyframes loadBar {
+  @keyframes load {
     0% { width: 5%; opacity: 1; }
     50% { width: 70%; opacity: 1; }
     100% { width: 95%; opacity: 0.3; }
   }
 
-  /* ============ RESPONSIVE ============ */
+  /* Responsive */
   @media (max-width: 1100px) {
     .main { grid-template-columns: 1fr; }
     .side { display: grid; grid-template-columns: repeat(3, 1fr); }
     .kpi-row { grid-template-columns: repeat(2, 1fr); }
+    .kpi-value { font-size: 42px; }
   }
   @media (max-width: 700px) {
     .side { grid-template-columns: 1fr; }
     .kpi-row { grid-template-columns: 1fr 1fr; }
-    .session-badge { display: none; }
-    .header { padding: 12px 16px; }
-    .main { padding: 12px 16px 20px; }
+    .kpi-value { font-size: 36px; }
+    .header { padding: 16px; flex-wrap: wrap; gap: 12px; }
+    .session { display: none; }
+    .main { padding: 16px; }
   }
 </style>
 </head>
 
 <body onload="myFunction_Time()">
 
-<div class="top-progress" id="topProgress"></div>
+<div class="progress-bar" id="progressBar"></div>
 
 <!-- ============ HEADER ============ -->
 <header class="header">
@@ -445,20 +383,17 @@
     <div class="brand-mark">T</div>
     <div>
       <h1>Transaction Monitor</h1>
-      <div class="sub">endpoint_failure_analytics</div>
+      <div class="sub">endpoint_failure // last 10 min</div>
     </div>
   </div>
 
   <div class="header-right">
-    <div class="session-badge" id="timeRangeMessage"></div>
-    <div class="live-pill">
-      <span class="pulse"></span>
-      Live
+    <div class="session" id="sessionInfo"></div>
+    <div class="live-badge">
+      <span class="dot"></span>
+      LIVE
     </div>
-    <div class="countdown-pill">
-      <span>refresh</span>
-      <span class="num" id="countdownNum">10:00</span>
-    </div>
+    <div class="countdown" id="countdownNum">10:00</div>
   </div>
 </header>
 
@@ -467,22 +402,22 @@
   <div class="kpi">
     <div class="kpi-label">Endpoints Monitored</div>
     <div class="kpi-value" id="statTotal">—</div>
-    <div class="kpi-delta">last 10 min window</div>
+    <div class="kpi-sub">unique endpoints with failures</div>
   </div>
   <div class="kpi">
     <div class="kpi-label">Critical &gt; 5%</div>
     <div class="kpi-value crit" id="statCritical">—</div>
-    <div class="kpi-delta">immediate action</div>
+    <div class="kpi-sub">immediate action</div>
   </div>
   <div class="kpi">
     <div class="kpi-label">High / Medium</div>
     <div class="kpi-value warn" id="statWarning">—</div>
-    <div class="kpi-delta">monitor closely</div>
+    <div class="kpi-sub">monitor closely</div>
   </div>
   <div class="kpi">
     <div class="kpi-label">Highest Failure</div>
     <div class="kpi-value" id="statMax">—</div>
-    <div class="kpi-delta">worst performer</div>
+    <div class="kpi-sub">worst performer</div>
   </div>
 </div>
 
@@ -493,12 +428,9 @@
     <div class="chart-head">
       <div>
         <h2>Failure % by Endpoint</h2>
-        <p>top 12 · sorted desc</p>
+        <p>top 12 &middot; sorted desc</p>
       </div>
-      <div class="meta">
-        <span class="meta-dot"></span>
-        <span>auto-refresh 10m</span>
-      </div>
+      <div class="chart-badge">auto-refresh 10m</div>
     </div>
     <div id="myChart"></div>
   </section>
@@ -507,20 +439,32 @@
     <div class="card">
       <div class="card-head">Severity</div>
       <div class="card-body">
-        <div class="sev-row">
-          <div class="sev-left"><span class="sev-bar" style="background:#ef4444;"></span>Critical</div>
+        <div class="sev">
+          <div class="sev-left">
+            <span class="sev-block" style="background:#ef4444;"></span>
+            <span>Critical</span>
+          </div>
           <span class="sev-range">&gt; 5%</span>
         </div>
-        <div class="sev-row">
-          <div class="sev-left"><span class="sev-bar" style="background:#f59e0b;"></span>High</div>
-          <span class="sev-range">2–5%</span>
+        <div class="sev">
+          <div class="sev-left">
+            <span class="sev-block" style="background:#f59e0b;"></span>
+            <span>High</span>
+          </div>
+          <span class="sev-range">2 – 5%</span>
         </div>
-        <div class="sev-row">
-          <div class="sev-left"><span class="sev-bar" style="background:#8b5cf6;"></span>Medium</div>
-          <span class="sev-range">1–2%</span>
+        <div class="sev">
+          <div class="sev-left">
+            <span class="sev-block" style="background:#8b5cf6;"></span>
+            <span>Medium</span>
+          </div>
+          <span class="sev-range">1 – 2%</span>
         </div>
-        <div class="sev-row">
-          <div class="sev-left"><span class="sev-bar" style="background:#10b981;"></span>Low</div>
+        <div class="sev">
+          <div class="sev-left">
+            <span class="sev-block" style="background:#10b981;"></span>
+            <span>Low</span>
+          </div>
           <span class="sev-range">&lt; 1%</span>
         </div>
       </div>
@@ -534,13 +478,15 @@
     </div>
 
     <div class="card">
-      <div class="card-head">Reading Guide</div>
+      <div class="card-head">Legend</div>
       <div class="card-body">
-        <div class="help-line">
+        <div class="help">
           Bar height = <b>failure %</b><br>
           Bar color = <b>severity</b><br>
-          X-label: <span class="dot-orange">TD</span> / <span class="dot-white">name</span> / <span class="dot-green">hits</span><br>
-          <span style="color:var(--accent);">click bar → drill-down</span>
+          <b style="color:#f59e0b;">Orange</b> → TD Count<br>
+          <b style="color:#fafafa;">White</b> → Endpoint<br>
+          <b style="color:#10b981;">Green</b> → Total Hits<br>
+          <span style="color:#6366f1;">Click bar → drill down</span>
         </div>
       </div>
     </div>
@@ -556,8 +502,8 @@ document.addEventListener('DOMContentLoaded', function() {
     var h = d.getHours(), m = d.getMinutes();
     return (h < 10 ? '0' + h : h) + ':' + (m < 10 ? '0' + m : m);
   }
-  document.getElementById('timeRangeMessage').innerHTML =
-    'session <b>' + fmt(past) + '</b> → <b>' + fmt(now) + '</b>';
+  document.getElementById('sessionInfo').innerHTML =
+    '<b>' + fmt(past) + '</b> → <b>' + fmt(now) + '</b>';
 });
 function myFunction_Time() {
   var demo = document.getElementById("demo");
@@ -608,10 +554,10 @@ try {
         int totalHit = resultSet.getInt("TOTAL_HITS");
         double pct = resultSet.getDouble("TD_PERCENT");
 
-        String label = "<span style='color:#f59e0b;font-weight:600;font-size:12px;font-family:JetBrains Mono,monospace;'>" + tdCount + "</span>"
-            + "<br><span style='color:#ededf4;font-weight:500;font-size:11px;'>"
+        String label = "<span style='color:#f59e0b;font-weight:700;font-size:18px;font-family:JetBrains Mono,monospace;'>" + tdCount + "</span>"
+            + "<br><span style='color:#fafafa;font-weight:600;font-size:13px;'>"
             + rawName.replaceAll("_", "_<br>") + "</span>"
-            + "<br><span style='color:#10b981;font-weight:600;font-size:11px;font-family:JetBrains Mono,monospace;'>" + totalHit + "</span>";
+            + "<br><span style='color:#10b981;font-weight:700;font-size:16px;font-family:JetBrains Mono,monospace;'>" + totalHit + "</span>";
 
         labels.add(label);
         rawNames.add(rawName);
@@ -733,72 +679,69 @@ var barColors = valueArr.map(function(v) {
   return "#10b981";
 });
 
-/* ============ CHART ============ */
+/* ============ CHART — clean 2D bar, large fonts ============ */
 var chartConfig = {
-  type: "bar3d",
-  "3dAspect": { depth: 18, true3d: 0, yAngle: 6 },
+  type: "bar",
   backgroundColor: "transparent",
   plotarea: {
     backgroundColor: "transparent",
-    margin: "60px 36px 150px 72px"
+    margin: "80px 40px 180px 90px"
   },
   globals: {
-    fontFamily: "Space Grotesk, sans-serif"
+    fontFamily: "Inter, sans-serif"
   },
   scaleX: {
     values: labelArr,
-    lineColor: "#26263a",
+    lineColor: "#27272a",
     tick: { visible: false },
-    item: { fontColor: "#ededf4", fontSize: 11 },
+    item: { fontColor: "#fafafa", fontSize: 13 },
     guide: { visible: false }
   },
   scaleY: {
-    lineColor: "#26263a",
+    lineColor: "#27272a",
     guide: {
       visible: true,
-      lineColor: "#1e1e2e",
+      lineColor: "#18181c",
       lineStyle: "solid"
     },
-    tick: { lineColor: "#26263a", visible: true },
-    item: { fontColor: "#7a7a95", fontSize: 10, paddingRight: 6 },
+    tick: { lineColor: "#27272a", visible: true },
+    item: { fontColor: "#a1a1aa", fontSize: 14, fontFamily: "JetBrains Mono, monospace", paddingRight: 10 },
     label: {
-      text: "failure %",
-      fontColor: "#7a7a95",
-      fontSize: 10,
+      text: "FAILURE %",
+      fontColor: "#a1a1aa",
+      fontSize: 12,
       fontFamily: "JetBrains Mono, monospace",
-      offsetX: -8
+      offsetX: -10
     }
   },
   plot: {
-    animation: { effect: "ANIMATION_SLIDE_BOTTOM", speed: 500, delay: 30, sequence: "ANIMATION_BY_NODE" },
+    animation: { effect: "ANIMATION_SLIDE_BOTTOM", speed: 600, delay: 40, sequence: "ANIMATION_BY_NODE" },
     tooltip: {
       text: "<b>%kl</b><br>failure: %v%",
-      backgroundColor: "#1a1a24",
-      borderColor: "#26263a",
+      backgroundColor: "#18181c",
+      borderColor: "#27272a",
       borderWidth: 1,
       borderRadius: "6px",
-      fontColor: "#ededf4",
-      fontSize: 11,
-      padding: "8px 12px",
+      fontColor: "#fafafa",
+      fontSize: 14,
+      padding: "10px 14px",
       shadow: false
     },
-    barWidth: "38%",
+    barWidth: "40%",
     borderWidth: 0,
     styles: barColors
   },
   series: [{
     values: valueArr,
-    lineColor: "#6366f1",
-    lineWidth: 1,
     "value-box": {
       visible: true,
       text: "%v%",
       placement: "top",
-      fontColor: "#ededf4",
-      fontSize: 10,
+      fontColor: "#fafafa",
+      fontSize: 14,
       fontFamily: "JetBrains Mono, monospace",
-      fontWeight: "600",
-      offsetY: -4
+      fontWeight: "700",
+      offsetY: -6
     }
   }]
 };
@@ -825,7 +768,7 @@ zingchart.bind('myChart', 'node_click', updateChart);
   var total = 10 * 60;
   var left = total;
   var num = document.getElementById('countdownNum');
-  var bar = document.getElementById('topProgress');
+  var bar = document.getElementById('progressBar');
 
   function tick() {
     left--;
