@@ -1,691 +1,149 @@
-<%@page contentType="text/html" pageEncoding="UTF-8"%>
-<%@page import="java.util.*"%>
-<%@page import="java.sql.*"%>
-<%@page import="com.jdbc.DBUtilityAuto" %>
-<%@page import="com.jdbc.DBUtility" %>
-<%@page import="java.time.ZoneId, java.time.ZonedDateTime, java.time.format.DateTimeFormatter, java.util.Locale" %>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Transaction Endpoint Monitor</title>
+Oct 22, 2026 12:05:48 PM org.apache.catalina.core.StandardWrapperValve invoke
+SEVERE: Servlet.service() for servlet [jsp] in context with path [/EISPortalVer2] threw exception [Unable to compile class for JSP: 
 
-<script nonce="undefined" src="../js/zingchart.min.js"></script>
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-<script src="../js/LdapAuth.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+An error occurred at line: [508] in the jsp file: [/jsp/AutoRefreshTransactionEndPointLDAP.jsp]
+Syntax error on token "<", invalid Expression
+505:         + rawName.replaceAll("_", "_<br>") + "</span>"
+506:         + "<br><span style='color:#32CD32;font-weight:900;font-size:18px;'>" + totalHit + "</span>";
+507: 
+508:     Arr[<%=j%>] = '<%=resultSet.getString("txn_endpoint")%>';
+509:     labels.add(name);
+510:     rawNames.add(rawName);
+511:     failure.add(pct);
 
-<style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
 
-  html, body {
-    height: 100%;
-    font-family: 'Rajdhani', sans-serif;
-    background: #05060f;
-    color: #fff;
-    overflow-x: hidden;
-  }
+An error occurred at line: [508] in the jsp file: [/jsp/AutoRefreshTransactionEndPointLDAP.jsp]
+Syntax error, insert "]" to complete ArrayAccess
+505:         + rawName.replaceAll("_", "_<br>") + "</span>"
+506:         + "<br><span style='color:#32CD32;font-weight:900;font-size:18px;'>" + totalHit + "</span>";
+507: 
+508:     Arr[<%=j%>] = '<%=resultSet.getString("txn_endpoint")%>';
+509:     labels.add(name);
+510:     rawNames.add(rawName);
+511:     failure.add(pct);
 
-  /* Animated gradient background */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background:
-      radial-gradient(circle at 15% 20%, rgba(120, 40, 200, 0.35), transparent 45%),
-      radial-gradient(circle at 85% 15%, rgba(0, 200, 255, 0.25), transparent 40%),
-      radial-gradient(circle at 50% 90%, rgba(255, 60, 100, 0.25), transparent 45%);
-    animation: bgShift 18s ease-in-out infinite alternate;
-    z-index: -2;
-  }
-  body::after {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image:
-      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
-    background-size: 40px 40px;
-    z-index: -1;
-    mask-image: radial-gradient(circle at center, black 30%, transparent 85%);
-  }
-  @keyframes bgShift {
-    0%   { filter: hue-rotate(0deg)   brightness(1); }
-    100% { filter: hue-rotate(35deg)  brightness(1.15); }
-  }
 
-  /* ============ TOP BAR ============ */
-  .topbar {
-    position: sticky;
-    top: 0;
-    z-index: 50;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 14px 28px;
-    background: rgba(10, 12, 26, 0.75);
-    backdrop-filter: blur(14px);
-    border-bottom: 1px solid rgba(120, 40, 200, 0.4);
-    box-shadow: 0 4px 30px rgba(120, 40, 200, 0.35);
-  }
+An error occurred at line: [508] in the jsp file: [/jsp/AutoRefreshTransactionEndPointLDAP.jsp]
+Syntax error, insert "AssignmentOperator Expression" to complete Assignment
+505:         + rawName.replaceAll("_", "_<br>") + "</span>"
+506:         + "<br><span style='color:#32CD32;font-weight:900;font-size:18px;'>" + totalHit + "</span>";
+507: 
+508:     Arr[<%=j%>] = '<%=resultSet.getString("txn_endpoint")%>';
+509:     labels.add(name);
+510:     rawNames.add(rawName);
+511:     failure.add(pct);
 
-  .brand {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-  }
-  .brand .logo-dot {
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    background: #00ffb3;
-    box-shadow: 0 0 14px #00ffb3, 0 0 28px #00ffb3;
-    animation: pulseDot 1.6s infinite;
-  }
-  @keyframes pulseDot {
-    0%, 100% { transform: scale(1); opacity: 1; }
-    50%      { transform: scale(1.35); opacity: 0.65; }
-  }
-  .brand h1 {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 20px;
-    letter-spacing: 2px;
-    background: linear-gradient(90deg, #a259ff, #00d4ff, #ff4b8b);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    text-transform: uppercase;
-  }
-  .brand .sub {
-    font-size: 12px;
-    color: #8b8fa8;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-  }
 
-  .status-wrap {
-    display: flex;
-    align-items: center;
-    gap: 24px;
-  }
+An error occurred at line: [508] in the jsp file: [/jsp/AutoRefreshTransactionEndPointLDAP.jsp]
+Syntax error, insert ";" to complete Statement
+505:         + rawName.replaceAll("_", "_<br>") + "</span>"
+506:         + "<br><span style='color:#32CD32;font-weight:900;font-size:18px;'>" + totalHit + "</span>";
+507: 
+508:     Arr[<%=j%>] = '<%=resultSet.getString("txn_endpoint")%>';
+509:     labels.add(name);
+510:     rawNames.add(rawName);
+511:     failure.add(pct);
 
-  .time-window {
-    font-size: 14px;
-    color: #a0a4be;
-    letter-spacing: 1px;
-  }
-  .time-window b { color: #fff; }
 
-  /* Countdown ring */
-  .ring-wrap {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 6px 14px;
-    background: rgba(120, 40, 200, 0.15);
-    border: 1px solid rgba(160, 89, 255, 0.5);
-    border-radius: 40px;
-    box-shadow: 0 0 18px rgba(160, 89, 255, 0.3);
-  }
-  .ring-label {
-    font-size: 12px;
-    letter-spacing: 2px;
-    color: #cfc5ff;
-    text-transform: uppercase;
-  }
-  .ring {
-    position: relative;
-    width: 46px;
-    height: 46px;
-  }
-  .ring svg { transform: rotate(-90deg); }
-  .ring circle {
-    fill: none;
-    stroke-width: 4;
-  }
-  .ring .bg { stroke: rgba(255,255,255,0.1); }
-  .ring .fg {
-    stroke: #00d4ff;
-    stroke-linecap: round;
-    stroke-dasharray: 125.6;
-    stroke-dashoffset: 0;
-    filter: drop-shadow(0 0 4px #00d4ff);
-    transition: stroke-dashoffset 1s linear;
-  }
-  .ring .num {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: 'Orbitron', sans-serif;
-    font-size: 15px;
-    color: #00d4ff;
-    font-weight: 700;
-  }
+An error occurred at line: [850] in the generated java file: [D:\Jakarta EISPortal\.metadata\.plugins\org.eclipse.wst.server.core\tmp0\work\Catalina\localhost\EISPortalVer2\org\apache\jsp\jsp\AutoRefreshTransactionEndPointLDAP_jsp.java]
+Syntax error, insert "}" to complete Block
 
-  /* ============ LAYOUT ============ */
-  .main {
-    display: grid;
-    grid-template-columns: 300px 1fr;
-    gap: 20px;
-    padding: 22px;
-    min-height: calc(100vh - 90px);
-  }
+An error occurred at line: [867] in the generated java file: [D:\Jakarta EISPortal\.metadata\.plugins\org.eclipse.wst.server.core\tmp0\work\Catalina\localhost\EISPortalVer2\org\apache\jsp\jsp\AutoRefreshTransactionEndPointLDAP_jsp.java]
+Syntax error on token "}", delete this token
 
-  /* ============ SIDE PANEL ============ */
-  .side {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
+An error occurred at line: [868] in the generated java file: [D:\Jakarta EISPortal\.metadata\.plugins\org.eclipse.wst.server.core\tmp0\work\Catalina\localhost\EISPortalVer2\org\apache\jsp\jsp\AutoRefreshTransactionEndPointLDAP_jsp.java]
+Syntax error, insert "}" to complete ClassBody
 
-  .card {
-    background: rgba(16, 18, 34, 0.72);
-    border: 1px solid rgba(120, 40, 200, 0.35);
-    border-radius: 16px;
-    padding: 18px;
-    backdrop-filter: blur(12px);
-    box-shadow: 0 8px 32px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03);
-    animation: fadeUp 0.6s ease both;
-  }
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(14px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
+Stacktrace:] with root cause
+org.apache.jasper.JasperException: Unable to compile class for JSP: 
 
-  .card h3 {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 13px;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    color: #a0a4be;
-    margin-bottom: 14px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .card h3::before {
-    content: '';
-    width: 4px;
-    height: 14px;
-    background: linear-gradient(#a259ff, #00d4ff);
-    border-radius: 2px;
-  }
+An error occurred at line: [508] in the jsp file: [/jsp/AutoRefreshTransactionEndPointLDAP.jsp]
+Syntax error on token "<", invalid Expression
+505:         + rawName.replaceAll("_", "_<br>") + "</span>"
+506:         + "<br><span style='color:#32CD32;font-weight:900;font-size:18px;'>" + totalHit + "</span>";
+507: 
+508:     Arr[<%=j%>] = '<%=resultSet.getString("txn_endpoint")%>';
+509:     labels.add(name);
+510:     rawNames.add(rawName);
+511:     failure.add(pct);
 
-  /* Severity legend */
-  .legend-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 7px 0;
-    font-size: 14px;
-    border-bottom: 1px dashed rgba(255,255,255,0.07);
-  }
-  .legend-row:last-child { border-bottom: none; }
-  .dot {
-    display: inline-block;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    margin-right: 10px;
-    vertical-align: middle;
-    box-shadow: 0 0 8px currentColor;
-  }
-  .dot.crit { background: #ff2d55; color: #ff2d55; }
-  .dot.high { background: #ff8c00; color: #ff8c00; }
-  .dot.med  { background: #ffd60a; color: #ffd60a; }
-  .dot.low  { background: #00ffb3; color: #00ffb3; }
 
-  /* Top critical list */
-  .crit-list {
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-  .crit-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 12px;
-    background: rgba(255, 45, 85, 0.08);
-    border-left: 3px solid #ff2d55;
-    border-radius: 8px;
-    font-size: 13px;
-    transition: all 0.25s;
-    animation: fadeUp 0.5s ease both;
-  }
-  .crit-item:hover {
-    background: rgba(255, 45, 85, 0.18);
-    transform: translateX(4px);
-    box-shadow: 0 0 18px rgba(255,45,85,0.3);
-  }
-  .crit-item .name {
-    font-weight: 700;
-    color: #fff;
-    letter-spacing: 0.5px;
-  }
-  .crit-item .val {
-    font-family: 'Orbitron', sans-serif;
-    color: #ff6b8b;
-    font-weight: 700;
-    font-size: 14px;
-  }
+An error occurred at line: [508] in the jsp file: [/jsp/AutoRefreshTransactionEndPointLDAP.jsp]
+Syntax error, insert "]" to complete ArrayAccess
+505:         + rawName.replaceAll("_", "_<br>") + "</span>"
+506:         + "<br><span style='color:#32CD32;font-weight:900;font-size:18px;'>" + totalHit + "</span>";
+507: 
+508:     Arr[<%=j%>] = '<%=resultSet.getString("txn_endpoint")%>';
+509:     labels.add(name);
+510:     rawNames.add(rawName);
+511:     failure.add(pct);
 
-  .empty-note {
-    color: #6b6f88;
-    font-size: 13px;
-    text-align: center;
-    padding: 10px;
-    font-style: italic;
-  }
 
-  /* ============ CHART PANEL ============ */
-  .chart-wrap {
-    background: rgba(16, 18, 34, 0.72);
-    border: 1px solid rgba(120, 40, 200, 0.35);
-    border-radius: 18px;
-    backdrop-filter: blur(12px);
-    box-shadow: 0 8px 32px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03);
-    position: relative;
-    overflow: hidden;
-    animation: fadeUp 0.7s ease both;
-    padding: 8px;
-  }
+An error occurred at line: [508] in the jsp file: [/jsp/AutoRefreshTransactionEndPointLDAP.jsp]
+Syntax error, insert "AssignmentOperator Expression" to complete Assignment
+505:         + rawName.replaceAll("_", "_<br>") + "</span>"
+506:         + "<br><span style='color:#32CD32;font-weight:900;font-size:18px;'>" + totalHit + "</span>";
+507: 
+508:     Arr[<%=j%>] = '<%=resultSet.getString("txn_endpoint")%>';
+509:     labels.add(name);
+510:     rawNames.add(rawName);
+511:     failure.add(pct);
 
-  .chart-title {
-    position: absolute;
-    top: 16px;
-    left: 22px;
-    z-index: 5;
-    font-family: 'Orbitron', sans-serif;
-    font-size: 22px;
-    letter-spacing: 3px;
-    background: linear-gradient(90deg, #ff4b8b, #a259ff, #00d4ff);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    text-transform: uppercase;
-  }
-  .chart-sub {
-    position: absolute;
-    top: 48px;
-    left: 22px;
-    z-index: 5;
-    font-size: 12px;
-    letter-spacing: 4px;
-    color: #7d81a0;
-    text-transform: uppercase;
-  }
 
-  #myChart {
-    width: 100%;
-    height: 100%;
-    min-height: 640px;
-  }
+An error occurred at line: [508] in the jsp file: [/jsp/AutoRefreshTransactionEndPointLDAP.jsp]
+Syntax error, insert ";" to complete Statement
+505:         + rawName.replaceAll("_", "_<br>") + "</span>"
+506:         + "<br><span style='color:#32CD32;font-weight:900;font-size:18px;'>" + totalHit + "</span>";
+507: 
+508:     Arr[<%=j%>] = '<%=resultSet.getString("txn_endpoint")%>';
+509:     labels.add(name);
+510:     rawNames.add(rawName);
+511:     failure.add(pct);
 
-  /* ============ REFRESHING OVERLAY ============ */
-  .refresh-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(5, 6, 15, 0.85);
-    backdrop-filter: blur(6px);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    gap: 20px;
-    z-index: 999;
-  }
-  .refresh-overlay.active { display: flex; }
-  .spinner {
-    width: 64px;
-    height: 64px;
-    border-radius: 50%;
-    border: 4px solid rgba(160, 89, 255, 0.2);
-    border-top-color: #a259ff;
-    border-right-color: #00d4ff;
-    animation: spin 0.9s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .refresh-overlay p {
-    font-family: 'Orbitron', sans-serif;
-    letter-spacing: 3px;
-    color: #cfc5ff;
-    text-transform: uppercase;
-    font-size: 14px;
-  }
 
-  /* Responsive */
-  @media (max-width: 1000px) {
-    .main { grid-template-columns: 1fr; }
-    .brand h1 { font-size: 15px; }
-    .time-window { display: none; }
-  }
-</style>
-</head>
+An error occurred at line: [850] in the generated java file: [D:\Jakarta EISPortal\.metadata\.plugins\org.eclipse.wst.server.core\tmp0\work\Catalina\localhost\EISPortalVer2\org\apache\jsp\jsp\AutoRefreshTransactionEndPointLDAP_jsp.java]
+Syntax error, insert "}" to complete Block
 
-<body onload="myFunction_Time()">
+An error occurred at line: [867] in the generated java file: [D:\Jakarta EISPortal\.metadata\.plugins\org.eclipse.wst.server.core\tmp0\work\Catalina\localhost\EISPortalVer2\org\apache\jsp\jsp\AutoRefreshTransactionEndPointLDAP_jsp.java]
+Syntax error on token "}", delete this token
 
-<!-- ============ TOP BAR ============ -->
-<div class="topbar">
-  <div class="brand">
-    <span class="logo-dot"></span>
-    <div>
-      <h1>Transaction Endpoint Monitor</h1>
-      <div class="sub">Failure Analytics • Live</div>
-    </div>
-  </div>
+An error occurred at line: [868] in the generated java file: [D:\Jakarta EISPortal\.metadata\.plugins\org.eclipse.wst.server.core\tmp0\work\Catalina\localhost\EISPortalVer2\org\apache\jsp\jsp\AutoRefreshTransactionEndPointLDAP_jsp.java]
+Syntax error, insert "}" to complete ClassBody
 
-  <div class="status-wrap">
-    <div class="time-window" id="timeRangeMessage"></div>
-    <div class="ring-wrap">
-      <span class="ring-label">Refresh In</span>
-      <div class="ring">
-        <svg width="46" height="46">
-          <circle class="bg" cx="23" cy="23" r="20"></circle>
-          <circle class="fg" cx="23" cy="23" r="20" id="ringProgress"></circle>
-        </svg>
-        <div class="num" id="ringNum">10</div>
-      </div>
-    </div>
-  </div>
-</div>
+Stacktrace:
+	at org.apache.jasper.compiler.DefaultErrorHandler.javacError(DefaultErrorHandler.java:70)
+	at org.apache.jasper.compiler.ErrorDispatcher.javacError(ErrorDispatcher.java:189)
+	at org.apache.jasper.compiler.JDTCompiler.generateClass(JDTCompiler.java:523)
+	at org.apache.jasper.compiler.Compiler.compile(Compiler.java:367)
+	at org.apache.jasper.compiler.Compiler.compile(Compiler.java:339)
+	at org.apache.jasper.compiler.Compiler.compile(Compiler.java:325)
+	at org.apache.jasper.JspCompilationContext.compile(JspCompilationContext.java:585)
+	at org.apache.jasper.servlet.JspServletWrapper.service(JspServletWrapper.java:368)
+	at org.apache.jasper.servlet.JspServlet.serviceJspFile(JspServlet.java:330)
+	at org.apache.jasper.servlet.JspServlet.service(JspServlet.java:281)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:710)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:128)
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:53)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+	at com.action.CORSFilter.doFilter(CORSFilter.java:22)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+	at com.action.CORSFilter.doFilter(CORSFilter.java:22)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:165)
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:77)
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:482)
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:113)
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:83)
+	at org.apache.catalina.valves.AbstractAccessLogValve.invoke(AbstractAccessLogValve.java:654)
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:72)
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:341)
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:397)
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63)
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:903)
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1778)
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:946)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:480)
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:57)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
 
-<!-- ============ MAIN ============ -->
-<div class="main">
-
-  <!-- SIDE PANEL -->
-  <aside class="side">
-    <div class="card">
-      <h3>Severity Legend</h3>
-      <div class="legend-row"><span><span class="dot crit"></span>Critical</span><span>&gt; 5.0%</span></div>
-      <div class="legend-row"><span><span class="dot high"></span>High</span><span>2.0 – 5.0%</span></div>
-      <div class="legend-row"><span><span class="dot med"></span>Medium</span><span>1.0 – 2.0%</span></div>
-      <div class="legend-row"><span><span class="dot low"></span>Low</span><span>&lt; 1.0%</span></div>
-    </div>
-
-    <div class="card">
-      <h3>Top Critical</h3>
-      <ul class="crit-list" id="critList">
-        <li class="empty-note">Loading...</li>
-      </ul>
-    </div>
-
-    <div class="card">
-      <h3>How To Read</h3>
-      <div style="font-size:13px; line-height:1.7; color:#a0a4be;">
-        <b style="color:#ff9933;">Orange</b> → TD Count<br>
-        <b style="color:#ffffff;">White</b> → Endpoint Name<br>
-        <b style="color:#32CD32;">Green</b> → Total Hits<br>
-        <b style="color:#00d4ff;">Bar</b> → Failure %<br>
-        <span style="color:#ff6b8b;">Click any bar</span> for drill-down.
-      </div>
-    </div>
-  </aside>
-
-  <!-- CHART -->
-  <section class="chart-wrap">
-    <div class="chart-title">Failure % · Endpoint Wise</div>
-    <div class="chart-sub">Last 10 minutes · Top 12</div>
-    <div id="myChart"></div>
-  </section>
-</div>
-
-<!-- Refresh Overlay -->
-<div class="refresh-overlay" id="refreshOverlay">
-  <div class="spinner"></div>
-  <p>Fetching Latest Data…</p>
-</div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  var currentTime = new Date();
-  var tenMinutesAgo = new Date();
-  tenMinutesAgo.setMinutes(currentTime.getMinutes() - 10);
-
-  var formatTime = function(date) {
-    var hours = date.getHours();
-    var minutes = date.getMinutes();
-    hours = hours < 10 ? '0' + hours : hours;
-    minutes = minutes < 10 ? '0' + minutes : minutes;
-    return hours + ':' + minutes;
-  };
-  document.getElementById('timeRangeMessage').innerHTML =
-    'Session <b>' + formatTime(tenMinutesAgo) + '</b> → <b>' + formatTime(currentTime) + '</b>';
-});
-
-function myFunction_Time() {
-  var x = document.lastModified;
-  var demo = document.getElementById("demo");
-  if (demo) demo.innerHTML = x;
-}
-</script>
-
-<script>
-var Arr = new Array();
-<%
-String m_strtxnArray = "";
-response.setIntHeader("Refresh", 600);
-Connection conn = DBUtilityAuto.getIIBDBConnection();
-
-ZonedDateTime CurrentDate = ZonedDateTime.now(ZoneId.of("Asia/Kolkata"));
-DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM_yy").withLocale(Locale.US);
-String PART = CurrentDate.format(formatter).toUpperCase();
-
-String sql = "Select * from(select txn_endpoint,\r\n"
-    + "COUNT(1) AS TOTAL_HITS,\r\n"
-    + "SUM(CASE WHEN (substr(error_code,3,3) in ('002','014') OR error_code in ('SI001','SI007','SI569','SI570','SI015')) and error_code <> '00014' and error_code <> '3P002' THEN 1 ELSE 0 END) AS TD_COUNT,\r\n"
-    + "ROUND((SUM(CASE WHEN (substr(error_code,3,3) in ('002','014') OR error_code in ('SI001','SI007','SI569','SI570','SI015')) and error_code <> '00014' and error_code <> '3P002' THEN 1 ELSE 0 END)*100)/COUNT(1),2) AS TD_PERCENT \r\n"
-    + "from eisapp.backend_log PARTITION(" + PART + ") where txn_endpoint != 'NATIONAL_PORTAL' and \r\n"
-    + "REQUEST_DATE_TIME>=SYSDATE - INTERVAL '10' MINUTE \r\n" + "GROUP BY txn_endpoint \r\n"
-    + "having ROUND((SUM(CASE WHEN (substr(error_code,3,3) in ('002','014') OR error_code in ('SI001','SI007','SI569','SI570','SI015')) and error_code <> '00014' and error_code <> '3P002' THEN 1 ELSE 0 END)*100)/COUNT(1),2)>= 0.5 \r\n"
-    + "order by TD_PERCENT desc)where ROWNUM <=12";
-
-Statement statement = conn.createStatement();
-ResultSet resultSet = statement.executeQuery(sql);
-
-List<String> labels = new ArrayList<String>();
-List<String> rawNames = new ArrayList<String>();
-List<Double> failure = new ArrayList<Double>();
-List<Integer> tdCounts = new ArrayList<Integer>();
-List<Integer> totalHits = new ArrayList<Integer>();
-int j = 0;
-while (resultSet.next()) {
-    String rawName = resultSet.getString("txn_endpoint");
-    int tdCount = resultSet.getInt("TD_COUNT");
-    int totalHit = resultSet.getInt("TOTAL_HITS");
-    double pct = resultSet.getDouble("TD_PERCENT");
-
-    // Label with color-coded count / name / hits
-    String name = "<span style='color:#ff9933;font-weight:900;font-size:22px;'>" + tdCount + "</span>"
-        + "<br><span style='color:#ffffff;font-weight:700;font-size:16px;letter-spacing:1px;'>"
-        + rawName.replaceAll("_", "_<br>") + "</span>"
-        + "<br><span style='color:#32CD32;font-weight:900;font-size:18px;'>" + totalHit + "</span>";
-
-    Arr[<%=j%>] = '<%=resultSet.getString("txn_endpoint")%>';
-    labels.add(name);
-    rawNames.add(rawName);
-    failure.add(pct);
-    tdCounts.add(tdCount);
-    totalHits.add(totalHit);
-    j++;
-}
-resultSet.close();
-statement.close();
-conn.close();
-%>
-
-// ---- JS-side safety: fill to 5 if fewer
-<% if (labels.size() <= 5) { %>
-  <% for (int i = labels.size(); i < 5; i++) { %>
-    labels.add("&nbsp;"); failure.add(0.0); rawNames.add(""); tdCounts.add(0); totalHits.add(0);
-  <% } %>
-<% } %>
-
-// Build arrays for JS
-var labelArr   = [<% for (String l : labels) { out.print("\"" + l.replace("\"", "\\\"") + "\","); } %>];
-var valueArr   = [<% for (Double v : failure) { out.print(v + ","); } %>];
-var nameArr    = [<% for (String n : rawNames) { out.print("\"" + n.replace("\"", "\\\"") + "\","); } %>];
-var tdArr      = [<% for (Integer t : tdCounts) { out.print(t + ","); } %>];
-var totalArr   = [<% for (Integer t : totalHits) { out.print(t + ","); } %>];
-
-// -------- Side panel: Top Critical --------
-(function buildCritList() {
-  var items = [];
-  for (var k = 0; k < nameArr.length; k++) {
-    if (nameArr[k] && valueArr[k] > 0) {
-      items.push({ name: nameArr[k], pct: valueArr[k], td: tdArr[k] });
-    }
-  }
-  items.sort(function(a,b){ return b.pct - a.pct; });
-  var top = items.slice(0, 5);
-  var ul = document.getElementById('critList');
-  if (!top.length) {
-    ul.innerHTML = '<li class="empty-note">All clear ✓ No failures</li>';
-    return;
-  }
-  ul.innerHTML = top.map(function(it){
-    var shown = it.name.length > 18 ? it.name.substring(0,18) + '…' : it.name;
-    return '<li class="crit-item"><span class="name" title="'+it.name+'">'+shown+'</span><span class="val">'+it.pct+'%</span></li>';
-  }).join('');
-})();
-
-// -------- Chart config --------
-let chartConfig = {
-  type: "bar3d",
-  "3dAspect": { depth: 28, true3d: 0, yAngle: 10 },
-  backgroundColor: "transparent",
-  plotarea: {
-    backgroundColor: "transparent",
-    margin: "90px 30px 190px 90px",
-  },
-  globals: {
-    fontFamily: "Rajdhani, sans-serif",
-  },
-  scaleX: {
-    values: labelArr,
-    lineColor: "rgba(255,255,255,0.15)",
-    tick: { visible: false },
-    item: { fontColor: "#fff", fontSize: 15, offsetY: 6 },
-    guide: { visible: false }
-  },
-  scaleY: {
-    lineColor: "rgba(255,255,255,0.1)",
-    guide: {
-      visible: true,
-      lineColor: "rgba(255,255,255,0.08)",
-      lineStyle: "dashed"
-    },
-    tick: { visible: false },
-    item: { fontColor: "#a0a4be", fontSize: 13, paddingRight: 8 },
-    label: {
-      text: "Failure %",
-      fontColor: "#8b8fa8",
-      fontSize: 13,
-      offsetX: -10
-    }
-  },
-  plot: {
-    animation: { effect: "ANIMATION_SLIDE_BOTTOM", speed: 800, delay: 60, sequence: "ANIMATION_BY_NODE" },
-    tooltip: {
-      text: "<b>%kl</b><br>Failure: %v%",
-      backgroundColor: "rgba(20,22,42,0.95)",
-      borderColor: "rgba(160,89,255,0.6)",
-      borderRadius: "8px",
-      fontColor: "#fff",
-      fontSize: 13,
-      padding: "8px 14px",
-      shadow: false
-    },
-    barWidth: "45%",
-    borderWidth: 0,
-    // per-node colors based on severity
-    styles: (function(){
-      var s = [];
-      for (var i=0;i<valueArr.length;i++){
-        var v = valueArr[i];
-        var color;
-        if (v >= 5)       color = "#ff2d55";
-        else if (v >= 2)  color = "#ff8c00";
-        else if (v >= 1)  color = "#ffd60a";
-        else              color = "#00ffb3";
-        s.push(color);
-      }
-      return s;
-    })()
-  },
-  series: [{
-    values: valueArr,
-    lineColor: "#a259ff",
-    lineWidth: 1,
-    "value-box": {
-      visible: true,
-      text: "%v%",
-      placement: "top",
-      fontColor: "#ffffff",
-      fontSize: 14,
-      fontWeight: "bold",
-      offsetY: -6,
-      rules: [
-        { rule: "%v >= 5",  fontColor: "#ff6b8b" },
-        { rule: "%v >= 2",  fontColor: "#ffb454" },
-        { rule: "%v >= 1",  fontColor: "#ffe066" }
-      ]
-    },
-    backgroundColor: "#673AB7"
-  }]
-};
-
-let updateChart = (p) => {
-  var idx = p.nodeindex;
-  if (!nameArr[idx]) return;
-  var a = '<%=request.getContextPath() + "/jsp/TransactionEndpointWiseService.jsp?txnEndPoint="%>' + nameArr[idx];
-  window.open(a, '_blank');
-};
-
-zingchart.render({
-  id: 'myChart',
-  data: chartConfig,
-  height: '100%',
-  width: '100%',
-});
-
-zingchart.bind('myChart', 'node_click', updateChart);
-</script>
-
-<!-- ============ COUNTDOWN RING ============ -->
-<script>
-(function countdownRing() {
-  var totalSeconds = 10 * 60;   // 10 minutes
-  var remaining = totalSeconds;
-  var CIRC = 2 * Math.PI * 20;  // r=20
-
-  var ring = document.getElementById('ringProgress');
-  var num  = document.getElementById('ringNum');
-  var overlay = document.getElementById('refreshOverlay');
-
-  ring.style.strokeDasharray  = CIRC;
-  ring.style.strokeDashoffset = 0;
-
-  function tick() {
-    remaining--;
-    if (remaining <= 0) {
-      overlay.classList.add('active');
-      return;
-    }
-    var progress = remaining / totalSeconds;
-    ring.style.strokeDashoffset = CIRC * (1 - progress);
-
-    var m = Math.floor(remaining / 60);
-    var s = remaining % 60;
-    num.textContent = (m > 0) ? (m + ':' + (s < 10 ? '0' + s : s)) : s;
-  }
-  setInterval(tick, 1000);
-})();
-</script>
-
-</body>
-</html>
