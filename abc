@@ -22,9 +22,10 @@
     height: 100vh;
     width: 100vw;
     overflow: hidden;
-    background: #020308;                 /* deeper dark */
-    color: #fff;
+    background: var(--bg, #020308);
+    color: var(--ink, #fff);
     font-family: 'Inter', sans-serif;
+    transition: background .3s ease, color .3s ease;
   }
 
   .app {
@@ -35,7 +36,7 @@
   }
 
   /* ============================================================
-     TOP BAR
+     TOP BAR — theme aware
      ============================================================ */
   .topbar {
     display: grid;
@@ -43,8 +44,8 @@
     align-items: center;
     gap: 20px;
     padding: 12px 22px;
-    background: #0a0d15;                 /* darker */
-    border-bottom: 1px solid #1c2030;
+    background: var(--card, #0a0d15);
+    border-bottom: 1px solid var(--line, #1c2030);
     flex-shrink: 0;
     box-shadow: 0 2px 20px rgba(99, 102, 241, 0.08);
   }
@@ -58,7 +59,7 @@
   .timer-label {
     font-size: 15px;
     font-weight: 700;
-    color: #8b90b0;
+    color: var(--muted, #8b90b0);
     text-transform: uppercase;
     letter-spacing: 1px;
     line-height: 1.2;
@@ -69,16 +70,19 @@
     justify-content: center;
     min-width: 110px;
     padding: 6px 14px;
-    border: 3px solid #6366f1;
+    border: 3px solid var(--brand, #6366f1);
     border-radius: 8px;
-    color: #fff;
+    color: var(--brand, #6366f1) !important;
     font-family: 'Courier New', monospace;
     font-size: 32px;
     font-weight: 900;
-    background: rgba(99, 102, 241, 0.12);
+    background: var(--brand-light, rgba(99,102,241,0.12));
     box-shadow: 0 0 12px rgba(99, 102, 241, 0.35), inset 0 0 12px rgba(99, 102, 241, 0.1);
     letter-spacing: 1px;
     line-height: 1;
+  }
+  html[data-theme="dark"] .timer {
+    background: rgba(99, 102, 241, 0.15);
   }
 
   /* KPI row */
@@ -86,13 +90,13 @@
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 1px;
-    background: #1c2030;
-    border-left: 1px solid #1c2030;
-    border-right: 1px solid #1c2030;
+    background: var(--line, #1c2030);
+    border-left: 1px solid var(--line, #1c2030);
+    border-right: 1px solid var(--line, #1c2030);
     height: 100%;
   }
   .kpi {
-    background: #0a0d15;
+    background: var(--card, #0a0d15);
     padding: 8px 18px;
     display: flex;
     flex-direction: column;
@@ -102,7 +106,7 @@
   .kpi-label {
     font-size: 11px;
     font-weight: 700;
-    color: #8b90b0;
+    color: var(--muted, #8b90b0);
     text-transform: uppercase;
     letter-spacing: 1.2px;
     white-space: nowrap;
@@ -113,20 +117,21 @@
     font-weight: 900;
     line-height: 1;
     margin-top: 4px;
-    color: #fff;
+    color: var(--ink, #fff);
     letter-spacing: -1px;
   }
-  .kpi-value.red    { color: #ef4444; text-shadow: 0 0 14px rgba(239,68,68,0.5); }
-  .kpi-value.orange { color: #f59e0b; text-shadow: 0 0 14px rgba(245,158,11,0.5); }
-  .kpi-value.green  { color: #10b981; text-shadow: 0 0 14px rgba(16,185,129,0.5); }
+  /* ✅ 3-level severity — crimson / amber / emerald */
+  .kpi-value.red    { color: #dc2626; }
+  .kpi-value.orange { color: #f59e0b; }
+  .kpi-value.green  { color: #10b981; }
 
-  /* Blinking critical KPI when > 0 */
+  /* Blinking critical KPI */
   .blink-red {
     animation: blinkRed 1.4s ease-in-out infinite;
   }
   @keyframes blinkRed {
-    0%, 100% { opacity: 1; text-shadow: 0 0 14px rgba(239,68,68,0.7); }
-    50%      { opacity: 0.35; text-shadow: 0 0 28px rgba(239,68,68,1); }
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.4; }
   }
 
   /* Right block */
@@ -141,12 +146,12 @@
     align-items: center;
     gap: 6px;
     padding: 6px 12px;
-    background: #0a0d15;
-    border: 1px solid #1c2030;
+    background: var(--card, #0a0d15);
+    border: 1px solid var(--line, #1c2030);
     border-radius: 6px;
     font-size: 12px;
     font-weight: 700;
-    color: #fff;
+    color: var(--ink, #fff);
     white-space: nowrap;
   }
   .sev-dot {
@@ -183,32 +188,31 @@
   }
 
   /* ============================================================
-     TOP CRITICAL BAR (horizontal chips)
+     TOP CRITICAL BAR — crimson theme
      ============================================================ */
   .crit-bar {
     display: flex;
     align-items: center;
     gap: 14px;
     padding: 10px 22px;
-    background: #0a0d15;
-    border-bottom: 1px solid #1c2030;
+    background: var(--card, #0a0d15);
+    border-bottom: 1px solid var(--line, #1c2030);
     flex-shrink: 0;
     overflow-x: auto;
   }
   .crit-bar::-webkit-scrollbar { height: 4px; }
-  .crit-bar::-webkit-scrollbar-thumb { background: #1c2030; border-radius: 2px; }
+  .crit-bar::-webkit-scrollbar-thumb { background: var(--line, #1c2030); border-radius: 2px; }
 
   .crit-bar .title {
     font-size: 12px;
     font-weight: 800;
-    color: #ef4444;
+    color: #dc2626;                    /* crimson */
     text-transform: uppercase;
     letter-spacing: 1.5px;
     white-space: nowrap;
     padding-right: 12px;
-    border-right: 1px solid #1c2030;
+    border-right: 1px solid var(--line, #1c2030);
     flex-shrink: 0;
-    text-shadow: 0 0 10px rgba(239,68,68,0.6);
   }
 
   .crit-chip {
@@ -216,28 +220,27 @@
     align-items: center;
     gap: 10px;
     padding: 8px 14px;
-    background: rgba(239, 68, 68, 0.1);
-    border: 1px solid rgba(239, 68, 68, 0.35);
+    background: rgba(220, 38, 38, 0.08);
+    border: 1px solid rgba(220, 38, 38, 0.4);
     border-radius: 8px;
     white-space: nowrap;
     flex-shrink: 0;
     transition: all 0.2s;
   }
   .crit-chip:hover {
-    background: rgba(239, 68, 68, 0.2);
-    box-shadow: 0 0 16px rgba(239,68,68,0.4);
+    background: rgba(220, 38, 38, 0.18);
   }
   .crit-chip.critical {
     animation: chipBlink 2s ease-in-out infinite;
   }
   @keyframes chipBlink {
-    0%, 100% { box-shadow: 0 0 0 rgba(239,68,68,0.0); }
-    50%      { box-shadow: 0 0 18px rgba(239,68,68,0.6); }
+    0%, 100% { box-shadow: 0 0 0 rgba(220,38,38,0.0); }
+    50%      { box-shadow: 0 0 16px rgba(220,38,38,0.6); }
   }
   .crit-chip .name {
     font-size: 14px;
     font-weight: 700;
-    color: #fff;
+    color: var(--ink, #fff);
     max-width: 180px;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -246,24 +249,51 @@
     font-family: 'Courier New', monospace;
     font-size: 20px;
     font-weight: 900;
-    color: #ef4444;
-    text-shadow: 0 0 10px rgba(239,68,68,0.5);
+    color: #dc2626;                    /* crimson */
   }
 
   /* ============================================================
-     CHART AREA — fills remaining viewport
+     CHART HEADER — always visible
+     ============================================================ */
+  .chart-header {
+    flex-shrink: 0;
+    padding: 8px 20px 4px;
+    background: var(--bg, #020308);
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .chart-header h2 {
+    font-size: 22px;
+    font-weight: 900;
+    color: var(--ink, #fff);
+    letter-spacing: 0.5px;
+    margin: 0;
+  }
+  .chart-header p {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--muted, #8b90b0);
+    font-family: 'Courier New', monospace;
+    margin: 0;
+    letter-spacing: 0.5px;
+  }
+
+  /* ============================================================
+     CHART AREA
      ============================================================ */
   .chart-area {
     flex: 1;
     min-height: 0;
-    padding: 8px;
-    background: #020308;
+    padding: 0 8px 8px;
+    background: var(--bg, #020308);
   }
   #myChart {
     width: 100%;
     height: 100%;
-    background: #0a0d15;
-    border: 1px solid #1c2030;
+    background: var(--card, #0a0d15);
+    border: 1px solid var(--line, #1c2030);
     border-radius: 10px;
     box-shadow: 0 0 24px rgba(99, 102, 241, 0.15),
                 inset 0 0 40px rgba(99, 102, 241, 0.04);
@@ -276,6 +306,7 @@
     .kpi-value { font-size: 28px; }
     .kpi { padding: 6px 12px; }
     .sev-chip { padding: 4px 8px; font-size: 11px; }
+    .chart-header h2 { font-size: 18px; }
   }
   @media (max-width: 900px) {
     .topbar { grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -297,7 +328,7 @@
       <div class="timer-label">
         Auto Refresh In
         <br>
-        <span style="font-size:11px;color:#5c6183;font-weight:600;" id="timeRangeMessage"></span>
+        <span style="font-size:11px;color:var(--muted);font-weight:600;" id="timeRangeMessage"></span>
       </div>
       <div class="timer" id="ten-countdown">10:00</div>
     </div>
@@ -312,7 +343,7 @@
         <div class="kpi-value red" id="statCritical">—</div>
       </div>
       <div class="kpi">
-        <div class="kpi-label">High / Medium</div>
+        <div class="kpi-label">Medium 1-5%</div>
         <div class="kpi-value orange" id="statWarning">—</div>
       </div>
       <div class="kpi">
@@ -323,10 +354,9 @@
 
     <div class="right-block">
       <div class="sev-chips">
-        <div class="sev-chip"><span class="sev-dot" style="background:#ef4444;"></span>&gt;5%</div>
-        <div class="sev-chip"><span class="sev-dot" style="background:#f59e0b;"></span>2-5%</div>
-        <div class="sev-chip"><span class="sev-dot" style="background:#8b5cf6;"></span>1-2%</div>
         <div class="sev-chip"><span class="sev-dot" style="background:#10b981;"></span>&lt;1%</div>
+        <div class="sev-chip"><span class="sev-dot" style="background:#f59e0b;"></span>1-5%</div>
+        <div class="sev-chip"><span class="sev-dot" style="background:#dc2626;"></span>&gt;5%</div>
       </div>
       <div class="live-badge">
         <span class="pulse"></span> LIVE
@@ -337,6 +367,12 @@
   <!-- ============ TOP CRITICAL BAR ============ -->
   <div class="crit-bar" id="critBar">
     <span class="title">Top Critical</span>
+  </div>
+
+  <!-- ============ CHART HEADER ============ -->
+  <div class="chart-header">
+    <h2>Failure % &nbsp;&middot;&nbsp; End Point Wise</h2>
+    <p>top 12 &middot; last 10 min</p>
   </div>
 
   <!-- ============ CHART ============ -->
@@ -407,11 +443,11 @@ try {
         int    totalHit = resultSet.getInt("TOTAL_HITS");
         double pct      = resultSet.getDouble("TD_PERCENT");
 
-        String name = "<p style='color:#ff9933; font-weight: bolder; font-size:20px; text-shadow:0 0 6px rgba(255,153,51,0.6);'>" + tdCount + "</p>"
-            + "<br><p style='color:#FFFFFF; font-weight: bolder; font-size:18px; text-shadow:0 0 6px rgba(255,255,255,0.3);'>"
-            + rawName.replaceAll("_", "</p><br><p style='color:#FFFFFF; font-weight: bolder; font-size:18px; text-shadow:0 0 6px rgba(255,255,255,0.3);'>")
+        String name = "<p style='color:#ff9933; font-weight: bolder; font-size:20px;'>" + tdCount + "</p>"
+            + "<br><p class='tx-ep-label' style='font-weight: bolder; font-size:18px;'>"
+            + rawName.replaceAll("_", "</p><br><p class='tx-ep-label' style='font-weight: bolder; font-size:18px;'>")
             + "</p><br>"
-            + "<p style='color:#32CD32; font-weight: bolder; font-size:18px; text-shadow:0 0 6px rgba(50,205,50,0.6);'>" + totalHit + "</p>";
+            + "<p style='color:#32CD32; font-weight: bolder; font-size:18px;'>" + totalHit + "</p>";
 
         labels.add(name);
         rawNames.add(rawName);
@@ -488,31 +524,63 @@ for (int k = 0; k < totalHits.size(); k++) {
 ];
 
 // ============================================================
-// KPI compute + blink if critical
+// THEME DETECTION
+// ============================================================
+var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+var chartBg        = isDark ? '#0a0d15' : '#FFFFFF';
+var chartText      = isDark ? '#FFFFFF' : '#0A0A0A';
+var chartMuted     = isDark ? '#8b90b0' : '#6B7280';
+var chartGridLine  = isDark ? '#2a2f45' : '#E5E7EB';
+var chartTickColor = isDark ? '#1c2030' : '#D1D5DB';
+var chartBorder    = isDark ? '#1c2030' : '#CCCCCC';
+
+/* ✅ Fix labelArr — theme ke hisaab se endpoint names visible */
+labelArr = labelArr.map(function(lbl) {
+  return lbl.replace(/class='tx-ep-label' style='font-weight: bolder; font-size:18px;'/g,
+                     "style='color:" + chartText + ";font-weight:bolder;font-size:18px;'");
+});
+
+// ============================================================
+// ✅ 3-LEVEL SEVERITY — crimson / amber / emerald
+// ============================================================
+var COLOR_LOW      = "#10b981";   /* < 1%  — emerald */
+var COLOR_MEDIUM   = "#f59e0b";   /* 1-5%  — amber */
+var COLOR_CRITICAL = "#dc2626";   /* > 5%  — crimson dark red */
+
+function severityColor(v) {
+  if (v > 5) return COLOR_CRITICAL;
+  if (v >= 1) return COLOR_MEDIUM;
+  return COLOR_LOW;
+}
+
+// ============================================================
+// KPI compute + blink
 // ============================================================
 (function computeStats() {
-  var total = 0, critical = 0, warning = 0, maxVal = 0;
+  var total = 0, critical = 0, medium = 0, maxVal = 0;
   for (var i = 0; i < nameArr.length; i++) {
     if (!nameArr[i]) continue;
     total++;
-    if (valueArr[i] >= 5) critical++;
-    else if (valueArr[i] >= 1) warning++;
+    if (valueArr[i] > 5) critical++;
+    else if (valueArr[i] >= 1) medium++;
     if (valueArr[i] > maxVal) maxVal = valueArr[i];
   }
-  document.getElementById('statTotal').textContent    = total;
+  document.getElementById('statTotal').textContent = total;
+
   var critEl = document.getElementById('statCritical');
   critEl.textContent = critical;
   if (critical > 0) critEl.classList.add('blink-red');
 
-  document.getElementById('statWarning').textContent  = warning;
+  document.getElementById('statWarning').textContent = medium;
+
   var maxEl = document.getElementById('statMax');
   maxEl.textContent = maxVal.toFixed(2) + '%';
-  maxEl.className = 'kpi-value ' + (maxVal >= 5 ? 'red' : (maxVal >= 2 ? 'orange' : 'green'));
-  if (maxVal >= 5) maxEl.classList.add('blink-red');
+  maxEl.className = 'kpi-value ' + (maxVal > 5 ? 'red' : (maxVal >= 1 ? 'orange' : 'green'));
+  if (maxVal > 5) maxEl.classList.add('blink-red');
 })();
 
 // ============================================================
-// Top Critical chips (critical ones blink)
+// Top Critical chips
 // ============================================================
 (function buildCritBar() {
   var items = [];
@@ -527,7 +595,7 @@ for (int k = 0; k < totalHits.size(); k++) {
 
   if (!top.length) {
     var empty = document.createElement('span');
-    empty.style.cssText = 'color:#5c6183;font-family:Courier New,monospace;font-size:14px;font-weight:700;';
+    empty.style.cssText = 'color:var(--muted);font-family:Courier New,monospace;font-size:14px;font-weight:700;';
     empty.textContent = 'all clear ✓';
     bar.appendChild(empty);
     return;
@@ -535,7 +603,7 @@ for (int k = 0; k < totalHits.size(); k++) {
 
   top.forEach(function(it) {
     var chip = document.createElement('div');
-    chip.className = 'crit-chip' + (it.pct >= 5 ? ' critical' : '');
+    chip.className = 'crit-chip' + (it.pct > 5 ? ' critical' : '');
     chip.innerHTML = '<span class="name" title="' + it.name + '">' + it.name + '</span>'
                    + '<span class="pct">' + it.pct + '%</span>';
     bar.appendChild(chip);
@@ -543,62 +611,47 @@ for (int k = 0; k < totalHits.size(); k++) {
 })();
 
 // ============================================================
-// Per-bar severity colors
+// Bars color — 3 levels only
 // ============================================================
-var barColors = valueArr.map(function(v) {
-  if (v >= 5) return "#ef4444";
-  if (v >= 2) return "#f59e0b";
-  if (v >= 1) return "#8b5cf6";
-  return "#10b981";
-});
+var barColors = valueArr.map(severityColor);
 
 // ============================================================
-// 3D bar shine colors (lighter top)
-// ============================================================
-var barColorsLight = barColors.map(function(c) {
-  if (c === "#ef4444") return "#ff7b7b";
-  if (c === "#f59e0b") return "#fbc04b";
-  if (c === "#8b5cf6") return "#b794ff";
-  return "#5eeab1";
-});
-
-// ============================================================
-// CHART — deeper 3D + glowing borders + blink on critical bars
+// CHART — 3D + theme-aware + severity colors
 // ============================================================
 var chartConfig = {
   type: "bar3d",
-  "3dAspect": { depth: 45, true3d: 0, yAngle: 15 },   /* deeper 3D */
-  backgroundColor: "#0a0d15",
+  "3dAspect": { depth: 45, true3d: 0, yAngle: 15 },
+  backgroundColor: chartBg,
   globals: { fontFamily: "Inter, sans-serif" },
   plotarea: {
     backgroundColor: "transparent",
-    margin: "55px 40px 190px 170px"
+    margin: "40px 40px 190px 170px"
   },
   scaleX: {
     values: labelArr,
     backgroundColor: "transparent",
-    borderColor: "#1c2030",
+    borderColor: chartBorder,
     borderWidth: "1px",
     guide: { visible: false },
-    item: { fontColor: "#fff", fontSize: 22 },
-    tick: { alpha: 0.2, lineColor: "#1c2030" },
+    item: { fontColor: chartText, fontSize: 22 },
+    tick: { alpha: 0.2, lineColor: chartTickColor },
     label: {
-      text: '<p style="color:#ff9933;font-size:20px;font-weight:800;margin:4px 0;text-shadow:0 0 8px rgba(255,153,51,0.6);">TD</p>'
-          + '<p style="color:#FFFFFF;font-size:20px;font-weight:800;margin:4px 0;text-shadow:0 0 6px rgba(255,255,255,0.4);">ENDPOINT</p>'
-          + '<p style="color:#32CD32;font-size:20px;font-weight:800;margin:4px 0;text-shadow:0 0 8px rgba(50,205,50,0.6);">HITS</p>',
+      text: '<p style="color:#ff9933;font-size:20px;font-weight:800;margin:4px 0;">TD</p>'
+          + '<p style="color:' + chartText + ';font-size:20px;font-weight:800;margin:4px 0;">ENDPOINT</p>'
+          + '<p style="color:#32CD32;font-size:20px;font-weight:800;margin:4px 0;">HITS</p>',
       offsetX: '-90px'
     }
   },
   scaleY: {
     backgroundColor: "transparent",
-    borderColor: "#1c2030",
+    borderColor: chartBorder,
     borderWidth: "1px",
-    guide: { alpha: 0.2, lineColor: "#2a2f45", lineStyle: "solid" },
-    item: { fontColor: "#fff", paddingRight: "10px", fontSize: 18 },
-    tick: { alpha: 0.2, lineColor: "#1c2030" },
+    guide: { alpha: 0.2, lineColor: chartGridLine, lineStyle: "solid" },
+    item: { fontColor: chartText, paddingRight: "10px", fontSize: 18 },
+    tick: { alpha: 0.2, lineColor: chartTickColor },
     label: {
       text: "Failure Percentage",
-      color: "#8b90b0",
+      color: chartMuted,
       fontSize: "20"
     }
   },
@@ -607,34 +660,31 @@ var chartConfig = {
     "value-box": {
       text: "%v%",
       placement: "top",
-      "font-color": "#ffffff",
+      "font-color": chartText,
       "font-size": "22px",
       "font-weight": "bold",
       "offset-y": -6,
       rules: [
-        { rule: "%v >= 5", "font-color": "#ff5252" },   /* red glow text for critical */
-        { rule: "%v >= 2", "font-color": "#fbc04b" },
-        { rule: "%v >= 1", "font-color": "#b794ff" }
+        { rule: "%v > 5",  "font-color": COLOR_CRITICAL },
+        { rule: "%v >= 1", "font-color": COLOR_MEDIUM }
       ]
     },
     tooltip: {
-      backgroundColor: "#1c2030",
-      borderColor: "#6366f1",
+      backgroundColor: isDark ? "#1c2030" : "#FFFFFF",
+      borderColor: isDark ? "#6366f1" : "#CCCCCC",
       borderWidth: 1,
       borderRadius: "6px",
       fontSize: "16px",
       padding: "10px 14px",
       shadow: false,
-      fontColor: "#fff"
+      fontColor: chartText
     },
     styles: barColors,
-    backgroundColor: "#673AB7",
-    borderColor: "#1c2030",
+    backgroundColor: COLOR_MEDIUM,
+    borderColor: chartBorder,
     borderWidth: 1,
-    /* 3D top shine */
-    "shadow": 0,
     "effects": [
-      { "effect": "SHADOW", "offsetX": 4, "offsetY": 4, "blur": 12, "color": "rgba(0,0,0,0.5)" }
+      { "effect": "SHADOW", "offsetX": 4, "offsetY": 4, "blur": 12, "color": "rgba(0,0,0,0.4)" }
     ]
   }]
 };
@@ -656,27 +706,16 @@ zingchart.render({
 zingchart.bind('myChart', 'node_click', updateChart);
 
 // ============================================================
-// Blink value-boxes for critical bars using ZingChart API
+// Theme change → reload
 // ============================================================
-(function blinkCriticalValues() {
-  var interval = setInterval(function() {
-    if (!window.zingchart) return;
-    clearInterval(interval);
-    try {
-      for (var i = 0; i < valueArr.length; i++) {
-        if (valueArr[i] >= 5) {
-          // toggle value-box visibility for blink effect
-          zingchart.exec('myChart', 'updateobject', {
-            graphid: 'myChart',
-            data: {
-              series: [{ "value-box": { visible: true } }]
-            }
-          });
-        }
-      }
-    } catch(e) {}
-  }, 1000);
-})();
+var _lastTheme = isDark ? 'dark' : 'light';
+setInterval(function() {
+  var now = document.documentElement.getAttribute('data-theme') || 'light';
+  if (now !== _lastTheme) {
+    _lastTheme = now;
+    location.reload();
+  }
+}, 500);
 </script>
 
 <!-- ============ COUNTDOWN ============ -->
