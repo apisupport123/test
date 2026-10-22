@@ -1,587 +1,691 @@
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%@page import="java.util.*"%>
-<%@page import="java.sql.*"%> 
-<%@page import="com.jdbc.DBUtilityAuto" %>   
-<%@page import="com.jdbc.DBUtility" %>  
-<%@page import=" java.time.ZoneId, java.time.ZonedDateTime , java.time.format.DateTimeFormatter, java.util.Locale" %> 
+<%@page import="java.sql.*"%>
+<%@page import="com.jdbc.DBUtilityAuto" %>
+<%@page import="com.jdbc.DBUtility" %>
+<%@page import="java.time.ZoneId, java.time.ZonedDateTime, java.time.format.DateTimeFormatter, java.util.Locale" %>
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta charset="ISO-8859-1" >
-<title>Transaction End Point</title>
- <script nonce="undefined" src="../js/zingchart.min.js"></script>
- <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-  <script src="../js/LdapAuth.js"></script>
-  <style>
-    .chart--container {
-      min-height: 620px;
-      width: 100%;
-      height: 100%;
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Transaction Endpoint Monitor</title>
 
-    }
+<script nonce="undefined" src="../js/zingchart.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="../js/LdapAuth.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
 
-    .blink {
-      animation: blinker 0s linear infinite;
-      color: white;
-      font-family: sans-serif;
-      font-size: larger;
-      text-align-last: center;
-      font-weight: 900;
-    }
-    
-    .footer {
-   position: relative;
-   left: 0;
-   bottom: 0;
-   width: 100%;
-   color: white;
-   text-align: center;
-}
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
 
-    @keyframes blinker {
-      50% {
-        opacity: 0;
-      }
-    }
-    
-    
-    
-    
-    
-    
-/* The Modal (background) */
-.modal {
-  display: none; /* Hidden by default */
-  position: fixed; /* Stay in place */
-  z-index: 1; /* Sit on top */
-  padding-top: 100px; /* Location of the box */
-  left: 0;
-  top: 0;
-  width: 100%; /* Full width */
-  height: 100%; /* Full height */
-  overflow: auto; /* Enable scroll if needed */
-  background-color: rgb(0,0,0); /* Fallback color */
-  background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
-}
-
-/* Modal Content */
-.modal-content {
-  position: relative;
-  background-color: #fefefe;
-  margin: auto;
-  padding: 0;
-  border: 1px solid #888;
-  width: 80%;
-  box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19);
-  -webkit-animation-name: animatetop;
-  -webkit-animation-duration: 0.4s;
-  animation-name: animatetop;
-  animation-duration: 0.4s
-}
-
-/* Add Animation */
-@-webkit-keyframes animatetop {
-  from {top:-300px; opacity:0} 
-  to {top:0; opacity:1}
-}
-
-@keyframes animatetop {
-  from {top:-300px; opacity:0}
-  to {top:0; opacity:1}
-}
-
-/* The Close Button */
-.close {
-  color: white;
-  float: right;
-  font-size: 28px;
-  font-weight: bold;
-}
-
-.close:hover,
-.close:focus {
-  color: #000;
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.modal-header {
-  padding: 2px 16px;
-  background-color: #AB5AF3;
-  color: white;
-}
-
-.modal-body {padding: 2px 16px;
-font-size:large;
-}
-
-.modal-footer {
-  padding: 2px 16px;
-  background-color: #AB5AF3 ;
-  color: white;
-}
-
-table {
-  font-family: arial, sans-serif;
-  border-collapse: collapse;
-  width: 100%;
-}
-
-td, th {
-  border: 1px solid #dddddd;
-  text-align: left;
-  padding: 8px;
-}
-
-tr:nth-child(even) {
-  background-color: #dddddd;
-}
-
-.timer {
-    /* text-align: center; */
-    border: 5px solid white;
-    display:inline;
-    padding: 5px;
-    color: white;
-    font-family: Verdana, sans-serif, Arial;
-    font-size: 40px;
-    height: 50px;
-    font-weight: bold;
-    text-decoration: none;
-}
-    
-    
-    .wait{
-font-family: arial;
-font-size: 13px;
-color: #ff0000;
-font-weight: bold;
-zoom: 10%;
-}
-    
-   
-
-    
-  </style>
-  
-</head>
- <%--   <%@include file="./DRPRHeader.jsp"%>  --%>
-<body onload="myFunction_Time()" bgcolor="#000000">
-
-
-    <p class="blink" style="font-size: 30px"> This Data get Auto Refresh after <span class="timer" id="ten-countdown"></span> Minutes 	<span class="blink" style="font-size: 20px" id="timeRangeMessage"></span>
-  </p>
-  
- 
-		
-
-
-  <div id="myChart" style="margin-top: 150px; height: 800px; zoom:85%; position: relative;" class="chart--container">
- 
-  
-  </div>
-  
-<!--   <button id="myBtn">Open Modal</button> -->
-
-<!-- The Modal -->
-	<script>
-	
-	 document.addEventListener('DOMContentLoaded', function() {
-	     // Get current time
-	     var currentTime = new Date();
-
-	     // Get time 10 minutes ago
-	     var tenMinutesAgo = new Date();
-	     tenMinutesAgo.setMinutes(currentTime.getMinutes() - 10);
-
-	     // Format time in HH:mm format
-	     var formatTime = function(date) {
-	         var hours = date.getHours();
-	         var minutes = date.getMinutes();
-	         // Add leading zeros if needed
-	         hours = hours < 10 ? '0' + hours : hours;
-	         minutes = minutes < 10 ? '0' + minutes : minutes;
-	         return hours + ':' + minutes;
-	     };
-
-	     // Display a formatted message
-	     var message = 'Your session was from ' + formatTime(tenMinutesAgo) + ' to ' + formatTime(currentTime) + '.';
-	     document.getElementById('timeRangeMessage').innerText = message;
-	 });
-	 
-      /* function myFunction_Time() {
-        var x = document.lastModified;
-        document.getElementById("demo").innerHTML = x;
-      } */
-      function myFunction_Time() {
-    	      var x = document.lastModified;
-    	      var demo = document.getElementById("demo");
-
-    	      if (demo) {
-    	          demo.innerHTML = x;
-    	      } else {
-    	          console.warn("Element with id='demo' not found");
-    	      }
-    	  }
-    
-      
-    
-   </script>
-   	
-	
-
-	
-	
-	<script>
-	  var Arr = new Array(); 
-	<%String m_strtxnArray="";
-	response.setIntHeader("Refresh", 600);
-	//load the sql driver
-	//Class.forName("oracle.jdbc.OracleDriver");
-	//Connect to oracle database
-	//Connection conn = DriverManager.getConnection("jdbc:oracle:thin:@10.176.0.85:1787/iibdrdb", "eisappsupport", "India#25");
-	
-	// uncomment it after DR Switch
-	
- 	String flagStatus = null;
- 	Connection conn= null;
-	/*Connection connection = DBUtilityAuto.getReportDBConnection();
-	String sql1 = "select * from connection_master";
-	Statement smt1 = connection.createStatement();
-	ResultSet rs = smt1.executeQuery(sql1);
-	while (rs.next()) {
-		flagStatus = rs.getString("FLAG");
-	}
-
-	System.out.println("flagStatus" + flagStatus);
-	
-	if (flagStatus != null && flagStatus.equals("PR"))
-	{
-		 conn = DBUtility.getConnection();
-	}
-	else if(flagStatus != null && flagStatus.equals("DR"))
-	{
-		 conn = DBUtility.getDRConnection();
-	}
-	else
-	{
-		 conn=DBUtilityAuto.getIIBDBConnection();
-	}*/
-	
-	 conn=DBUtilityAuto.getIIBDBConnection();
-	
-	/* Connection conn= null;
-	try {
-			Class.forName("oracle.jdbc.driver.OracleDriver");
-		//	connection = DriverManager.getConnection("jdbc:oracle:thin:@eisdr-scan.sbi.co.in:1786/iibdrdb", "eisappsupport", "India#25");
-			conn = DriverManager.getConnection("jdbc:oracle:thin:@10.176.0.83:1787/iibdrdb", "eisappsupport", "India#25");
-			
-			} catch (Exception e) {
-				try {
-					Class.forName("oracle.jdbc.driver.OracleDriver");
-					conn = DriverManager.getConnection("jdbc:oracle:thin:@10.176.0.85:1787/iibdrdb", "eisappsupport", "India#25");	
-				}catch (Exception e1) {
-					try {
-						Class.forName("oracle.jdbc.driver.OracleDriver");
-						conn = DriverManager.getConnection("jdbc:oracle:thin:@10.176.0.77:1787/iibdrdb", "eisappsupport", "India#25");
-					}catch (Exception e2) {
-						try {
-							Class.forName("oracle.jdbc.driver.OracleDriver");
-							conn = DriverManager.getConnection("jdbc:oracle:thin:@10.176.0.75:1787/iibdrdb", "eisappsupport", "India#25");	
-						}catch (Exception e3) {
-							// TODO: handle exception
-							e3.printStackTrace();
-						}
-					}
-				}
-				
-			} */
-	//Execute query to retrieve the data
-	/*String sql="select txn_endpoint,\r\n"
-			+ "COUNT(1) AS TOTAL_HITS,\r\n"
-			+ "ROUND((SUM(CASE WHEN (substr(error_code,3,3) in ('002','014') OR error_code in ('SI001','SI007','SI051','SI569','SI570')) and error_code <> '00014' THEN 1 ELSE 0 END)*100)/COUNT(1),2) AS TD_PERCENT \r\n"
-			+ "from txn_endpoint_hits where \r\n"
-			+ "REQUEST_DATE_TIME>=SYSDATE - INTERVAL '10' MINUTE \r\n"
-			+ "GROUP BY txn_endpoint \r\n"
-			+ "having ROUND((SUM(CASE WHEN (substr(error_code,3,3) in ('002','014') OR error_code in ('SI001','SI007','SI051','SI569','SI570')) and error_code <> '00014' THEN 1 ELSE 0 END)*100)/COUNT(1),2)>= 0.5 \r\n"
-			+ "order by TD_PERCENT desc";*/
-			ZonedDateTime CurrentDate= ZonedDateTime.now(ZoneId.of("Asia/Kolkata"));
-		    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM_yy").withLocale(Locale.US);
-		    String PART=CurrentDate.format(formatter).toUpperCase();
-	String sql = "Select * from(select txn_endpoint,\r\n" 
-	        + "COUNT(1) AS TOTAL_HITS,\r\n"
-			+ "SUM(CASE WHEN (substr(error_code,3,3) in ('002','014') OR error_code in ('SI001','SI007','SI569','SI570','SI015')) and error_code <> '00014' and error_code <> '3P002' THEN 1 ELSE 0 END) AS TD_COUNT,\r\n"
-			+ "ROUND((SUM(CASE WHEN (substr(error_code,3,3) in ('002','014') OR error_code in ('SI001','SI007','SI569','SI570','SI015')) and error_code <> '00014' and error_code <> '3P002' THEN 1 ELSE 0 END)*100)/COUNT(1),2) AS TD_PERCENT \r\n"
-			+ "from eisapp.backend_log PARTITION(" + PART + ") where txn_endpoint != 'NATIONAL_PORTAL' and \r\n"
-			+ "REQUEST_DATE_TIME>=SYSDATE - INTERVAL '10' MINUTE \r\n" + "GROUP BY txn_endpoint \r\n"
-			+ "having ROUND((SUM(CASE WHEN (substr(error_code,3,3) in ('002','014') OR error_code in ('SI001','SI007','SI569','SI570','SI015')) and error_code <> '00014' and error_code <> '3P002' THEN 1 ELSE 0 END)*100)/COUNT(1),2)>= 0.5 \r\n"
-			+ "order by TD_PERCENT desc)where ROWNUM <=12";
-	System.out.println(sql);
-	Statement statement = conn.createStatement();
-	ResultSet resultSet = statement.executeQuery(sql);
-
-	List<String> labels = new ArrayList<String>();
-	List<Double> failure = new ArrayList<Double>();
-	int j = 0;
-	while (resultSet.next()) {
-		String name = "<p style='color:#ff9933; font-weight: bolder; '>"
-				+ Integer.toString(resultSet.getInt("TD_COUNT"))
-				+ "</p><br><p style='color:#FFFFFF; font-weight: bolder;'>"
-				+ resultSet.getString("txn_endpoint").replaceAll("_",
-						"</p><br><p style='color:#FFFFFF; font-weight: bolder;'>")
-				+ "</p><br>" + "<p style='color:#32CD32; font-weight: bolder;'>"
-				+ Integer.toString(resultSet.getInt("TOTAL_HITS")) + "</p>";
-		//	String name="<p style='color:#ff9933; font-weight: bolder; '>"+Integer.toString(resultSet.getInt("TD_COUNT"))+"</p><br>"+"<p style='color:#FFFFFF; font-weight: bolder;'>"+resultSet.getString("txn_endpoint")+"</p><br>"+"<p style='color:#32CD32; font-weight: bolder;'>"+Integer.toString(resultSet.getInt("TOTAL_HITS")) +"</p>";%>
-        Arr[<%=j %>] = '<%=resultSet.getString("txn_endpoint") %>';
-        <%
-		double value= resultSet.getDouble("TD_PERCENT");
-		labels.add(name);
-		failure.add(value);
-		j++;
-	}
-	resultSet.close();
-	statement.close();
-	conn.close();
-	
-	%>
-	
-
-    let chartConfig = {
-      type: "bar3d",
-      "3dAspect": { depth: 30, true3d: 0, yAngle: 10 },
-      backgroundColor: "#000000",
-      title: {
-        text: "Failure %   End Point Wise",
-        fontWeight: "bold",
-        height: "25px",
-        color: "#FFFFFF",
-
-
-
-        fontSize: "40px",
-        fontFamily: "Times New Roman",
-
-
-
-      },
-
-      plotarea: {
-        alpha: 0.3,
-        backgroundColor: "#000000",
-        margin: "50px 35px 250px 200px",
-      },
-      scaleX: {
-
-        values: [<%
-         if(labels.size()<=5){
-        	 for(String label: labels){
-        		 out.print("\""+label+"\",");
-        	 }
-        	 for(int i=labels.size();i<5;i++)
-        	 {
-        		 out.print("\""+" "+"\",");
-        	 }
-         }
-         else
-         {
-        	 for(String label: labels){
-        		 out.print("\""+label+"\",");
-        	 }
-         }
-        %>],
-
-        alpha: 0.5,
-        backgroundColor: "#fff",
-        borderColor: "#333",
-        borderWidth: "1px",
-        guide: { visible: false },
-        item: { fontColor: "#fff", fontSize: "30px" },
-        tick: { alpha: 0.2, lineColor: "#333" },
-
-        label: {
-          text: '<p style="color:#ff9933;">TD FAILURE, </p><p style="color:#FFFFFF;"> END POINT, </p><p style="color:#32CD32;">TOTAL HITS</p>',
-          color: "red",
-          fontSize: "30",
-          offsetX: '-100px',
-        },
-        item: {
-          'font-size': 30
-        },
-        guide: {
-          visible: true,
-          'line-color': "black",
-          'line-style': "dotted",
-          alpha: 1
-        }
-
-
-      },
-
-
-
-      scaleY: {
-        alpha: 0.5,
-        backgroundColor: "#fff",
-        borderColor: "#fff",
-        borderWidth: "1px",
-        guide: { alpha: 0.2, lineColor: "#FFF", lineStyle: "solid" },
-        item: { fontColor: "#FFF", paddingRight: "10px" },
-        tick: { alpha: 0.2, lineColor: "#333" },
-        label: {
-          text: "Failure Percentage",
-          color: "red",
-          fontSize: "30",
-
-
-
-
-        },
-        item: {
-          'font-size': 30
-        },
-        guide: {
-          visible: true,
-          'line-color': "black",
-          'line-style': "dotted",
-          alpha: 1
-        }
-      },
-
-
-      series: [
-
-        {
-          text: "Product 2",
-          values: [<%
-                   for(Double value: failure)
-                   {
-                	  out.print(value+","); 
-                   }
-          %>],
-          "value-box": {
-            "text": "%v %",
-            "placement": "top",
-            "font-color": "#ffffff",
-            "font-size": "30px",
-            "font-weight": "bold",
-            "offset-y": -10,
-
-          },
-          tooltip: {
-            backgroundColor: "#673AB7",
-            borderColor: "none",
-            borderRadius: "5px",
-            fontSize: "20px",
-            padding: "6px 12px",
-            shadow: false,
-          },
-          backgroundColor: "#673AB7 #9575CD",
-          borderColor: "#fff",
-          legendMarker: { borderColor: "#673AB7" },
-        },
-      ],
-    };
-    let updateChart = (p) => {
-        initState = zingchart.exec(p.id, 'getdata'); // Gets the state of the chart when the node was clicked
-      //  alert(Arr[p.nodeindex]);
-     
-    
-        var a = '<%=request.getContextPath() + "/jsp/TransactionEndpointWiseService.jsp?txnEndPoint="%>'+Arr[p.nodeindex];
-  	     window.open(a,'_blank');
-
-      }
-      zingchart.render({
-        id: 'myChart',
-        data: chartConfig,
-        height: '100%',
-        width: '100%',
-      });
-
-      zingchart.bind('myChart', 'node_click', updateChart);
-    
-    
-    
- // Get the modal this is for the popup window
-    var modal = document.getElementById("myModal");
-
-    // Get the button that opens the modal
-    var btn = document.getElementById("myBtn");
-
-    // Get the <span> element that closes the modal
-    var span = document.getElementsByClassName("close")[0];
-
-   /*  // When the user clicks the button, open the modal 
-    btn.onclick = function() {
-      modal.style.display = "block";
-    } */
-    
-    document.addEventListener("DOMContentLoaded", () => {
-    	    if (btn && modal) {
-    	        btn.onclick = function() {
-    	            modal.style.display = "block";
-    	        }
-    	    } else {
-    	        console.warn("Button or modal element not found in DOM");
-    	    }
-    	});
-
-   /*  // When the user clicks on <span> (x), close the modal
-    span.onclick = function() {
-      modal.style.display = "none";
-    } */
-    
-    document.addEventListener("DOMContentLoaded", () => {
-        if (span && modal) {
-            span.onclick = function() {
-                modal.style.display = "none";
-            };
-        } else {
-            console.warn("Modal or span.close not found at runtime");
-        }
-    });
-
-    // When the user clicks anywhere outside of the modal, close it
-    window.onclick = function(event) {
-      if (event.target == modal) {
-        modal.style.display = "none";
-      }
-    }
-  </script>
-  <script>
-  function countdown( elementName, minutes, seconds )
-  {
-      var element, endTime, hours, mins, msLeft, time;
-
-      function twoDigits( n )
-      {
-          return (n <= 9 ? "0" + n : n);
-      }
-
-      function updateTimer()
-      {
-          msLeft = endTime - (+new Date);
-          if ( msLeft < 1000 ) {
-              element.innerHTML = "Please Wait Fetching the Latest Data!";
-          } else {
-              time = new Date( msLeft );
-              hours = time.getUTCHours();
-              mins = time.getUTCMinutes();
-              element.innerHTML = (hours ? hours + ':' + twoDigits( mins ) : mins) + ':' + twoDigits( time.getUTCSeconds() );
-              setTimeout( updateTimer, time.getUTCMilliseconds() + 500 );
-          }
-      }
-
-      element = document.getElementById( elementName );
-      endTime = (+new Date) + 1000 * (60*minutes + seconds) + 500;
-      updateTimer();
+  html, body {
+    height: 100%;
+    font-family: 'Rajdhani', sans-serif;
+    background: #05060f;
+    color: #fff;
+    overflow-x: hidden;
   }
 
-  countdown( "ten-countdown", 10, 0 );
+  /* Animated gradient background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(circle at 15% 20%, rgba(120, 40, 200, 0.35), transparent 45%),
+      radial-gradient(circle at 85% 15%, rgba(0, 200, 255, 0.25), transparent 40%),
+      radial-gradient(circle at 50% 90%, rgba(255, 60, 100, 0.25), transparent 45%);
+    animation: bgShift 18s ease-in-out infinite alternate;
+    z-index: -2;
+  }
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    z-index: -1;
+    mask-image: radial-gradient(circle at center, black 30%, transparent 85%);
+  }
+  @keyframes bgShift {
+    0%   { filter: hue-rotate(0deg)   brightness(1); }
+    100% { filter: hue-rotate(35deg)  brightness(1.15); }
+  }
 
-  </script>
-  <br>
-   
-    
- 
+  /* ============ TOP BAR ============ */
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 28px;
+    background: rgba(10, 12, 26, 0.75);
+    backdrop-filter: blur(14px);
+    border-bottom: 1px solid rgba(120, 40, 200, 0.4);
+    box-shadow: 0 4px 30px rgba(120, 40, 200, 0.35);
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .brand .logo-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #00ffb3;
+    box-shadow: 0 0 14px #00ffb3, 0 0 28px #00ffb3;
+    animation: pulseDot 1.6s infinite;
+  }
+  @keyframes pulseDot {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50%      { transform: scale(1.35); opacity: 0.65; }
+  }
+  .brand h1 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 20px;
+    letter-spacing: 2px;
+    background: linear-gradient(90deg, #a259ff, #00d4ff, #ff4b8b);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-transform: uppercase;
+  }
+  .brand .sub {
+    font-size: 12px;
+    color: #8b8fa8;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+
+  .status-wrap {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .time-window {
+    font-size: 14px;
+    color: #a0a4be;
+    letter-spacing: 1px;
+  }
+  .time-window b { color: #fff; }
+
+  /* Countdown ring */
+  .ring-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 14px;
+    background: rgba(120, 40, 200, 0.15);
+    border: 1px solid rgba(160, 89, 255, 0.5);
+    border-radius: 40px;
+    box-shadow: 0 0 18px rgba(160, 89, 255, 0.3);
+  }
+  .ring-label {
+    font-size: 12px;
+    letter-spacing: 2px;
+    color: #cfc5ff;
+    text-transform: uppercase;
+  }
+  .ring {
+    position: relative;
+    width: 46px;
+    height: 46px;
+  }
+  .ring svg { transform: rotate(-90deg); }
+  .ring circle {
+    fill: none;
+    stroke-width: 4;
+  }
+  .ring .bg { stroke: rgba(255,255,255,0.1); }
+  .ring .fg {
+    stroke: #00d4ff;
+    stroke-linecap: round;
+    stroke-dasharray: 125.6;
+    stroke-dashoffset: 0;
+    filter: drop-shadow(0 0 4px #00d4ff);
+    transition: stroke-dashoffset 1s linear;
+  }
+  .ring .num {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 15px;
+    color: #00d4ff;
+    font-weight: 700;
+  }
+
+  /* ============ LAYOUT ============ */
+  .main {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 20px;
+    padding: 22px;
+    min-height: calc(100vh - 90px);
+  }
+
+  /* ============ SIDE PANEL ============ */
+  .side {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .card {
+    background: rgba(16, 18, 34, 0.72);
+    border: 1px solid rgba(120, 40, 200, 0.35);
+    border-radius: 16px;
+    padding: 18px;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03);
+    animation: fadeUp 0.6s ease both;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .card h3 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 13px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #a0a4be;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card h3::before {
+    content: '';
+    width: 4px;
+    height: 14px;
+    background: linear-gradient(#a259ff, #00d4ff);
+    border-radius: 2px;
+  }
+
+  /* Severity legend */
+  .legend-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 7px 0;
+    font-size: 14px;
+    border-bottom: 1px dashed rgba(255,255,255,0.07);
+  }
+  .legend-row:last-child { border-bottom: none; }
+  .dot {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 10px;
+    vertical-align: middle;
+    box-shadow: 0 0 8px currentColor;
+  }
+  .dot.crit { background: #ff2d55; color: #ff2d55; }
+  .dot.high { background: #ff8c00; color: #ff8c00; }
+  .dot.med  { background: #ffd60a; color: #ffd60a; }
+  .dot.low  { background: #00ffb3; color: #00ffb3; }
+
+  /* Top critical list */
+  .crit-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .crit-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    background: rgba(255, 45, 85, 0.08);
+    border-left: 3px solid #ff2d55;
+    border-radius: 8px;
+    font-size: 13px;
+    transition: all 0.25s;
+    animation: fadeUp 0.5s ease both;
+  }
+  .crit-item:hover {
+    background: rgba(255, 45, 85, 0.18);
+    transform: translateX(4px);
+    box-shadow: 0 0 18px rgba(255,45,85,0.3);
+  }
+  .crit-item .name {
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0.5px;
+  }
+  .crit-item .val {
+    font-family: 'Orbitron', sans-serif;
+    color: #ff6b8b;
+    font-weight: 700;
+    font-size: 14px;
+  }
+
+  .empty-note {
+    color: #6b6f88;
+    font-size: 13px;
+    text-align: center;
+    padding: 10px;
+    font-style: italic;
+  }
+
+  /* ============ CHART PANEL ============ */
+  .chart-wrap {
+    background: rgba(16, 18, 34, 0.72);
+    border: 1px solid rgba(120, 40, 200, 0.35);
+    border-radius: 18px;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03);
+    position: relative;
+    overflow: hidden;
+    animation: fadeUp 0.7s ease both;
+    padding: 8px;
+  }
+
+  .chart-title {
+    position: absolute;
+    top: 16px;
+    left: 22px;
+    z-index: 5;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 22px;
+    letter-spacing: 3px;
+    background: linear-gradient(90deg, #ff4b8b, #a259ff, #00d4ff);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-transform: uppercase;
+  }
+  .chart-sub {
+    position: absolute;
+    top: 48px;
+    left: 22px;
+    z-index: 5;
+    font-size: 12px;
+    letter-spacing: 4px;
+    color: #7d81a0;
+    text-transform: uppercase;
+  }
+
+  #myChart {
+    width: 100%;
+    height: 100%;
+    min-height: 640px;
+  }
+
+  /* ============ REFRESHING OVERLAY ============ */
+  .refresh-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(5, 6, 15, 0.85);
+    backdrop-filter: blur(6px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 20px;
+    z-index: 999;
+  }
+  .refresh-overlay.active { display: flex; }
+  .spinner {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    border: 4px solid rgba(160, 89, 255, 0.2);
+    border-top-color: #a259ff;
+    border-right-color: #00d4ff;
+    animation: spin 0.9s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .refresh-overlay p {
+    font-family: 'Orbitron', sans-serif;
+    letter-spacing: 3px;
+    color: #cfc5ff;
+    text-transform: uppercase;
+    font-size: 14px;
+  }
+
+  /* Responsive */
+  @media (max-width: 1000px) {
+    .main { grid-template-columns: 1fr; }
+    .brand h1 { font-size: 15px; }
+    .time-window { display: none; }
+  }
+</style>
+</head>
+
+<body onload="myFunction_Time()">
+
+<!-- ============ TOP BAR ============ -->
+<div class="topbar">
+  <div class="brand">
+    <span class="logo-dot"></span>
+    <div>
+      <h1>Transaction Endpoint Monitor</h1>
+      <div class="sub">Failure Analytics • Live</div>
+    </div>
+  </div>
+
+  <div class="status-wrap">
+    <div class="time-window" id="timeRangeMessage"></div>
+    <div class="ring-wrap">
+      <span class="ring-label">Refresh In</span>
+      <div class="ring">
+        <svg width="46" height="46">
+          <circle class="bg" cx="23" cy="23" r="20"></circle>
+          <circle class="fg" cx="23" cy="23" r="20" id="ringProgress"></circle>
+        </svg>
+        <div class="num" id="ringNum">10</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MAIN ============ -->
+<div class="main">
+
+  <!-- SIDE PANEL -->
+  <aside class="side">
+    <div class="card">
+      <h3>Severity Legend</h3>
+      <div class="legend-row"><span><span class="dot crit"></span>Critical</span><span>&gt; 5.0%</span></div>
+      <div class="legend-row"><span><span class="dot high"></span>High</span><span>2.0 – 5.0%</span></div>
+      <div class="legend-row"><span><span class="dot med"></span>Medium</span><span>1.0 – 2.0%</span></div>
+      <div class="legend-row"><span><span class="dot low"></span>Low</span><span>&lt; 1.0%</span></div>
+    </div>
+
+    <div class="card">
+      <h3>Top Critical</h3>
+      <ul class="crit-list" id="critList">
+        <li class="empty-note">Loading...</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>How To Read</h3>
+      <div style="font-size:13px; line-height:1.7; color:#a0a4be;">
+        <b style="color:#ff9933;">Orange</b> → TD Count<br>
+        <b style="color:#ffffff;">White</b> → Endpoint Name<br>
+        <b style="color:#32CD32;">Green</b> → Total Hits<br>
+        <b style="color:#00d4ff;">Bar</b> → Failure %<br>
+        <span style="color:#ff6b8b;">Click any bar</span> for drill-down.
+      </div>
+    </div>
+  </aside>
+
+  <!-- CHART -->
+  <section class="chart-wrap">
+    <div class="chart-title">Failure % · Endpoint Wise</div>
+    <div class="chart-sub">Last 10 minutes · Top 12</div>
+    <div id="myChart"></div>
+  </section>
+</div>
+
+<!-- Refresh Overlay -->
+<div class="refresh-overlay" id="refreshOverlay">
+  <div class="spinner"></div>
+  <p>Fetching Latest Data…</p>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var currentTime = new Date();
+  var tenMinutesAgo = new Date();
+  tenMinutesAgo.setMinutes(currentTime.getMinutes() - 10);
+
+  var formatTime = function(date) {
+    var hours = date.getHours();
+    var minutes = date.getMinutes();
+    hours = hours < 10 ? '0' + hours : hours;
+    minutes = minutes < 10 ? '0' + minutes : minutes;
+    return hours + ':' + minutes;
+  };
+  document.getElementById('timeRangeMessage').innerHTML =
+    'Session <b>' + formatTime(tenMinutesAgo) + '</b> → <b>' + formatTime(currentTime) + '</b>';
+});
+
+function myFunction_Time() {
+  var x = document.lastModified;
+  var demo = document.getElementById("demo");
+  if (demo) demo.innerHTML = x;
+}
+</script>
+
+<script>
+var Arr = new Array();
+<%
+String m_strtxnArray = "";
+response.setIntHeader("Refresh", 600);
+Connection conn = DBUtilityAuto.getIIBDBConnection();
+
+ZonedDateTime CurrentDate = ZonedDateTime.now(ZoneId.of("Asia/Kolkata"));
+DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM_yy").withLocale(Locale.US);
+String PART = CurrentDate.format(formatter).toUpperCase();
+
+String sql = "Select * from(select txn_endpoint,\r\n"
+    + "COUNT(1) AS TOTAL_HITS,\r\n"
+    + "SUM(CASE WHEN (substr(error_code,3,3) in ('002','014') OR error_code in ('SI001','SI007','SI569','SI570','SI015')) and error_code <> '00014' and error_code <> '3P002' THEN 1 ELSE 0 END) AS TD_COUNT,\r\n"
+    + "ROUND((SUM(CASE WHEN (substr(error_code,3,3) in ('002','014') OR error_code in ('SI001','SI007','SI569','SI570','SI015')) and error_code <> '00014' and error_code <> '3P002' THEN 1 ELSE 0 END)*100)/COUNT(1),2) AS TD_PERCENT \r\n"
+    + "from eisapp.backend_log PARTITION(" + PART + ") where txn_endpoint != 'NATIONAL_PORTAL' and \r\n"
+    + "REQUEST_DATE_TIME>=SYSDATE - INTERVAL '10' MINUTE \r\n" + "GROUP BY txn_endpoint \r\n"
+    + "having ROUND((SUM(CASE WHEN (substr(error_code,3,3) in ('002','014') OR error_code in ('SI001','SI007','SI569','SI570','SI015')) and error_code <> '00014' and error_code <> '3P002' THEN 1 ELSE 0 END)*100)/COUNT(1),2)>= 0.5 \r\n"
+    + "order by TD_PERCENT desc)where ROWNUM <=12";
+
+Statement statement = conn.createStatement();
+ResultSet resultSet = statement.executeQuery(sql);
+
+List<String> labels = new ArrayList<String>();
+List<String> rawNames = new ArrayList<String>();
+List<Double> failure = new ArrayList<Double>();
+List<Integer> tdCounts = new ArrayList<Integer>();
+List<Integer> totalHits = new ArrayList<Integer>();
+int j = 0;
+while (resultSet.next()) {
+    String rawName = resultSet.getString("txn_endpoint");
+    int tdCount = resultSet.getInt("TD_COUNT");
+    int totalHit = resultSet.getInt("TOTAL_HITS");
+    double pct = resultSet.getDouble("TD_PERCENT");
+
+    // Label with color-coded count / name / hits
+    String name = "<span style='color:#ff9933;font-weight:900;font-size:22px;'>" + tdCount + "</span>"
+        + "<br><span style='color:#ffffff;font-weight:700;font-size:16px;letter-spacing:1px;'>"
+        + rawName.replaceAll("_", "_<br>") + "</span>"
+        + "<br><span style='color:#32CD32;font-weight:900;font-size:18px;'>" + totalHit + "</span>";
+
+    Arr[<%=j%>] = '<%=resultSet.getString("txn_endpoint")%>';
+    labels.add(name);
+    rawNames.add(rawName);
+    failure.add(pct);
+    tdCounts.add(tdCount);
+    totalHits.add(totalHit);
+    j++;
+}
+resultSet.close();
+statement.close();
+conn.close();
+%>
+
+// ---- JS-side safety: fill to 5 if fewer
+<% if (labels.size() <= 5) { %>
+  <% for (int i = labels.size(); i < 5; i++) { %>
+    labels.add("&nbsp;"); failure.add(0.0); rawNames.add(""); tdCounts.add(0); totalHits.add(0);
+  <% } %>
+<% } %>
+
+// Build arrays for JS
+var labelArr   = [<% for (String l : labels) { out.print("\"" + l.replace("\"", "\\\"") + "\","); } %>];
+var valueArr   = [<% for (Double v : failure) { out.print(v + ","); } %>];
+var nameArr    = [<% for (String n : rawNames) { out.print("\"" + n.replace("\"", "\\\"") + "\","); } %>];
+var tdArr      = [<% for (Integer t : tdCounts) { out.print(t + ","); } %>];
+var totalArr   = [<% for (Integer t : totalHits) { out.print(t + ","); } %>];
+
+// -------- Side panel: Top Critical --------
+(function buildCritList() {
+  var items = [];
+  for (var k = 0; k < nameArr.length; k++) {
+    if (nameArr[k] && valueArr[k] > 0) {
+      items.push({ name: nameArr[k], pct: valueArr[k], td: tdArr[k] });
+    }
+  }
+  items.sort(function(a,b){ return b.pct - a.pct; });
+  var top = items.slice(0, 5);
+  var ul = document.getElementById('critList');
+  if (!top.length) {
+    ul.innerHTML = '<li class="empty-note">All clear ✓ No failures</li>';
+    return;
+  }
+  ul.innerHTML = top.map(function(it){
+    var shown = it.name.length > 18 ? it.name.substring(0,18) + '…' : it.name;
+    return '<li class="crit-item"><span class="name" title="'+it.name+'">'+shown+'</span><span class="val">'+it.pct+'%</span></li>';
+  }).join('');
+})();
+
+// -------- Chart config --------
+let chartConfig = {
+  type: "bar3d",
+  "3dAspect": { depth: 28, true3d: 0, yAngle: 10 },
+  backgroundColor: "transparent",
+  plotarea: {
+    backgroundColor: "transparent",
+    margin: "90px 30px 190px 90px",
+  },
+  globals: {
+    fontFamily: "Rajdhani, sans-serif",
+  },
+  scaleX: {
+    values: labelArr,
+    lineColor: "rgba(255,255,255,0.15)",
+    tick: { visible: false },
+    item: { fontColor: "#fff", fontSize: 15, offsetY: 6 },
+    guide: { visible: false }
+  },
+  scaleY: {
+    lineColor: "rgba(255,255,255,0.1)",
+    guide: {
+      visible: true,
+      lineColor: "rgba(255,255,255,0.08)",
+      lineStyle: "dashed"
+    },
+    tick: { visible: false },
+    item: { fontColor: "#a0a4be", fontSize: 13, paddingRight: 8 },
+    label: {
+      text: "Failure %",
+      fontColor: "#8b8fa8",
+      fontSize: 13,
+      offsetX: -10
+    }
+  },
+  plot: {
+    animation: { effect: "ANIMATION_SLIDE_BOTTOM", speed: 800, delay: 60, sequence: "ANIMATION_BY_NODE" },
+    tooltip: {
+      text: "<b>%kl</b><br>Failure: %v%",
+      backgroundColor: "rgba(20,22,42,0.95)",
+      borderColor: "rgba(160,89,255,0.6)",
+      borderRadius: "8px",
+      fontColor: "#fff",
+      fontSize: 13,
+      padding: "8px 14px",
+      shadow: false
+    },
+    barWidth: "45%",
+    borderWidth: 0,
+    // per-node colors based on severity
+    styles: (function(){
+      var s = [];
+      for (var i=0;i<valueArr.length;i++){
+        var v = valueArr[i];
+        var color;
+        if (v >= 5)       color = "#ff2d55";
+        else if (v >= 2)  color = "#ff8c00";
+        else if (v >= 1)  color = "#ffd60a";
+        else              color = "#00ffb3";
+        s.push(color);
+      }
+      return s;
+    })()
+  },
+  series: [{
+    values: valueArr,
+    lineColor: "#a259ff",
+    lineWidth: 1,
+    "value-box": {
+      visible: true,
+      text: "%v%",
+      placement: "top",
+      fontColor: "#ffffff",
+      fontSize: 14,
+      fontWeight: "bold",
+      offsetY: -6,
+      rules: [
+        { rule: "%v >= 5",  fontColor: "#ff6b8b" },
+        { rule: "%v >= 2",  fontColor: "#ffb454" },
+        { rule: "%v >= 1",  fontColor: "#ffe066" }
+      ]
+    },
+    backgroundColor: "#673AB7"
+  }]
+};
+
+let updateChart = (p) => {
+  var idx = p.nodeindex;
+  if (!nameArr[idx]) return;
+  var a = '<%=request.getContextPath() + "/jsp/TransactionEndpointWiseService.jsp?txnEndPoint="%>' + nameArr[idx];
+  window.open(a, '_blank');
+};
+
+zingchart.render({
+  id: 'myChart',
+  data: chartConfig,
+  height: '100%',
+  width: '100%',
+});
+
+zingchart.bind('myChart', 'node_click', updateChart);
+</script>
+
+<!-- ============ COUNTDOWN RING ============ -->
+<script>
+(function countdownRing() {
+  var totalSeconds = 10 * 60;   // 10 minutes
+  var remaining = totalSeconds;
+  var CIRC = 2 * Math.PI * 20;  // r=20
+
+  var ring = document.getElementById('ringProgress');
+  var num  = document.getElementById('ringNum');
+  var overlay = document.getElementById('refreshOverlay');
+
+  ring.style.strokeDasharray  = CIRC;
+  ring.style.strokeDashoffset = 0;
+
+  function tick() {
+    remaining--;
+    if (remaining <= 0) {
+      overlay.classList.add('active');
+      return;
+    }
+    var progress = remaining / totalSeconds;
+    ring.style.strokeDashoffset = CIRC * (1 - progress);
+
+    var m = Math.floor(remaining / 60);
+    var s = remaining % 60;
+    num.textContent = (m > 0) ? (m + ':' + (s < 10 ? '0' + s : s)) : s;
+  }
+  setInterval(tick, 1000);
+})();
+</script>
+
 </body>
 </html>
