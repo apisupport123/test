@@ -1,2 +1,5 @@
-<%@page import="com.jdbc.DBUtilityAuto" %>   
-Connection connection = DBUtilityAuto.getReportDBConnection();
+<dependency>
+    <groupId>com.openai</groupId>
+    <artifactId>openai-java</artifactId>
+    <version>4.31.0</version>
+</dependency>
