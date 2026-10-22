@@ -23,10 +23,10 @@
     width: 100vw;
     overflow: hidden;
     background:
-      radial-gradient(ellipse at 20% 0%, rgba(99,102,241,0.08), transparent 50%),
-      radial-gradient(ellipse at 80% 100%, rgba(239,68,68,0.06), transparent 50%),
-      #05060a;
-    color: #fff;
+      radial-gradient(ellipse at 20% 0%, rgba(99,102,241,0.15), transparent 55%),
+      radial-gradient(ellipse at 80% 100%, rgba(6,182,212,0.10), transparent 55%),
+      linear-gradient(180deg, #131a2e 0%, #0f1420 100%);
+    color: #e8ecf8;
     font-family: 'Inter', sans-serif;
   }
 
@@ -38,7 +38,7 @@
   }
 
   /* ============================================================
-     TOP BAR
+     TOP BAR — lighter navy with visible border
      ============================================================ */
   .topbar {
     display: grid;
@@ -46,17 +46,15 @@
     align-items: center;
     gap: 20px;
     padding: 12px 22px;
-    background: linear-gradient(180deg, #121624 0%, #0d1018 100%);
-    border-bottom: 1px solid #1c2030;
+    background: linear-gradient(180deg, #1e2740 0%, #171e32 100%);
+    border-bottom: 1px solid #2d3a56;
     flex-shrink: 0;
     box-shadow:
-      0 4px 20px rgba(0,0,0,0.6),
-      inset 0 1px 0 rgba(255,255,255,0.04);
+      0 4px 20px rgba(0,0,0,0.4),
+      inset 0 1px 0 rgba(255,255,255,0.06);
     position: relative;
     z-index: 5;
   }
-
-  /* subtle top sheen */
   .topbar::before {
     content: '';
     position: absolute;
@@ -64,7 +62,7 @@
     left: 0;
     right: 0;
     height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(99,102,241,0.5), transparent);
+    background: linear-gradient(90deg, transparent, rgba(129,140,248,0.6), transparent);
   }
 
   /* Timer */
@@ -76,7 +74,7 @@
   .timer-label {
     font-size: 15px;
     font-weight: 700;
-    color: #8b90b0;
+    color: #94a3c4;
     text-transform: uppercase;
     letter-spacing: 1px;
     line-height: 1.2;
@@ -87,20 +85,20 @@
     justify-content: center;
     min-width: 110px;
     padding: 6px 14px;
-    border: 3px solid #6366f1;
+    border: 3px solid #818cf8;
     border-radius: 8px;
-    color: #fff;
+    color: #ffffff;
     font-family: 'Courier New', monospace;
     font-size: 32px;
     font-weight: 900;
-    background: linear-gradient(180deg, rgba(99,102,241,0.15), rgba(99,102,241,0.04));
+    background: linear-gradient(180deg, rgba(129,140,248,0.25), rgba(129,140,248,0.08));
     letter-spacing: 1px;
     line-height: 1;
     box-shadow:
-      0 4px 12px rgba(99,102,241,0.3),
-      inset 0 1px 0 rgba(255,255,255,0.15),
-      inset 0 -2px 0 rgba(0,0,0,0.3);
-    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+      0 4px 14px rgba(129,140,248,0.4),
+      inset 0 1px 0 rgba(255,255,255,0.2),
+      inset 0 -2px 0 rgba(0,0,0,0.2);
+    text-shadow: 0 1px 3px rgba(0,0,0,0.6);
   }
 
   /* KPI row */
@@ -111,8 +109,8 @@
     height: 100%;
   }
   .kpi {
-    background: linear-gradient(180deg, #0f1422 0%, #0a0d15 100%);
-    border: 1px solid #1c2030;
+    background: linear-gradient(180deg, #232d4a 0%, #1a2338 100%);
+    border: 1px solid #2d3a56;
     border-radius: 8px;
     padding: 8px 18px;
     display: flex;
@@ -120,23 +118,37 @@
     justify-content: center;
     min-width: 0;
     box-shadow:
-      0 3px 10px rgba(0,0,0,0.4),
-      inset 0 1px 0 rgba(255,255,255,0.04);
+      0 3px 10px rgba(0,0,0,0.3),
+      inset 0 1px 0 rgba(255,255,255,0.06);
     transition: transform 0.2s, box-shadow 0.2s;
+    position: relative;
+    overflow: hidden;
   }
+  /* Left accent border per KPI */
+  .kpi::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: #6366f1;
+  }
+  .kpi.red::before    { background: #ef4444; }
+  .kpi.orange::before { background: #f59e0b; }
+
   .kpi:hover {
     transform: translateY(-1px);
     box-shadow:
-      0 5px 16px rgba(0,0,0,0.5),
-      inset 0 1px 0 rgba(255,255,255,0.06);
+      0 5px 16px rgba(0,0,0,0.4),
+      inset 0 1px 0 rgba(255,255,255,0.1);
   }
   .kpi-label {
     font-size: 11px;
     font-weight: 700;
-    color: #8b90b0;
+    color: #94a3c4;
     text-transform: uppercase;
     letter-spacing: 1.2px;
     white-space: nowrap;
+    padding-left: 4px;
   }
   .kpi-value {
     font-family: 'Courier New', monospace;
@@ -144,13 +156,14 @@
     font-weight: 900;
     line-height: 1;
     margin-top: 4px;
-    color: #fff;
+    color: #ffffff;
     letter-spacing: -1px;
-    text-shadow: 0 2px 6px rgba(0,0,0,0.5);
+    text-shadow: 0 2px 6px rgba(0,0,0,0.4);
+    padding-left: 4px;
   }
-  .kpi-value.red    { color: #ef4444; text-shadow: 0 0 20px rgba(239,68,68,0.4); }
-  .kpi-value.orange { color: #f59e0b; text-shadow: 0 0 20px rgba(245,158,11,0.4); }
-  .kpi-value.green  { color: #10b981; text-shadow: 0 0 20px rgba(16,185,129,0.4); }
+  .kpi-value.red    { color: #f87171; text-shadow: 0 0 20px rgba(248,113,113,0.5); }
+  .kpi-value.orange { color: #fbbf24; text-shadow: 0 0 20px rgba(251,191,36,0.5); }
+  .kpi-value.green  { color: #34d399; text-shadow: 0 0 20px rgba(52,211,153,0.5); }
 
   /* Right block */
   .right-block {
@@ -167,22 +180,22 @@
     align-items: center;
     gap: 6px;
     padding: 6px 12px;
-    background: linear-gradient(180deg, #0f1422, #0a0d15);
-    border: 1px solid #1c2030;
+    background: linear-gradient(180deg, #232d4a, #1a2338);
+    border: 1px solid #2d3a56;
     border-radius: 6px;
     font-size: 12px;
     font-weight: 700;
-    color: #fff;
+    color: #e8ecf8;
     white-space: nowrap;
     box-shadow:
-      0 2px 6px rgba(0,0,0,0.4),
-      inset 0 1px 0 rgba(255,255,255,0.04);
+      0 2px 6px rgba(0,0,0,0.3),
+      inset 0 1px 0 rgba(255,255,255,0.06);
   }
   .sev-dot {
     width: 10px;
     height: 10px;
     border-radius: 2px;
-    box-shadow: 0 0 6px currentColor;
+    box-shadow: 0 0 8px currentColor;
   }
 
   .live-badge {
@@ -190,23 +203,23 @@
     align-items: center;
     gap: 8px;
     padding: 8px 16px;
-    background: linear-gradient(180deg, rgba(16,185,129,0.18), rgba(16,185,129,0.06));
-    border: 1px solid rgba(16,185,129,0.4);
+    background: linear-gradient(180deg, rgba(16,185,129,0.25), rgba(16,185,129,0.08));
+    border: 1px solid rgba(16,185,129,0.5);
     border-radius: 6px;
     font-size: 13px;
     font-weight: 800;
-    color: #10b981;
+    color: #34d399;
     letter-spacing: 1.5px;
     box-shadow:
-      0 3px 10px rgba(16,185,129,0.2),
-      inset 0 1px 0 rgba(255,255,255,0.1);
+      0 3px 12px rgba(16,185,129,0.25),
+      inset 0 1px 0 rgba(255,255,255,0.15);
   }
   .live-badge .pulse {
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: #10b981;
-    box-shadow: 0 0 10px #10b981;
+    background: #34d399;
+    box-shadow: 0 0 12px #34d399;
     animation: pulse 2s infinite;
   }
   @keyframes pulse {
@@ -215,33 +228,33 @@
   }
 
   /* ============================================================
-     TOP CRITICAL BAR — 3D chips
+     TOP CRITICAL BAR — red accent but on lighter navy
      ============================================================ */
   .crit-bar {
     display: flex;
     align-items: center;
     gap: 14px;
     padding: 10px 22px;
-    background: linear-gradient(180deg, #0d1018 0%, #0a0d15 100%);
-    border-bottom: 1px solid #1c2030;
+    background: linear-gradient(180deg, #171e32 0%, #131a2e 100%);
+    border-bottom: 1px solid #2d3a56;
     flex-shrink: 0;
     overflow-x: auto;
-    box-shadow: inset 0 -1px 0 rgba(0,0,0,0.3);
+    box-shadow: inset 0 -1px 0 rgba(0,0,0,0.2);
   }
   .crit-bar::-webkit-scrollbar { height: 4px; }
-  .crit-bar::-webkit-scrollbar-thumb { background: #1c2030; border-radius: 2px; }
+  .crit-bar::-webkit-scrollbar-thumb { background: #2d3a56; border-radius: 2px; }
 
   .crit-bar .title {
     font-size: 12px;
     font-weight: 800;
-    color: #ef4444;
+    color: #f87171;
     text-transform: uppercase;
     letter-spacing: 1.5px;
     white-space: nowrap;
     padding-right: 12px;
-    border-right: 1px solid #1c2030;
+    border-right: 1px solid #2d3a56;
     flex-shrink: 0;
-    text-shadow: 0 0 12px rgba(239,68,68,0.5);
+    text-shadow: 0 0 12px rgba(248,113,113,0.6);
   }
 
   .crit-chip {
@@ -249,26 +262,26 @@
     align-items: center;
     gap: 10px;
     padding: 8px 14px;
-    background: linear-gradient(180deg, rgba(239,68,68,0.14), rgba(239,68,68,0.05));
-    border: 1px solid rgba(239,68,68,0.35);
+    background: linear-gradient(180deg, rgba(239,68,68,0.22), rgba(239,68,68,0.08));
+    border: 1px solid rgba(239,68,68,0.45);
     border-radius: 8px;
     white-space: nowrap;
     flex-shrink: 0;
     box-shadow:
-      0 3px 10px rgba(239,68,68,0.15),
-      inset 0 1px 0 rgba(255,255,255,0.05);
+      0 3px 12px rgba(239,68,68,0.2),
+      inset 0 1px 0 rgba(255,255,255,0.1);
     transition: transform 0.2s, box-shadow 0.2s;
   }
   .crit-chip:hover {
     transform: translateY(-2px);
     box-shadow:
-      0 6px 16px rgba(239,68,68,0.3),
-      inset 0 1px 0 rgba(255,255,255,0.08);
+      0 6px 18px rgba(239,68,68,0.35),
+      inset 0 1px 0 rgba(255,255,255,0.15);
   }
   .crit-chip .name {
     font-size: 14px;
     font-weight: 700;
-    color: #fff;
+    color: #ffffff;
     max-width: 180px;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -277,30 +290,30 @@
     font-family: 'Courier New', monospace;
     font-size: 20px;
     font-weight: 900;
-    color: #ef4444;
-    text-shadow: 0 0 10px rgba(239,68,68,0.4);
+    color: #f87171;
+    text-shadow: 0 0 10px rgba(248,113,113,0.5);
   }
 
   /* ============================================================
-     CHART — fills remaining viewport with 3D depth
+     CHART — lighter navy background, bars pop
      ============================================================ */
   .chart-area {
     flex: 1;
     min-height: 0;
     padding: 10px;
-    background: #05060a;
+    background: #0f1420;
   }
   #myChart {
     width: 100%;
     height: 100%;
     background:
-      radial-gradient(ellipse at 50% 0%, rgba(99,102,241,0.06), transparent 60%),
-      linear-gradient(180deg, #0d1018 0%, #080a12 100%);
-    border: 1px solid #1c2030;
+      radial-gradient(ellipse at 50% 100%, rgba(99,102,241,0.10), transparent 70%),
+      linear-gradient(180deg, #1a2338 0%, #141b2d 100%);
+    border: 1px solid #2d3a56;
     border-radius: 10px;
     box-shadow:
-      0 10px 40px rgba(0,0,0,0.6),
-      inset 0 1px 0 rgba(255,255,255,0.03);
+      0 10px 40px rgba(0,0,0,0.45),
+      inset 0 1px 0 rgba(255,255,255,0.05);
     position: relative;
     overflow: hidden;
   }
@@ -332,7 +345,7 @@
       <div class="timer-label">
         Auto Refresh In
         <br>
-        <span style="font-size:11px;color:#5c6183;font-weight:600;" id="timeRangeMessage"></span>
+        <span style="font-size:11px;color:#64748b;font-weight:600;" id="timeRangeMessage"></span>
       </div>
       <div class="timer" id="ten-countdown">10:00</div>
     </div>
@@ -342,11 +355,11 @@
         <div class="kpi-label">Endpoints</div>
         <div class="kpi-value" id="statTotal">—</div>
       </div>
-      <div class="kpi">
+      <div class="kpi red">
         <div class="kpi-label">Critical &gt; 5%</div>
         <div class="kpi-value red" id="statCritical">—</div>
       </div>
-      <div class="kpi">
+      <div class="kpi orange">
         <div class="kpi-label">High / Medium</div>
         <div class="kpi-value orange" id="statWarning">—</div>
       </div>
@@ -360,8 +373,8 @@
       <div class="sev-chips">
         <div class="sev-chip"><span class="sev-dot" style="background:#ef4444;color:#ef4444;"></span>&gt;5%</div>
         <div class="sev-chip"><span class="sev-dot" style="background:#f59e0b;color:#f59e0b;"></span>2-5%</div>
-        <div class="sev-chip"><span class="sev-dot" style="background:#8b5cf6;color:#8b5cf6;"></span>1-2%</div>
-        <div class="sev-chip"><span class="sev-dot" style="background:#10b981;color:#10b981;"></span>&lt;1%</div>
+        <div class="sev-chip"><span class="sev-dot" style="background:#a78bfa;color:#a78bfa;"></span>1-2%</div>
+        <div class="sev-chip"><span class="sev-dot" style="background:#34d399;color:#34d399;"></span>&lt;1%</div>
       </div>
       <div class="live-badge">
         <span class="pulse"></span> LIVE
@@ -439,11 +452,11 @@ try {
         int    totalHit = resultSet.getInt("TOTAL_HITS");
         double pct      = resultSet.getDouble("TD_PERCENT");
 
-        String name = "<p style='color:#ff9933; font-weight: bolder; font-size:20px;'>" + tdCount + "</p>"
-            + "<br><p style='color:#FFFFFF; font-weight: bolder; font-size:18px;'>"
-            + rawName.replaceAll("_", "</p><br><p style='color:#FFFFFF; font-weight: bolder; font-size:18px;'>")
-            + "</p><br>"
-            + "<p style='color:#32CD32; font-weight: bolder; font-size:18px;'>" + totalHit + "</p>";
+        String name = "<p style='color:#fbbf24; font-weight: bolder; font-size:20px; margin:2px 0;'>" + tdCount + "</p>"
+            + "<p style='color:#ffffff; font-weight: bolder; font-size:18px; margin:2px 0;'>"
+            + rawName.replaceAll("_", "</p><p style='color:#ffffff; font-weight: bolder; font-size:18px; margin:2px 0;'>")
+            + "</p>"
+            + "<p style='color:#34d399; font-weight: bolder; font-size:18px; margin:2px 0;'>" + totalHit + "</p>";
 
         labels.add(name);
         rawNames.add(rawName);
@@ -520,7 +533,7 @@ for (int k = 0; k < totalHits.size(); k++) {
 ];
 
 // ============================================================
-// KPI
+// KPI compute
 // ============================================================
 (function computeStats() {
   var total = 0, critical = 0, warning = 0, maxVal = 0;
@@ -555,7 +568,7 @@ for (int k = 0; k < totalHits.size(); k++) {
 
   if (!top.length) {
     var empty = document.createElement('span');
-    empty.style.cssText = 'color:#5c6183;font-family:Courier New,monospace;font-size:14px;font-weight:700;';
+    empty.style.cssText = 'color:#64748b;font-family:Courier New,monospace;font-size:14px;font-weight:700;';
     empty.textContent = 'all clear ✓';
     bar.appendChild(empty);
     return;
@@ -571,34 +584,33 @@ for (int k = 0; k < totalHits.size(); k++) {
 })();
 
 // ============================================================
-// 3D gradient colors for bars (top brighter, base darker)
+// Bright 3D gradient colors
 // ============================================================
 function makeBarColor(baseRgb, topBoost) {
-  // baseRgb like "239,68,68"
-  var parts = baseRgb.split(',');
-  var r = parseInt(parts[0]), g = parseInt(parts[1]), b = parseInt(parts[2]);
-  var topR = Math.min(255, r + topBoost);
-  var topG = Math.min(255, g + topBoost);
-  var topB = Math.min(255, b + topBoost);
-  return "rgb(" + topR + "," + topG + "," + topB + ") rgb(" + r + "," + g + "," + b + ")";
+  var p = baseRgb.split(',');
+  var r = parseInt(p[0]), g = parseInt(p[1]), b = parseInt(p[2]);
+  var tr = Math.min(255, r + topBoost);
+  var tg = Math.min(255, g + topBoost);
+  var tb = Math.min(255, b + topBoost);
+  return "rgb(" + tr + "," + tg + "," + tb + ") rgb(" + r + "," + g + "," + b + ")";
 }
 
 var barColors = valueArr.map(function(v) {
-  if (v >= 5) return makeBarColor("239,68,68", 60);   // red
-  if (v >= 2) return makeBarColor("245,158,11", 60);  // amber
-  if (v >= 1) return makeBarColor("139,92,246", 60);  // purple
-  return makeBarColor("16,185,129", 60);              // green
+  if (v >= 5) return makeBarColor("239,68,68", 70);
+  if (v >= 2) return makeBarColor("245,158,11", 70);
+  if (v >= 1) return makeBarColor("167,139,250", 60);
+  return makeBarColor("52,211,153", 70);
 });
 
 // ============================================================
-// CHART — deeper 3D + gradient bars
+// CHART — 3D + bright, non-black background
 // ============================================================
 var chartConfig = {
   type: "bar3d",
   "3dAspect": {
-    depth: 45,       // 🎯 gehra 3D
+    depth: 45,
     true3d: 0,
-    yAngle: 15,      // strong perspective
+    yAngle: 15,
     xAngle: 6
   },
   backgroundColor: "transparent",
@@ -612,28 +624,28 @@ var chartConfig = {
   scaleX: {
     values: labelArr,
     backgroundColor: "transparent",
-    borderColor: "#1c2030",
+    borderColor: "#2d3a56",
     borderWidth: "1px",
     guide: { visible: false },
-    item: { fontColor: "#fff", fontSize: 22 },
-    tick: { alpha: 0.2, lineColor: "#1c2030" },
+    item: { fontColor: "#e8ecf8", fontSize: 22 },
+    tick: { alpha: 0.3, lineColor: "#3d4a66" },
     label: {
-      text: '<p style="color:#ff9933;font-size:20px;font-weight:800;margin:4px 0;">TD</p>'
-          + '<p style="color:#FFFFFF;font-size:20px;font-weight:800;margin:4px 0;">ENDPOINT</p>'
-          + '<p style="color:#32CD32;font-size:20px;font-weight:800;margin:4px 0;">HITS</p>',
+      text: '<p style="color:#fbbf24;font-size:20px;font-weight:800;margin:4px 0;">TD</p>'
+          + '<p style="color:#ffffff;font-size:20px;font-weight:800;margin:4px 0;">ENDPOINT</p>'
+          + '<p style="color:#34d399;font-size:20px;font-weight:800;margin:4px 0;">HITS</p>',
       offsetX: '-90px'
     }
   },
   scaleY: {
     backgroundColor: "transparent",
-    borderColor: "#1c2030",
+    borderColor: "#2d3a56",
     borderWidth: "1px",
-    guide: { alpha: 0.2, lineColor: "#2a2f45", lineStyle: "solid" },
-    item: { fontColor: "#fff", paddingRight: "10px", fontSize: 18 },
-    tick: { alpha: 0.2, lineColor: "#1c2030" },
+    guide: { alpha: 0.3, lineColor: "#3d4a66", lineStyle: "solid" },
+    item: { fontColor: "#94a3c4", paddingRight: "10px", fontSize: 18 },
+    tick: { alpha: 0.3, lineColor: "#3d4a66" },
     label: {
       text: "Failure Percentage",
-      color: "#8b90b0",
+      color: "#94a3c4",
       fontSize: "20"
     }
   },
@@ -648,17 +660,17 @@ var chartConfig = {
       "offset-y": -6
     },
     tooltip: {
-      backgroundColor: "#1c2030",
-      borderColor: "#6366f1",
+      backgroundColor: "#232d4a",
+      borderColor: "#818cf8",
       borderWidth: 1,
       borderRadius: "6px",
       fontSize: "16px",
       padding: "10px 14px",
       shadow: false,
-      fontColor: "#fff"
+      fontColor: "#ffffff"
     },
     styles: barColors,
-    borderColor: "rgba(255,255,255,0.15)",
+    borderColor: "rgba(255,255,255,0.2)",
     borderWidth: 1
   }]
 };
