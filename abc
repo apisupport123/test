@@ -1,6 +1,8 @@
 Dear Team,
 
-Below mentioned passbook query , We have used regular expressions for the reduction policy issue. However ,the BRANCH_CODE ,REQ_KIOSKID and  BARCODE values are showing
-blank when accessed through the eisappsupport login.
+Below mentioned passbook query is returning blank for the BRANCH_CODE, REQ_KIOSK_ID and BARCODE values when accessed through the eisappsupport login, due to the redaction policy on the INPUT_DATA columns.
 
 Kindly execute the attached query using the sys login and verify the output.
+
+Regards,
+Amit
