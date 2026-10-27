@@ -1,93 +1,75 @@
-select /*+ parallel(32) */
-REQ_REF_NO || '^'||
-REQ_DATE_TIME || '^'||
-REQ_BRANCH || '^'||
-upper(REQ_KIOSKID) || '^'||
-RESP_DATE_TIME || '^'||
-ACK_DATE_TIME || '^'||
-RESP_CODE || '^'||
-ERROR_CODE || '^'||
-trim(ERROR_DESC) || '^'||
-STATUS || '^'||
-DEC_ACC_NO
-from
-(
-SELECT
-a.urn REQ_REF_NO,
-a.request_date_time REQ_DATE_TIME,
-REGEXP_REPLACE(b.input_data, '.*"BRANCH_CODE"\s*:\s*"?([^",}]+)"?.*', '\1') REQ_BRANCH,
-Upper(REGEXP_REPLACE(b.input_data, '.*"REQ_KIOSK_ID"\s*:\s*"?([^",}]+)"?.*', '\1')) REQ_KIOSKID,
-a.response_date_time RESP_DATE_TIME,
-null as ACK_DATE_TIME,
-a.response_status RESP_CODE,
-a.error_code ERROR_CODE,
-trim(a.error_description) ERROR_DESC,
-case when a.response_status = '0' then 'RCV'
-when a.error_code BETWEEN '0' and '9999' then 'NEG'
-else 'ERR'
-end as status,
-REGEXP_REPLACE(d.input_data, '.*"BARCODE"\s*:\s*"?([^",}]+)"?.*', '\1') DEC_ACC_NO
-FROM
-eisapp.api_log a,
-eisapp.api_details b,
-eisapp.orch_api_log c,
-eisapp.orch_api_details d
-WHERE
-a.urn = b.urn
-AND a.urn = c.urn
-AND a.urn = d.urn
-AND c.urn_child = d.urn_child
-AND c.url = 'http://system.api:9010/NBC/001650/bancs/cbs/accounts'
-and a.url = 'http://eispri.sbi.co.in:3010/passbook_th/printTxn/accounts'
-AND trunc(a.request_date_time) = '$testing1'
-union all
-SELECT * FROM ( WITH tempap as (
-  select REGEXP_REPLACE(input_data, '.*"PRINT_REFERENCE_NUMBER"\s*:\s*"?([^",}]+)"?.*', '\1') as urn
-  from eisapp.api_details
-  where urn in (
-    SELECT urn FROM EISAPP.API_LOG
-    WHERE URL='http://eispri.sbi.co.in:3010/passbook_th/negativeAck/accounts'
-    and trunc(request_date_time)= '$testing1'
-  )
-)
-SELECT
-a.urn REQ_REF_NO,
-a.request_date_time REQ_DATE_TIME,
-REGEXP_REPLACE(b.input_data, '.*"BRANCH_CODE"\s*:\s*"?([^",}]+)"?.*', '\1') REQ_BRANCH,
-Upper(REGEXP_REPLACE(b.input_data, '.*"REQ_KIOSK_ID"\s*:\s*"?([^",}]+)"?.*', '\1')) REQ_KIOSKID,
-a.response_date_time RESP_DATE_TIME,
-null as ACK_DATE_TIME,
-a.response_status RESP_CODE,
-a.error_code ERROR_CODE,
-a.error_description ERROR_DESC,
-'NACK' as status,
-REGEXP_REPLACE(d.input_data, '.*"BARCODE"\s*:\s*"?([^",}]+)"?.*', '\1') DEC_ACC_NO
-FROM
-eisapp.api_log a,
-eisapp.api_details b,
-eisapp.orch_api_log c,
-eisapp.orch_api_details d,
-tempap
-WHERE
-a.urn = b.urn
-AND a.urn = c.urn
-AND a.urn = d.urn
-AND c.urn_child = d.urn_child
-AND a.urn = tempap.urn
-AND c.url = 'http://system.api:9010/NBC/001650/bancs/cbs/accounts'
-AND trunc(a.request_date_time) = '$testing1')
-union all
-select REQ_REF_NO,
-REQ_DATE_TIME,
-REQ_BRANCH,
-REQ_KIOSKID,
-RESP_DATE_TIME,
-ACK_DATE_TIME,
-RESP_CODE,
-ERROR_CODE,
-ERROR_DESC,
-STATUS,
-DEC_ACC_NO
-from EISAPP.passbook_table
-where status='REP'
-AND trunc(REQ_DATE_TIME)='$testing1';
+SELECT /*+ parallel(32) */
+       a.urn                                                                                       || '^' ||
+       a.request_date_time                                                                         || '^' ||
+       CAST(REGEXP_SUBSTR(b.input_data, '"BRANCH_CODE"\s*:\s*"?([^",}]*)', 1, 1, NULL, 1) AS VARCHAR2(50))         || '^' ||
+       UPPER(CAST(REGEXP_SUBSTR(b.input_data, '"REQ_KIOSK_ID"\s*:\s*"?([^",}]*)', 1, 1, NULL, 1) AS VARCHAR2(100))) || '^' ||
+       a.response_date_time                                                                        || '^' ||
+       NULL                                                                                        || '^' ||
+       a.response_status                                                                           || '^' ||
+       a.error_code                                                                                || '^' ||
+       TRIM(a.error_description)                                                                   || '^' ||
+       CASE WHEN a.response_status = '0' THEN 'RCV'
+            WHEN a.error_code BETWEEN '0' AND '9999' THEN 'NEG'
+            ELSE 'ERR'
+       END                                                                                         || '^' ||
+       CAST(REGEXP_SUBSTR(d.input_data, '"BARCODE"\s*:\s*"?([^",}]*)', 1, 1, NULL, 1) AS VARCHAR2(100)) AS rec
+FROM   eisapp.api_log          a,
+       eisapp.api_details      b,
+       eisapp.orch_api_log     c,
+       eisapp.orch_api_details d
+WHERE  a.urn       = b.urn
+AND    a.urn       = c.urn
+AND    a.urn       = d.urn
+AND    c.urn_child = d.urn_child
+AND    c.url = 'http://system.api:9010/NBC/001650/bancs/cbs/accounts'
+AND    a.url = 'http://eispri.sbi.co.in:3010/passbook_th/printTxn/accounts'
+AND    TRUNC(a.request_date_time) = '$testing1'
+
+UNION ALL
+
+SELECT a.urn                                                                                       || '^' ||
+       a.request_date_time                                                                         || '^' ||
+       CAST(REGEXP_SUBSTR(b.input_data, '"BRANCH_CODE"\s*:\s*"?([^",}]*)', 1, 1, NULL, 1) AS VARCHAR2(50))         || '^' ||
+       UPPER(CAST(REGEXP_SUBSTR(b.input_data, '"REQ_KIOSK_ID"\s*:\s*"?([^",}]*)', 1, 1, NULL, 1) AS VARCHAR2(100))) || '^' ||
+       a.response_date_time                                                                        || '^' ||
+       NULL                                                                                        || '^' ||
+       a.response_status                                                                           || '^' ||
+       a.error_code                                                                                || '^' ||
+       TRIM(a.error_description)                                                                   || '^' ||
+       'NACK'                                                                                      || '^' ||
+       CAST(REGEXP_SUBSTR(d.input_data, '"BARCODE"\s*:\s*"?([^",}]*)', 1, 1, NULL, 1) AS VARCHAR2(100)) AS rec
+FROM   eisapp.api_log          a,
+       eisapp.api_details      b,
+       eisapp.orch_api_log     c,
+       eisapp.orch_api_details d
+WHERE  a.urn       = b.urn
+AND    a.urn       = c.urn
+AND    a.urn       = d.urn
+AND    c.urn_child = d.urn_child
+AND    c.url = 'http://system.api:9010/NBC/001650/bancs/cbs/accounts'
+AND    TRUNC(a.request_date_time) = '$testing1'
+AND    a.urn IN (
+         SELECT CAST(REGEXP_SUBSTR(x.input_data, '"PRINT_REFERENCE_NUMBER"\s*:\s*"?([^",}]*)', 1, 1, NULL, 1) AS VARCHAR2(100))
+         FROM   eisapp.api_details x
+         WHERE  x.urn IN (
+                  SELECT l.urn
+                  FROM   eisapp.api_log l
+                  WHERE  l.url = 'http://eispri.sbi.co.in:3010/passbook_th/negativeAck/accounts'
+                  AND    TRUNC(l.request_date_time) = '$testing1'))
+
+UNION ALL
+
+SELECT p.req_ref_no              || '^' ||
+       p.req_date_time           || '^' ||
+       p.req_branch              || '^' ||
+       UPPER(p.req_kioskid)      || '^' ||
+       p.resp_date_time          || '^' ||
+       p.ack_date_time           || '^' ||
+       p.resp_code               || '^' ||
+       p.error_code              || '^' ||
+       TRIM(p.error_desc)        || '^' ||
+       p.status                  || '^' ||
+       p.dec_acc_no              AS rec
+FROM   eisapp.passbook_table p
+WHERE  p.status = 'REP'
+AND    TRUNC(p.req_date_time) = '$testing1';
