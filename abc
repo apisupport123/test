@@ -12,20 +12,20 @@ STATUS || '^'||
 DEC_ACC_NO
 FROM (
     SELECT
-    a.urn REQ_REF_NO,
-    a.request_date_time REQ_DATE_TIME,
-    REGEXP_REPLACE(b_input_data, '.*"BRANCH_CODE"\s*:\s*"?([^",}]*)"?.*', '\1', 1, 0, 'n') REQ_BRANCH,
-    Upper(REGEXP_REPLACE(b_input_data, '.*"REQ_KIOSK_ID"\s*:\s*"?([^",}]*)"?.*', '\1', 1, 0, 'n')) REQ_KIOSKID,
-    a.response_date_time RESP_DATE_TIME,
+    t1.urn REQ_REF_NO,
+    t1.request_date_time REQ_DATE_TIME,
+    REGEXP_REPLACE(t1.b_input_data, '.*"BRANCH_CODE"\s*:\s*"?([^",}]*)"?.*', '\1', 1, 0, 'n') REQ_BRANCH,
+    Upper(REGEXP_REPLACE(t1.b_input_data, '.*"REQ_KIOSK_ID"\s*:\s*"?([^",}]*)"?.*', '\1', 1, 0, 'n')) REQ_KIOSKID,
+    t1.response_date_time RESP_DATE_TIME,
     null as ACK_DATE_TIME,
-    a.response_status RESP_CODE,
-    a.error_code ERROR_CODE,
-    trim(a.error_description) ERROR_DESC,
-    case when a.response_status = '0' then 'RCV'
-    when a.error_code BETWEEN '0' and '9999' then 'NEG'
+    t1.response_status RESP_CODE,
+    t1.error_code ERROR_CODE,
+    trim(t1.error_description) ERROR_DESC,
+    case when t1.response_status = '0' then 'RCV'
+    when t1.error_code BETWEEN '0' and '9999' then 'NEG'
     else 'ERR'
     end as status,
-    REGEXP_REPLACE(d_input_data, '.*"BARCODE"\s*:\s*"?([^",}]*)"?.*', '\1', 1, 0, 'n') DEC_ACC_NO
+    REGEXP_REPLACE(t1.d_input_data, '.*"BARCODE"\s*:\s*"?([^",}]*)"?.*', '\1', 1, 0, 'n') DEC_ACC_NO
     FROM (
         SELECT
         a.urn, a.request_date_time, a.response_date_time, a.response_status,
@@ -45,7 +45,7 @@ FROM (
         AND c.url = 'http://system.api:9010/NBC/001650/bancs/cbs/accounts'
         and a.url = 'http://eispri.sbi.co.in:3010/passbook_th/printTxn/accounts'
         AND trunc(a.request_date_time) = DATE '2026-10-26'
-    ) inner1
+    ) t1
     UNION ALL
     SELECT * FROM (
         WITH tempap as (
@@ -58,17 +58,17 @@ FROM (
             )
         )
         SELECT
-        a.urn REQ_REF_NO,
-        a.request_date_time REQ_DATE_TIME,
-        REGEXP_REPLACE(b_input_data, '.*"BRANCH_CODE"\s*:\s*"?([^",}]*)"?.*', '\1', 1, 0, 'n') REQ_BRANCH,
-        Upper(REGEXP_REPLACE(b_input_data, '.*"REQ_KIOSK_ID"\s*:\s*"?([^",}]*)"?.*', '\1', 1, 0, 'n')) REQ_KIOSKID,
-        a.response_date_time RESP_DATE_TIME,
+        t2.urn REQ_REF_NO,
+        t2.request_date_time REQ_DATE_TIME,
+        REGEXP_REPLACE(t2.b_input_data, '.*"BRANCH_CODE"\s*:\s*"?([^",}]*)"?.*', '\1', 1, 0, 'n') REQ_BRANCH,
+        Upper(REGEXP_REPLACE(t2.b_input_data, '.*"REQ_KIOSK_ID"\s*:\s*"?([^",}]*)"?.*', '\1', 1, 0, 'n')) REQ_KIOSKID,
+        t2.response_date_time RESP_DATE_TIME,
         null as ACK_DATE_TIME,
-        a.response_status RESP_CODE,
-        a.error_code ERROR_CODE,
-        a.error_description ERROR_DESC,
+        t2.response_status RESP_CODE,
+        t2.error_code ERROR_CODE,
+        t2.error_description ERROR_DESC,
         'NACK' as status,
-        REGEXP_REPLACE(d_input_data, '.*"BARCODE"\s*:\s*"?([^",}]*)"?.*', '\1', 1, 0, 'n') DEC_ACC_NO
+        REGEXP_REPLACE(t2.d_input_data, '.*"BARCODE"\s*:\s*"?([^",}]*)"?.*', '\1', 1, 0, 'n') DEC_ACC_NO
         FROM (
             SELECT
             a.urn, a.request_date_time, a.response_date_time, a.response_status,
@@ -87,9 +87,9 @@ FROM (
             AND c.urn_child = d.urn_child
             AND c.url = 'http://system.api:9010/NBC/001650/bancs/cbs/accounts'
             AND trunc(a.request_date_time) = DATE '2026-10-26'
-        ) inner2,
+        ) t2,
         tempap
-        WHERE inner2.urn = tempap.urn
+        WHERE t2.urn = tempap.urn
     )
 ) combined
 UNION ALL
