@@ -47,50 +47,47 @@ FROM (
         AND trunc(a.request_date_time) = DATE '2026-10-26'
     ) t1
     UNION ALL
-    SELECT * FROM (
-        WITH tempap as (
-            SELECT REGEXP_REPLACE(input_data, '.*"PRINT_REFERENCE_NUMBER"\s*:\s*"?([^",}]*)"?.*', '\1', 1, 0, 'n') as urn
-            FROM eisapp.api_details
-            WHERE urn in (
-                SELECT urn FROM EISAPP.API_LOG
-                WHERE URL='http://eispri.sbi.co.in:3010/passbook_th/negativeAck/accounts'
-                and trunc(request_date_time)= DATE '2026-10-26'
-            )
+    WITH tempap as (
+        SELECT REGEXP_REPLACE(input_data, '.*"PRINT_REFERENCE_NUMBER"\s*:\s*"?([^",}]*)"?.*', '\1', 1, 0, 'n') as urn
+        FROM eisapp.api_details
+        WHERE urn in (
+            SELECT urn FROM EISAPP.API_LOG
+            WHERE URL='http://eispri.sbi.co.in:3010/passbook_th/negativeAck/accounts'
+            and trunc(request_date_time)= DATE '2026-10-26'
         )
-        SELECT
-        t2.urn REQ_REF_NO,
-        t2.request_date_time REQ_DATE_TIME,
-        REGEXP_REPLACE(t2.b_input_data, '.*"BRANCH_CODE"\s*:\s*"?([^",}]*)"?.*', '\1', 1, 0, 'n') REQ_BRANCH,
-        Upper(REGEXP_REPLACE(t2.b_input_data, '.*"REQ_KIOSK_ID"\s*:\s*"?([^",}]*)"?.*', '\1', 1, 0, 'n')) REQ_KIOSKID,
-        t2.response_date_time RESP_DATE_TIME,
-        null as ACK_DATE_TIME,
-        t2.response_status RESP_CODE,
-        t2.error_code ERROR_CODE,
-        t2.error_description ERROR_DESC,
-        'NACK' as status,
-        REGEXP_REPLACE(t2.d_input_data, '.*"BARCODE"\s*:\s*"?([^",}]*)"?.*', '\1', 1, 0, 'n') DEC_ACC_NO
-        FROM (
-            SELECT
-            a.urn, a.request_date_time, a.response_date_time, a.response_status,
-            a.error_code, a.error_description,
-            b.input_data AS b_input_data,
-            d.input_data AS d_input_data
-            FROM
-            eisapp.api_log a,
-            eisapp.api_details b,
-            eisapp.orch_api_log c,
-            eisapp.orch_api_details d
-            WHERE
-            a.urn = b.urn
-            AND a.urn = c.urn
-            AND a.urn = d.urn
-            AND c.urn_child = d.urn_child
-            AND c.url = 'http://system.api:9010/NBC/001650/bancs/cbs/accounts'
-            AND trunc(a.request_date_time) = DATE '2026-10-26'
-        ) t2,
-        tempap
-        WHERE t2.urn = tempap.urn
     )
+    SELECT
+    t2.urn REQ_REF_NO,
+    t2.request_date_time REQ_DATE_TIME,
+    REGEXP_REPLACE(t2.b_input_data, '.*"BRANCH_CODE"\s*:\s*"?([^",}]*)"?.*', '\1', 1, 0, 'n') REQ_BRANCH,
+    Upper(REGEXP_REPLACE(t2.b_input_data, '.*"REQ_KIOSK_ID"\s*:\s*"?([^",}]*)"?.*', '\1', 1, 0, 'n')) REQ_KIOSKID,
+    t2.response_date_time RESP_DATE_TIME,
+    null as ACK_DATE_TIME,
+    t2.response_status RESP_CODE,
+    t2.error_code ERROR_CODE,
+    t2.error_description ERROR_DESC,
+    'NACK' as status,
+    REGEXP_REPLACE(t2.d_input_data, '.*"BARCODE"\s*:\s*"?([^",}]*)"?.*', '\1', 1, 0, 'n') DEC_ACC_NO
+    FROM (
+        SELECT
+        a.urn, a.request_date_time, a.response_date_time, a.response_status,
+        a.error_code, a.error_description,
+        b.input_data AS b_input_data,
+        d.input_data AS d_input_data
+        FROM
+        eisapp.api_log a,
+        eisapp.api_details b,
+        eisapp.orch_api_log c,
+        eisapp.orch_api_details d
+        WHERE
+        a.urn = b.urn
+        AND a.urn = c.urn
+        AND a.urn = d.urn
+        AND c.urn_child = d.urn_child
+        AND c.url = 'http://system.api:9010/NBC/001650/bancs/cbs/accounts'
+        AND trunc(a.request_date_time) = DATE '2026-10-26'
+    ) t2, tempap
+    WHERE t2.urn = tempap.urn
 ) combined
 UNION ALL
 select REQ_REF_NO,
