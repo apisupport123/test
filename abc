@@ -1,4 +1,4 @@
-select /+parallel(32)/
+select /*+ parallel(32) */
 REQ_REF_NO || '^'||
 REQ_DATE_TIME || '^'||
 REQ_BRANCH || '^'||
@@ -15,8 +15,8 @@ from
 SELECT
 a.urn REQ_REF_NO,
 a.request_date_time REQ_DATE_TIME,
-JSON_VALUE(b.input_data, '$.BRANCH_CODE') REQ_BRANCH,
-Upper(JSON_VALUE(b.input_data, '$.REQ_KIOSK_ID')) REQ_KIOSKID,
+REGEXP_REPLACE(b.input_data, '.*"BRANCH_CODE"\s*:\s*"?([^",}]*)"?.*', '\1', 1, 0, 'n') REQ_BRANCH,
+Upper(REGEXP_REPLACE(b.input_data, '.*"REQ_KIOSK_ID"\s*:\s*"?([^",}]*)"?.*', '\1', 1, 0, 'n')) REQ_KIOSKID,
 a.response_date_time RESP_DATE_TIME,
 null as ACK_DATE_TIME,
 a.response_status RESP_CODE,
@@ -26,7 +26,7 @@ case when a.response_status = '0' then 'RCV'
 when a.error_code BETWEEN '0' and '9999' then 'NEG'
 else 'ERR'
 end as status,
-JSON_VALUE(d.input_data, '$.BARCODE') DEC_ACC_NO
+REGEXP_REPLACE(d.input_data, '.*"BARCODE"\s*:\s*"?([^",}]*)"?.*', '\1', 1, 0, 'n') DEC_ACC_NO
 FROM
 eisapp.api_log a,
 eisapp.api_details b,
@@ -43,21 +43,21 @@ AND
 --a.request_date_time>= sysdate - interval '10' minute
 trunc(a.request_date_time) = '$testing1'
 union all
-SELECT * FROM ( WITH tempap as (select JSON_VALUE(input_data, '$.PRINT_REFERENCE_NUMBER') as urn from eisapp.api_details where urn in (
+SELECT * FROM ( WITH tempap as (select REGEXP_REPLACE(input_data, '.*"PRINT_REFERENCE_NUMBER"\s*:\s*"?([^",}]*)"?.*', '\1', 1, 0, 'n') as urn from eisapp.api_details where urn in (
 SELECT urn FROM EISAPP.API_LOG WHERE URL='http://eispri.sbi.co.in:3010/passbook_th/negativeAck/accounts' and
 trunc(request_date_time)= '$testing1'))
 SELECT
 a.urn REQ_REF_NO,
 a.request_date_time REQ_DATE_TIME,
-JSON_VALUE(b.input_data, '$.BRANCH_CODE') REQ_BRANCH,
-Upper(JSON_VALUE(b.input_data, '$.REQ_KIOSK_ID')) REQ_KIOSKID,
+REGEXP_REPLACE(b.input_data, '.*"BRANCH_CODE"\s*:\s*"?([^",}]*)"?.*', '\1', 1, 0, 'n') REQ_BRANCH,
+Upper(REGEXP_REPLACE(b.input_data, '.*"REQ_KIOSK_ID"\s*:\s*"?([^",}]*)"?.*', '\1', 1, 0, 'n')) REQ_KIOSKID,
 a.response_date_time RESP_DATE_TIME,
 null as ACK_DATE_TIME,
 a.response_status RESP_CODE,
 a.error_code ERROR_CODE,
 a.error_description ERROR_DESC,
 'NACK' as status,
-JSON_VALUE(d.input_data, '$.BARCODE') DEC_ACC_NO
+REGEXP_REPLACE(d.input_data, '.*"BARCODE"\s*:\s*"?([^",}]*)"?.*', '\1', 1, 0, 'n') DEC_ACC_NO
 FROM
 eisapp.api_log a,
 eisapp.api_details b,
@@ -86,4 +86,4 @@ STATUS,
 DEC_ACC_NO
 from EISAPP.passbook_table
 where status='REP' AND
-trunc(REQ_DATE_TIME)='$testing1');
+trunc(REQ_DATE_TIME)='$testing1';
