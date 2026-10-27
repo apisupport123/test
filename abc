@@ -1,18 +1,18 @@
 SELECT /*+ parallel(32) */
-       a.urn                                                                                       || '^' ||
-       a.request_date_time                                                                         || '^' ||
-       CAST(REGEXP_SUBSTR(b.input_data, '"BRANCH_CODE"\s*:\s*"?([^",}]*)', 1, 1, NULL, 1) AS VARCHAR2(50))         || '^' ||
-       UPPER(CAST(REGEXP_SUBSTR(b.input_data, '"REQ_KIOSK_ID"\s*:\s*"?([^",}]*)', 1, 1, NULL, 1) AS VARCHAR2(100))) || '^' ||
-       a.response_date_time                                                                        || '^' ||
-       NULL                                                                                        || '^' ||
-       a.response_status                                                                           || '^' ||
-       a.error_code                                                                                || '^' ||
-       TRIM(a.error_description)                                                                   || '^' ||
+       a.urn                                                                                                   || '^' ||
+       a.request_date_time                                                                                     || '^' ||
+       CAST(REGEXP_SUBSTR(b.input_data, '\\?"BRANCH_CODE\\?"\s*:\s*\\?"?([^"\\,}]*)', 1, 1, 'i', 1) AS VARCHAR2(50))          || '^' ||
+       UPPER(CAST(REGEXP_SUBSTR(b.input_data, '\\?"REQ_KIOSK_ID\\?"\s*:\s*\\?"?([^"\\,}]*)', 1, 1, 'i', 1) AS VARCHAR2(100))) || '^' ||
+       a.response_date_time                                                                                    || '^' ||
+       NULL                                                                                                    || '^' ||
+       a.response_status                                                                                       || '^' ||
+       a.error_code                                                                                            || '^' ||
+       TRIM(a.error_description)                                                                               || '^' ||
        CASE WHEN a.response_status = '0' THEN 'RCV'
             WHEN a.error_code BETWEEN '0' AND '9999' THEN 'NEG'
             ELSE 'ERR'
-       END                                                                                         || '^' ||
-       CAST(REGEXP_SUBSTR(d.input_data, '"BARCODE"\s*:\s*"?([^",}]*)', 1, 1, NULL, 1) AS VARCHAR2(100)) AS rec
+       END                                                                                                     || '^' ||
+       CAST(REGEXP_SUBSTR(d.input_data, '\\?"BARCODE\\?"\s*:\s*\\?"?([^"\\,}]*)', 1, 1, 'i', 1) AS VARCHAR2(100)) AS rec
 FROM   eisapp.api_log          a,
        eisapp.api_details      b,
        eisapp.orch_api_log     c,
@@ -23,21 +23,22 @@ AND    a.urn       = d.urn
 AND    c.urn_child = d.urn_child
 AND    c.url = 'http://system.api:9010/NBC/001650/bancs/cbs/accounts'
 AND    a.url = 'http://eispri.sbi.co.in:3010/passbook_th/printTxn/accounts'
-AND    TRUNC(a.request_date_time) = '$testing1'
+AND    a.request_date_time >= TO_DATE('$testing1', 'DD-MON-RR')
+AND    a.request_date_time <  TO_DATE('$testing1', 'DD-MON-RR') + 1
 
 UNION ALL
 
-SELECT a.urn                                                                                       || '^' ||
-       a.request_date_time                                                                         || '^' ||
-       CAST(REGEXP_SUBSTR(b.input_data, '"BRANCH_CODE"\s*:\s*"?([^",}]*)', 1, 1, NULL, 1) AS VARCHAR2(50))         || '^' ||
-       UPPER(CAST(REGEXP_SUBSTR(b.input_data, '"REQ_KIOSK_ID"\s*:\s*"?([^",}]*)', 1, 1, NULL, 1) AS VARCHAR2(100))) || '^' ||
-       a.response_date_time                                                                        || '^' ||
-       NULL                                                                                        || '^' ||
-       a.response_status                                                                           || '^' ||
-       a.error_code                                                                                || '^' ||
-       TRIM(a.error_description)                                                                   || '^' ||
-       'NACK'                                                                                      || '^' ||
-       CAST(REGEXP_SUBSTR(d.input_data, '"BARCODE"\s*:\s*"?([^",}]*)', 1, 1, NULL, 1) AS VARCHAR2(100)) AS rec
+SELECT a.urn                                                                                                   || '^' ||
+       a.request_date_time                                                                                     || '^' ||
+       CAST(REGEXP_SUBSTR(b.input_data, '\\?"BRANCH_CODE\\?"\s*:\s*\\?"?([^"\\,}]*)', 1, 1, 'i', 1) AS VARCHAR2(50))          || '^' ||
+       UPPER(CAST(REGEXP_SUBSTR(b.input_data, '\\?"REQ_KIOSK_ID\\?"\s*:\s*\\?"?([^"\\,}]*)', 1, 1, 'i', 1) AS VARCHAR2(100))) || '^' ||
+       a.response_date_time                                                                                    || '^' ||
+       NULL                                                                                                    || '^' ||
+       a.response_status                                                                                       || '^' ||
+       a.error_code                                                                                            || '^' ||
+       TRIM(a.error_description)                                                                               || '^' ||
+       'NACK'                                                                                                  || '^' ||
+       CAST(REGEXP_SUBSTR(d.input_data, '\\?"BARCODE\\?"\s*:\s*\\?"?([^"\\,}]*)', 1, 1, 'i', 1) AS VARCHAR2(100)) AS rec
 FROM   eisapp.api_log          a,
        eisapp.api_details      b,
        eisapp.orch_api_log     c,
@@ -47,15 +48,17 @@ AND    a.urn       = c.urn
 AND    a.urn       = d.urn
 AND    c.urn_child = d.urn_child
 AND    c.url = 'http://system.api:9010/NBC/001650/bancs/cbs/accounts'
-AND    TRUNC(a.request_date_time) = '$testing1'
+AND    a.request_date_time >= TO_DATE('$testing1', 'DD-MON-RR')
+AND    a.request_date_time <  TO_DATE('$testing1', 'DD-MON-RR') + 1
 AND    a.urn IN (
-         SELECT CAST(REGEXP_SUBSTR(x.input_data, '"PRINT_REFERENCE_NUMBER"\s*:\s*"?([^",}]*)', 1, 1, NULL, 1) AS VARCHAR2(100))
+         SELECT CAST(REGEXP_SUBSTR(x.input_data, '\\?"PRINT_REFERENCE_NUMBER\\?"\s*:\s*\\?"?([^"\\,}]*)', 1, 1, 'i', 1) AS VARCHAR2(100))
          FROM   eisapp.api_details x
          WHERE  x.urn IN (
                   SELECT l.urn
                   FROM   eisapp.api_log l
                   WHERE  l.url = 'http://eispri.sbi.co.in:3010/passbook_th/negativeAck/accounts'
-                  AND    TRUNC(l.request_date_time) = '$testing1'))
+                  AND    l.request_date_time >= TO_DATE('$testing1', 'DD-MON-RR')
+                  AND    l.request_date_time <  TO_DATE('$testing1', 'DD-MON-RR') + 1))
 
 UNION ALL
 
@@ -72,4 +75,5 @@ SELECT p.req_ref_no              || '^' ||
        p.dec_acc_no              AS rec
 FROM   eisapp.passbook_table p
 WHERE  p.status = 'REP'
-AND    TRUNC(p.req_date_time) = '$testing1';
+AND    p.req_date_time >= TO_DATE('$testing1', 'DD-MON-RR')
+AND    p.req_date_time <  TO_DATE('$testing1', 'DD-MON-RR') + 1;
