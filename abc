@@ -1,13 +1,1 @@
-Dear Sir,
-
-Please find below the current status along with detailed observations from Dynatrace against each integrated module:
-
-**EIS GEN-5 100%** – Dashboard is working fine.
-
-**EIS Service Wise** – Dashboard is working fine.
-
-**EIS Transaction Endpoint** – Dashboard is working fine.
-
-**Common Observation (applicable to all above modules):** Dashboard is working fine. However, Dynatrace is entirely dependent on the crons that we build. If our crons stop or fail, Dynatrace will not display any data at all.
-
-**Additional Observation:** Dynatrace lacks drill-down functionality in our use case. Multi-level drill-down, allowing users to move from a high-level overview down to granular details with ease, is not supported.
+Dynatrace lacks drill-down functionality in our use case. It does not provide details such as which service/server is impacted, which error code the transaction is failing with, and the live RRN number to check why a particular transaction failed.
