@@ -1,8 +1,242 @@
-Dear Team,
+WITH SERVICE_MASTER AS
+(
+SELECT 'I4C' SERVICE,'INBOUND' TYPE FROM dual UNION ALL
+SELECT 'FB_BASE' SERVICE,'INBOUND' TYPE FROM dual UNION all
+SELECT 'SBOSS','INBOUND' FROM dual UNION ALL
+SELECT 'SBICAPS','INBOUND' FROM dual UNION ALL
+SELECT 'PAL','INBOUND' FROM dual UNION ALL
+SELECT 'INSTAHOME LOAN','INBOUND' FROM dual UNION ALL
+WITH SERVICE_MASTER AS
+(
+SELECT 'I4C' SERVICE,'INBOUND' TYPE FROM dual UNION ALL
+SELECT 'FB_BASE' SERVICE,'INBOUND' TYPE FROM dual UNION all
+SELECT 'SBOSS','INBOUND' FROM dual UNION ALL
+SELECT 'SBICAPS','INBOUND' FROM dual UNION ALL
+SELECT 'PAL','INBOUND' FROM dual UNION ALL
+SELECT 'INSTAHOME LOAN','INBOUND' FROM dual UNION ALL
+SELECT 'CBS','OUTBOUND' FROM dual UNION ALL
+SELECT 'SBOSS','OUTBOUND' FROM dual UNION ALL
+SELECT 'CGTMSE','OUTBOUND' FROM dual UNION ALL
+SELECT 'BASE','OUTBOUND' FROM dual UNION ALL
+SELECT 'I4C_NCRP','OUTBOUND' FROM dual UNION ALL
+SELECT 'HRMS','OUTBOUND' FROM dual UNION ALL
+SELECT 'ATM','OUTBOUND' FROM dual UNION ALL
+SELECT 'DEAF LOGGING','INBOUND' FROM dual union all
+SELECT 'ATM','INBOUND' FROM dual
+),
+DATA AS
+(
+---------------- INBOUND ----------------
+select  
+(case
+when source_id='I4' then 'I4C'
+when source_id='FS' then 'SBOSS'
+when source_id='SA' then 'SBICAPS'
+when source_id='FB' then 'FB_BASE'
+when api_name='pal_th_orchDS' then 'PAL'
+when api_name in ('InstaHomeLoan_th_orchDS') then 'INSTAHOME LOAN'
+end) as SERVICE,
+COUNT(1) TOTAL_HITS,
+ROUND(
+(SUM(CASE
+WHEN (substr(error_code,3,3) in ('002','014')
+or error_code in ('SI001','SI007','SI017','SI569','SI570','SI051','SI052','SI111'))
+and error_code<>'00014'
+THEN 1 ELSE 0 END)100)/NULLIF(COUNT(1),0)
+,2) AS TD_PERCENT,
+'INBOUND' TYPE
+from eisapp.api_log PARTITION(JUL_26)
+where request_date_time >= sysdate - interval '10' minute
+group by
+(case
+when source_id='I4' then 'I4C'
+when source_id='FS' then 'SBOSS'
+when source_id='SA' then 'SBICAPS'
+when source_id='FB' then 'FB_BASE'
+when api_name='pal_th_orchDS' then 'PAL'
+when api_name in ('InstaHomeLoan_th_orchDS') then 'INSTAHOME LOAN'
+end)
+UNION ALL
 
-Below mentioned passbook query is returning blank for the BRANCH_CODE, REQ_KIOSK_ID and BARCODE values when accessed through the eisappsupport login, due to the redaction policy on the INPUT_DATA columns.
+select  
+(case
+when TXN_ENDPOINT='CBS' then 'CBS'
+when TXN_ENDPOINT='SBOSS' then 'SBOSS'
+when TXN_ENDPOINT='CGTMSE' then 'CGTMSE'
+when TXN_ENDPOINT='BASE' then 'BASE'
+when TXN_ENDPOINT='I4C_NCRP' then 'I4C_NCRP'
+when TXN_ENDPOINT='HRMS' then 'HRMS'
+when TXN_ENDPOINT='ATM' then 'ATM'
+end) as SERVICE,
+COUNT(1) TOTAL_HITS,
+ROUND(
+(SUM(CASE
+WHEN (substr(error_code,3,3) in ('002','014')
+or error_code in ('SI001','SI007','SI017','SI569','SI570','SI051','SI052','SI111'))
+and error_code<>'00014'
+THEN 1 ELSE 0 END)100)/NULLIF(COUNT(1),0)
+,2) AS TD_PERCENT,
+'OUTBOUND' TYPE
+from eisapp.backend_log PARTITION(JUL_26)
+where ((request_date_time >= sysdate - interval '10' minute)
+Or (creation_date_time >= sysdate - interval '10' minute))
+group by
+(case
+when TXN_ENDPOINT='CBS' then 'CBS'
+when TXN_ENDPOINT='SBOSS' then 'SBOSS'
+when TXN_ENDPOINT='CGTMSE' then 'CGTMSE'
+when TXN_ENDPOINT='BASE' then 'BASE'
+when TXN_ENDPOINT='I4C_NCRP' then 'I4C_NCRP'
+when TXN_ENDPOINT='HRMS' then 'HRMS'
+when TXN_ENDPOINT='ATM' then 'ATM'
+end)
+UNION ALL
+select
+'DEAF LOGGING',
+COUNT(1) TOTAL_HITS,
+ROUND(
+(SUM(CASE
+WHEN (substr(error_code,3,3) in ('002','014')
+or error_code in ('SI001','SI007','SI017','SI569','SI570','SI051','SI052','SI111'))
+and error_code<>'00014'
+THEN 1 ELSE 0 END)100)/NULLIF(COUNT(1),0)
+,2),
+'INBOUND'
+from EISAPP.DEAF_LOGGING
+where CREATION_DATE_TIME >= sysdate - interval '10' minute
+UNION ALL
+select
+'ATM' ,
+COUNT(1) TOTAL_HITS,
+ROUND(
+(SUM(CASE
+WHEN RESPONSE_STATUS <> '0'
+THEN 1 ELSE 0 END)100)/NULLIF(COUNT(1),0)
+,2),
+'INBOUND'
+from EISAPP.urn_details_atm
+where REQUEST_DATE_TIME >= sysdate - interval '10' minute
+)
+---------------- FINAL OUTPUT ----------------
+select
+SM.SERVICE as CRITICAL_SERVICES,
+CASE WHEN NVL(D.TOTAL_HITS,0) > 0 THEN 'YES' ELSE 'NO' END HITS_OBSERVED,
+NVL(D.TD_PERCENT,0) TD_PERCENT,
+SM.TYPE
+from SERVICE_MASTER SM
+LEFT JOIN DATA D
+ON SM.SERVICE = D.SERVICE
+AND SM.TYPE = D.TYPE;
+   SELECT 'CBS','OUTBOUND' FROM dual UNION ALL
+   SELECT 'SBOSS','OUTBOUND' FROM dual UNION ALL
+   SELECT 'CGTMSE','OUTBOUND' FROM dual UNION ALL
+   SELECT 'BASE','OUTBOUND' FROM dual UNION ALL
+   SELECT 'I4C_NCRP','OUTBOUND' FROM dual UNION ALL
+   SELECT 'HRMS','OUTBOUND' FROM dual UNION ALL
+   SELECT 'ATM','OUTBOUND' FROM dual UNION ALL
+   SELECT 'DEAF LOGGING','INBOUND' FROM dual union all
+   SELECT 'ATM','INBOUND' FROM dual
+),
+DATA AS
+(
+---------------- INBOUND ----------------
+select  
+(case
+ when source_id='I4' then 'I4C'
+ when source_id='FS' then 'SBOSS'
+ when source_id='SA' then 'SBICAPS'
+ when source_id='FB' then 'FB_BASE'
+ when api_name='pal_th_orchDS' then 'PAL'  
+ when api_name in ('InstaHomeLoan_th_orchDS') then 'INSTAHOME LOAN'
+end) as SERVICE,
+COUNT(1) TOTAL_HITS,
+ROUND(
+(SUM(CASE
+ WHEN (substr(error_code,3,3) in ('002','014')
+   or error_code in ('SI001','SI007','SI017','SI569','SI570','SI051','SI052','SI111'))
+ and error_code<>'00014'
+ THEN 1 ELSE 0 END)100)/NULLIF(COUNT(1),0)
+,2) AS TD_PERCENT,
+'INBOUND' TYPE
+from eisapp.api_log PARTITION(JUL_26)
+where request_date_time >= sysdate - interval '10' minute
+group by
+(case
+ when source_id='I4' then 'I4C'
+ when source_id='FS' then 'SBOSS'
+ when source_id='SA' then 'SBICAPS'
+  when source_id='FB' then 'FB_BASE'
+ when api_name='pal_th_orchDS' then 'PAL'  
+ when api_name in ('InstaHomeLoan_th_orchDS') then 'INSTAHOME LOAN'
+end)
+UNION ALL
 
-Kindly execute the attached query using the sys login and verify the output.
-
-Regards,
-Amit
+select  
+(case
+ when TXN_ENDPOINT='CBS' then 'CBS'
+ when TXN_ENDPOINT='SBOSS' then 'SBOSS'
+ when TXN_ENDPOINT='CGTMSE' then 'CGTMSE'
+ when TXN_ENDPOINT='BASE' then 'BASE'
+ when TXN_ENDPOINT='I4C_NCRP' then 'I4C_NCRP'
+ when TXN_ENDPOINT='HRMS' then 'HRMS'
+ when TXN_ENDPOINT='ATM' then 'ATM'
+end) as SERVICE,
+COUNT(1) TOTAL_HITS,
+ROUND(
+(SUM(CASE
+ WHEN (substr(error_code,3,3) in ('002','014')
+   or error_code in ('SI001','SI007','SI017','SI569','SI570','SI051','SI052','SI111'))
+ and error_code<>'00014'
+ THEN 1 ELSE 0 END)100)/NULLIF(COUNT(1),0)
+,2) AS TD_PERCENT,
+'OUTBOUND' TYPE
+from eisapp.backend_log PARTITION(JUL_26)
+where ((request_date_time >= sysdate - interval '10' minute)
+    Or (creation_date_time >= sysdate - interval '10' minute))
+group by
+(case
+ when TXN_ENDPOINT='CBS' then 'CBS'
+ when TXN_ENDPOINT='SBOSS' then 'SBOSS'
+ when TXN_ENDPOINT='CGTMSE' then 'CGTMSE'
+ when TXN_ENDPOINT='BASE' then 'BASE'
+ when TXN_ENDPOINT='I4C_NCRP' then 'I4C_NCRP'
+ when TXN_ENDPOINT='HRMS' then 'HRMS'
+ when TXN_ENDPOINT='ATM' then 'ATM'
+end)
+UNION ALL
+select
+'DEAF LOGGING',
+COUNT(1) TOTAL_HITS,
+ROUND(
+(SUM(CASE
+ WHEN (substr(error_code,3,3) in ('002','014')
+   or error_code in ('SI001','SI007','SI017','SI569','SI570','SI051','SI052','SI111'))
+ and error_code<>'00014'
+ THEN 1 ELSE 0 END)100)/NULLIF(COUNT(1),0)
+,2),
+'INBOUND'
+from EISAPP.DEAF_LOGGING
+where CREATION_DATE_TIME >= sysdate - interval '10' minute
+UNION ALL
+select
+'ATM' ,
+COUNT(1) TOTAL_HITS,
+ROUND(
+(SUM(CASE
+ WHEN RESPONSE_STATUS <> '0'
+ THEN 1 ELSE 0 END)100)/NULLIF(COUNT(1),0)
+,2),
+'INBOUND'
+from EISAPP.urn_details_atm
+where REQUEST_DATE_TIME >= sysdate - interval '10' minute
+)
+---------------- FINAL OUTPUT ----------------
+select
+SM.SERVICE as CRITICAL_SERVICES,
+CASE WHEN NVL(D.TOTAL_HITS,0) > 0 THEN 'YES' ELSE 'NO' END HITS_OBSERVED,
+NVL(D.TD_PERCENT,0) TD_PERCENT,
+SM.TYPE
+from SERVICE_MASTER SM
+LEFT JOIN DATA D
+ON SM.SERVICE = D.SERVICE
+AND SM.TYPE = D.TYPE;
