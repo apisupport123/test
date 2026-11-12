@@ -1,133 +1,24 @@
-WITH SERVICE_MASTER AS
-(
-    SELECT 'I4C'             SERVICE, 'INBOUND'  TYPE FROM dual UNION ALL
-    SELECT 'FB_BASE'         SERVICE, 'INBOUND'  TYPE FROM dual UNION ALL
-    SELECT 'SBOSS'          , 'INBOUND'          FROM dual UNION ALL
-    SELECT 'SBICAPS'        , 'INBOUND'          FROM dual UNION ALL
-    SELECT 'PAL'            , 'INBOUND'          FROM dual UNION ALL
-    SELECT 'INSTAHOME LOAN' , 'INBOUND'          FROM dual UNION ALL
-    SELECT 'CBS'            , 'OUTBOUND'         FROM dual UNION ALL
-    SELECT 'SBOSS'          , 'OUTBOUND'         FROM dual UNION ALL
-    SELECT 'CGTMSE'         , 'OUTBOUND'         FROM dual UNION ALL
-    SELECT 'BASE'           , 'OUTBOUND'         FROM dual UNION ALL
-    SELECT 'I4C_NCRP'       , 'OUTBOUND'         FROM dual UNION ALL
-    SELECT 'HRMS'           , 'OUTBOUND'         FROM dual UNION ALL
-    SELECT 'ATM'            , 'OUTBOUND'         FROM dual UNION ALL
-    SELECT 'DEAF LOGGING'   , 'INBOUND'          FROM dual UNION ALL
-    SELECT 'ATM'            , 'INBOUND'          FROM dual
-),
-DATA AS
-(
-    ---------------- INBOUND ----------------
-    SELECT
-        (CASE
-            WHEN source_id = 'I4' THEN 'I4C'
-            WHEN source_id = 'FS' THEN 'SBOSS'
-            WHEN source_id = 'SA' THEN 'SBICAPS'
-            WHEN source_id = 'FB' THEN 'FB_BASE'
-            WHEN api_name  = 'pal_th_orchDS' THEN 'PAL'
-            WHEN api_name IN ('InstaHomeLoan_th_orchDS') THEN 'INSTAHOME LOAN'
-        END) AS SERVICE,
-        COUNT(1) TOTAL_HITS,
-        ROUND(
-            (SUM(CASE
-                WHEN (SUBSTR(error_code, 3, 3) IN ('002', '014')
-                      OR error_code IN ('SI001','SI007','SI017','SI569','SI570','SI051','SI052','SI111'))
-                 AND error_code <> '00014'
-                THEN 1 ELSE 0
-            END) * 100) / NULLIF(COUNT(1), 0)
-        , 2) AS TD_PERCENT,
-        'INBOUND' TYPE
-    FROM eisapp.api_log PARTITION (JUL_26)
-    WHERE request_date_time >= SYSDATE - INTERVAL '10' MINUTE
-    GROUP BY
-        (CASE
-            WHEN source_id = 'I4' THEN 'I4C'
-            WHEN source_id = 'FS' THEN 'SBOSS'
-            WHEN source_id = 'SA' THEN 'SBICAPS'
-            WHEN source_id = 'FB' THEN 'FB_BASE'
-            WHEN api_name  = 'pal_th_orchDS' THEN 'PAL'
-            WHEN api_name IN ('InstaHomeLoan_th_orchDS') THEN 'INSTAHOME LOAN'
-        END)
+Team,
 
-    UNION ALL
+Please update the current status along with detailed observation from dynatrace against each integrated module.
 
-    ---------------- OUTBOUND ----------------
-    SELECT
-        (CASE
-            WHEN TXN_ENDPOINT = 'CBS'      THEN 'CBS'
-            WHEN TXN_ENDPOINT = 'SBOSS'    THEN 'SBOSS'
-            WHEN TXN_ENDPOINT = 'CGTMSE'   THEN 'CGTMSE'
-            WHEN TXN_ENDPOINT = 'BASE'     THEN 'BASE'
-            WHEN TXN_ENDPOINT = 'I4C_NCRP' THEN 'I4C_NCRP'
-            WHEN TXN_ENDPOINT = 'HRMS'     THEN 'HRMS'
-            WHEN TXN_ENDPOINT = 'ATM'      THEN 'ATM'
-        END) AS SERVICE,
-        COUNT(1) TOTAL_HITS,
-        ROUND(
-            (SUM(CASE
-                WHEN (SUBSTR(error_code, 3, 3) IN ('002', '014')
-                      OR error_code IN ('SI001','SI007','SI017','SI569','SI570','SI051','SI052','SI111'))
-                 AND error_code <> '00014'
-                THEN 1 ELSE 0
-            END) * 100) / NULLIF(COUNT(1), 0)
-        , 2) AS TD_PERCENT,
-        'OUTBOUND' TYPE
-    FROM eisapp.backend_log PARTITION (JUL_26)
-    WHERE (request_date_time  >= SYSDATE - INTERVAL '10' MINUTE
-        OR creation_date_time >= SYSDATE - INTERVAL '10' MINUTE)
-    GROUP BY
-        (CASE
-            WHEN TXN_ENDPOINT = 'CBS'      THEN 'CBS'
-            WHEN TXN_ENDPOINT = 'SBOSS'    THEN 'SBOSS'
-            WHEN TXN_ENDPOINT = 'CGTMSE'   THEN 'CGTMSE'
-            WHEN TXN_ENDPOINT = 'BASE'     THEN 'BASE'
-            WHEN TXN_ENDPOINT = 'I4C_NCRP' THEN 'I4C_NCRP'
-            WHEN TXN_ENDPOINT = 'HRMS'     THEN 'HRMS'
-            WHEN TXN_ENDPOINT = 'ATM'      THEN 'ATM'
-        END)
+Hi Sir,
 
-    UNION ALL
+EIS GEN-5 100% -:  Dashboard is working fine, But Dynatrace is entirely dependent on the crons that we build. If our crons stop or fail, Dynatrace will not display any data at all.
+EIS Service Wise -:  Dashboard is working fine,
+EIS Transaction Endpoint -:  Dashboard is working fine,
 
-    ---------------- DEAF LOGGING ----------------
-    SELECT
-        'DEAF LOGGING',
-        COUNT(1) TOTAL_HITS,
-        ROUND(
-            (SUM(CASE
-                WHEN (SUBSTR(error_code, 3, 3) IN ('002', '014')
-                      OR error_code IN ('SI001','SI007','SI017','SI569','SI570','SI051','SI052','SI111'))
-                 AND error_code <> '00014'
-                THEN 1 ELSE 0
-            END) * 100) / NULLIF(COUNT(1), 0)
-        , 2),
-        'INBOUND'
-    FROM EISAPP.DEAF_LOGGING
-    WHERE CREATION_DATE_TIME >= SYSDATE - INTERVAL '10' MINUTE
 
-    UNION ALL
 
-    ---------------- ATM INBOUND ----------------
-    SELECT
-        'ATM',
-        COUNT(1) TOTAL_HITS,
-        ROUND(
-            (SUM(CASE
-                WHEN RESPONSE_STATUS <> '0'
-                THEN 1 ELSE 0
-            END) * 100) / NULLIF(COUNT(1), 0)
-        , 2),
-        'INBOUND'
-    FROM EISAPP.urn_details_atm
-    WHERE REQUEST_DATE_TIME >= SYSDATE - INTERVAL '10' MINUTE
-)
----------------- FINAL OUTPUT ----------------
-SELECT
-    SM.SERVICE AS CRITICAL_SERVICES,
-    CASE WHEN NVL(D.TOTAL_HITS, 0) > 0 THEN 'YES' ELSE 'NO' END HITS_OBSERVED,
-    NVL(D.TD_PERCENT, 0) TD_PERCENT,
-    SM.TYPE
-FROM SERVICE_MASTER SM
-LEFT JOIN DATA D
-    ON  SM.SERVICE = D.SERVICE
-    AND SM.TYPE    = D.TYPE;
+Dear sir,
+
+Compliance Monitoring - Script shared with the team and  Dashboard still need to be created.
+
+EIS Port Monitoring - Dashboard is working fine, need to add some features like last cache hit, last broker restart  and show some alert when established connection crosses the 100 connections marks, some of the data is mismatch so need to change some of the constraint in total connections, established, time wait, close wait. 
+
+ MQ Monitoring - Data is available but it need to be server wise segregated, currently it is not feasible  for the monitoring purpose.
+
+PR/DR Sync - Not integrated yet. 
+
+API Workload Monitoring - Not Integrated yet.
+
