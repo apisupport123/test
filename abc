@@ -1,345 +1,51 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
-<%@ page import="java.io.*" %>
-<%@ page import="java.net.*" %>
-<%@ page import="java.util.*" %>
-<%@ page import="java.util.logging.*" %>
-<%@ page import="java.nio.charset.StandardCharsets" %>
-<%!
-    // ============================================================
-    //  CONFIG — Windows paths (Linux ke liye niche comment dekho)
-    // ============================================================
-    private static final String BASE_DIR =
-        "C:\\Users\\saqib-r-momin\\Documents\\coding\\dynatrace\\data_ingestion";
-    // Linux: "/home/saqib-r-momin/Documents/coding/dynatrace/data_ingestion"
+HTTP Status 500 – Internal Server Error
+Type Exception Report
 
-    private static final String LOG_FILE_PATH = BASE_DIR + "\\data_ingest.log";
-    // Linux: BASE_DIR + "/data_ingest.log"
+Message Unable to compile class for JSP:
 
-    private static final String DYNATRACE_URL = "http://localhost:14499/metrics/ingest";
+Description The server encountered an unexpected condition that prevented it from fulfilling the request.
 
-    // Ek static Logger setup (script ke logging.basicConfig jaisa)
-    private static final Logger LOGGER = Logger.getLogger("ComplianceIngest");
-    static {
-        try {
-            LOGGER.setUseParentHandlers(false);
-            LOGGER.setLevel(Level.INFO);
+Exception
 
-            Formatter fmt = new Formatter() {
-                @Override
-                public String format(LogRecord r) {
-                    return String.format("%1$tF %1$tT - %2$s - %3$s%n",
-                            new Date(r.getMillis()), r.getLevel(), r.getMessage());
-                }
-            };
+org.apache.jasper.JasperException: Unable to compile class for JSP: 
 
-            ConsoleHandler ch = new ConsoleHandler();
-            ch.setFormatter(fmt);
-            ch.setLevel(Level.INFO);
-            LOGGER.addHandler(ch);
+An error occurred at line: [27] in the jsp file: [/jsp/Compliance_ingest.jsp]
+The type Formatter is ambiguous
+24:             LOGGER.setUseParentHandlers(false);
+25:             LOGGER.setLevel(Level.INFO);
+26: 
+27:             Formatter fmt = new Formatter() {
+28:                 @Override
+29:                 public String format(LogRecord r) {
+30:                     return String.format("%1$tF %1$tT - %2$s - %3$s%n",
 
-            FileHandler fh = new FileHandler(LOG_FILE_PATH, true);  // append mode
-            fh.setFormatter(fmt);
-            fh.setLevel(Level.INFO);
-            LOGGER.addHandler(fh);
-        } catch (IOException e) {
-            System.err.println("Logger init failed: " + e.getMessage());
-        }
-    }
 
-    // ============================================================
-    //  execute_command() ka Java equivalent (script mein use nahi
-    //  ho raha tha, but parity ke liye rakha hai)
-    // ============================================================
-    private String executeCommand(String command) throws Exception {
-        ProcessBuilder pb = new ProcessBuilder(command.split("\\s+"));
-        pb.redirectErrorStream(true);
-        Process p = pb.start();
-        BufferedReader r = new BufferedReader(new InputStreamReader(p.getInputStream()));
-        StringBuilder sb = new StringBuilder();
-        String line;
-        while ((line = r.readLine()) != null) sb.append(line).append("\n");
-        p.waitFor();
-        return sb.toString().trim();
-    }
+An error occurred at line: [27] in the jsp file: [/jsp/Compliance_ingest.jsp]
+The type Formatter is ambiguous
+24:             LOGGER.setUseParentHandlers(false);
+25:             LOGGER.setLevel(Level.INFO);
+26: 
+27:             Formatter fmt = new Formatter() {
+28:                 @Override
+29:                 public String format(LogRecord r) {
+30:                     return String.format("%1$tF %1$tT - %2$s - %3$s%n",
 
-    // ============================================================
-    //  ingest_data() — Python function ka direct translation
-    // ============================================================
-    private String ingestData(
-            String ip, String mountPoint, String scriptRun, String uptime,
-            String env, String ram, String cpuCore, String osVersion,
-            String kernelVersion, String kernelUpdate, String aceVersion,
-            String mqVersion, String firewallStatus, String rpmCount,
-            String dshtts, String splunk, String ragent, String referenceId,
-            String systemTime, String eisuserPasswdexp, String rootPasswdexp,
-            String SOCVAPasswdexp, String addmitamPasswdexp, String comvault) {
 
-        StringBuilder resultLog = new StringBuilder();
+Stacktrace:
+	org.apache.jasper.compiler.DefaultErrorHandler.javacError(DefaultErrorHandler.java:70)
+	org.apache.jasper.compiler.ErrorDispatcher.javacError(ErrorDispatcher.java:189)
+	org.apache.jasper.compiler.JDTCompiler.generateClass(JDTCompiler.java:523)
+	org.apache.jasper.compiler.Compiler.compile(Compiler.java:367)
+	org.apache.jasper.compiler.Compiler.compile(Compiler.java:339)
+	org.apache.jasper.compiler.Compiler.compile(Compiler.java:325)
+	org.apache.jasper.JspCompilationContext.compile(JspCompilationContext.java:585)
+	org.apache.jasper.servlet.JspServletWrapper.service(JspServletWrapper.java:368)
+	org.apache.jasper.servlet.JspServlet.serviceJspFile(JspServlet.java:330)
+	org.apache.jasper.servlet.JspServlet.service(JspServlet.java:281)
+	jakarta.servlet.http.HttpServlet.service(HttpServlet.java:710)
+	org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:53)
+	com.action.CORSFilter.doFilter(CORSFilter.java:22)
+	com.action.CORSFilter.doFilter(CORSFilter.java:22)
+Note The full stack trace of the root cause is available in the server logs.
 
-        // Payload banao (Python f-string jaisa)
-        String payload =
-            "eis.compliance.report" +
-            ",ip=\"" + ip + "\"" +
-            ",mount_point=\"" + mountPoint + "\"" +
-            ",script_run=\"" + scriptRun + "\"" +
-            ",uptime=\"" + uptime + "\"" +
-            ",env=\"" + env + "\"" +
-            ",ram=\"" + ram + "\"" +
-            ",cpu_core=\"" + cpuCore + "\"" +
-            ",os_version=\"" + osVersion + "\"" +
-            ",kernel_version=\"" + kernelVersion + "\"" +
-            ",kernel_update=\"" + kernelUpdate + "\"" +
-            ",ace_version=\"" + aceVersion + "\"" +
-            ",mq_version=\"" + mqVersion + "\"" +
-            ",firewall_status=\"" + firewallStatus + "\"" +
-            ",rpm_count=\"" + rpmCount + "\"" +
-            ",dshtts=\"" + dshtts + "\"" +
-            ",splunk=\"" + splunk + "\"" +
-            ",ragent=\"" + ragent + "\"" +
-            ",reference_id=\"" + referenceId + "\"" +
-            ",system_time=\"" + systemTime + "\"" +
-            ",eisuser_passwd_exp=\"" + eisuserPasswdexp + "\"" +
-            ",root_passwd_exp=\"" + rootPasswdexp + "\"" +
-            ",soc_va_passwd_exp=\"" + SOCVAPasswdexp + "\"" +
-            ",addm_itam_passwd_exp=\"" + addmitamPasswdexp + "\"" +
-            ",comvault=\"" + comvault + "\" 1";
-
-        resultLog.append("PAYLOAD: ").append(payload).append("\n");
-
-        HttpURLConnection conn = null;
-        try {
-            URL url = new URL(DYNATRACE_URL);
-            conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestMethod("POST");
-            conn.setRequestProperty("Content-Type", "text/plain; charset=utf-8");
-            conn.setConnectTimeout(5000);
-            conn.setReadTimeout(5000);
-            conn.setDoOutput(true);
-
-            // Body bhejo
-            try (OutputStream os = conn.getOutputStream()) {
-                os.write(payload.getBytes(StandardCharsets.UTF_8));
-            }
-
-            int status = conn.getResponseCode();
-            resultLog.append("HTTP Status: ").append(status).append("\n");
-
-            // Response padho (success ya error stream)
-            InputStream is = (status >= 200 && status < 300)
-                    ? conn.getInputStream() : conn.getErrorStream();
-            StringBuilder respText = new StringBuilder();
-            if (is != null) {
-                BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
-                String l;
-                while ((l = br.readLine()) != null) respText.append(l);
-                br.close();
-            }
-            resultLog.append("Dynatrace Response: ").append(respText).append("\n");
-
-            LOGGER.info("HTTP Status: " + status);
-            LOGGER.info("Dynatrace Response: " + respText);
-
-            if (status == 200 || status == 202) {
-                LOGGER.info("Metric successfully sent to Dynatrace!");
-                resultLog.append("✅ Metric successfully sent to Dynatrace!\n");
-            } else {
-                LOGGER.severe("Metric ingestion failed!");
-                resultLog.append("❌ Metric ingestion failed!\n");
-            }
-
-        } catch (Exception e) {
-            LOGGER.severe("Connection error: " + e.getMessage());
-            resultLog.append("❌ Connection error: ").append(e.getMessage()).append("\n");
-        } finally {
-            if (conn != null) conn.disconnect();
-        }
-
-        return resultLog.toString();
-    }
-%>
-<%
-    // ============================================================
-    //  MAIN BLOCK — Python ke __main__ jaisa
-    // ============================================================
-    String ipParam = request.getParameter("ip");
-    if (ipParam == null) ipParam = "";
-
-    StringBuilder pageOutput = new StringBuilder();
-    String statusMsg;
-    int httpStatus = -1;
-
-    try {
-        if (ipParam.trim().isEmpty()) {
-            throw new Exception("IP parameter missing. ?ip=10.0.0.12 dein.");
-        }
-
-        // File padho: {ip}.txt
-        String dataFile = BASE_DIR + "\\" + ipParam + ".txt";
-        // Linux: BASE_DIR + "/" + ipParam + ".txt"
-
-        File f = new File(dataFile);
-        if (!f.exists()) {
-            throw new FileNotFoundException("Data file nahi mili: " + dataFile);
-        }
-
-        StringBuilder complianceData = new StringBuilder();
-        try (BufferedReader br = new BufferedReader(new FileReader(f))) {
-            String line;
-            while ((line = br.readLine()) != null) {
-                complianceData.append(line);
-                complianceData.append("\n");
-            }
-        }
-
-        // Split by comma (Python ka .split(',') jaisa)
-        String raw = complianceData.toString();
-        // Python ke read().split(',') se match karne ke liye newlines remove karo
-        raw = raw.replace("\r", "").replace("\n", "");
-        String[] parts = raw.split(",", -1);   // -1 => trailing empty bhi rakho
-
-        // Empty fields ko "NA" se replace karo
-        List<String> dataListNew = new ArrayList<>();
-        for (String part : parts) {
-            String val = part.trim();
-            dataListNew.add(val.isEmpty() ? "NA" : val);
-        }
-
-        if (dataListNew.size() < 24) {
-            throw new Exception("File mein 24 fields expected hain, mile: "
-                    + dataListNew.size());
-        }
-
-        // 24 fields unpack karo
-        String ip                    = dataListNew.get(0);
-        String mountPoint            = dataListNew.get(1);
-        String scriptRun             = dataListNew.get(2);
-        String uptime                = dataListNew.get(3);
-        String env                   = dataListNew.get(4);
-        String ram                   = dataListNew.get(5);
-        String cpuCore               = dataListNew.get(6);
-        String osVersion             = dataListNew.get(7);
-        String kernelVersion         = dataListNew.get(8);
-        String kernelUpdate          = dataListNew.get(9);
-        String aceVersion            = dataListNew.get(10);
-        String mqVersion             = dataListNew.get(11);
-        String firewallStatus        = dataListNew.get(12);
-        String rpmCount              = dataListNew.get(13);
-        String dshtts                = dataListNew.get(14);
-        String splunk                = dataListNew.get(15);
-        String ragent                = dataListNew.get(16);
-        String referenceId           = dataListNew.get(17);
-        String systemTime            = dataListNew.get(18);
-        String eisuserPasswdexp      = dataListNew.get(19);
-        String rootPasswdexp         = dataListNew.get(20);
-        String SOCVAPasswdexp        = dataListNew.get(21);
-        String addmitamPasswdexp     = dataListNew.get(22);
-        String comvault              = dataListNew.get(23);
-
-        // Ingest call
-        String ingestResult = ingestData(
-                ip, mountPoint, scriptRun, uptime, env, ram, cpuCore,
-                osVersion, kernelVersion, kernelUpdate, aceVersion,
-                mqVersion, firewallStatus, rpmCount, dshtts, splunk,
-                ragent, referenceId, systemTime, eisuserPasswdexp,
-                rootPasswdexp, SOCVAPasswdexp, addmitamPasswdexp, comvault);
-
-        pageOutput.append(ingestResult);
-        httpStatus = 200;
-        statusMsg = "✅ Ingestion complete";
-
-    } catch (Exception e) {
-        statusMsg = "❌ " + e.getMessage();
-        LOGGER.severe(statusMsg);
-        StringWriter sw = new StringWriter();
-        e.printStackTrace(new PrintWriter(sw));
-        pageOutput.append(sw.toString());
-    }
-
-    // Log file ka tail (browser display ke liye)
-    StringBuilder logTail = new StringBuilder();
-    try {
-        File logFile = new File(LOG_FILE_PATH);
-        if (logFile.exists()) {
-            Deque<String> last = new ArrayDeque<>();
-            try (BufferedReader lr = new BufferedReader(new FileReader(logFile))) {
-                String l;
-                while ((l = lr.readLine()) != null) {
-                    last.addLast(l);
-                    if (last.size() > 200) last.removeFirst();
-                }
-            }
-            for (String s : last) logTail.append(s).append("\n");
-        } else {
-            logTail.append("Log file nahi mili: ").append(LOG_FILE_PATH);
-        }
-    } catch (Exception e) {
-        logTail.append("Log read error: ").append(e.getMessage());
-    }
-%>
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Compliance Ingest (JSP)</title>
-    <style>
-        body{font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#f4f6f8;margin:0;padding:24px;color:#222;}
-        h1{font-size:20px;margin-bottom:8px;}
-        .card{background:#fff;border-radius:10px;padding:16px 20px;box-shadow:0 2px 8px rgba(0,0,0,.08);margin-bottom:20px;}
-        .status{font-weight:600;padding:10px 14px;border-radius:8px;margin-bottom:12px;}
-        .ok{background:#e6f7ea;color:#1a7f37;border:1px solid #b7e4c7;}
-        .err{background:#fdecea;color:#b3261e;border:1px solid #f5c2c0;}
-        pre{background:#0d1117;color:#c9d1d9;padding:14px;border-radius:8px;overflow:auto;max-height:420px;font-size:12.5px;line-height:1.45;white-space:pre-wrap;word-break:break-word;}
-        .meta{font-size:12px;color:#666;margin-bottom:8px;}
-        input[type=text]{padding:8px 10px;border:1px solid #ccc;border-radius:6px;width:220px;}
-        button{padding:8px 14px;border:none;border-radius:6px;background:#2563eb;color:#fff;cursor:pointer;font-weight:600;}
-        button:hover{background:#1d4ed8;}
-        .tabs button{background:#e5e7eb;color:#111;margin-right:6px;}
-        .tabs button.active{background:#2563eb;color:#fff;}
-        .tab-content{display:none;} .tab-content.active{display:block;}
-    </style>
-</head>
-<body>
-    <h1>🔍 Compliance Ingest — Pure JSP (no Python needed)</h1>
-    <p class="meta">
-        OS: <b><%= System.getProperty("os.name") %></b><br/>
-        Data dir: <code><%= BASE_DIR %></code><br/>
-        Log: <code><%= LOG_FILE_PATH %></code><br/>
-        Dynatrace: <code><%= DYNATRACE_URL %></code>
-    </p>
-
-    <form method="get">
-        <label for="ip">Server IP:</label>
-        <input type="text" id="ip" name="ip" value="<%= ipParam %>" placeholder="e.g. 10.0.0.12"/>
-        <button type="submit">▶ Run Ingest</button>
-    </form>
-
-    <div class="status <%= (httpStatus == 200) ? "ok" : "err" %>"><%= statusMsg %></div>
-
-    <div class="tabs">
-        <button class="tab-btn active" data-tab="out">Ingest Result</button>
-        <button class="tab-btn" data-tab="log">Log File (last 200 lines)</button>
-    </div>
-
-    <div class="card">
-        <div id="out" class="tab-content active">
-            <h3>Output</h3>
-            <pre><%= pageOutput.length()==0 ? "(koi output nahi)" : pageOutput.toString().replace("<","&lt;").replace(">","&gt;") %></pre>
-        </div>
-        <div id="log" class="tab-content">
-            <h3>data_ingest.log</h3>
-            <pre><%= logTail.toString().replace("<","&lt;").replace(">","&gt;") %></pre>
-        </div>
-    </div>
-
-    <script>
-        document.querySelectorAll('.tab-btn').forEach(function(btn){
-            btn.addEventListener('click', function(){
-                document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-                document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
-                btn.classList.add('active');
-                document.getElementById(btn.dataset.tab).classList.add('active');
-            });
-        });
-    </script>
-</body>
-</html>
+Apache Tomcat/11.0.13
