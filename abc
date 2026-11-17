@@ -1,1 +1,84 @@
-Dynatrace lacks drill-down functionality in our use case. It does not provide details such as which service/server is impacted, which error code the transaction is failing with, and the live RRN number to check why a particular transaction failed.
+import logging
+import requests
+import subprocess
+
+
+logging.basicConfig(
+level=logging.INFO,
+format="%(asctime)s - %(levelname)s - %(message)s",
+handlers=[
+logging.StreamHandler(),
+logging.FileHandler(
+"/home/saqib-r-momin/Documents/coding/dynatrace/data_ingestion/data_ingest.log"
+),
+],
+)
+
+def execute_command(command):
+
+    result = subprocess.run(
+    command.split(),
+    capture_output=True,
+    text=True,
+    check=True
+    )
+
+    return result.stdout.strip()
+
+
+def ingest_data(ip,mount_point,script_run,uptime,env,ram,cpu_core,os_version,kernel_version,kernel_update,ace_version,mq_version,firewall_status,rpm_count,dshtts,splunk,ragent,reference_id,system_time,eisuserPasswdexp,rootPasswdexp,SOCVAPasswdexp,addmitamPasswdexp,comvault):
+
+    url = "http://localhost:14499/metrics/ingest"
+    headers = {
+    "Content-Type": "text/plain; charset=utf-8"
+    }
+
+    # Metric with two dimensions
+    payload = f'eis.compliance.report,ip="{ip}",mount_point="{mount_point}",script_run="{script_run}",uptime="{uptime}",env="{env}",ram="{ram}",cpu_core="{cpu_core}",os_version="{os_version}",kernel_version="{kernel_version}",kernel_update="{kernel_update}",ace_version="{ace_version}",mq_version="{mq_version}",firewall_status="{firewall_status}",rpm_count="{rpm_count}",dshtts="{dshtts}",splunk="{splunk}",ragent="{ragent}",reference_id="{reference_id}",system_time="{system_time}",eisuser_passwd_exp="{eisuserPasswdexp}",root_passwd_exp="{rootPasswdexp}",soc_va_passwd_exp="{SOCVAPasswdexp}",addm_itam_passwd_exp="{addmitamPasswdexp}",comvault="{comvault}" 1'
+    print(payload)
+    # exit()
+    try:
+        response = requests.post(
+        url,
+        headers=headers,
+        data=payload,
+        timeout=5
+        )
+
+        logging.info("HTTP Status: %s", response.status_code)
+        logging.info("Dynatrace Response: %s", response.text)
+
+        if response.status_code in [200, 202]:
+            logging.info("Metric successfully sent to Dynatrace!")
+        else:
+            logging.error("Metric ingestion failed!")
+
+    except requests.exceptions.RequestException as e:
+        logging.error("Connection error: %s", e)
+
+
+
+
+
+if __name__ == "__main__":
+
+    
+
+    # # executing command
+    # output=execute_command("hostname -i")
+    # print(output)
+    ip_addr=""
+    with open(f"/home/saqib-r-momin/Documents/coding/dynatrace/data_ingestion/{ip_addr}.txt","r") as f:
+            compliance_data=f.read()
+
+    data_list=compliance_data.split(',')
+    data_list_new=[]
+    for ind in data_list:
+        if len(ind) == 0:
+            ind = "NA"
+            data_list_new.append(ind)
+        else:
+            data_list_new.append(ind)
+
+    ip,mount_point,script_run,uptime,env,ram,cpu_core,os_version,kernel_version,kernel_update,ace_version,mq_version,firewall_status,rpm_count,dshtts,splunk,ragent,reference_id,system_time,eisuserPasswdexp,rootPasswdexp,SOCVAPasswdexp,addmitamPasswdexp,comvault=data_list_new
+    ingest_data(ip,mount_point,script_run,uptime,env,ram,cpu_core,os_version,kernel_version,kernel_update,ace_version,mq_version,firewall_status,rpm_count,dshtts,splunk,ragent,reference_id,system_time,eisuserPasswdexp,rootPasswdexp,SOCVAPasswdexp,addmitamPasswdexp,comvault)
