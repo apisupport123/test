@@ -1,84 +1,152 @@
-import logging
-import requests
-import subprocess
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ page import="java.io.*" %>
+<%@ page import="java.util.*" %>
+<%
+    // ====== CONFIG ======
+    String SCRIPT_PATH = "/home/saqib-r-momin/Documents/coding/dynatrace/data_ingestion/ingest_script.py";
+    String PYTHON_BIN  = "python3";
+    String LOG_FILE    = "/home/saqib-r-momin/Documents/coding/dynatrace/data_ingestion/data_ingest.log";
 
+    // Optional: ?ip=10.0.0.1 query param se IP pass kar sakte hain
+    String ipParam = request.getParameter("ip");
+    if (ipParam == null) ipParam = "";
 
-logging.basicConfig(
-level=logging.INFO,
-format="%(asctime)s - %(levelname)s - %(message)s",
-handlers=[
-logging.StreamHandler(),
-logging.FileHandler(
-"/home/saqib-r-momin/Documents/coding/dynatrace/data_ingestion/data_ingest.log"
-),
-],
-)
+    StringBuilder output = new StringBuilder();
+    int exitCode = -1;
+    String statusMsg = "";
 
-def execute_command(command):
+    try {
+        // ====== Script run karo ======
+        List<String> cmd = new ArrayList<>();
+        cmd.add(PYTHON_BIN);
+        cmd.add(SCRIPT_PATH);
+        // agar aap script ko argument se IP dena chahte hain to:
+        if (!ipParam.isEmpty()) cmd.add(ipParam);
 
-    result = subprocess.run(
-    command.split(),
-    capture_output=True,
-    text=True,
-    check=True
-    )
+        ProcessBuilder pb = new ProcessBuilder(cmd);
+        pb.redirectErrorStream(true);          // stderr ko stdout mein merge karo
+        pb.directory(new File("/home/saqib-r-momin/Documents/coding/dynatrace/data_ingestion"));
 
-    return result.stdout.strip()
+        // Environment variable pass karna ho to:
+        // pb.environment().put("COMPLIANCE_IP", ipParam);
 
+        Process process = pb.start();
 
-def ingest_data(ip,mount_point,script_run,uptime,env,ram,cpu_core,os_version,kernel_version,kernel_update,ace_version,mq_version,firewall_status,rpm_count,dshtts,splunk,ragent,reference_id,system_time,eisuserPasswdexp,rootPasswdexp,SOCVAPasswdexp,addmitamPasswdexp,comvault):
+        // Output read karo
+        BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+        String line;
+        while ((line = reader.readLine()) != null) {
+            output.append(line).append("\n");
+        }
 
-    url = "http://localhost:14499/metrics/ingest"
-    headers = {
-    "Content-Type": "text/plain; charset=utf-8"
+        exitCode = process.waitFor();
+        statusMsg = (exitCode == 0)
+                ? "✅ Script successfully chali (exit code 0)"
+                : "❌ Script fail hui (exit code " + exitCode + ")";
+
+    } catch (Exception e) {
+        statusMsg = "❌ Exception: " + e.getMessage();
+        StringWriter sw = new StringWriter();
+        e.printStackTrace(new PrintWriter(sw));
+        output.append(sw.toString());
     }
 
-    # Metric with two dimensions
-    payload = f'eis.compliance.report,ip="{ip}",mount_point="{mount_point}",script_run="{script_run}",uptime="{uptime}",env="{env}",ram="{ram}",cpu_core="{cpu_core}",os_version="{os_version}",kernel_version="{kernel_version}",kernel_update="{kernel_update}",ace_version="{ace_version}",mq_version="{mq_version}",firewall_status="{firewall_status}",rpm_count="{rpm_count}",dshtts="{dshtts}",splunk="{splunk}",ragent="{ragent}",reference_id="{reference_id}",system_time="{system_time}",eisuser_passwd_exp="{eisuserPasswdexp}",root_passwd_exp="{rootPasswdexp}",soc_va_passwd_exp="{SOCVAPasswdexp}",addm_itam_passwd_exp="{addmitamPasswdexp}",comvault="{comvault}" 1'
-    print(payload)
-    # exit()
-    try:
-        response = requests.post(
-        url,
-        headers=headers,
-        data=payload,
-        timeout=5
-        )
+    // ====== Log file ka last 200 lines padho ======
+    StringBuilder logTail = new StringBuilder();
+    try {
+        File logFile = new File(LOG_FILE);
+        if (logFile.exists()) {
+            Deque<String> lastLines = new ArrayDeque<>();
+            BufferedReader lr = new BufferedReader(new FileReader(logFile));
+            String l;
+            while ((l = lr.readLine()) != null) {
+                lastLines.addLast(l);
+                if (lastLines.size() > 200) lastLines.removeFirst();
+            }
+            lr.close();
+            for (String s : lastLines) logTail.append(s).append("\n");
+        } else {
+            logTail.append("Log file nahi mili: ").append(LOG_FILE);
+        }
+    } catch (Exception e) {
+        logTail.append("Log read error: ").append(e.getMessage());
+    }
+%>
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Compliance Ingest Runner</title>
+    <style>
+        body { font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+               background:#f4f6f8; margin:0; padding:24px; color:#222; }
+        h1 { font-size:20px; margin-bottom:8px; }
+        .card { background:#fff; border-radius:10px; padding:16px 20px;
+                box-shadow:0 2px 8px rgba(0,0,0,.08); margin-bottom:20px; }
+        .status { font-weight:600; padding:10px 14px; border-radius:8px; margin-bottom:12px; }
+        .ok  { background:#e6f7ea; color:#1a7f37; border:1px solid #b7e4c7; }
+        .err { background:#fdecea; color:#b3261e; border:1px solid #f5c2c0; }
+        pre { background:#0d1117; color:#c9d1d9; padding:14px; border-radius:8px;
+              overflow:auto; max-height:420px; font-size:12.5px; line-height:1.45;
+              white-space:pre-wrap; word-break:break-word; }
+        .meta { font-size:12px; color:#666; margin-bottom:8px; }
+        form { margin-bottom:16px; }
+        input[type=text] { padding:8px 10px; border:1px solid #ccc; border-radius:6px; width:220px; }
+        button { padding:8px 14px; border:none; border-radius:6px;
+                 background:#2563eb; color:#fff; cursor:pointer; font-weight:600; }
+        button:hover { background:#1d4ed8; }
+        .tabs button { background:#e5e7eb; color:#111; margin-right:6px; }
+        .tabs button.active { background:#2563eb; color:#fff; }
+        .tab-content { display:none; }
+        .tab-content.active { display:block; }
+    </style>
+</head>
+<body>
 
-        logging.info("HTTP Status: %s", response.status_code)
-        logging.info("Dynatrace Response: %s", response.text)
+    <h1>🔍 Compliance Ingest — Output Viewer</h1>
+    <p class="meta">
+        Script: <code><%= SCRIPT_PATH %></code><br/>
+        Log: <code><%= LOG_FILE %></code>
+    </p>
 
-        if response.status_code in [200, 202]:
-            logging.info("Metric successfully sent to Dynatrace!")
-        else:
-            logging.error("Metric ingestion failed!")
+    <form method="get">
+        <label for="ip">Server IP (optional):</label>
+        <input type="text" id="ip" name="ip" value="<%= ipParam %>" placeholder="e.g. 10.0.0.12"/>
+        <button type="submit">▶ Run Script</button>
+    </form>
 
-    except requests.exceptions.RequestException as e:
-        logging.error("Connection error: %s", e)
+    <div class="status <%= exitCode == 0 ? "ok" : "err" %>">
+        <%= statusMsg %>
+    </div>
 
+    <div class="tabs">
+        <button class="tab-btn active" data-tab="out">Script Output</button>
+        <button class="tab-btn" data-tab="log">Log File (last 200 lines)</button>
+    </div>
 
+    <div class="card">
+        <div id="out" class="tab-content active">
+            <h3>Stdout / Stderr</h3>
+            <pre><%= output.length() == 0 ? "(koi output nahi)" :
+                    output.toString().replace("<","&lt;").replace(">","&gt;") %></pre>
+        </div>
 
+        <div id="log" class="tab-content">
+            <h3>data_ingest.log</h3>
+            <pre><%= logTail.toString().replace("<","&lt;").replace(">","&gt;") %></pre>
+        </div>
+    </div>
 
+    <script>
+        document.querySelectorAll('.tab-btn').forEach(function(btn){
+            btn.addEventListener('click', function(){
+                document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById(btn.dataset.tab).classList.add('active');
+            });
+        });
+    </script>
 
-if __name__ == "__main__":
-
-    
-
-    # # executing command
-    # output=execute_command("hostname -i")
-    # print(output)
-    ip_addr=""
-    with open(f"/home/saqib-r-momin/Documents/coding/dynatrace/data_ingestion/{ip_addr}.txt","r") as f:
-            compliance_data=f.read()
-
-    data_list=compliance_data.split(',')
-    data_list_new=[]
-    for ind in data_list:
-        if len(ind) == 0:
-            ind = "NA"
-            data_list_new.append(ind)
-        else:
-            data_list_new.append(ind)
-
-    ip,mount_point,script_run,uptime,env,ram,cpu_core,os_version,kernel_version,kernel_update,ace_version,mq_version,firewall_status,rpm_count,dshtts,splunk,ragent,reference_id,system_time,eisuserPasswdexp,rootPasswdexp,SOCVAPasswdexp,addmitamPasswdexp,comvault=data_list_new
-    ingest_data(ip,mount_point,script_run,uptime,env,ram,cpu_core,os_version,kernel_version,kernel_update,ace_version,mq_version,firewall_status,rpm_count,dshtts,splunk,ragent,reference_id,system_time,eisuserPasswdexp,rootPasswdexp,SOCVAPasswdexp,addmitamPasswdexp,comvault)
+</body>
+</html>
