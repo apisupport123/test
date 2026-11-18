@@ -36,16 +36,18 @@ if ("fetchSourceStatus".equals(action)) {
         conn = DBUtilityAuto.getIIBDBConnection();
         String partition = getPartition();
 
+        // SAME GROUP BY, COUNT(*) added — no extra scan cost
         String query =
             "WITH FOUND_SOURCES AS ( " +
-            "   SELECT /*+ parallel(04) */ a.source_id " +
+            "   SELECT /*+ parallel(04) */ a.source_id, COUNT(*) AS hit_count " +
             "   FROM eisapp.api_log PARTITION(" + partition + ") a " +
             "   WHERE a.source_id IN ('AK','CA','CC','CK','CR','FA','FS','I4','IN','KA','MB','NB','ON','RL','SA','SK','SQ','UP','WB','Y2') " +
             "   AND a.request_date_time >= SYSDATE - INTERVAL '10' MINUTE " +
             "   GROUP BY a.source_id " +
             ") " +
             "SELECT s.source_id, " +
-            "CASE WHEN f.source_id IS NOT NULL THEN 'Y' ELSE 'N' END AS flag " +
+            "CASE WHEN f.source_id IS NOT NULL THEN 'Y' ELSE 'N' END AS flag, " +
+            "NVL(f.hit_count, 0) AS hit_count " +
             "FROM ( " +
             "   SELECT 'SA' AS source_id FROM DUAL UNION ALL " +
             "   SELECT 'FS' FROM DUAL UNION ALL " +
@@ -72,7 +74,7 @@ if ("fetchSourceStatus".equals(action)) {
             "ORDER BY s.source_id";
 
         stmt = conn.createStatement();
-        stmt.setQueryTimeout(1200);
+        stmt.setQueryTimeout(60);   // 1200s -> 60s (slow query jaldi pakdo)
         rs = stmt.executeQuery(query);
 
         json.append("[");
@@ -81,7 +83,8 @@ if ("fetchSourceStatus".equals(action)) {
             if (!first) json.append(",");
             json.append("{");
             json.append("\"source_id\":\"").append(rs.getString("source_id")).append("\",");
-            json.append("\"flag\":\"").append(rs.getString("flag")).append("\"");
+            json.append("\"flag\":\"").append(rs.getString("flag")).append("\",");
+            json.append("\"hits\":").append(rs.getLong("hit_count"));
             json.append("}");
             first = false;
         }
@@ -1064,7 +1067,7 @@ function fetchData() {
 }
 
 /* ============================================================
-   RENDER SOURCES
+   RENDER SOURCES  (hits ab REAL DB COUNT se aata hai)
    ============================================================ */
 function renderSources(data) {
   var c = document.getElementById('sourcesGrid');
@@ -1085,13 +1088,17 @@ function renderSources(data) {
     if (isActive) active++;
     var cls = isActive ? 'active' : 'inactive';
     var status = isActive ? 'ONLINE' : 'OFFLINE';
-    var hits = isActive ? Math.floor(Math.random() * 50 + 10) : 0;
+
+    // REAL hit count from DB (0 if inactive)
+    var hits = (typeof item.hits === 'number') ? item.hits : 0;
 
     html += '<div class="source-card ' + cls + '">' +
       '<span class="source-status-indicator"></span>' +
       '<div class="source-code">' + item.source_id + '</div>' +
       '<div class="source-status-text">' + status + '</div>' +
-      '<span class="source-hits">' + (isActive ? '⚡ ' + hits : '⏸') + '</span>' +
+      '<span class="source-hits">' +
+        (isActive ? '⚡ ' + hits + ' hits' : '⏸ 0 hits') +
+      '</span>' +
       '</div>';
   }
   c.innerHTML = html;
