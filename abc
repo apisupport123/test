@@ -2,6 +2,9 @@
 <%@ page import="java.sql.*, java.util.*, java.text.*, java.util.concurrent.*, java.util.concurrent.atomic.*" %>
 <%@ page import="com.jdbc.DBUtilityAuto" %>
 <%!
+// ============================================================
+// PARTITION HELPER
+// ============================================================
 String getPartition() {
     Calendar cal = Calendar.getInstance();
     String month = new SimpleDateFormat("MMM", Locale.US).format(cal.getTime()).toUpperCase();
@@ -10,18 +13,29 @@ String getPartition() {
 }
 
 // ============================================================
-// CACHE + BACKGROUND REFRESHER
+// FLAG CACHE (fast — DISTINCT, no COUNT)
 // ============================================================
 static final Object CACHE_LOCK = new Object();
-static volatile String CACHE_JSON = "[{\"source_id\":\"SA\",\"flag\":\"N\"}]"; // placeholder
+static volatile String CACHE_JSON = "[{\"source_id\":\"SA\",\"flag\":\"N\"}]";
 static volatile long CACHE_TS = 0L;
 static volatile boolean REFRESHING = false;
 static final AtomicBoolean SCHEDULER_STARTED = new AtomicBoolean(false);
-static final long REFRESH_INTERVAL_MS = 5 * 60 * 1000L; // 5 min background refresh
-static final long QUERY_TIMEOUT_SEC = 360;              // 6 min query timeout
+static final long REFRESH_INTERVAL_MS = 5 * 60 * 1000L;  // 5 min
+static final long QUERY_TIMEOUT_SEC = 360;               // 6 min
 
+// ============================================================
+// HITS CACHE (slow — COUNT(*), alag thread)
+// ============================================================
+static volatile String HITS_CACHE_JSON = "{}";
+static volatile long HITS_CACHE_TS = 0L;
+static volatile boolean HITS_REFRESHING = false;
+static final long HITS_REFRESH_INTERVAL_MS = 10 * 60 * 1000L; // 10 min
+
+// ============================================================
+// FLAG REFRESH (background)
+// ============================================================
 void refreshCacheAsync() {
-    if (REFRESHING) return; // already chal raha hai
+    if (REFRESHING) return;
     REFRESHING = true;
     Thread t = new Thread(new Runnable() {
         public void run() {
@@ -31,6 +45,7 @@ void refreshCacheAsync() {
             try {
                 conn = DBUtilityAuto.getIIBDBConnection();
                 String partition = getPartition();
+
                 String query =
                     "WITH FOUND_SOURCES AS ( " +
                     "   SELECT /*+ INDEX(a idx_api_log_src_dt) */ DISTINCT a.source_id " +
@@ -86,7 +101,6 @@ void refreshCacheAsync() {
                 CACHE_TS = System.currentTimeMillis();
 
             } catch (Exception e) {
-                // fail ho gaya, purana cache serve hota rahega
                 e.printStackTrace();
             } finally {
                 try { if (rs != null) rs.close(); } catch(Exception e) {}
@@ -100,21 +114,81 @@ void refreshCacheAsync() {
     t.start();
 }
 
+// ============================================================
+// HITS REFRESH (background — slow COUNT query)
+// ============================================================
+void refreshHitsAsync() {
+    if (HITS_REFRESHING) return;
+    HITS_REFRESHING = true;
+    Thread t = new Thread(new Runnable() {
+        public void run() {
+            Connection conn = null;
+            Statement stmt = null;
+            ResultSet rs = null;
+            try {
+                conn = DBUtilityAuto.getIIBDBConnection();
+                String partition = getPartition();
+
+                String query =
+                    "SELECT /*+ INDEX(a idx_api_log_src_dt) */ a.source_id, COUNT(*) AS hit_count " +
+                    "FROM eisapp.api_log PARTITION(" + partition + ") a " +
+                    "WHERE a.source_id IN ('AK','CA','CC','CK','CR','FA','FS','I4','IN','KA','MB','NB','ON','RL','SA','SK','SQ','UP','WB','Y2') " +
+                    "AND a.request_date_time >= SYSDATE - INTERVAL '10' MINUTE " +
+                    "GROUP BY a.source_id";
+
+                stmt = conn.createStatement();
+                stmt.setQueryTimeout((int) QUERY_TIMEOUT_SEC);
+                rs = stmt.executeQuery(query);
+
+                StringBuilder json = new StringBuilder();
+                json.append("{");
+                boolean first = true;
+                while (rs.next()) {
+                    if (!first) json.append(",");
+                    json.append("\"").append(rs.getString("source_id")).append("\":")
+                        .append(rs.getLong("hit_count"));
+                    first = false;
+                }
+                json.append("}");
+
+                HITS_CACHE_JSON = json.toString();
+                HITS_CACHE_TS = System.currentTimeMillis();
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                try { if (rs != null) rs.close(); } catch(Exception e) {}
+                try { if (stmt != null) stmt.close(); } catch(Exception e) {}
+                try { if (conn != null) conn.close(); } catch(Exception e) {}
+                HITS_REFRESHING = false;
+            }
+        }
+    });
+    t.setDaemon(true);
+    t.start();
+}
+
+// ============================================================
+// SCHEDULER — dono threads
+// ============================================================
 void startScheduler() {
     if (SCHEDULER_STARTED.compareAndSet(false, true)) {
-        ScheduledExecutorService sched = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
+        ScheduledExecutorService sched = Executors.newScheduledThreadPool(2, new ThreadFactory() {
             public Thread newThread(Runnable r) {
                 Thread th = new Thread(r, "source-monitor-refresher");
                 th.setDaemon(true);
                 return th;
             }
         });
+        // Flag: har 5 min
         sched.scheduleAtFixedRate(new Runnable() {
-            public void run() {
-                // har 5 min pe background refresh
-                refreshCacheAsync();
-            }
+            public void run() { refreshCacheAsync(); }
         }, 0, REFRESH_INTERVAL_MS, TimeUnit.MILLISECONDS);
+
+        // Hits: pehli baar 30s baad, phir har 10 min
+        sched.scheduleAtFixedRate(new Runnable() {
+            public void run() { refreshHitsAsync(); }
+        }, 30, HITS_REFRESH_INTERVAL_MS, TimeUnit.MILLISECONDS);
     }
 }
 %>
@@ -128,25 +202,34 @@ if (__role == null || __role.trim().isEmpty()) {
     return;
 }
 
-// Scheduler pehli baar start karo
 startScheduler();
 
 // ============================================================
-// AJAX ENDPOINT — INSTANT response (cache se), background refresh
+// AJAX ENDPOINTS
 // ============================================================
 String action = request.getParameter("action");
 
+// ---------- FLAG ENDPOINT (fast) ----------
 if ("fetchSourceStatus".equals(action)) {
     response.setContentType("application/json");
     response.setHeader("Cache-Control", "no-cache");
 
-    // Agar cache bilkul khaali hai (server just started), to ek async refresh trigger karo
-    if (CACHE_TS == 0L) {
-        refreshCacheAsync();
-    }
+    if (CACHE_TS == 0L) refreshCacheAsync();
 
-    // INSTANT cached response bhejo — chahe purana ho
+    response.setHeader("X-Cache-Timestamp", String.valueOf(CACHE_TS));
     out.print(CACHE_JSON);
+    return;
+}
+
+// ---------- HITS ENDPOINT (slow, cached) ----------
+if ("fetchHits".equals(action)) {
+    response.setContentType("application/json");
+    response.setHeader("Cache-Control", "no-cache");
+
+    if (HITS_CACHE_TS == 0L) refreshHitsAsync();
+
+    response.setHeader("X-Cache-Timestamp", String.valueOf(HITS_CACHE_TS));
+    out.print(HITS_CACHE_JSON);
     return;
 }
 %>
@@ -172,7 +255,10 @@ if ("fetchSourceStatus".equals(action)) {
   --topnav-h:64px;
   --green:#10B981;
   --blue:#3B82F6;
+  --purple:#8B5CF6;
+  --pink:#EC4899;
   --amber:#F59E0B;
+  --cyan:#06B6D4;
   --red:#EF4444;
 }
 html[data-theme="dark"]{
@@ -194,124 +280,344 @@ body{
 }
 a{color:inherit;text-decoration:none}
 h1,h2,h3,h4,h5,h6,strong,b{font-weight:800;letter-spacing:-.3px}
-.icon-svg{width:16px;height:16px;display:inline-block;flex-shrink:0;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;}
-.new-wrapper{margin-left:var(--sidebar-w);padding-top:var(--topnav-h);transition:margin-left .3s cubic-bezier(.4,0,.2,1);min-height:100vh;}
+.icon-svg{
+  width:16px;height:16px;
+  display:inline-block;flex-shrink:0;
+  stroke:currentColor;fill:none;
+  stroke-width:2.2;
+  stroke-linecap:round;stroke-linejoin:round;
+}
+.new-wrapper{
+  margin-left:var(--sidebar-w);
+  padding-top:var(--topnav-h);
+  transition:margin-left .3s cubic-bezier(.4,0,.2,1);
+  min-height:100vh;
+}
 html.sb-collapsed .new-wrapper{margin-left:0}
-.dash-wrap{max-width:1500px;margin:0 auto;padding:28px 28px 60px;}
+.dash-wrap{
+  max-width:1500px;
+  margin:0 auto;
+  padding:28px 28px 60px;
+}
 
-.page-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:24px;flex-wrap:wrap;}
+/* ============ PAGE HEAD ============ */
+.page-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:16px;
+  margin-bottom:24px;
+  flex-wrap:wrap;
+}
 .page-head .ttl-wrap{flex:1;min-width:260px;}
-.page-head .ttl{display:flex;align-items:center;gap:14px;font-size:1.65rem;font-weight:900;letter-spacing:-.6px;line-height:1.2;margin-bottom:6px;}
-.page-head .ttl .ttl-icon{width:48px;height:48px;display:grid;place-items:center;background:linear-gradient(135deg,var(--brand),var(--brand-2));color:#fff;border-radius:14px;font-size:1.2rem;flex-shrink:0;box-shadow:0 8px 22px -6px var(--brand-glow);}
+.page-head .ttl{
+  display:flex;align-items:center;gap:14px;
+  font-size:1.65rem;font-weight:900;letter-spacing:-.6px;
+  line-height:1.2;margin-bottom:6px;
+}
+.page-head .ttl .ttl-icon{
+  width:48px;height:48px;display:grid;place-items:center;
+  background:linear-gradient(135deg,var(--brand),var(--brand-2));
+  color:#fff;border-radius:14px;font-size:1.2rem;flex-shrink:0;
+  box-shadow:0 8px 22px -6px var(--brand-glow);
+}
 .page-head .ttl .ttl-icon .icon-svg{width:22px;height:22px;stroke-width:2.4;}
-.page-head .sub{color:var(--muted);font-size:.85rem;margin-left:62px;font-weight:600;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
-.page-head .sub .partition-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;background:var(--card);border:1px solid var(--line);border-radius:999px;font-family:'JetBrains Mono',Consolas,monospace;font-size:.72rem;font-weight:800;color:var(--brand);letter-spacing:.3px;}
+.page-head .sub{
+  color:var(--muted);font-size:.85rem;margin-left:62px;
+  font-weight:600;display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+}
+.page-head .sub .partition-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:4px 12px;background:var(--card);border:1px solid var(--line);
+  border-radius:999px;font-family:'JetBrains Mono',Consolas,monospace;
+  font-size:.72rem;font-weight:800;color:var(--brand);letter-spacing:.3px;
+}
 
+/* ============ HEADER ACTIONS ============ */
 .head-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
-.live-badge{display:flex;align-items:center;gap:8px;padding:10px 16px;background:var(--card);border:1px solid var(--line);border-radius:12px;font-size:.72rem;font-weight:800;color:var(--green);text-transform:uppercase;letter-spacing:.5px;}
-.live-badge .dot{width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulseDot 1.5s ease-in-out infinite;box-shadow:0 0 10px var(--green);}
+.data-age-badge{
+  display:flex;align-items:center;gap:8px;
+  padding:10px 16px;background:var(--card);border:1px solid var(--line);
+  border-radius:12px;font-size:.72rem;font-weight:800;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.4px;transition:all .3s ease;
+}
+.data-age-badge .icon-svg{width:14px;height:14px;stroke-width:2.4;}
+.data-age-badge b{font-family:'JetBrains Mono',Consolas,monospace;letter-spacing:-.2px;}
+.data-age-badge.fresh{color:var(--green);border-color:rgba(16,185,129,.3);background:rgba(16,185,129,.06);}
+.data-age-badge.warm{color:var(--amber);border-color:rgba(245,158,11,.3);background:rgba(245,158,11,.06);}
+.data-age-badge.stale{color:var(--red);border-color:rgba(239,68,68,.3);background:rgba(239,68,68,.06);}
+
+.live-badge{
+  display:flex;align-items:center;gap:8px;padding:10px 16px;
+  background:var(--card);border:1px solid var(--line);border-radius:12px;
+  font-size:.72rem;font-weight:800;color:var(--green);
+  text-transform:uppercase;letter-spacing:.5px;
+}
+.live-badge .dot{
+  width:8px;height:8px;border-radius:50%;background:var(--green);
+  animation:pulseDot 1.5s ease-in-out infinite;box-shadow:0 0 10px var(--green);
+}
 @keyframes pulseDot{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.4;transform:scale(.85);}}
 
-.timer-badge{display:flex;align-items:center;gap:10px;padding:10px 16px;background:var(--card);border:1px solid var(--line);border-radius:12px;}
+.timer-badge{
+  display:flex;align-items:center;gap:10px;padding:10px 16px;
+  background:var(--card);border:1px solid var(--line);border-radius:12px;
+}
 .timer-badge .icon-svg{color:var(--brand);width:16px;height:16px;}
-.timer-badge .time{font-family:'JetBrains Mono',Consolas,monospace;font-size:.95rem;font-weight:800;color:var(--ink);letter-spacing:-.3px;font-variant-numeric:tabular-nums;}
-.timer-badge .lbl{font-size:.65rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px;}
+.timer-badge .time{
+  font-family:'JetBrains Mono',Consolas,monospace;font-size:.95rem;
+  font-weight:800;color:var(--ink);letter-spacing:-.3px;
+  font-variant-numeric:tabular-nums;
+}
+.timer-badge .lbl{
+  font-size:.65rem;color:var(--muted);font-weight:700;
+  text-transform:uppercase;letter-spacing:.4px;
+}
 
+/* ============ STATS ROW ============ */
 .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;}
-.stat-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;display:flex;align-items:center;gap:14px;transition:all .25s ease;}
-.stat-card:hover{transform:translateY(-3px);box-shadow:0 12px 32px -10px rgba(0,0,0,.15);border-color:var(--brand);}
+.stat-card{
+  background:var(--card);border:1px solid var(--line);border-radius:16px;
+  padding:18px;display:flex;align-items:center;gap:14px;transition:all .25s ease;
+}
+.stat-card:hover{
+  transform:translateY(-3px);box-shadow:0 12px 32px -10px rgba(0,0,0,.15);
+  border-color:var(--brand);
+}
 .stat-card .sicon{width:46px;height:46px;border-radius:12px;display:grid;place-items:center;flex-shrink:0;}
 .stat-card .sicon .icon-svg{width:20px;height:20px;stroke-width:2.4;}
 .stat-card .stext{flex:1;min-width:0;}
-.stat-card .snum{font-size:1.4rem;font-weight:900;letter-spacing:-.6px;line-height:1;color:var(--ink);display:flex;align-items:baseline;gap:4px;}
+.stat-card .snum{
+  font-size:1.4rem;font-weight:900;letter-spacing:-.6px;line-height:1;
+  color:var(--ink);display:flex;align-items:baseline;gap:4px;
+}
 .stat-card .snum small{font-size:.75rem;font-weight:700;color:var(--muted);}
-.stat-card .slabel{font-size:.72rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-top:3px;}
+.stat-card .slabel{
+  font-size:.72rem;color:var(--muted);font-weight:700;
+  text-transform:uppercase;letter-spacing:.4px;margin-top:3px;
+}
 .stat-card.s-green .sicon{background:rgba(16,185,129,.12);color:var(--green);}
 .stat-card.s-red .sicon{background:rgba(239,68,68,.12);color:var(--red);}
 .stat-card.s-blue .sicon{background:rgba(59,130,246,.12);color:var(--blue);}
 .stat-card.s-amber .sicon{background:rgba(245,158,11,.12);color:var(--amber);}
 
-.monitor-main{display:grid;grid-template-columns:1fr 340px;gap:16px;min-height:600px;margin-bottom:24px;}
-.panel{background:var(--card);border:1px solid var(--line);border-radius:20px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.03);}
-.panel-header{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;}
-.panel-header .panel-title{display:flex;align-items:center;gap:10px;font-size:.85rem;font-weight:900;text-transform:uppercase;letter-spacing:.8px;color:var(--ink);}
+/* ============ MAIN LAYOUT ============ */
+.monitor-main{
+  display:grid;grid-template-columns:1fr 340px;gap:16px;
+  min-height:600px;margin-bottom:24px;
+}
+.panel{
+  background:var(--card);border:1px solid var(--line);border-radius:20px;
+  display:flex;flex-direction:column;overflow:hidden;
+  box-shadow:0 2px 8px rgba(0,0,0,.03);
+}
+.panel-header{
+  padding:16px 20px;border-bottom:1px solid var(--line);
+  display:flex;justify-content:space-between;align-items:center;
+  gap:12px;flex-wrap:wrap;
+}
+.panel-header .panel-title{
+  display:flex;align-items:center;gap:10px;font-size:.85rem;font-weight:900;
+  text-transform:uppercase;letter-spacing:.8px;color:var(--ink);
+}
 .panel-header .panel-title .icon-svg{color:var(--brand);width:16px;height:16px;}
-.panel-header .count-badge{padding:3px 10px;background:var(--brand-light);color:var(--brand);border-radius:999px;font-size:.65rem;font-weight:800;font-variant-numeric:tabular-nums;}
+.panel-header .count-badge{
+  padding:3px 10px;background:var(--brand-light);color:var(--brand);
+  border-radius:999px;font-size:.65rem;font-weight:800;
+  font-variant-numeric:tabular-nums;
+}
 html[data-theme="dark"] .panel-header .count-badge{background:rgba(248,111,3,.15);}
-.panel-legend{display:flex;gap:14px;font-size:.68rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px;}
+.panel-legend{
+  display:flex;gap:14px;font-size:.68rem;color:var(--muted);
+  font-weight:700;text-transform:uppercase;letter-spacing:.4px;
+}
 .panel-legend .legend-item{display:flex;align-items:center;gap:6px;}
 .panel-legend .swatch{width:8px;height:8px;border-radius:2px;}
 .panel-legend .swatch.on{background:var(--green);}
 .panel-legend .swatch.off{background:var(--red);}
 
-.sources-grid{flex:1;overflow-y:auto;padding:16px;display:grid;grid-template-columns:repeat(auto-fill, minmax(150px, 1fr));gap:12px;align-content:start;}
+/* ============ SOURCES GRID ============ */
+.sources-grid{
+  flex:1;overflow-y:auto;padding:16px;
+  display:grid;grid-template-columns:repeat(auto-fill, minmax(150px, 1fr));
+  gap:12px;align-content:start;
+}
 .sources-grid::-webkit-scrollbar{width:6px;}
 .sources-grid::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px;}
 
-.source-card{background:var(--bg);border:1.5px solid var(--line);border-radius:16px;padding:18px 12px 16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;position:relative;transition:all .25s cubic-bezier(.4,0,.2,1);cursor:default;overflow:hidden;min-height:130px;}
-.source-card.active{border-color:rgba(16,185,129,.3);background:linear-gradient(180deg, rgba(16,185,129,.08) 0%, var(--card) 60%);}
+/* ============ SOURCE CARD ============ */
+.source-card{
+  background:var(--bg);border:1.5px solid var(--line);border-radius:16px;
+  padding:18px 12px 16px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:8px;position:relative;
+  transition:all .25s cubic-bezier(.4,0,.2,1);cursor:default;
+  overflow:hidden;min-height:130px;
+}
+.source-card.active{
+  border-color:rgba(16,185,129,.3);
+  background:linear-gradient(180deg, rgba(16,185,129,.08) 0%, var(--card) 60%);
+}
 .source-card.inactive{opacity:.7;}
 .source-card:hover{transform:translateY(-3px);box-shadow:0 12px 32px -10px rgba(0,0,0,.15);}
 .source-card.active:hover{border-color:var(--green);box-shadow:0 12px 32px -10px rgba(16,185,129,.3);}
 .source-card.inactive:hover{border-color:var(--red);opacity:1;}
 
 .source-status-indicator{position:absolute;top:12px;right:12px;width:9px;height:9px;border-radius:50%;}
-.source-card.active .source-status-indicator{background:var(--green);box-shadow:0 0 0 4px rgba(16,185,129,.15);animation:pulseDot 1.8s ease-in-out infinite;}
-.source-card.inactive .source-status-indicator{background:var(--red);box-shadow:0 0 0 4px rgba(239,68,68,.12);}
-
-.source-code{font-family:'JetBrains Mono',Consolas,monospace;font-size:1.9rem;font-weight:800;letter-spacing:-.5px;line-height:1;color:var(--ink);transition:color .2s ease;}
+.source-card.active .source-status-indicator{
+  background:var(--green);box-shadow:0 0 0 4px rgba(16,185,129,.15);
+  animation:pulseDot 1.8s ease-in-out infinite;
+}
+.source-card.inactive .source-status-indicator{
+  background:var(--red);box-shadow:0 0 0 4px rgba(239,68,68,.12);
+}
+.source-code{
+  font-family:'JetBrains Mono',Consolas,monospace;font-size:1.9rem;
+  font-weight:800;letter-spacing:-.5px;line-height:1;color:var(--ink);
+  transition:color .2s ease;
+}
 .source-card.active .source-code{color:var(--green);}
 .source-card.inactive .source-code{color:var(--muted);}
-
-.source-status-text{font-size:.6rem;font-weight:900;letter-spacing:1px;text-transform:uppercase;padding:4px 10px;border-radius:999px;}
+.source-status-text{
+  font-size:.6rem;font-weight:900;letter-spacing:1px;
+  text-transform:uppercase;padding:4px 10px;border-radius:999px;
+}
 .source-card.active .source-status-text{background:rgba(16,185,129,.12);color:var(--green);}
 .source-card.inactive .source-status-text{background:rgba(239,68,68,.1);color:var(--red);}
+.source-hits{
+  font-family:'JetBrains Mono',Consolas,monospace;font-size:.65rem;font-weight:700;
+  color:var(--muted);padding:3px 8px;background:var(--card);
+  border-radius:6px;border:1px solid var(--line);
+}
+.source-card.active .source-hits{
+  color:var(--green);background:rgba(16,185,129,.08);
+  border-color:rgba(16,185,129,.2);
+}
 
-.source-hits{font-family:'JetBrains Mono',Consolas,monospace;font-size:.65rem;font-weight:700;color:var(--muted);padding:3px 8px;background:var(--card);border-radius:6px;border:1px solid var(--line);}
-.source-card.active .source-hits{color:var(--green);background:rgba(16,185,129,.08);border-color:rgba(16,185,129,.2);}
-
-.activity-list{flex:1;overflow-y:auto;padding:10px 12px;display:flex;flex-direction:column;gap:6px;}
+/* ============ ACTIVITY LOG ============ */
+.activity-list{
+  flex:1;overflow-y:auto;padding:10px 12px;
+  display:flex;flex-direction:column;gap:6px;
+}
 .activity-list::-webkit-scrollbar{width:5px;}
 .activity-list::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px;}
-.activity-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg);border:1px solid var(--line);border-left:3px solid transparent;border-radius:10px;font-size:.75rem;font-weight:700;animation:slideIn .3s ease;}
+.activity-item{
+  display:flex;align-items:center;gap:10px;padding:10px 12px;
+  background:var(--bg);border:1px solid var(--line);
+  border-left:3px solid transparent;border-radius:10px;
+  font-size:.75rem;font-weight:700;animation:slideIn .3s ease;
+}
 @keyframes slideIn{from{transform:translateX(-8px);opacity:0;}to{transform:translateX(0);opacity:1;}}
 .activity-item.on{border-left-color:var(--green);}
 .activity-item.off{border-left-color:var(--red);opacity:.7;}
-.activity-time{font-family:'JetBrains Mono',Consolas,monospace;font-size:.68rem;font-weight:700;color:var(--muted);flex-shrink:0;font-variant-numeric:tabular-nums;}
-.activity-source{font-family:'JetBrains Mono',Consolas,monospace;font-size:.75rem;font-weight:800;color:var(--ink);letter-spacing:-.2px;}
-.activity-status{margin-left:auto;font-size:.6rem;font-weight:900;text-transform:uppercase;letter-spacing:.6px;padding:3px 8px;border-radius:6px;flex-shrink:0;}
+.activity-time{
+  font-family:'JetBrains Mono',Consolas,monospace;font-size:.68rem;
+  font-weight:700;color:var(--muted);flex-shrink:0;
+  font-variant-numeric:tabular-nums;
+}
+.activity-source{
+  font-family:'JetBrains Mono',Consolas,monospace;font-size:.75rem;
+  font-weight:800;color:var(--ink);letter-spacing:-.2px;
+}
+.activity-status{
+  margin-left:auto;font-size:.6rem;font-weight:900;
+  text-transform:uppercase;letter-spacing:.6px;
+  padding:3px 8px;border-radius:6px;flex-shrink:0;
+}
 .activity-status.on{background:rgba(16,185,129,.12);color:var(--green);}
 .activity-status.off{background:rgba(239,68,68,.1);color:var(--red);}
 .activity-empty{text-align:center;padding:40px 20px;color:var(--muted);font-size:.8rem;font-weight:600;}
 .activity-empty .icon-svg{width:36px;height:36px;opacity:.4;margin-bottom:12px;}
 
-.foot{margin-top:32px;padding-top:24px;border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;font-size:.75rem;color:var(--muted);font-weight:600;flex-wrap:wrap;gap:12px;}
+/* ============ FOOTER ============ */
+.foot{
+  margin-top:32px;padding-top:24px;border-top:1px solid var(--line);
+  display:flex;justify-content:space-between;align-items:center;
+  font-size:.75rem;color:var(--muted);font-weight:600;
+  flex-wrap:wrap;gap:12px;
+}
 .foot .brandline b{color:var(--brand);}
 
-.loading-overlay{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:opacity .5s ease;gap:20px;}
+/* ============ LOADING OVERLAY ============ */
+.loading-overlay{
+  position:fixed;inset:0;background:var(--bg);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  z-index:9999;transition:opacity .5s ease;gap:20px;
+}
 .loading-overlay.hide{opacity:0;pointer-events:none;}
 .loader-cyber{width:64px;height:64px;position:relative;}
-.loader-cyber::before,.loader-cyber::after{content:"";position:absolute;border-radius:50%;animation:cyberSpin 1.2s ease-in-out infinite;}
-.loader-cyber::before{inset:0;border:3px solid transparent;border-top-color:var(--brand);border-bottom-color:var(--brand-2);}
-.loader-cyber::after{inset:12px;border:3px solid transparent;border-left-color:var(--green);border-right-color:var(--red);animation-delay:.3s;animation-direction:reverse;}
+.loader-cyber::before,.loader-cyber::after{
+  content:"";position:absolute;border-radius:50%;
+  animation:cyberSpin 1.2s ease-in-out infinite;
+}
+.loader-cyber::before{
+  inset:0;border:3px solid transparent;
+  border-top-color:var(--brand);border-bottom-color:var(--brand-2);
+}
+.loader-cyber::after{
+  inset:12px;border:3px solid transparent;
+  border-left-color:var(--green);border-right-color:var(--red);
+  animation-delay:.3s;animation-direction:reverse;
+}
 @keyframes cyberSpin{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
-.loader-text{font-family:'JetBrains Mono',Consolas,monospace;font-size:.85rem;font-weight:800;letter-spacing:4px;color:var(--ink);animation:pulseText 1.5s ease-in-out infinite;}
+.loader-text{
+  font-family:'JetBrains Mono',Consolas,monospace;font-size:.85rem;
+  font-weight:800;letter-spacing:4px;color:var(--ink);
+  animation:pulseText 1.5s ease-in-out infinite;
+}
 @keyframes pulseText{0%,100%{opacity:1;}50%{opacity:.3;}}
 .loader-sub{font-size:.75rem;color:var(--muted);font-weight:600;letter-spacing:1px;}
 
-.error-banner{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:var(--red);padding:12px 20px;border-radius:14px;font-size:.8rem;font-weight:700;z-index:999;box-shadow:0 12px 32px -8px rgba(0,0,0,.15);display:none;align-items:center;gap:10px;max-width:90%;backdrop-filter:blur(10px);}
+/* ============ ERROR BANNER ============ */
+.error-banner{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);
+  color:var(--red);padding:12px 20px;border-radius:14px;
+  font-size:.8rem;font-weight:700;z-index:999;
+  box-shadow:0 12px 32px -8px rgba(0,0,0,.15);
+  display:none;align-items:center;gap:10px;max-width:90%;
+  backdrop-filter:blur(10px);
+}
 .error-banner.show{display:flex;animation:slideUp .4s ease;}
-@keyframes slideUp{from{transform:translateX(-50%) translateY(20px);opacity:0;}to{transform:translateX(-50%) translateY(0);opacity:1;}}
+@keyframes slideUp{
+  from{transform:translateX(-50%) translateY(20px);opacity:0;}
+  to{transform:translateX(-50%) translateY(0);opacity:1;}
+}
 
+/* ============ RESPONSIVE ============ */
 @media (max-width:1200px){.monitor-main{grid-template-columns:1fr 280px;}}
-@media (max-width:992px){.monitor-main{grid-template-columns:1fr;}.stats-row{grid-template-columns:repeat(2,1fr);}}
-@media (max-width:900px){.new-wrapper{margin-left:0;}.dash-wrap{padding:20px 16px 40px;}.stats-row{grid-template-columns:repeat(2,1fr);}.page-head .ttl{font-size:1.3rem;}.page-head .ttl .ttl-icon{width:40px;height:40px;}.page-head .sub{margin-left:52px;font-size:.78rem;}}
-@media (max-width:640px){.dash-wrap{padding:16px 12px 32px;}.stats-row{grid-template-columns:1fr;}.sources-grid{grid-template-columns:repeat(2,1fr);gap:8px;padding:12px;}.source-card{min-height:110px;padding:14px 8px;}.source-code{font-size:1.5rem;}.head-actions{width:100%;}.live-badge, .timer-badge{flex:1;justify-content:center;}}
+@media (max-width:992px){
+  .monitor-main{grid-template-columns:1fr;}
+  .stats-row{grid-template-columns:repeat(2,1fr);}
+}
+@media (max-width:900px){
+  .new-wrapper{margin-left:0;}
+  .dash-wrap{padding:20px 16px 40px;}
+  .stats-row{grid-template-columns:repeat(2,1fr);}
+  .page-head .ttl{font-size:1.3rem;}
+  .page-head .ttl .ttl-icon{width:40px;height:40px;}
+  .page-head .sub{margin-left:52px;font-size:.78rem;}
+}
+@media (max-width:640px){
+  .dash-wrap{padding:16px 12px 32px;}
+  .stats-row{grid-template-columns:1fr;}
+  .sources-grid{grid-template-columns:repeat(2,1fr);gap:8px;padding:12px;}
+  .source-card{min-height:110px;padding:14px 8px;}
+  .source-code{font-size:1.5rem;}
+  .head-actions{width:100%;}
+  .live-badge, .timer-badge, .data-age-badge{flex:1;justify-content:center;}
+}
 </style>
 </head>
 <body>
 
 <jsp:include page="./roleHeader.jsp" />
+
+<%
+  String roleForDisplay = (String) session.getAttribute("role");
+  String __user = (String) session.getAttribute("username");
+  if (__user == null || __user.trim().isEmpty()) __user = "User";
+  String userInitial = (__user.length() > 0) ? __user.substring(0,1).toUpperCase() : "U";
+%>
 
 <!-- ============ LOADING OVERLAY ============ -->
 <div class="loading-overlay" id="loadingOverlay">
@@ -338,9 +644,12 @@ html[data-theme="dark"] .panel-header .count-badge{background:rgba(248,111,3,.15
       </p>
     </div>
     <div class="head-actions">
+      <div class="data-age-badge" id="dataAgeBadge" style="display:none;">
+        <svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Data: --
+      </div>
       <div class="live-badge" id="liveBadge" style="display:none;">
-        <span class="dot"></span>
-        LIVE
+        <span class="dot"></span> LIVE
       </div>
       <div class="timer-badge" id="timerBadge" style="display:none;">
         <svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
@@ -374,6 +683,7 @@ html[data-theme="dark"] .panel-header .count-badge{background:rgba(248,111,3,.15
 
   <!-- ============ MAIN LAYOUT ============ -->
   <div class="monitor-main" id="mainGrid" style="display:none;">
+
     <div class="panel">
       <div class="panel-header">
         <div class="panel-title">
@@ -404,6 +714,7 @@ html[data-theme="dark"] .panel-header .count-badge{background:rgba(248,111,3,.15
         </div>
       </div>
     </div>
+
   </div>
 
   <footer class="foot">
@@ -415,21 +726,29 @@ html[data-theme="dark"] .panel-header .count-badge{background:rgba(248,111,3,.15
 </div>
 </div>
 
+<!-- ============ ERROR BANNER ============ -->
 <div class="error-banner" id="errorBanner">
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
   <span id="errorMessage">Connection Error</span>
 </div>
 
 <script>
+/* ============================================================
+   STATE
+   ============================================================ */
 var sourceData = {};
 var activityLog = [];
 var MAX_ACTIVITY = 30;
-var timerSeconds = 300;   // 5 min — cache refresh ke saath match
+var timerSeconds = 300;
 var timerInterval;
 var retryCount = 0;
 var maxRetries = 3;
-var pollInterval;
+var __lastCacheTs = 0;
+var __lastHits = {};
 
+/* ============================================================
+   HELPERS
+   ============================================================ */
 function getPartition() {
   var months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
   var now = new Date();
@@ -446,10 +765,11 @@ function updateTimer() {
   timerSeconds--;
   var el = document.getElementById('timerDisplay');
   if (el) el.textContent = formatTime(timerSeconds);
+  if (__lastCacheTs > 0) updateDataAge(__lastCacheTs);
   if (timerSeconds <= 0) {
-    // poll for fresh cache (server background refresh already chal raha hoga)
     timerSeconds = 300;
     fetchData();
+    fetchHits();
   }
 }
 
@@ -461,6 +781,37 @@ function updateFootTime() {
   if (footEl) footEl.textContent = 'Session active · ' + hh + ':' + mm;
 }
 
+function updateDataAge(cacheTs) {
+  var badge = document.getElementById('dataAgeBadge');
+  if (!badge) return;
+  if (!cacheTs || cacheTs <= 0) {
+    badge.textContent = 'Data: --';
+    badge.className = 'data-age-badge stale';
+    return;
+  }
+  var ageSec = Math.floor((Date.now() - cacheTs) / 1000);
+  if (ageSec < 0) ageSec = 0;
+  var d = new Date(cacheTs);
+  var hh = String(d.getHours()).padStart(2,'0');
+  var mm = String(d.getMinutes()).padStart(2,'0');
+  var ss = String(d.getSeconds()).padStart(2,'0');
+  var ageTxt;
+  if (ageSec < 60) ageTxt = ageSec + 's ago';
+  else if (ageSec < 3600) ageTxt = Math.floor(ageSec/60) + 'm ago';
+  else ageTxt = Math.floor(ageSec/3600) + 'h ago';
+
+  badge.innerHTML = '<svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>' +
+    ' Data as of <b>' + hh + ':' + mm + ':' + ss + '</b> · ' + ageTxt;
+
+  badge.classList.remove('fresh','warm','stale');
+  if (ageSec < 360) badge.classList.add('fresh');
+  else if (ageSec < 720) badge.classList.add('warm');
+  else badge.classList.add('stale');
+}
+
+/* ============================================================
+   ACTIVITY LOG
+   ============================================================ */
 function addActivity(source, status) {
   var now = new Date();
   var t = now.getHours().toString().padStart(2,'0') + ':' +
@@ -483,11 +834,18 @@ function renderActivity() {
     var item = activityLog[i];
     var cls = item.status === 'Y' ? 'on' : 'off';
     var txt = item.status === 'Y' ? 'ON' : 'OFF';
-    html += '<div class="activity-item ' + cls + '"><span class="activity-time">' + item.time + '</span><span class="activity-source">' + item.source + '</span><span class="activity-status ' + cls + '">' + txt + '</span></div>';
+    html += '<div class="activity-item ' + cls + '">' +
+      '<span class="activity-time">' + item.time + '</span>' +
+      '<span class="activity-source">' + item.source + '</span>' +
+      '<span class="activity-status ' + cls + '">' + txt + '</span>' +
+      '</div>';
   }
   c.innerHTML = html;
 }
 
+/* ============================================================
+   HIDE LOADING
+   ============================================================ */
 function hideLoading() {
   var overlay = document.getElementById('loadingOverlay');
   if (overlay) overlay.classList.add('hide');
@@ -495,6 +853,8 @@ function hideLoading() {
   if (liveBadge) liveBadge.style.display = 'flex';
   var timerBadge = document.getElementById('timerBadge');
   if (timerBadge) timerBadge.style.display = 'flex';
+  var ageBadge = document.getElementById('dataAgeBadge');
+  if (ageBadge) ageBadge.style.display = 'flex';
   var statsRow = document.getElementById('statsRow');
   if (statsRow) statsRow.style.display = 'grid';
   var mainGrid = document.getElementById('mainGrid');
@@ -510,6 +870,9 @@ function hideLoading() {
   }
 }
 
+/* ============================================================
+   ERROR BANNER
+   ============================================================ */
 function showError(msg) {
   var banner = document.getElementById('errorBanner');
   var msgEl = document.getElementById('errorMessage');
@@ -518,22 +881,31 @@ function showError(msg) {
   setTimeout(function() { if (banner) banner.classList.remove('show'); }, 5000);
 }
 
+/* ============================================================
+   FETCH FLAG DATA (fast)
+   ============================================================ */
 function fetchData() {
   var url = '?action=fetchSourceStatus';
-  console.log('Fetching (instant, cached): ' + url);
-
   fetch(url, { method: 'GET', cache: 'no-cache', headers: { 'Content-Type': 'application/json' } })
   .then(function(response) {
     if (!response.ok) throw new Error('HTTP ' + response.status);
-    return response.json();
+    var tsHeader = response.headers.get('X-Cache-Timestamp');
+    var cacheTs = tsHeader ? parseInt(tsHeader, 10) : 0;
+    return response.json().then(function(data) {
+      return { data: data, cacheTs: cacheTs };
+    });
   })
-  .then(function(data) {
+  .then(function(result) {
     retryCount = 0;
+    var data = result.data;
     if (data.error) { showError('DB Error: ' + data.error); return; }
+    __lastCacheTs = result.cacheTs;
     renderSources(data);
     updateStats(data);
     updateActivity(data);
+    updateDataAge(result.cacheTs);
     hideLoading();
+    fetchHits();
   })
   .catch(function(e) {
     console.error('Fetch Error:', e);
@@ -548,6 +920,44 @@ function fetchData() {
   });
 }
 
+/* ============================================================
+   FETCH HITS (background, slow-cached)
+   ============================================================ */
+function fetchHits() {
+  fetch('?action=fetchHits', { method: 'GET', cache: 'no-cache' })
+  .then(function(r) { return r.ok ? r.json() : {}; })
+  .then(function(hits) {
+    if (!hits || typeof hits !== 'object' || hits.error) return;
+    __lastHits = hits;
+    applyHits();
+  })
+  .catch(function(e) { console.error('Hits fetch error:', e); });
+}
+
+function applyHits() {
+  var cards = document.querySelectorAll('.source-card');
+  for (var i = 0; i < cards.length; i++) {
+    var card = cards[i];
+    var codeEl = card.querySelector('.source-code');
+    var hitsEl = card.querySelector('.source-hits');
+    if (!codeEl || !hitsEl) continue;
+    var src = codeEl.textContent.trim();
+    var isActive = card.classList.contains('active');
+    var count = __lastHits[src];
+
+    if (isActive && typeof count === 'number') {
+      hitsEl.textContent = '⚡ ' + count + ' hits';
+    } else if (isActive) {
+      hitsEl.textContent = '⚡ active';
+    } else {
+      hitsEl.textContent = '⏸ 0 hits';
+    }
+  }
+}
+
+/* ============================================================
+   RENDER SOURCES
+   ============================================================ */
 function renderSources(data) {
   var c = document.getElementById('sourcesGrid');
   if (!c) return;
@@ -563,18 +973,27 @@ function renderSources(data) {
     if (isActive) active++;
     var cls = isActive ? 'active' : 'inactive';
     var status = isActive ? 'ONLINE' : 'OFFLINE';
+
     html += '<div class="source-card ' + cls + '">' +
       '<span class="source-status-indicator"></span>' +
       '<div class="source-code">' + item.source_id + '</div>' +
       '<div class="source-status-text">' + status + '</div>' +
-      '<span class="source-hits">' + (isActive ? '⚡ active' : '⏸ idle') + '</span>' +
+      '<span class="source-hits">' +
+        (isActive ? '⚡ active' : '⏸ 0 hits') +
+      '</span>' +
       '</div>';
   }
   c.innerHTML = html;
   var countEl = document.getElementById('sourceCount');
   if (countEl) countEl.textContent = active + '/' + data.length;
+
+  // agar hits pehle se cached hain to turant apply karo
+  applyHits();
 }
 
+/* ============================================================
+   UPDATE STATS
+   ============================================================ */
 function updateStats(data) {
   var active = 0, inactive = 0;
   for (var i = 0; i < data.length; i++) {
@@ -592,6 +1011,9 @@ function updateStats(data) {
   if (uptimeEl) uptimeEl.innerHTML = uptime + '<small>%</small>';
 }
 
+/* ============================================================
+   UPDATE ACTIVITY
+   ============================================================ */
 function updateActivity(data) {
   var current = {};
   for (var i = 0; i < data.length; i++) {
@@ -607,11 +1029,16 @@ function updateActivity(data) {
   sourceData = current;
 }
 
+/* ============================================================
+   CLEANUP
+   ============================================================ */
 window.addEventListener('beforeunload', function() {
   if (timerInterval) clearInterval(timerInterval);
-  if (pollInterval) clearInterval(pollInterval);
 });
 
+/* ============================================================
+   START
+   ============================================================ */
 fetchData();
 </script>
 
