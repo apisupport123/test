@@ -24,49 +24,26 @@
  response.setDateHeader("Expires", 0);
 
  // ============================================================
- // ENVIRONMENT DETECTION — connection_master.FLAG se
- // 5-min session cache taaki har load pe DB hit na ho
+ // ENV — DB se (connection_master.FLAG)
  // ============================================================
- String flagStatus = "DR";   // safe default
-
- Long   __flagTs     = (Long)   session.getAttribute("cm_flag_ts");
- String __flagCached = (String) session.getAttribute("cm_flag");
- long   __now        = System.currentTimeMillis();
- long   __CACHE_MS   = 5L * 60L * 1000L;   // 5 minutes
-
- if (__flagCached != null && __flagTs != null && (__now - __flagTs) < __CACHE_MS) {
-     flagStatus = __flagCached;
- } else {
-     Connection __cmConn = null;
-     Statement  __cmStmt = null;
-     ResultSet  __cmRs   = null;
-     try {
-         __cmConn = com.jdbc.DBUtilityAuto.getIIBDBConnection();   // <-- apna report conn helper yahan
-         __cmStmt = __cmConn.createStatement();
-         __cmStmt.setQueryTimeout(5);
-         __cmRs   = __cmStmt.executeQuery("SELECT FLAG FROM connection_master");
-         if (__cmRs.next()) {
-             String __f = __cmRs.getString("FLAG");
-             if (__f != null && !__f.trim().isEmpty()) {
-                 flagStatus = __f.trim().toUpperCase();
-             }
+ String flagStatus = "DR";
+ Connection reportConn = null;
+ try {
+     reportConn = com.jdbc.DBUtilityAuto.getIIBDBConnection();   // apna actual conn helper
+     try (Statement stmt = reportConn.createStatement();
+          ResultSet rs = stmt.executeQuery("SELECT FLAG FROM connection_master")) {
+         if (rs.next()) {
+             flagStatus = rs.getString("FLAG");
+             if (flagStatus == null) flagStatus = "DR";
          }
-     } catch (Exception __e) {
-         flagStatus = "DR";   // DB fail — safe fallback
-     } finally {
-         try { if (__cmRs   != null) __cmRs.close();   } catch (Exception ignore) {}
-         try { if (__cmStmt != null) __cmStmt.close(); } catch (Exception ignore) {}
-         try { if (__cmConn != null) __cmConn.close(); } catch (Exception ignore) {}
      }
-     session.setAttribute("cm_flag",    flagStatus);
-     session.setAttribute("cm_flag_ts", __now);
- }
-
- // Sirf PR / DR allow, baaki kuch bhi ho to DR (safe)
- if (!"PR".equals(flagStatus) && !"DR".equals(flagStatus)) {
+ } catch (Exception e) {
      flagStatus = "DR";
+ } finally {
+     try { if (reportConn != null) reportConn.close(); } catch (Exception ignore) {}
  }
 
+ flagStatus = flagStatus.trim().toUpperCase();
  String __envClass = "DR".equals(flagStatus) ? "is-dr" : "is-pr";
  String __envLabel = "DR".equals(flagStatus) ? "Disaster Recovery" : "Production";
  String __envShort = flagStatus;
@@ -885,7 +862,7 @@ html[data-theme="dark"] .bcard .btag{background:rgba(248,111,3,.15)}
       <span class="kbd">Ctrl K</span>
     </div>
 
-    <!-- ✅ ENV STATUS PILL (connection_master.FLAG se) -->
+    <!-- ENV STATUS PILL — connection_master.FLAG se -->
     <div class="env-pill <%= __envClass %>" id="envPill" title="Environment: <%= __envLabel %>">
       <span class="env-dot"></span>
       <span class="env-label">Running on</span>
@@ -1103,7 +1080,7 @@ html[data-theme="dark"] .bcard .btag{background:rgba(248,111,3,.15)}
       </div>
     </a>
 
-    <!-- Source Monitor (NEW — added) -->
+    <!-- Source Monitor -->
     <a class="bcard sm" data-cat="tools" data-name="Source Monitor" href="<%=request.getContextPath()%>/jsp/Source_Monitor.jsp" target="_blank" rel="noopener noreferrer">
       <div class="btop">
         <div class="bico">
@@ -1281,7 +1258,6 @@ function applyFilters(){
   var favs = getFavs();
   document.querySelectorAll('#bentoGrid .bcard').forEach(function(card){
     var cat = card.getAttribute('data-cat') || '';
-    var name = (card.getAttribute('data-name') || '').toLowerCase();
     var cardText = card.innerText.toLowerCase();
 
     var catMatch = (currentCat === 'all') 
@@ -1403,7 +1379,7 @@ document.querySelectorAll('#bentoGrid .bcard').forEach(function(card){
 });
 
 /* ============================================================
-   ✅ ENTER key search
+   ✅ ESC key search clear
    ============================================================ */
 if(searchInput){
   searchInput.addEventListener('keydown', function(e){
