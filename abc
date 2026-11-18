@@ -6,6 +6,7 @@
   ✅ Role routing roleHeader.jsp karta hai — yahan NAHI.
   ✅ Fragment hai — isliye pageEncoding / sendRedirect NAHI.
   ✅ Source_Monitor.jsp Dashboards section me add kiya.
+  ✅ Topnav me ENV pill (PR/DR) — connection_master.FLAG se.
   ============================================================
 --%>
 <%
@@ -17,6 +18,31 @@
     HttpSession sess = request.getSession(false);
     String m_strrole = (sess != null) ? (String) sess.getAttribute("role") : null;
     String ctx = request.getContextPath();
+
+    // ============================================================
+    // ENV — connection_master.FLAG se (PR / DR)
+    // ============================================================
+    String flagStatus = "DR";
+    java.sql.Connection __cmConn = null;
+    try {
+        __cmConn = com.jdbc.DBUtilityAuto.getIIBDBConnection();   // apna actual conn helper
+        try (java.sql.Statement stmt = __cmConn.createStatement();
+             java.sql.ResultSet rs = stmt.executeQuery("SELECT FLAG FROM connection_master")) {
+            if (rs.next()) {
+                flagStatus = rs.getString("FLAG");
+                if (flagStatus == null) flagStatus = "DR";
+            }
+        }
+    } catch (Exception e) {
+        flagStatus = "DR";
+    } finally {
+        try { if (__cmConn != null) __cmConn.close(); } catch (Exception ignore) {}
+    }
+
+    flagStatus = flagStatus.trim().toUpperCase();
+    String __envClass = "DR".equals(flagStatus) ? "is-dr" : "is-pr";
+    String __envLabel = "DR".equals(flagStatus) ? "Disaster Recovery" : "Production";
+    String __envShort = flagStatus;
 %>
 
 <style>
@@ -348,6 +374,70 @@ html[data-theme="dark"] .sb-item.sb-logout .sb-icon{background:rgba(229,57,53,.1
   cursor:pointer;
   border:2px solid var(--card);
   box-shadow:0 2px 8px rgba(0,0,0,.08);
+}
+
+/* ============ ENV STATUS PILL (topnav) ============ */
+.env-pill{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  padding:7px 12px;
+  background:var(--card);
+  border:1.5px solid var(--line);
+  border-radius:9px;
+  font-size:.68rem;
+  font-weight:800;
+  letter-spacing:.5px;
+  text-transform:uppercase;
+  white-space:nowrap;
+  flex-shrink:0;
+  transition:all .25s ease;
+  position:relative;
+  height:36px;
+}
+.env-pill .env-dot{
+  width:7px;height:7px;
+  border-radius:50%;
+  flex-shrink:0;
+  position:relative;
+}
+.env-pill .env-dot::after{
+  content:"";
+  position:absolute;
+  inset:-4px;
+  border-radius:50%;
+  opacity:.35;
+  animation:envPulse 1.8s ease-in-out infinite;
+}
+@keyframes envPulse{
+  0%,100%{transform:scale(1);opacity:.35;}
+  50%{transform:scale(1.6);opacity:0;}
+}
+.env-pill .env-label{
+  color:var(--muted);
+  font-weight:700;
+  letter-spacing:.4px;
+}
+.env-pill .env-value{
+  font-weight:900;
+  letter-spacing:.6px;
+}
+.env-pill.is-pr{border-color:rgba(16,185,129,.35);background:rgba(16,185,129,.07);}
+.env-pill.is-pr .env-dot{background:#10B981;box-shadow:0 0 10px #10B981;}
+.env-pill.is-pr .env-dot::after{background:#10B981;}
+.env-pill.is-pr .env-value{color:#10B981;}
+
+.env-pill.is-dr{border-color:rgba(245,158,11,.4);background:rgba(245,158,11,.08);}
+.env-pill.is-dr .env-dot{background:#F59E0B;box-shadow:0 0 10px #F59E0B;}
+.env-pill.is-dr .env-dot::after{background:#F59E0B;}
+.env-pill.is-dr .env-value{color:#F59E0B;}
+
+html[data-theme="dark"] .env-pill.is-pr{background:rgba(16,185,129,.12);}
+html[data-theme="dark"] .env-pill.is-dr{background:rgba(245,158,11,.12);}
+
+@media (max-width:640px){
+  .env-pill{font-size:.6rem;padding:6px 9px;height:32px;}
+  .env-pill .env-label{display:none;}
 }
 
 .new-wrapper{
@@ -721,6 +811,14 @@ html.sb-open .sb-overlay{opacity:1;pointer-events:auto}
   </button>
 
   <div class="tn-right">
+
+    <!-- ENV STATUS PILL — connection_master.FLAG se -->
+    <div class="env-pill <%= __envClass %>" title="Environment: <%= __envLabel %>">
+      <span class="env-dot"></span>
+      <span class="env-label">Running on</span>
+      <span class="env-value"><%= __envShort %></span>
+    </div>
+
     <button class="tn-btn" onclick="toggleTheme()" title="Toggle theme" id="themeBtn">
       <svg class="icon-svg" id="themeIconSun" viewBox="0 0 24 24" style="display:none;">
         <circle cx="12" cy="12" r="5"/>
