@@ -1,1 +1,7 @@
-[userheader] ENV: getIIBDBConnection() returned NULL â defaulting to DR
+        try (Statement stmt = reportConn.createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT FLAG FROM connection_master")) {
+            if (rs.next()) {
+                flagStatus = rs.getString("FLAG");
+                if (flagStatus == null) flagStatus = "DR";
+            }
+        }
