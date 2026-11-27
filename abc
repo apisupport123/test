@@ -1,1046 +1,679 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
-<%@ page import="java.sql.*, java.util.*, java.text.*, java.util.concurrent.*, java.util.concurrent.atomic.*" %>
-<%@ page import="com.jdbc.DBUtilityAuto" %>
-<%!
-// ============================================================
-// PARTITION HELPER
-// ============================================================
-String getPartition() {
-    Calendar cal = Calendar.getInstance();
-    String month = new SimpleDateFormat("MMM", Locale.US).format(cal.getTime()).toUpperCase();
-    String year = new SimpleDateFormat("yy", Locale.US).format(cal.getTime());
-    return month + "_" + year;
+SELECT /* PARALLEL(4) */ COUNT(*) AS Total_hits FROM EISAPP.backend_log PARTITION(NOV_26) WHERE END_POINT_PORT = '7443';
+
+
+
+<%@ page import="java.sql.*, java.util.*, java.text.SimpleDateFormat" %>
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@page import="com.jdbc.DBUtilityAuto"%>
+<%@ page import="java.sql.*,java.time.LocalTime,java.time.LocalDate,java.util.Date"%>
+<%
+// ── No-cache headers ──
+response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+response.setHeader("Pragma", "no-cache");
+response.setDateHeader("Expires", 0);
+response.setHeader("Refresh", "600"); // Auto-refresh every 10 minutes
+
+// ── Mute Toggle ──
+String muteParam = request.getParameter("mute");
+boolean isMuted = "true".equals(muteParam);
+%>
+<%! 
+// ── Helper: Ensure the master table exists (create if not) ──
+void ensureTableExists(Connection conn) throws SQLException {
+    Statement stmt = null;
+    try {
+        stmt = conn.createStatement();
+        stmt.executeUpdate(
+            "CREATE TABLE DPG_IP_MASTER (" +
+            "    DPG_IP        VARCHAR2(50) PRIMARY KEY," +
+            "    DPG_MODE      VARCHAR2(10)," +
+            "    LAST_UPDATED  DATE" +
+            ")"
+        );
+    } catch (SQLException e) {
+        if (e.getErrorCode() != 955) throw e; // 955 = name already used
+    } finally {
+        if (stmt != null) try { stmt.close(); } catch (SQLException e) {}
+    }
+    // Create index, ignore if exists
+    try {
+        stmt = conn.createStatement();
+        stmt.executeUpdate("CREATE INDEX IDX_DPG_MASTER_MODE ON DPG_IP_MASTER(DPG_MODE)");
+    } catch (SQLException e) {
+        if (e.getErrorCode() != 955) throw e;
+    } finally {
+        if (stmt != null) try { stmt.close(); } catch (SQLException e) {}
+    }
 }
 
-// ============================================================
-// FLAG CACHE (fast — DISTINCT, no COUNT)
-// ============================================================
-static final Object CACHE_LOCK = new Object();
-static volatile String CACHE_JSON = "[{\"source_id\":\"SA\",\"flag\":\"N\"}]";
-static volatile long CACHE_TS = 0L;
-static volatile boolean REFRESHING = false;
-static final AtomicBoolean SCHEDULER_STARTED = new AtomicBoolean(false);
-static final long REFRESH_INTERVAL_MS = 5 * 60 * 1000L;  // 5 min
-static final long QUERY_TIMEOUT_SEC = 360;               // 6 min
-
-// ============================================================
-// HITS CACHE (slow — COUNT(*), alag thread)
-// ============================================================
-static volatile String HITS_CACHE_JSON = "{}";
-static volatile long HITS_CACHE_TS = 0L;
-static volatile boolean HITS_REFRESHING = false;
-static final long HITS_REFRESH_INTERVAL_MS = 10 * 60 * 1000L; // 10 min
-
-// ============================================================
-// FLAG REFRESH (background)
-// ============================================================
-void refreshCacheAsync() {
-    if (REFRESHING) return;
-    REFRESHING = true;
-    Thread t = new Thread(new Runnable() {
-        public void run() {
-            Connection conn = null;
-            Statement stmt = null;
-            ResultSet rs = null;
-            try {
-                conn = DBUtilityAuto.getIIBDBConnection();
-                String partition = getPartition();
-
-                String query =
-                    "WITH FOUND_SOURCES AS ( " +
-                    "   SELECT /*+ INDEX(a idx_api_log_src_dt) */ DISTINCT a.source_id " +
-                    "   FROM eisapp.api_log PARTITION(" + partition + ") a " +
-                    "   WHERE a.source_id IN ('AK','CA','CC','CK','CR','FA','FS','I4','IN','KA','MB','NB','ON','RL','SA','SK','SQ','UP','WB','Y2') " +
-                    "   AND a.request_date_time >= SYSDATE - INTERVAL '10' MINUTE " +
-                    ") " +
-                    "SELECT s.source_id, " +
-                    "CASE WHEN f.source_id IS NOT NULL THEN 'Y' ELSE 'N' END AS flag " +
-                    "FROM ( " +
-                    "   SELECT 'SA' AS source_id FROM DUAL UNION ALL " +
-                    "   SELECT 'FS' FROM DUAL UNION ALL " +
-                    "   SELECT 'I4' FROM DUAL UNION ALL " +
-                    "   SELECT 'Y2' FROM DUAL UNION ALL " +
-                    "   SELECT 'KA' FROM DUAL UNION ALL " +
-                    "   SELECT 'FA' FROM DUAL UNION ALL " +
-                    "   SELECT 'WB' FROM DUAL UNION ALL " +
-                    "   SELECT 'ON' FROM DUAL UNION ALL " +
-                    "   SELECT 'CC' FROM DUAL UNION ALL " +
-                    "   SELECT 'CK' FROM DUAL UNION ALL " +
-                    "   SELECT 'CR' FROM DUAL UNION ALL " +
-                    "   SELECT 'SQ' FROM DUAL UNION ALL " +
-                    "   SELECT 'RL' FROM DUAL UNION ALL " +
-                    "   SELECT 'UP' FROM DUAL UNION ALL " +
-                    "   SELECT 'CA' FROM DUAL UNION ALL " +
-                    "   SELECT 'AK' FROM DUAL UNION ALL " +
-                    "   SELECT 'NB' FROM DUAL UNION ALL " +
-                    "   SELECT 'IN' FROM DUAL UNION ALL " +
-                    "   SELECT 'MB' FROM DUAL UNION ALL " +
-                    "   SELECT 'SK' FROM DUAL " +
-                    ") s " +
-                    "LEFT JOIN FOUND_SOURCES f ON f.source_id = s.source_id " +
-                    "ORDER BY s.source_id";
-
-                stmt = conn.createStatement();
-                stmt.setQueryTimeout((int) QUERY_TIMEOUT_SEC);
-                rs = stmt.executeQuery(query);
-
-                StringBuilder json = new StringBuilder();
-                json.append("[");
-                boolean first = true;
-                while (rs.next()) {
-                    if (!first) json.append(",");
-                    json.append("{");
-                    json.append("\"source_id\":\"").append(rs.getString("source_id")).append("\",");
-                    json.append("\"flag\":\"").append(rs.getString("flag")).append("\"");
-                    json.append("}");
-                    first = false;
-                }
-                json.append("]");
-
-                CACHE_JSON = json.toString();
-                CACHE_TS = System.currentTimeMillis();
-
-            } catch (Exception e) {
-                e.printStackTrace();
-            } finally {
-                try { if (rs != null) rs.close(); } catch(Exception e) {}
-                try { if (stmt != null) stmt.close(); } catch(Exception e) {}
-                try { if (conn != null) conn.close(); } catch(Exception e) {}
-                REFRESHING = false;
-            }
+// ── Helper: Refresh master table (delete all + insert fresh) ──
+void refreshMasterTable(Connection connReport, Connection connIIB) throws SQLException {
+    // 1. Fetch all distinct IPs from IIB
+    List<String> ipList = new ArrayList<>();
+    Statement stmtIIB = null;
+    ResultSet rsIIB = null;
+    try {
+        stmtIIB = connIIB.createStatement();
+        String queryIIB =
+        		"SELECT /*+ PARALLEL(4) */ DISTINCT TRIM(DPG_IP) AS IP " +
+        	            "FROM EISAPP.API_LOG " +
+        	            "WHERE TRIM(DPG_IP) LIKE '10.191.171.2%' OR TRIM(DPG_IP) LIKE '10.176.0.1%' " +
+        	            "AND request_date_time >= TRUNC(SYSDATE) - 1 " +
+        	            "AND request_date_time < TRUNC(SYSDATE)";
+        rsIIB = stmtIIB.executeQuery(queryIIB);
+        while (rsIIB.next()) {
+            ipList.add(rsIIB.getString("IP"));
         }
-    });
-    t.setDaemon(true);
-    t.start();
-}
+    } finally {
+        if (rsIIB != null) try { rsIIB.close(); } catch (SQLException e) {}
+        if (stmtIIB != null) try { stmtIIB.close(); } catch (SQLException e) {}
+    }
 
-// ============================================================
-// HITS REFRESH (background — slow COUNT query)
-// ============================================================
-void refreshHitsAsync() {
-    if (HITS_REFRESHING) return;
-    HITS_REFRESHING = true;
-    Thread t = new Thread(new Runnable() {
-        public void run() {
-            Connection conn = null;
-            Statement stmt = null;
-            ResultSet rs = null;
-            try {
-                conn = DBUtilityAuto.getIIBDBConnection();
-                String partition = getPartition();
+    // 2. Delete all rows from master table (report DB)
+    Statement stmtDel = connReport.createStatement();
+    stmtDel.executeUpdate("DELETE FROM DPG_IP_MASTER");
+    stmtDel.close();
 
-                String query =
-                    "SELECT /*+ INDEX(a idx_api_log_src_dt) */ a.source_id, COUNT(*) AS hit_count " +
-                    "FROM eisapp.api_log PARTITION(" + partition + ") a " +
-                    "WHERE a.source_id IN ('AK','CA','CC','CK','CR','FA','FS','I4','IN','KA','MB','NB','ON','RL','SA','SK','SQ','UP','WB','Y2') " +
-                    "AND a.request_date_time >= SYSDATE - INTERVAL '10' MINUTE " +
-                    "GROUP BY a.source_id";
-
-                stmt = conn.createStatement();
-                stmt.setQueryTimeout((int) QUERY_TIMEOUT_SEC);
-                rs = stmt.executeQuery(query);
-
-                StringBuilder json = new StringBuilder();
-                json.append("{");
-                boolean first = true;
-                while (rs.next()) {
-                    if (!first) json.append(",");
-                    json.append("\"").append(rs.getString("source_id")).append("\":")
-                        .append(rs.getLong("hit_count"));
-                    first = false;
-                }
-                json.append("}");
-
-                HITS_CACHE_JSON = json.toString();
-                HITS_CACHE_TS = System.currentTimeMillis();
-
-            } catch (Exception e) {
-                e.printStackTrace();
-            } finally {
-                try { if (rs != null) rs.close(); } catch(Exception e) {}
-                try { if (stmt != null) stmt.close(); } catch(Exception e) {}
-                try { if (conn != null) conn.close(); } catch(Exception e) {}
-                HITS_REFRESHING = false;
-            }
+    // 3. Insert fresh rows
+    if (!ipList.isEmpty()) {
+        PreparedStatement pstmtIns = connReport.prepareStatement("INSERT INTO DPG_IP_MASTER (DPG_IP, DPG_MODE, LAST_UPDATED) VALUES (?, ?, SYSDATE)");
+        for (String ip : ipList) {
+            String mode = ip.contains("171.") ? "PR" : "DR";
+            pstmtIns.setString(1, ip);
+            pstmtIns.setString(2, mode);
+            pstmtIns.addBatch();
         }
-    });
-    t.setDaemon(true);
-    t.start();
-}
-
-// ============================================================
-// SCHEDULER — dono threads
-// ============================================================
-void startScheduler() {
-    if (SCHEDULER_STARTED.compareAndSet(false, true)) {
-        ScheduledExecutorService sched = Executors.newScheduledThreadPool(2, new ThreadFactory() {
-            public Thread newThread(Runnable r) {
-                Thread th = new Thread(r, "source-monitor-refresher");
-                th.setDaemon(true);
-                return th;
-            }
-        });
-        // Flag: har 5 min
-        sched.scheduleAtFixedRate(new Runnable() {
-            public void run() { refreshCacheAsync(); }
-        }, 0, REFRESH_INTERVAL_MS, TimeUnit.MILLISECONDS);
-
-        // Hits: pehli baar 30s baad, phir har 10 min
-        sched.scheduleAtFixedRate(new Runnable() {
-            public void run() { refreshHitsAsync(); }
-        }, 30, HITS_REFRESH_INTERVAL_MS, TimeUnit.MILLISECONDS);
+        pstmtIns.executeBatch();
+        pstmtIns.close();
     }
 }
 %>
 <%
-// ============================================================
-// AUTH GUARD
-// ============================================================
-String __role = (session != null) ? (String) session.getAttribute("role") : null;
-if (__role == null || __role.trim().isEmpty()) {
-    response.sendRedirect(request.getContextPath() + "/login.action");
-    return;
-}
-
-startScheduler();
-
-// ============================================================
-// AJAX ENDPOINTS
-// ============================================================
+// ── Manual Refresh IP List ──
 String action = request.getParameter("action");
+if ("refreshMaster".equals(action)) {
+    Connection connReport = null;
+    Connection connIIB = null;
+    try {
+        connReport = DBUtilityAuto.getReportDBConnection();
+        connIIB = DBUtilityAuto.getIIBDBConnection();
+        ensureTableExists(connReport);
+        connReport.setAutoCommit(false);
+        refreshMasterTable(connReport, connIIB);
+        connReport.commit();
+        connReport.setAutoCommit(true);
+    } catch (Exception e) {
+        e.printStackTrace();
+        try { if (connReport != null) connReport.rollback(); } catch (Exception ex) {}
+    } finally {
+        try { if (connReport != null) connReport.close(); } catch (Exception e) {}
+        try { if (connIIB != null) connIIB.close(); } catch (Exception e) {}
+    }
 
-// ---------- FLAG ENDPOINT (fast) ----------
-if ("fetchSourceStatus".equals(action)) {
-    response.setContentType("application/json");
-    response.setHeader("Cache-Control", "no-cache");
-
-    if (CACHE_TS == 0L) refreshCacheAsync();
-
-    response.setHeader("X-Cache-Timestamp", String.valueOf(CACHE_TS));
-    out.print(CACHE_JSON);
+    // Redirect to remove action parameter but keep filters & mute
+    String redirectUrl = request.getRequestURI() + "?mute=" + isMuted;
+    if (request.getParameter("fromTime") != null) redirectUrl += "&fromTime=" + request.getParameter("fromTime");
+    if (request.getParameter("toTime") != null) redirectUrl += "&toTime=" + request.getParameter("toTime");
+    response.sendRedirect(redirectUrl);
     return;
 }
 
-// ---------- HITS ENDPOINT (slow, cached) ----------
-if ("fetchHits".equals(action)) {
-    response.setContentType("application/json");
-    response.setHeader("Cache-Control", "no-cache");
+// ── Automatic Refresh Logic (runs on every page load) ──
+boolean masterRefreshed = false;
+Connection connReportAuto = null;
+Connection connIIBAuto = null;
+try {
+    connReportAuto = DBUtilityAuto.getReportDBConnection();
+    connIIBAuto = DBUtilityAuto.getIIBDBConnection();
+    ensureTableExists(connReportAuto);
 
-    if (HITS_CACHE_TS == 0L) refreshHitsAsync();
+    // Check if we need to refresh (new day)
+    boolean needsRefresh = false;
+    Statement stmtCheck = connReportAuto.createStatement();
+    ResultSet rsCheck = stmtCheck.executeQuery("SELECT MAX(LAST_UPDATED) FROM DPG_IP_MASTER");
+    Date lastUpdated = null;
+    if (rsCheck.next()) {
+        lastUpdated = rsCheck.getDate(1);
+    }
+    rsCheck.close();
+    stmtCheck.close();
 
-    response.setHeader("X-Cache-Timestamp", String.valueOf(HITS_CACHE_TS));
-    out.print(HITS_CACHE_JSON);
-    return;
+    if (lastUpdated == null || lastUpdated.before(new java.util.Date(System.currentTimeMillis() - 24*60*60*1000))) {
+        needsRefresh = true;
+    }
+
+    if (needsRefresh) {
+        connReportAuto.setAutoCommit(false);
+        refreshMasterTable(connReportAuto, connIIBAuto);
+        connReportAuto.commit();
+        connReportAuto.setAutoCommit(true);
+        masterRefreshed = true;
+    }
+} catch (Exception e) {
+    e.printStackTrace();
+    try { if (connReportAuto != null) connReportAuto.rollback(); } catch (Exception ex) {}
+} finally {
+    try { if (connReportAuto != null) connReportAuto.close(); } catch (Exception e) {}
+    try { if (connIIBAuto != null) connIIBAuto.close(); } catch (Exception e) {}
+}
+
+// ── Flag status (not used) ──
+String flagStatus = "DR";
+try (Connection connection = DBUtilityAuto.getReportDBConnection();
+     Statement smt = connection.createStatement();
+     ResultSet rs = smt.executeQuery("select * from connection_master")) {
+    if (rs.next()) {
+        flagStatus = rs.getString("FLAG");
+        if (flagStatus == null) flagStatus = "DR";
+    }
+} catch(Exception e) {
+    System.out.println("Flag not found! Using default DR");
+}
+
+// ── Time Range Handling ──
+String manualFromTime = request.getParameter("fromTime");
+String manualToTime = request.getParameter("toTime");
+String displayFromTime = "", displayToTime = "", timeRangeDisplay = "";
+if(manualFromTime != null && manualToTime != null && !manualFromTime.isEmpty() && !manualToTime.isEmpty()) {
+    String fromDate = manualFromTime.replace("T", " ").replace("-", "/");
+    String toDate = manualToTime.replace("T", " ").replace("-", "/");
+    displayFromTime = fromDate; displayToTime = toDate;
+    timeRangeDisplay = fromDate + " to " + toDate;
+} else {
+    SimpleDateFormat sdfDisplay = new SimpleDateFormat("yyyy/MM/dd HH:mm");
+    java.util.Calendar cal = java.util.Calendar.getInstance();
+    java.util.Date now = cal.getTime();
+    java.util.Date tenMinsAgo = new java.util.Date(now.getTime() - (10 * 60 * 1000));
+    displayFromTime = sdfDisplay.format(tenMinsAgo);
+    displayToTime = sdfDisplay.format(now);
+    timeRangeDisplay = displayFromTime + " to " + displayToTime + " (Last 10 minutes)";
+}
+
+SimpleDateFormat sdf = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss");
+String currentTime = sdf.format(new java.util.Date());
+
+// ── Build the sample query for the SQL box (generic with IN) ──
+String sampleTimeCondition = "AND request_date_time >= SYSDATE - INTERVAL '10' MINUTE";
+if(manualFromTime != null && manualToTime != null && !manualFromTime.isEmpty() && !manualToTime.isEmpty()) {
+    String fromDate = manualFromTime.replace("T", " ").replace("-", "/");
+    String toDate = manualToTime.replace("T", " ").replace("-", "/");
+    sampleTimeCondition = "AND REQUEST_DATE_TIME BETWEEN TO_DATE('" + fromDate + "', 'YYYY/MM/DD HH24:MI') " +
+                           "AND TO_DATE('" + toDate + "', 'YYYY/MM/DD HH24:MI')";
+}
+String displayQuery = 
+    "SELECT /*+ PARALLEL(4) */ TRIM(DPG_IP) AS DPG_IP, COUNT(1) AS TOTAL_HITS\n" +
+    "FROM EISAPP.API_LOG\n" +
+    "WHERE TRIM(DPG_IP) IN ('10.191.171.200', '10.191.171.201', ...) \n" +
+    "  " + sampleTimeCondition + "\n" +
+    "GROUP BY TRIM(DPG_IP)\n" +
+    "ORDER BY DPG_IP";
+
+// ── Stats variables ──
+int totalHits = 0, totalCarts = 0, zeroHitCarts = 0;
+List<Map<String, Object>> dataList = new ArrayList<>();
+int prCount = 0, drCount = 0;
+%>
+<%!
+String maskIp(String fullIp) {
+    if (fullIp == null || fullIp.isEmpty()) return "N/A";
+    String[] parts = fullIp.split("\\.");
+    if (parts.length >= 4) return parts[2] + "." + parts[3];
+    return fullIp;
+}
+String getModeFromIp(String ip) {
+    if (ip == null) return "UNKNOWN";
+    if (ip.contains("171.")) return "PR";
+    if (ip.contains("176.")) return "DR";
+    return "UNKNOWN";
 }
 %>
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>Source Monitor — EIS Portal</title>
-<script src="<%=request.getContextPath()%>/js/jquery.min.js"></script>
+<meta charset="UTF-8">
+<title>DMZ DPG Incoming Transaction Monitoring</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-:root{
-  --brand:#F86F03;
-  --brand-2:#FF9A3D;
-  --brand-light:#FFF4EC;
-  --brand-glow:rgba(248,111,3,.4);
-  --ink:#0A0A0A;
-  --muted:#6B7280;
-  --line:#EAEAEA;
-  --bg:#F7F7F5;
-  --card:#FFFFFF;
-  --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --sidebar-w:260px;
-  --topnav-h:64px;
-  --green:#10B981;
-  --blue:#3B82F6;
-  --purple:#8B5CF6;
-  --pink:#EC4899;
-  --amber:#F59E0B;
-  --cyan:#06B6D4;
-  --red:#EF4444;
-}
-html[data-theme="dark"]{
-  --ink:#F5F5F5;
-  --muted:#9CA3AF;
-  --line:#272727;
-  --bg:#0F0F0F;
-  --card:#161616;
-}
-*{margin:0;padding:0;box-sizing:border-box}
-body{
-  font-family:var(--font-stack);
-  font-weight:700;
-  background:var(--bg);
-  color:var(--ink);
-  -webkit-font-smoothing:antialiased;
-  min-height:100vh;
-  transition:background .3s ease,color .3s ease;
-}
-a{color:inherit;text-decoration:none}
-h1,h2,h3,h4,h5,h6,strong,b{font-weight:800;letter-spacing:-.3px}
-.icon-svg{
-  width:16px;height:16px;
-  display:inline-block;flex-shrink:0;
-  stroke:currentColor;fill:none;
-  stroke-width:2.2;
-  stroke-linecap:round;stroke-linejoin:round;
-}
-.new-wrapper{
-  margin-left:var(--sidebar-w);
-  padding-top:var(--topnav-h);
-  transition:margin-left .3s cubic-bezier(.4,0,.2,1);
-  min-height:100vh;
-}
-html.sb-collapsed .new-wrapper{margin-left:0}
-.dash-wrap{
-  max-width:1500px;
-  margin:0 auto;
-  padding:28px 28px 60px;
-}
-
-/* ============ PAGE HEAD ============ */
-.page-head{
-  display:flex;
-  justify-content:space-between;
-  align-items:flex-start;
-  gap:16px;
-  margin-bottom:24px;
-  flex-wrap:wrap;
-}
-.page-head .ttl-wrap{flex:1;min-width:260px;}
-.page-head .ttl{
-  display:flex;align-items:center;gap:14px;
-  font-size:1.65rem;font-weight:900;letter-spacing:-.6px;
-  line-height:1.2;margin-bottom:6px;
-}
-.page-head .ttl .ttl-icon{
-  width:48px;height:48px;display:grid;place-items:center;
-  background:linear-gradient(135deg,var(--brand),var(--brand-2));
-  color:#fff;border-radius:14px;font-size:1.2rem;flex-shrink:0;
-  box-shadow:0 8px 22px -6px var(--brand-glow);
-}
-.page-head .ttl .ttl-icon .icon-svg{width:22px;height:22px;stroke-width:2.4;}
-.page-head .sub{
-  color:var(--muted);font-size:.85rem;margin-left:62px;
-  font-weight:600;display:flex;align-items:center;gap:10px;flex-wrap:wrap;
-}
-.page-head .sub .partition-badge{
-  display:inline-flex;align-items:center;gap:6px;
-  padding:4px 12px;background:var(--card);border:1px solid var(--line);
-  border-radius:999px;font-family:'JetBrains Mono',Consolas,monospace;
-  font-size:.72rem;font-weight:800;color:var(--brand);letter-spacing:.3px;
-}
-
-/* ============ HEADER ACTIONS ============ */
-.head-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
-.data-age-badge{
-  display:flex;align-items:center;gap:8px;
-  padding:10px 16px;background:var(--card);border:1px solid var(--line);
-  border-radius:12px;font-size:.72rem;font-weight:800;color:var(--muted);
-  text-transform:uppercase;letter-spacing:.4px;transition:all .3s ease;
-}
-.data-age-badge .icon-svg{width:14px;height:14px;stroke-width:2.4;}
-.data-age-badge b{font-family:'JetBrains Mono',Consolas,monospace;letter-spacing:-.2px;}
-.data-age-badge.fresh{color:var(--green);border-color:rgba(16,185,129,.3);background:rgba(16,185,129,.06);}
-.data-age-badge.warm{color:var(--amber);border-color:rgba(245,158,11,.3);background:rgba(245,158,11,.06);}
-.data-age-badge.stale{color:var(--red);border-color:rgba(239,68,68,.3);background:rgba(239,68,68,.06);}
-
-.live-badge{
-  display:flex;align-items:center;gap:8px;padding:10px 16px;
-  background:var(--card);border:1px solid var(--line);border-radius:12px;
-  font-size:.72rem;font-weight:800;color:var(--green);
-  text-transform:uppercase;letter-spacing:.5px;
-}
-.live-badge .dot{
-  width:8px;height:8px;border-radius:50%;background:var(--green);
-  animation:pulseDot 1.5s ease-in-out infinite;box-shadow:0 0 10px var(--green);
-}
-@keyframes pulseDot{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.4;transform:scale(.85);}}
-
-.timer-badge{
-  display:flex;align-items:center;gap:10px;padding:10px 16px;
-  background:var(--card);border:1px solid var(--line);border-radius:12px;
-}
-.timer-badge .icon-svg{color:var(--brand);width:16px;height:16px;}
-.timer-badge .time{
-  font-family:'JetBrains Mono',Consolas,monospace;font-size:.95rem;
-  font-weight:800;color:var(--ink);letter-spacing:-.3px;
-  font-variant-numeric:tabular-nums;
-}
-.timer-badge .lbl{
-  font-size:.65rem;color:var(--muted);font-weight:700;
-  text-transform:uppercase;letter-spacing:.4px;
-}
-
-/* ============ STATS ROW ============ */
-.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;}
-.stat-card{
-  background:var(--card);border:1px solid var(--line);border-radius:16px;
-  padding:18px;display:flex;align-items:center;gap:14px;transition:all .25s ease;
-}
-.stat-card:hover{
-  transform:translateY(-3px);box-shadow:0 12px 32px -10px rgba(0,0,0,.15);
-  border-color:var(--brand);
-}
-.stat-card .sicon{width:46px;height:46px;border-radius:12px;display:grid;place-items:center;flex-shrink:0;}
-.stat-card .sicon .icon-svg{width:20px;height:20px;stroke-width:2.4;}
-.stat-card .stext{flex:1;min-width:0;}
-.stat-card .snum{
-  font-size:1.4rem;font-weight:900;letter-spacing:-.6px;line-height:1;
-  color:var(--ink);display:flex;align-items:baseline;gap:4px;
-}
-.stat-card .snum small{font-size:.75rem;font-weight:700;color:var(--muted);}
-.stat-card .slabel{
-  font-size:.72rem;color:var(--muted);font-weight:700;
-  text-transform:uppercase;letter-spacing:.4px;margin-top:3px;
-}
-.stat-card.s-green .sicon{background:rgba(16,185,129,.12);color:var(--green);}
-.stat-card.s-red .sicon{background:rgba(239,68,68,.12);color:var(--red);}
-.stat-card.s-blue .sicon{background:rgba(59,130,246,.12);color:var(--blue);}
-.stat-card.s-amber .sicon{background:rgba(245,158,11,.12);color:var(--amber);}
-
-/* ============ MAIN LAYOUT ============ */
-.monitor-main{
-  display:grid;grid-template-columns:1fr 340px;gap:16px;
-  min-height:600px;margin-bottom:24px;
-}
-.panel{
-  background:var(--card);border:1px solid var(--line);border-radius:20px;
-  display:flex;flex-direction:column;overflow:hidden;
-  box-shadow:0 2px 8px rgba(0,0,0,.03);
-}
-.panel-header{
-  padding:16px 20px;border-bottom:1px solid var(--line);
-  display:flex;justify-content:space-between;align-items:center;
-  gap:12px;flex-wrap:wrap;
-}
-.panel-header .panel-title{
-  display:flex;align-items:center;gap:10px;font-size:.85rem;font-weight:900;
-  text-transform:uppercase;letter-spacing:.8px;color:var(--ink);
-}
-.panel-header .panel-title .icon-svg{color:var(--brand);width:16px;height:16px;}
-.panel-header .count-badge{
-  padding:3px 10px;background:var(--brand-light);color:var(--brand);
-  border-radius:999px;font-size:.65rem;font-weight:800;
-  font-variant-numeric:tabular-nums;
-}
-html[data-theme="dark"] .panel-header .count-badge{background:rgba(248,111,3,.15);}
-.panel-legend{
-  display:flex;gap:14px;font-size:.68rem;color:var(--muted);
-  font-weight:700;text-transform:uppercase;letter-spacing:.4px;
-}
-.panel-legend .legend-item{display:flex;align-items:center;gap:6px;}
-.panel-legend .swatch{width:8px;height:8px;border-radius:2px;}
-.panel-legend .swatch.on{background:var(--green);}
-.panel-legend .swatch.off{background:var(--red);}
-
-/* ============ SOURCES GRID ============ */
-.sources-grid{
-  flex:1;overflow-y:auto;padding:16px;
-  display:grid;grid-template-columns:repeat(auto-fill, minmax(150px, 1fr));
-  gap:12px;align-content:start;
-}
-.sources-grid::-webkit-scrollbar{width:6px;}
-.sources-grid::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px;}
-
-/* ============ SOURCE CARD ============ */
-.source-card{
-  background:var(--bg);border:1.5px solid var(--line);border-radius:16px;
-  padding:18px 12px 16px;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;gap:8px;position:relative;
-  transition:all .25s cubic-bezier(.4,0,.2,1);cursor:default;
-  overflow:hidden;min-height:130px;
-}
-.source-card.active{
-  border-color:rgba(16,185,129,.3);
-  background:linear-gradient(180deg, rgba(16,185,129,.08) 0%, var(--card) 60%);
-}
-.source-card.inactive{opacity:.7;}
-.source-card:hover{transform:translateY(-3px);box-shadow:0 12px 32px -10px rgba(0,0,0,.15);}
-.source-card.active:hover{border-color:var(--green);box-shadow:0 12px 32px -10px rgba(16,185,129,.3);}
-.source-card.inactive:hover{border-color:var(--red);opacity:1;}
-
-.source-status-indicator{position:absolute;top:12px;right:12px;width:9px;height:9px;border-radius:50%;}
-.source-card.active .source-status-indicator{
-  background:var(--green);box-shadow:0 0 0 4px rgba(16,185,129,.15);
-  animation:pulseDot 1.8s ease-in-out infinite;
-}
-.source-card.inactive .source-status-indicator{
-  background:var(--red);box-shadow:0 0 0 4px rgba(239,68,68,.12);
-}
-.source-code{
-  font-family:'JetBrains Mono',Consolas,monospace;font-size:1.9rem;
-  font-weight:800;letter-spacing:-.5px;line-height:1;color:var(--ink);
-  transition:color .2s ease;
-}
-.source-card.active .source-code{color:var(--green);}
-.source-card.inactive .source-code{color:var(--muted);}
-.source-status-text{
-  font-size:.6rem;font-weight:900;letter-spacing:1px;
-  text-transform:uppercase;padding:4px 10px;border-radius:999px;
-}
-.source-card.active .source-status-text{background:rgba(16,185,129,.12);color:var(--green);}
-.source-card.inactive .source-status-text{background:rgba(239,68,68,.1);color:var(--red);}
-.source-hits{
-  font-family:'JetBrains Mono',Consolas,monospace;font-size:.65rem;font-weight:700;
-  color:var(--muted);padding:3px 8px;background:var(--card);
-  border-radius:6px;border:1px solid var(--line);
-}
-.source-card.active .source-hits{
-  color:var(--green);background:rgba(16,185,129,.08);
-  border-color:rgba(16,185,129,.2);
-}
-
-/* ============ ACTIVITY LOG ============ */
-.activity-list{
-  flex:1;overflow-y:auto;padding:10px 12px;
-  display:flex;flex-direction:column;gap:6px;
-}
-.activity-list::-webkit-scrollbar{width:5px;}
-.activity-list::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px;}
-.activity-item{
-  display:flex;align-items:center;gap:10px;padding:10px 12px;
-  background:var(--bg);border:1px solid var(--line);
-  border-left:3px solid transparent;border-radius:10px;
-  font-size:.75rem;font-weight:700;animation:slideIn .3s ease;
-}
-@keyframes slideIn{from{transform:translateX(-8px);opacity:0;}to{transform:translateX(0);opacity:1;}}
-.activity-item.on{border-left-color:var(--green);}
-.activity-item.off{border-left-color:var(--red);opacity:.7;}
-.activity-time{
-  font-family:'JetBrains Mono',Consolas,monospace;font-size:.68rem;
-  font-weight:700;color:var(--muted);flex-shrink:0;
-  font-variant-numeric:tabular-nums;
-}
-.activity-source{
-  font-family:'JetBrains Mono',Consolas,monospace;font-size:.75rem;
-  font-weight:800;color:var(--ink);letter-spacing:-.2px;
-}
-.activity-status{
-  margin-left:auto;font-size:.6rem;font-weight:900;
-  text-transform:uppercase;letter-spacing:.6px;
-  padding:3px 8px;border-radius:6px;flex-shrink:0;
-}
-.activity-status.on{background:rgba(16,185,129,.12);color:var(--green);}
-.activity-status.off{background:rgba(239,68,68,.1);color:var(--red);}
-.activity-empty{text-align:center;padding:40px 20px;color:var(--muted);font-size:.8rem;font-weight:600;}
-.activity-empty .icon-svg{width:36px;height:36px;opacity:.4;margin-bottom:12px;}
-
-/* ============ FOOTER ============ */
-.foot{
-  margin-top:32px;padding-top:24px;border-top:1px solid var(--line);
-  display:flex;justify-content:space-between;align-items:center;
-  font-size:.75rem;color:var(--muted);font-weight:600;
-  flex-wrap:wrap;gap:12px;
-}
-.foot .brandline b{color:var(--brand);}
-
-/* ============ LOADING OVERLAY ============ */
-.loading-overlay{
-  position:fixed;inset:0;background:var(--bg);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  z-index:9999;transition:opacity .5s ease;gap:20px;
-}
-.loading-overlay.hide{opacity:0;pointer-events:none;}
-.loader-cyber{width:64px;height:64px;position:relative;}
-.loader-cyber::before,.loader-cyber::after{
-  content:"";position:absolute;border-radius:50%;
-  animation:cyberSpin 1.2s ease-in-out infinite;
-}
-.loader-cyber::before{
-  inset:0;border:3px solid transparent;
-  border-top-color:var(--brand);border-bottom-color:var(--brand-2);
-}
-.loader-cyber::after{
-  inset:12px;border:3px solid transparent;
-  border-left-color:var(--green);border-right-color:var(--red);
-  animation-delay:.3s;animation-direction:reverse;
-}
-@keyframes cyberSpin{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
-.loader-text{
-  font-family:'JetBrains Mono',Consolas,monospace;font-size:.85rem;
-  font-weight:800;letter-spacing:4px;color:var(--ink);
-  animation:pulseText 1.5s ease-in-out infinite;
-}
-@keyframes pulseText{0%,100%{opacity:1;}50%{opacity:.3;}}
-.loader-sub{font-size:.75rem;color:var(--muted);font-weight:600;letter-spacing:1px;}
-
-/* ============ ERROR BANNER ============ */
-.error-banner{
-  position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
-  background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);
-  color:var(--red);padding:12px 20px;border-radius:14px;
-  font-size:.8rem;font-weight:700;z-index:999;
-  box-shadow:0 12px 32px -8px rgba(0,0,0,.15);
-  display:none;align-items:center;gap:10px;max-width:90%;
-  backdrop-filter:blur(10px);
-}
-.error-banner.show{display:flex;animation:slideUp .4s ease;}
-@keyframes slideUp{
-  from{transform:translateX(-50%) translateY(20px);opacity:0;}
-  to{transform:translateX(-50%) translateY(0);opacity:1;}
-}
-
-/* ============ RESPONSIVE ============ */
-@media (max-width:1200px){.monitor-main{grid-template-columns:1fr 280px;}}
-@media (max-width:992px){
-  .monitor-main{grid-template-columns:1fr;}
-  .stats-row{grid-template-columns:repeat(2,1fr);}
-}
-@media (max-width:900px){
-  .new-wrapper{margin-left:0;}
-  .dash-wrap{padding:20px 16px 40px;}
-  .stats-row{grid-template-columns:repeat(2,1fr);}
-  .page-head .ttl{font-size:1.3rem;}
-  .page-head .ttl .ttl-icon{width:40px;height:40px;}
-  .page-head .sub{margin-left:52px;font-size:.78rem;}
-}
-@media (max-width:640px){
-  .dash-wrap{padding:16px 12px 32px;}
-  .stats-row{grid-template-columns:1fr;}
-  .sources-grid{grid-template-columns:repeat(2,1fr);gap:8px;padding:12px;}
-  .source-card{min-height:110px;padding:14px 8px;}
-  .source-code{font-size:1.5rem;}
-  .head-actions{width:100%;}
-  .live-badge, .timer-badge, .data-age-badge{flex:1;justify-content:center;}
-}
+/* ── CSS (unchanged) ── */
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Inter',sans-serif; min-height:100vh; padding:24px; background:#0b0e1a; color:#fff; }
+body::before { content:''; position:fixed; inset:0; background:radial-gradient(ellipse at 20% 50%, rgba(88,70,255,0.15) 0%, transparent 60%), radial-gradient(ellipse at 80% 80%, rgba(0,200,255,0.10) 0%, transparent 50%); pointer-events:none; z-index:0; }
+body::after { content:''; position:fixed; inset:0; background-image:linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px); background-size:60px 60px; pointer-events:none; z-index:0; animation:gridMove 20s linear infinite; }
+@keyframes gridMove { 0% { transform:translate(0,0); } 100% { transform:translate(60px,60px); } }
+.container { max-width:1600px; margin:0 auto; position:relative; z-index:1; }
+.header { background:rgba(255,255,255,0.04); backdrop-filter:blur(24px); border:1px solid rgba(255,255,255,0.08); border-radius:40px; padding:32px 40px 28px; margin-bottom:32px; box-shadow:0 30px 60px rgba(0,0,0,0.5),0 0 0 1px rgba(255,255,255,0.04) inset; transform:perspective(1200px) rotateX(1.5deg); transition:transform 0.6s ease; }
+.header:hover { transform:perspective(1200px) rotateX(0deg); }
+.header-top { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:20px; }
+.header h1 { font-size:34px; font-weight:800; letter-spacing:-0.5px; background:linear-gradient(135deg, #ffffff 0%, #a78bfa 40%, #60a5fa 70%, #34d399 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; text-shadow:0 0 60px rgba(167,139,250,0.15); line-height:1.2; }
+.header h1 small { font-size:16px; font-weight:400; -webkit-text-fill-color:rgba(255,255,255,0.4); letter-spacing:1px; }
+.header-actions { display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+.btn { background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); color:#fff; padding:10px 22px; border-radius:60px; font-size:14px; font-weight:600; cursor:pointer; transition:all 0.3s; display:inline-flex; align-items:center; gap:8px; backdrop-filter:blur(8px); font-family:'Inter',sans-serif; text-decoration:none; }
+.btn:hover { background:rgba(167,139,250,0.2); border-color:rgba(167,139,250,0.4); transform:translateY(-2px); box-shadow:0 12px 30px rgba(167,139,250,0.2); }
+.btn svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2.5; stroke-linecap:round; stroke-linejoin:round; }
+.btn-refresh-ip { background:rgba(248,113,113,0.12); border-color:rgba(248,113,113,0.2); color:#f87171; }
+.btn-refresh-ip:hover { background:rgba(248,113,113,0.25); border-color:rgba(248,113,113,0.4); box-shadow:0 12px 30px rgba(248,113,113,0.2); }
+.btn-sql { background:rgba(251,191,36,0.12); border-color:rgba(251,191,36,0.2); color:#fbbf24; }
+.btn-sql:hover { background:rgba(251,191,36,0.25); border-color:rgba(251,191,36,0.4); box-shadow:0 12px 30px rgba(251,191,36,0.2); }
+.spin { animation:spin 0.8s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.live-badge { background:rgba(52,211,153,0.15); border:1px solid rgba(52,211,153,0.25); padding:6px 18px; border-radius:60px; font-size:12px; font-weight:600; color:#34d399; display:flex; align-items:center; gap:8px; letter-spacing:0.5px; text-transform:uppercase; }
+.live-badge .dot { width:8px; height:8px; border-radius:50%; background:#34d399; animation:pulseDot 1.6s ease-in-out infinite; display:inline-block; }
+@keyframes pulseDot { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:0.3; transform:scale(0.7); } }
+.time-range-display { background:rgba(0,0,0,0.3); border-radius:60px; padding:10px 28px; margin-top:18px; display:inline-block; border:1px solid rgba(255,255,255,0.06); font-size:14px; font-weight:500; color:rgba(255,255,255,0.6); backdrop-filter:blur(4px); }
+.time-range-display .time-value { color:#fff; font-weight:700; background:linear-gradient(135deg, #a78bfa, #60a5fa); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin-left:6px; }
+.datetime-section { background:rgba(255,255,255,0.03); border-radius:28px; padding:20px 24px; margin-top:18px; border:1px solid rgba(255,255,255,0.05); backdrop-filter:blur(4px); }
+.datetime-picker { display:flex; gap:18px; align-items:flex-end; justify-content:center; flex-wrap:wrap; }
+.datetime-input { flex:1; min-width:220px; }
+.datetime-input label { display:block; color:rgba(255,255,255,0.5); font-size:11px; font-weight:600; margin-bottom:6px; letter-spacing:0.8px; text-transform:uppercase; }
+.datetime-input input { width:100%; padding:12px 18px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.10); border-radius:16px; color:#fff; font-size:14px; font-weight:500; transition:all 0.3s; font-family:'Inter',sans-serif; }
+.datetime-input input:focus { border-color:#a78bfa; outline:none; box-shadow:0 0 0 4px rgba(167,139,250,0.15); background:rgba(255,255,255,0.08); }
+.datetime-input input::-webkit-calendar-picker-indicator { filter:invert(1); cursor:pointer; }
+.manual-btn { background:linear-gradient(145deg, #7c3aed, #6d28d9); border:none; padding:12px 32px; border-radius:16px; color:#fff; font-size:14px; font-weight:600; cursor:pointer; transition:all 0.3s; box-shadow:0 8px 24px rgba(124,58,237,0.25); font-family:'Inter',sans-serif; letter-spacing:0.3px; white-space:nowrap; }
+.manual-btn:hover { transform:translateY(-3px); box-shadow:0 16px 40px rgba(124,58,237,0.35); }
+.reset-btn { background:rgba(255,255,255,0.06); box-shadow:none; }
+.reset-btn:hover { background:rgba(255,255,255,0.12); box-shadow:0 8px 24px rgba(0,0,0,0.3); }
+.sql-box { display:none; background:rgba(0,0,0,0.6); border:1px solid rgba(251,191,36,0.2); border-radius:16px; padding:20px; margin:20px 0; backdrop-filter:blur(8px); }
+.sql-box.show { display:block; }
+.sql-box pre { font-family:'Courier New',monospace; font-size:14px; color:#a5b4fc; white-space:pre-wrap; word-break:break-all; margin:0; padding:12px; background:rgba(255,255,255,0.05); border-radius:8px; border-left:3px solid #fbbf24; }
+.sql-box .copy-btn { margin-top:12px; background:rgba(251,191,36,0.15); border:1px solid rgba(251,191,36,0.3); color:#fbbf24; padding:6px 18px; border-radius:30px; font-size:13px; font-weight:600; cursor:pointer; transition:0.3s; font-family:'Inter',sans-serif; }
+.sql-box .copy-btn:hover { background:rgba(251,191,36,0.25); box-shadow:0 0 20px rgba(251,191,36,0.1); }
+.sql-box .copy-msg { color:#34d399; font-size:13px; margin-left:12px; display:none; }
+.stats-panel { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:20px; margin:28px 0 32px; }
+.stat-card { background:rgba(255,255,255,0.03); backdrop-filter:blur(8px); border-radius:24px; padding:22px 24px; border:1px solid rgba(255,255,255,0.05); transition:all 0.4s; position:relative; overflow:hidden; box-shadow:0 8px 24px rgba(0,0,0,0.2); }
+.stat-card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg, transparent, #a78bfa, #34d399, transparent); opacity:0.5; }
+.stat-card:hover { transform:translateY(-4px); border-color:rgba(167,139,250,0.15); box-shadow:0 20px 48px rgba(0,0,0,0.3); }
+.stat-label { color:rgba(255,255,255,0.5); font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:8px; }
+.stat-value { font-size:40px; font-weight:800; background:linear-gradient(135deg, #fff, #a78bfa); -webkit-background-clip:text; -webkit-text-fill-color:transparent; line-height:1.1; }
+.stat-value.green { background:linear-gradient(135deg, #34d399, #6ee7b7); -webkit-background-clip:text; }
+.stat-value.purple { background:linear-gradient(135deg, #a78bfa, #8b5cf6); -webkit-background-clip:text; }
+.stat-value.blue { background:linear-gradient(135deg, #60a5fa, #3b82f6); -webkit-background-clip:text; }
+.stat-value.red { background:linear-gradient(135deg, #f87171, #ef4444); -webkit-background-clip:text; }
+.stat-card.blink-zero-stat { animation:blinkStat 1.0s ease-in-out infinite; border-color:#f87171; box-shadow:0 0 30px rgba(248,113,113,0.15); }
+@keyframes blinkStat { 0%,100% { background:rgba(255,255,255,0.03); border-color:rgba(248,113,113,0.2); } 50% { background:rgba(248,113,113,0.10); border-color:#f87171; box-shadow:0 0 40px rgba(248,113,113,0.25); } }
+.carts-container { display:grid; grid-template-columns:repeat(auto-fill, minmax(300px,1fr)); gap:28px; padding:4px 0 20px; }
+.cart { background:rgba(255,255,255,0.03); backdrop-filter:blur(12px); border-radius:28px; padding:28px 24px 24px; border:1px solid rgba(255,255,255,0.06); transform-style:preserve-3d; transition:all 0.45s cubic-bezier(0.23,1,0.32,1); position:relative; overflow:hidden; box-shadow:0 12px 32px rgba(0,0,0,0.3),0 0 0 1px rgba(255,255,255,0.03) inset; cursor:default; }
+.cart::before { content:''; position:absolute; inset:0; background:radial-gradient(circle at 30% 20%, rgba(167,139,250,0.06), transparent 70%); pointer-events:none; opacity:0; transition:opacity 0.6s; }
+.cart:hover::before { opacity:1; }
+.cart:hover { transform:perspective(1200px) rotateX(3deg) rotateY(4deg) translateZ(16px); border-color:rgba(167,139,250,0.15); box-shadow:0 32px 64px rgba(0,0,0,0.4),0 0 0 1px rgba(167,139,250,0.08) inset; }
+.cart-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; padding-bottom:14px; border-bottom:1px solid rgba(255,255,255,0.04); }
+.dpg-ip { font-size:22px; font-weight:700; color:#fff; letter-spacing:0.3px; background:linear-gradient(135deg, #fff, #c4b5fd); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.dpg-ip .full-ip { font-size:13px; font-weight:400; -webkit-text-fill-color:rgba(255,255,255,0.25); display:block; margin-top:2px; }
+.mode-badge { padding:6px 18px; border-radius:60px; font-size:13px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; box-shadow:0 4px 16px rgba(0,0,0,0.2); }
+.mode-badge.pr { background:linear-gradient(145deg, #f43f5e, #e11d48); color:#fff; box-shadow:0 4px 20px rgba(244,63,94,0.3); }
+.mode-badge.dr { background:linear-gradient(145deg, #10b981, #059669); color:#fff; box-shadow:0 4px 20px rgba(16,185,129,0.3); }
+.hits-value { font-size:64px; font-weight:800; text-align:center; margin:12px 0 8px; background:linear-gradient(135deg, #fff, #a78bfa); -webkit-background-clip:text; -webkit-text-fill-color:transparent; line-height:1; letter-spacing:-2px; }
+.hits-value .label { font-size:16px; font-weight:500; -webkit-text-fill-color:rgba(255,255,255,0.3); letter-spacing:1px; display:block; margin-top:4px; }
+.hit-status { text-align:center; padding:10px; border-radius:16px; font-size:14px; font-weight:600; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.04); margin-top:4px; }
+.hit-status.up { color:#34d399; }
+.hit-status.down { color:#f87171; }
+.cart.blink-zero { animation:blinkRed 0.8s ease-in-out infinite; border-color:#f87171; box-shadow:0 0 30px rgba(248,113,113,0.15); }
+@keyframes blinkRed { 0%,100% { background:rgba(255,255,255,0.03); border-color:rgba(248,113,113,0.2); } 50% { background:rgba(248,113,113,0.08); border-color:#f87171; box-shadow:0 0 40px rgba(248,113,113,0.2); } }
+.last-updated { margin-top:16px; font-size:11px; color:rgba(255,255,255,0.2); text-align:right; letter-spacing:0.3px; border-top:1px solid rgba(255,255,255,0.03); padding-top:14px; }
+.no-data { grid-column:1/-1; text-align:center; padding:80px 40px; background:rgba(255,255,255,0.02); backdrop-filter:blur(8px); border-radius:40px; border:1px solid rgba(255,255,255,0.05); }
+.no-data h3 { font-size:28px; font-weight:700; margin-bottom:12px; background:linear-gradient(135deg, #fff, #a78bfa); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.no-data p { color:rgba(255,255,255,0.4); font-size:16px; }
+.audio-controls { position:fixed; bottom:30px; right:30px; z-index:1000; }
+.mute-btn { width:70px; height:70px; border-radius:50%; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.10); color:#fff; font-size:14px; font-weight:700; cursor:pointer; transition:all 0.3s; backdrop-filter:blur(12px); box-shadow:0 12px 32px rgba(0,0,0,0.4); position:relative; display:flex; align-items:center; justify-content:center; text-decoration:none; font-family:'Inter',sans-serif; }
+.mute-btn:hover { transform:scale(1.08); }
+.mute-btn.sound-on { background:rgba(52,211,153,0.15); border-color:rgba(52,211,153,0.25); color:#34d399; }
+.mute-btn.sound-off { background:rgba(248,113,113,0.12); border-color:rgba(248,113,113,0.2); color:#f87171; }
+.mute-btn .indicator { position:absolute; top:-4px; right:-4px; width:16px; height:16px; border-radius:50%; background:#34d399; border:2px solid #0b0e1a; animation:pulseDot 1.6s ease-in-out infinite; }
+.mute-btn.sound-off .indicator { background:#f87171; }
+.footer { margin-top:50px; text-align:center; padding:28px; color:rgba(255,255,255,0.2); font-size:13px; letter-spacing:0.5px; border-top:1px solid rgba(255,255,255,0.03); }
+.footer strong { color:rgba(255,255,255,0.3); font-weight:600; }
+@media (max-width:768px) { body { padding:16px; } .header { padding:24px 20px; } .header h1 { font-size:24px; } .header-top { flex-direction:column; align-items:stretch; } .header-actions { justify-content:center; } .datetime-picker { flex-direction:column; } .datetime-input { min-width:100%; } .manual-btn { width:100%; justify-content:center; } .stats-panel { grid-template-columns:1fr 1fr; } .stat-value { font-size:30px; } .carts-container { grid-template-columns:1fr; } .hits-value { font-size:48px; } .time-range-display { font-size:12px; padding:8px 16px; } .audio-controls { bottom:16px; right:16px; } .mute-btn { width:56px; height:56px; font-size:12px; } }
+@media (max-width:480px) { .stats-panel { grid-template-columns:1fr; } .header h1 { font-size:20px; } .header h1 small { font-size:13px; } }
+::-webkit-scrollbar { width:6px; }
+::-webkit-scrollbar-track { background:rgba(255,255,255,0.02); }
+::-webkit-scrollbar-thumb { background:rgba(167,139,250,0.3); border-radius:10px; }
+::-webkit-scrollbar-thumb:hover { background:rgba(167,139,250,0.5); }
 </style>
 </head>
 <body>
+<div class="container">
+<div class="header">
+<div class="header-top">
+<h1>DMZ DPG Incoming Transaction Monitoring <small>- Real-time</small></h1>
+<div class="header-actions">
+<span class="live-badge"><span class="dot"></span> LIVE</span>
+<button class="btn" onclick="refreshPage()" id="refreshBtn">
+<svg viewBox="0 0 24 24"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg> Refresh
+</button>
+<a href="<%= request.getRequestURI() %>?action=refreshMaster&mute=<%= isMuted %><%= (manualFromTime!=null?"&fromTime="+manualFromTime:"") %><%= (manualToTime!=null?"&toTime="+manualToTime:"") %>" class="btn btn-refresh-ip" onclick="return confirm('Refresh IP list? This will delete and reload all IPs from IIB.');">
+<svg viewBox="0 0 24 24"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg> Refresh IP List
+</a>
+<button class="btn btn-sql" onclick="toggleSqlBox()">
+<svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg> Show SQL Query
+</button>
+<span style="font-size:13px;color:rgba(255,255,255,0.25);font-weight:500;"><%= currentTime %></span>
+</div>
+</div>
+<div id="sqlBox" class="sql-box">
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+<span style="color:#fbbf24; font-weight:600; font-size:14px;">QUERY RUN EVERY 10 MINUTES (USING IN CLAUSE)</span>
+</div>
+<pre id="sqlQueryText"><%= displayQuery %></pre>
+<div>
+<button class="copy-btn" onclick="copySql()">Copy to Clipboard</button>
+<span id="copyMsg" class="copy-msg">Copied Successfully!</span>
+</div>
+</div>
+<div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-top:14px;">
+<div class="time-range-display">DATA FROM: <span class="time-value"><%= timeRangeDisplay %></span></div>
+</div>
+<div class="datetime-section">
+<form method="get" action="" id="mainForm">
+<input type="hidden" name="mute" id="muteInput" value="<%= isMuted %>">
+<div class="datetime-picker">
+<div class="datetime-input"><label>FROM</label><input type="datetime-local" name="fromTime" id="fromTime" value="<%= manualFromTime!=null?manualFromTime:"" %>"></div>
+<div class="datetime-input"><label>TO</label><input type="datetime-local" name="toTime" id="toTime" value="<%= manualToTime!=null?manualToTime:"" %>"></div>
+<button type="submit" class="manual-btn">APPLY</button>
+<% if(manualFromTime != null || manualToTime != null) { %>
+<a href="<%= request.getRequestURI() %>?mute=<%= isMuted %>" class="manual-btn reset-btn">RESET</a>
+<% } %>
+</div>
+</form>
+</div>
+</div>
 
-<jsp:include page="./roleHeader.jsp" />
+<div class="stats-panel">
+<div class="stat-card" id="totalHitsCard"><div class="stat-label">Total Hits</div><div class="stat-value purple" id="totalHits">0</div></div>
+<div class="stat-card" id="zeroHitsCard"><div class="stat-label">Zero Hit Carts</div><div class="stat-value red" id="zeroHitsCount">0</div></div>
+<div class="stat-card"><div class="stat-label">Active Carts</div><div class="stat-value blue" id="totalCarts">0</div></div>
+<div class="stat-card"><div class="stat-label">PR Mode</div><div class="stat-value green" id="prCount">0</div></div>
+<div class="stat-card"><div class="stat-label">DR Mode</div><div class="stat-value" id="drCount" style="background:linear-gradient(135deg,#60a5fa,#3b82f6);-webkit-background-clip:text;">0</div></div>
+</div>
 
+<div id="cartsContainer" class="carts-container">
 <%
-  String roleForDisplay = (String) session.getAttribute("role");
-  String __user = (String) session.getAttribute("username");
-  if (__user == null || __user.trim().isEmpty()) __user = "User";
-  String userInitial = (__user.length() > 0) ? __user.substring(0,1).toUpperCase() : "U";
+// ── Read Master IP List from Report DB ──
+List<String> allIps = new ArrayList<>();
+Connection connRead = null;
+Statement stmtRead = null;
+ResultSet rsRead = null;
+try {
+    connRead = DBUtilityAuto.getReportDBConnection();
+    stmtRead = connRead.createStatement();
+    rsRead = stmtRead.executeQuery("SELECT DPG_IP FROM DPG_IP_MASTER ORDER BY DPG_IP");
+    while (rsRead.next()) {
+        allIps.add(rsRead.getString("DPG_IP"));
+    }
+} catch (SQLException e) {
+    e.printStackTrace();
+} finally {
+    try { if (rsRead != null) rsRead.close(); } catch (Exception e) {}
+    try { if (stmtRead != null) stmtRead.close(); } catch (Exception e) {}
+    try { if (connRead != null) connRead.close(); } catch (Exception e) {}
+}
+
+if (allIps == null || allIps.isEmpty()) {
+%>
+<div class="no-data">
+<h3>IP Master List is Empty</h3>
+<p>Please click <strong>"Refresh IP List"</strong> button to populate the master table, or wait for the next auto-refresh (it will auto-populate at 12:01 AM).</p>
+</div>
+<%
+    prCount = 0; drCount = 0; totalHits = 0; totalCarts = 0; zeroHitCarts = 0;
+} else {
+    // ── Build IN clause with all IPs ──
+    StringBuilder inClause = new StringBuilder();
+    for (int i = 0; i < allIps.size(); i++) {
+        inClause.append("'").append(allIps.get(i)).append("'");
+        if (i < allIps.size() - 1) inClause.append(",");
+    }
+
+    // ── Fetch hit counts from IIB using IN clause ──
+    Connection connIIB = null;
+    PreparedStatement pstmtIIB = null;
+    ResultSet rsIIB = null;
+    try {
+        connIIB = DBUtilityAuto.getIIBDBConnection();
+        String timeCondition = "";
+        if(manualFromTime != null && manualToTime != null && !manualFromTime.isEmpty() && !manualToTime.isEmpty()) {
+            String fromDate = manualFromTime.replace("T", " ").replace("-", "/");
+            String toDate = manualToTime.replace("T", " ").replace("-", "/");
+            timeCondition = "AND REQUEST_DATE_TIME BETWEEN TO_DATE('" + fromDate + "', 'YYYY/MM/DD HH24:MI') " +
+                            "AND TO_DATE('" + toDate + "', 'YYYY/MM/DD HH24:MI') ";
+        } else {
+            timeCondition = "AND request_date_time >= SYSDATE - INTERVAL '10' MINUTE ";
+        }
+
+        String countQuery =
+            "SELECT /*+ PARALLEL(4) */ TRIM(DPG_IP) AS DPG_IP, COUNT(1) AS TOTAL_HITS " +
+            "FROM EISAPP.API_LOG " +
+            "WHERE TRIM(DPG_IP) IN (" + inClause.toString() + ") " +
+            timeCondition +
+            "GROUP BY TRIM(DPG_IP)";
+        
+        // Print the query to console for debugging
+        System.out.println("===== 10-min hit count query =====");
+        System.out.println(countQuery);
+        System.out.println("===================================");
+
+        pstmtIIB = connIIB.prepareStatement(countQuery);
+        rsIIB = pstmtIIB.executeQuery();
+        Map<String, Integer> countMap = new HashMap<>();
+        while (rsIIB.next()) {
+            String ip = rsIIB.getString("DPG_IP");
+            int hits = rsIIB.getInt("TOTAL_HITS");
+            countMap.put(ip, hits);
+        }
+
+        // ── Build dataList ──
+        for (String ip : allIps) {
+            Map<String, Object> row = new HashMap<>();
+            int hits = countMap.getOrDefault(ip, 0);
+            row.put("dpgIp", ip);
+            row.put("hits", hits);
+            dataList.add(row);
+            totalHits += hits;
+            totalCarts++;
+            if (hits == 0) zeroHitCarts++;
+            String mode = getModeFromIp(ip);
+            if ("PR".equals(mode)) prCount++;
+            else if ("DR".equals(mode)) drCount++;
+        }
+
+    } catch (Exception e) {
+        e.printStackTrace();
+%>
+<div class="no-data">
+<h3>System Error</h3>
+<p><%= e.getMessage() %></p>
+</div>
+<%
+    } finally {
+        try { if (rsIIB != null) rsIIB.close(); } catch (Exception e) {}
+        try { if (pstmtIIB != null) pstmtIIB.close(); } catch (Exception e) {}
+        try { if (connIIB != null) connIIB.close(); } catch (Exception e) {}
+    }
+}
 %>
 
-<!-- ============ LOADING OVERLAY ============ -->
-<div class="loading-overlay" id="loadingOverlay">
-  <div class="loader-cyber"></div>
-  <div class="loader-text">LOADING</div>
-  <div class="loader-sub">Fetching cached status...</div>
+<%
+if (dataList != null && !dataList.isEmpty()) {
+    Collections.sort(dataList, (a,b) -> ((String)a.get("dpgIp")).compareTo((String)b.get("dpgIp")));
+    for(Map<String, Object> row : dataList) {
+        String fullIp = (String) row.get("dpgIp");
+        String maskedIp = maskIp(fullIp);
+        int hits = (Integer) row.get("hits");
+        String mode = getModeFromIp(fullIp);
+        boolean isPr = "PR".equals(mode);
+        String badgeClass = isPr ? "pr" : "dr";
+        String statusClass, statusText, cartExtraClass = "";
+        if (hits == 0) {
+            statusClass = "down";
+            statusText = "IP Down / No Traffic";
+            cartExtraClass = "blink-zero";
+        } else {
+            statusClass = "up";
+            statusText = "Up & Running";
+        }
+%>
+<div class="cart <%= cartExtraClass %>" data-mode="<%= mode %>" data-hits="<%= hits %>">
+<div class="cart-header">
+<span class="dpg-ip"><%= maskedIp %><span class="full-ip"><%= fullIp %></span></span>
+<span class="mode-badge <%= badgeClass %>"><%= mode %></span>
+</div>
+<div class="hits-value"><%= hits %><span class="label">HITS</span></div>
+<div class="hit-status <%= statusClass %>"><%= statusText %></div>
+<div class="last-updated">Updated: <%= currentTime %></div>
+</div>
+<%
+    }
+} else if (dataList != null && dataList.isEmpty() && allIps != null && !allIps.isEmpty()) {
+%>
+<div class="no-data">
+<h3>No Data Available</h3>
+<p>No DPG IP records found in the selected time range.</p>
+</div>
+<%
+}
+%>
 </div>
 
-<div class="new-wrapper">
-<div class="dash-wrap">
-
-  <!-- ============ PAGE HEAD ============ -->
-  <section class="page-head">
-    <div class="ttl-wrap">
-      <h1 class="ttl">
-        <span class="ttl-icon">
-          <svg class="icon-svg" viewBox="0 0 24 24"><path d="M4.93 4.93a10 10 0 0 0 0 14.14M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M8.46 8.46a5 5 0 0 0 0 7.07M15.54 8.46a5 5 0 0 1 0 7.07"/><circle cx="12" cy="12" r="1.5"/></svg>
-        </span>
-        Source Monitor
-      </h1>
-      <p class="sub">
-        Real-time source tracking
-        <span class="partition-badge" id="partitionBadge">LOADING</span>
-      </p>
-    </div>
-    <div class="head-actions">
-      <div class="data-age-badge" id="dataAgeBadge" style="display:none;">
-        <svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        Data: --
-      </div>
-      <div class="live-badge" id="liveBadge" style="display:none;">
-        <span class="dot"></span> LIVE
-      </div>
-      <div class="timer-badge" id="timerBadge" style="display:none;">
-        <svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        <div>
-          <div class="time" id="timerDisplay">05:00</div>
-          <div class="lbl">Next Refresh</div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============ STATS ROW ============ -->
-  <section class="stats-row" id="statsRow" style="display:none;">
-    <div class="stat-card s-green">
-      <div class="sicon"><svg class="icon-svg" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
-      <div class="stext"><div class="snum" id="activeCount">0</div><div class="slabel">Active Sources</div></div>
-    </div>
-    <div class="stat-card s-red">
-      <div class="sicon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg></div>
-      <div class="stext"><div class="snum" id="inactiveCount">0</div><div class="slabel">Inactive Sources</div></div>
-    </div>
-    <div class="stat-card s-blue">
-      <div class="sicon"><svg class="icon-svg" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg></div>
-      <div class="stext"><div class="snum" id="totalSources">0</div><div class="slabel">Total Sources</div></div>
-    </div>
-    <div class="stat-card s-amber">
-      <div class="sicon"><svg class="icon-svg" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
-      <div class="stext"><div class="snum" id="uptimePercent">0<small>%</small></div><div class="slabel">Uptime Rate</div></div>
-    </div>
-  </section>
-
-  <!-- ============ MAIN LAYOUT ============ -->
-  <div class="monitor-main" id="mainGrid" style="display:none;">
-
-    <div class="panel">
-      <div class="panel-header">
-        <div class="panel-title">
-          <svg class="icon-svg" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/></svg>
-          Sources
-          <span class="count-badge" id="sourceCount">0/0</span>
-        </div>
-        <div class="panel-legend">
-          <span class="legend-item"><span class="swatch on"></span>Active</span>
-          <span class="legend-item"><span class="swatch off"></span>Inactive</span>
-        </div>
-      </div>
-      <div class="sources-grid" id="sourcesGrid"></div>
-    </div>
-
-    <div class="panel">
-      <div class="panel-header">
-        <div class="panel-title">
-          <svg class="icon-svg" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-          Activity Log
-        </div>
-        <span style="font-size:.6rem;color:var(--muted);font-family:'JetBrains Mono',monospace;font-weight:800;letter-spacing:.5px;">LIVE</span>
-      </div>
-      <div class="activity-list" id="activityList">
-        <div class="activity-empty">
-          <svg class="icon-svg" viewBox="0 0 24 24"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
-          <div>Waiting for signal...</div>
-        </div>
-      </div>
-    </div>
-
-  </div>
-
-  <footer class="foot">
-    <div class="brandline"><b>EIS Portal</b> · Source Monitor</div>
-    <div id="footTime">Loading...</div>
-    <div>Designed &amp; Developed by EIS Automation Team</div>
-  </footer>
-
+<div class="footer">
+<p>DMZ DPG Incoming Transaction Monitoring - <strong>PR</strong> (171.x) &amp; <strong>DR</strong> (176.x) - Auto-refresh every 10 min</p>
+<p style="font-size:11px;margin-top:6px;color:rgba(255,255,255,0.12);">Data Range: <%= timeRangeDisplay %></p>
 </div>
 </div>
 
-<!-- ============ ERROR BANNER ============ -->
-<div class="error-banner" id="errorBanner">
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-  <span id="errorMessage">Connection Error</span>
+<div class="audio-controls">
+<%
+String newMute = isMuted ? "false" : "true";
+String muteUrl = request.getRequestURI() + "?mute=" + newMute;
+if (manualFromTime != null) muteUrl += "&fromTime=" + manualFromTime;
+if (manualToTime != null) muteUrl += "&toTime=" + manualToTime;
+%>
+<a href="<%= muteUrl %>" class="mute-btn <%= isMuted ? "sound-off" : "sound-on" %>">
+<%= isMuted ? "OFF" : "ON" %>
+<span class="indicator"></span>
+</a>
 </div>
+
+<audio id="alertSound" preload="auto">
+<source src="data:audio/wav;base64,//uQRAAAAWMSLwUIYAAsYkXgoQwAEaYLWfkWgAI0wWs/ItAAAGDgYtAgAyN+QWaAAihwMWm4GmmQQAAAAAAABEQkJDIIAAADAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA0NAAD/AAAA/5Ej0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB/+5EkAAAAkAAAA4AAAIAAAQQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyAhIiMkJSYnKCkqKywtLi8wMTIzNDU2Nzg5Ojs8PT4/QEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaW1xdXl9gYWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXp7fH1+f4CBgoOEhYaHiImKi4yNjo+QkZKTlJWWl5iZmpucnZ6foKGio6SlpqeoqaqrrK2ur7CxsrO0tba3uLm6u7y9vr/AwcLDxMXGx8jJysvMzc7P0NHS09TV1tfY2drb3N3e3+Dh4uPk5ebn6Onq6+zt7u/w8fLz9PX29/j5+vv8/f7/AAH/5AuQAAAkAAAA4AAAAgABAgMEBQYHCAkKCwwNDg8QERITFBUWFxgZGhscHR4fICEiIyQlJicoKSorLC0uLzAxMjM0NTY3ODk6Ozw9Pj9AQUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVpbXF1eX2BhYmNkZWZnaGlqa2xtbm9wcXJzdHV2d3h5ent8fX5/gIGCg4SFhoeIiYqLjI2Oj5CRkpOUlZaXmJmam5ydnp+goaKjpKWmp6ipqqusra6vsLGys7S1tre4ubq7vL2+v8DBwsPExcbHyMnKy8zNzs/Q0dLT1NXW19jZ2tv8/f7/wA=" type="audio/wav">
+</audio>
 
 <script>
-/* ============================================================
-   STATE
-   ============================================================ */
-var sourceData = {};
-var activityLog = [];
-var MAX_ACTIVITY = 30;
-var timerSeconds = 300;
-var timerInterval;
-var retryCount = 0;
-var maxRetries = 3;
-var __lastCacheTs = 0;
-var __lastHits = {};
+// ── Update Stats ──
+const totalHits = <%= totalHits %>;
+const zeroHits = <%= zeroHitCarts %>;
+document.getElementById('totalHits').textContent = totalHits;
+document.getElementById('zeroHitsCount').textContent = zeroHits;
+document.getElementById('totalCarts').textContent = '<%= totalCarts %>';
+document.getElementById('prCount').textContent = '<%= prCount %>';
+document.getElementById('drCount').textContent = '<%= drCount %>';
 
-/* ============================================================
-   HELPERS
-   ============================================================ */
-function getPartition() {
-  var months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
-  var now = new Date();
-  return months[now.getMonth()] + '_' + String(now.getFullYear()).slice(-2);
+// ── Blink Cards ──
+const zeroHitsCard = document.getElementById('zeroHitsCard');
+if (zeroHits > 0) zeroHitsCard.classList.add('blink-zero-stat');
+else zeroHitsCard.classList.remove('blink-zero-stat');
+
+const totalHitsCard = document.getElementById('totalHitsCard');
+if (totalHits === 0) totalHitsCard.classList.add('blink-zero-stat');
+else totalHitsCard.classList.remove('blink-zero-stat');
+
+// ── Audio (only when total hits is zero) ──
+const audio = document.getElementById('alertSound');
+let isMuted = <%= isMuted %>;
+let alertPlayed = false;
+audio.load();
+
+function checkAndPlayAlert() {
+    if (totalHits === 0 && !isMuted && !alertPlayed) {
+        audio.currentTime = 0;
+        audio.play().catch(e => console.log('Audio play failed:', e));
+        alertPlayed = true;
+        setTimeout(() => { alertPlayed = false; }, 5000);
+    }
+}
+checkAndPlayAlert();
+setInterval(checkAndPlayAlert, 3000);
+
+// ── SQL Box toggle ──
+function toggleSqlBox() {
+    document.getElementById('sqlBox').classList.toggle('show');
 }
 
-function formatTime(s) {
-  var m = Math.floor(s / 60);
-  var sec = s % 60;
-  return String(m).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
-}
-
-function updateTimer() {
-  timerSeconds--;
-  var el = document.getElementById('timerDisplay');
-  if (el) el.textContent = formatTime(timerSeconds);
-  if (__lastCacheTs > 0) updateDataAge(__lastCacheTs);
-  if (timerSeconds <= 0) {
-    timerSeconds = 300;
-    fetchData();
-    fetchHits();
-  }
-}
-
-function updateFootTime() {
-  var now = new Date();
-  var hh = String(now.getHours()).padStart(2,'0');
-  var mm = String(now.getMinutes()).padStart(2,'0');
-  var footEl = document.getElementById('footTime');
-  if (footEl) footEl.textContent = 'Session active · ' + hh + ':' + mm;
-}
-
-function updateDataAge(cacheTs) {
-  var badge = document.getElementById('dataAgeBadge');
-  if (!badge) return;
-  if (!cacheTs || cacheTs <= 0) {
-    badge.textContent = 'Data: --';
-    badge.className = 'data-age-badge stale';
-    return;
-  }
-  var ageSec = Math.floor((Date.now() - cacheTs) / 1000);
-  if (ageSec < 0) ageSec = 0;
-  var d = new Date(cacheTs);
-  var hh = String(d.getHours()).padStart(2,'0');
-  var mm = String(d.getMinutes()).padStart(2,'0');
-  var ss = String(d.getSeconds()).padStart(2,'0');
-  var ageTxt;
-  if (ageSec < 60) ageTxt = ageSec + 's ago';
-  else if (ageSec < 3600) ageTxt = Math.floor(ageSec/60) + 'm ago';
-  else ageTxt = Math.floor(ageSec/3600) + 'h ago';
-
-  badge.innerHTML = '<svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>' +
-    ' Data as of <b>' + hh + ':' + mm + ':' + ss + '</b> · ' + ageTxt;
-
-  badge.classList.remove('fresh','warm','stale');
-  if (ageSec < 360) badge.classList.add('fresh');
-  else if (ageSec < 720) badge.classList.add('warm');
-  else badge.classList.add('stale');
-}
-
-/* ============================================================
-   ACTIVITY LOG
-   ============================================================ */
-function addActivity(source, status) {
-  var now = new Date();
-  var t = now.getHours().toString().padStart(2,'0') + ':' +
-          now.getMinutes().toString().padStart(2,'0') + ':' +
-          now.getSeconds().toString().padStart(2,'0');
-  activityLog.unshift({ time: t, source: source, status: status });
-  if (activityLog.length > MAX_ACTIVITY) activityLog.pop();
-  renderActivity();
-}
-
-function renderActivity() {
-  var c = document.getElementById('activityList');
-  if (!c) return;
-  if (activityLog.length === 0) {
-    c.innerHTML = '<div class="activity-empty"><div>Waiting for signal...</div></div>';
-    return;
-  }
-  var html = '';
-  for (var i = 0; i < Math.min(activityLog.length, 20); i++) {
-    var item = activityLog[i];
-    var cls = item.status === 'Y' ? 'on' : 'off';
-    var txt = item.status === 'Y' ? 'ON' : 'OFF';
-    html += '<div class="activity-item ' + cls + '">' +
-      '<span class="activity-time">' + item.time + '</span>' +
-      '<span class="activity-source">' + item.source + '</span>' +
-      '<span class="activity-status ' + cls + '">' + txt + '</span>' +
-      '</div>';
-  }
-  c.innerHTML = html;
-}
-
-/* ============================================================
-   HIDE LOADING
-   ============================================================ */
-function hideLoading() {
-  var overlay = document.getElementById('loadingOverlay');
-  if (overlay) overlay.classList.add('hide');
-  var liveBadge = document.getElementById('liveBadge');
-  if (liveBadge) liveBadge.style.display = 'flex';
-  var timerBadge = document.getElementById('timerBadge');
-  if (timerBadge) timerBadge.style.display = 'flex';
-  var ageBadge = document.getElementById('dataAgeBadge');
-  if (ageBadge) ageBadge.style.display = 'flex';
-  var statsRow = document.getElementById('statsRow');
-  if (statsRow) statsRow.style.display = 'grid';
-  var mainGrid = document.getElementById('mainGrid');
-  if (mainGrid) mainGrid.style.display = 'grid';
-  var part = document.getElementById('partitionBadge');
-  if (part) part.textContent = getPartition();
-  var timerDisp = document.getElementById('timerDisplay');
-  if (timerDisp) timerDisp.textContent = formatTime(timerSeconds);
-  if (!timerInterval) {
-    timerInterval = setInterval(updateTimer, 1000);
-    setInterval(updateFootTime, 30000);
-    updateFootTime();
-  }
-}
-
-/* ============================================================
-   ERROR BANNER
-   ============================================================ */
-function showError(msg) {
-  var banner = document.getElementById('errorBanner');
-  var msgEl = document.getElementById('errorMessage');
-  if (msgEl) msgEl.textContent = msg || 'Connection Error - Retrying...';
-  if (banner) banner.classList.add('show');
-  setTimeout(function() { if (banner) banner.classList.remove('show'); }, 5000);
-}
-
-/* ============================================================
-   FETCH FLAG DATA (fast)
-   ============================================================ */
-function fetchData() {
-  var url = '?action=fetchSourceStatus';
-  fetch(url, { method: 'GET', cache: 'no-cache', headers: { 'Content-Type': 'application/json' } })
-  .then(function(response) {
-    if (!response.ok) throw new Error('HTTP ' + response.status);
-    var tsHeader = response.headers.get('X-Cache-Timestamp');
-    var cacheTs = tsHeader ? parseInt(tsHeader, 10) : 0;
-    return response.json().then(function(data) {
-      return { data: data, cacheTs: cacheTs };
+// ── Copy SQL ──
+function copySql() {
+    const text = document.getElementById('sqlQueryText').innerText;
+    navigator.clipboard.writeText(text).then(() => {
+        const msg = document.getElementById('copyMsg');
+        msg.style.display = 'inline';
+        setTimeout(() => { msg.style.display = 'none'; }, 3000);
+    }).catch(() => {
+        const range = document.createRange();
+        const pre = document.getElementById('sqlQueryText');
+        range.selectNode(pre);
+        window.getSelection().removeAllRanges();
+        window.getSelection().addRange(range);
+        document.execCommand('copy');
+        const msg = document.getElementById('copyMsg');
+        msg.style.display = 'inline';
+        setTimeout(() => { msg.style.display = 'none'; }, 3000);
     });
-  })
-  .then(function(result) {
-    retryCount = 0;
-    var data = result.data;
-    if (data.error) { showError('DB Error: ' + data.error); return; }
-    __lastCacheTs = result.cacheTs;
-    renderSources(data);
-    updateStats(data);
-    updateActivity(data);
-    updateDataAge(result.cacheTs);
-    hideLoading();
-    fetchHits();
-  })
-  .catch(function(e) {
-    console.error('Fetch Error:', e);
-    retryCount++;
-    if (retryCount <= maxRetries) {
-      showError('Connection failed (Attempt ' + retryCount + '/' + maxRetries + ') - Retrying...');
-      setTimeout(function() { fetchData(); }, 3000);
-    } else {
-      showError('Connection Error - Please refresh the page');
-      hideLoading();
+}
+
+// ── Refresh Page ──
+function refreshPage() {
+    const btn = document.getElementById('refreshBtn');
+    const svg = btn.querySelector('svg');
+    svg.classList.add('spin');
+    btn.disabled = true;
+    btn.style.opacity = '0.6';
+    document.getElementById('mainForm').submit();
+    setTimeout(() => {
+        svg.classList.remove('spin');
+        btn.disabled = false;
+        btn.style.opacity = '1';
+    }, 3000);
+}
+
+// ── Init datetime ──
+document.addEventListener('DOMContentLoaded', () => {
+    const from = document.getElementById('fromTime');
+    const to = document.getElementById('toTime');
+    if (!from.value) {
+        const now = new Date();
+        const tenMinsAgo = new Date(now.getTime() - 10 * 60000);
+        from.value = tenMinsAgo.toISOString().slice(0, 16);
     }
-  });
-}
-
-/* ============================================================
-   FETCH HITS (background, slow-cached)
-   ============================================================ */
-function fetchHits() {
-  fetch('?action=fetchHits', { method: 'GET', cache: 'no-cache' })
-  .then(function(r) { return r.ok ? r.json() : {}; })
-  .then(function(hits) {
-    if (!hits || typeof hits !== 'object' || hits.error) return;
-    __lastHits = hits;
-    applyHits();
-  })
-  .catch(function(e) { console.error('Hits fetch error:', e); });
-}
-
-function applyHits() {
-  var cards = document.querySelectorAll('.source-card');
-  for (var i = 0; i < cards.length; i++) {
-    var card = cards[i];
-    var codeEl = card.querySelector('.source-code');
-    var hitsEl = card.querySelector('.source-hits');
-    if (!codeEl || !hitsEl) continue;
-    var src = codeEl.textContent.trim();
-    var isActive = card.classList.contains('active');
-    var count = __lastHits[src];
-
-    if (isActive && typeof count === 'number') {
-      hitsEl.textContent = '⚡ ' + count + ' hits';
-    } else if (isActive) {
-      hitsEl.textContent = '⚡ active';
-    } else {
-      hitsEl.textContent = '⏸ 0 hits';
+    if (!to.value) {
+        const now = new Date();
+        to.value = now.toISOString().slice(0, 16);
     }
-  }
-}
-
-/* ============================================================
-   RENDER SOURCES
-   ============================================================ */
-function renderSources(data) {
-  var c = document.getElementById('sourcesGrid');
-  if (!c) return;
-  if (!data || data.length === 0) {
-    c.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--muted);grid-column:1/-1;"><div style="font-size:.85rem;font-weight:700;">No data available</div></div>';
-    return;
-  }
-  var html = '';
-  var active = 0;
-  for (var i = 0; i < data.length; i++) {
-    var item = data[i];
-    var isActive = item.flag === 'Y';
-    if (isActive) active++;
-    var cls = isActive ? 'active' : 'inactive';
-    var status = isActive ? 'ONLINE' : 'OFFLINE';
-
-    html += '<div class="source-card ' + cls + '">' +
-      '<span class="source-status-indicator"></span>' +
-      '<div class="source-code">' + item.source_id + '</div>' +
-      '<div class="source-status-text">' + status + '</div>' +
-      '<span class="source-hits">' +
-        (isActive ? '⚡ active' : '⏸ 0 hits') +
-      '</span>' +
-      '</div>';
-  }
-  c.innerHTML = html;
-  var countEl = document.getElementById('sourceCount');
-  if (countEl) countEl.textContent = active + '/' + data.length;
-
-  // agar hits pehle se cached hain to turant apply karo
-  applyHits();
-}
-
-/* ============================================================
-   UPDATE STATS
-   ============================================================ */
-function updateStats(data) {
-  var active = 0, inactive = 0;
-  for (var i = 0; i < data.length; i++) {
-    if (data[i].flag === 'Y') active++;
-    else inactive++;
-  }
-  var activeEl = document.getElementById('activeCount');
-  if (activeEl) activeEl.textContent = active;
-  var inactiveEl = document.getElementById('inactiveCount');
-  if (inactiveEl) inactiveEl.textContent = inactive;
-  var totalEl = document.getElementById('totalSources');
-  if (totalEl) totalEl.textContent = data.length;
-  var uptime = data.length > 0 ? Math.round((active / data.length) * 100) : 0;
-  var uptimeEl = document.getElementById('uptimePercent');
-  if (uptimeEl) uptimeEl.innerHTML = uptime + '<small>%</small>';
-}
-
-/* ============================================================
-   UPDATE ACTIVITY
-   ============================================================ */
-function updateActivity(data) {
-  var current = {};
-  for (var i = 0; i < data.length; i++) {
-    if (data[i].flag === 'Y') current[data[i].source_id] = true;
-  }
-  for (var s in current) {
-    if (!sourceData[s]) addActivity(s, 'Y');
-    else if (sourceData[s] !== current[s]) addActivity(s, current[s] ? 'Y' : 'N');
-  }
-  for (var old in sourceData) {
-    if (sourceData[old] && !current[old]) addActivity(old, 'N');
-  }
-  sourceData = current;
-}
-
-/* ============================================================
-   CLEANUP
-   ============================================================ */
-window.addEventListener('beforeunload', function() {
-  if (timerInterval) clearInterval(timerInterval);
 });
 
-/* ============================================================
-   START
-   ============================================================ */
-fetchData();
-</script>
+// ── 3D Tilt ──
+document.querySelectorAll('.cart').forEach(card => {
+    card.addEventListener('mousemove', (e) => {
+        const rect = card.getBoundingClientRect();
+        const x = (e.clientX - rect.left) / rect.width - 0.5;
+        const y = (e.clientY - rect.top) / rect.height - 0.5;
+        card.style.transform = `perspective(1200px) rotateX(${y*6}deg) rotateY(${-x*6}deg) translateZ(12px)`;
+    });
+    card.addEventListener('mouseleave', () => {
+        card.style.transform = 'perspective(1200px) rotateX(0deg) rotateY(0deg) translateZ(0px)';
+    });
+});
 
+// ── Parallax ──
+document.addEventListener('mousemove', (e) => {
+    const x = e.clientX / window.innerWidth;
+    const y = e.clientY / window.innerHeight;
+    document.body.style.background =
+        `radial-gradient(ellipse at ${x*100}% ${y*100}%, rgba(88,70,255,0.12) 0%, transparent 50%),
+         radial-gradient(ellipse at ${(1-x)*100}% ${(1-y)*100}%, rgba(0,200,255,0.07) 0%, transparent 50%),
+         #0b0e1a`;
+});
+
+console.log('DMZ DPG Incoming Transaction Monitoring loaded (Master Table Mode with separate connections)');
+console.log('PR count: <%= prCount %>, DR count: <%= drCount %>');
+console.log('Sound: <%= isMuted ? "OFF" : "ON" %>');
+console.log('Total Hits:', totalHits);
+console.log('Zero Hit Carts:', zeroHits);
+</script>
 </body>
 </html>
