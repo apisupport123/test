@@ -7,6 +7,8 @@
   ✅ Fragment hai — isliye pageEncoding / sendRedirect NAHI.
   ✅ Source_Monitor.jsp Dashboards section me add kiya.
   ✅ Topnav me ENV pill (PR/DR) — connection_master.FLAG se.
+  ✅ ENV logic hardened: null conn / empty table / bad value
+     / exception — sab cases handle, proper logging ke saath.
   ============================================================
 --%>
 <%
@@ -20,26 +22,56 @@
     String ctx = request.getContextPath();
 
     // ============================================================
-    // ENV — connection_master.FLAG se (PR / DR)
+    // ENV — connection_master.FLAG se (PR / DR) — HARDENED
     // ============================================================
-    String flagStatus = "DR";
+    String flagStatus = "DR";   // safe default
     java.sql.Connection __cmConn = null;
     try {
-        __cmConn = com.jdbc.DBUtilityAuto.getIIBDBConnection();   // apna actual conn helper
-        try (java.sql.Statement stmt = __cmConn.createStatement();
-             java.sql.ResultSet rs = stmt.executeQuery("SELECT FLAG FROM connection_master")) {
-            if (rs.next()) {
-                flagStatus = rs.getString("FLAG");
-                if (flagStatus == null) flagStatus = "DR";
+        __cmConn = com.jdbc.DBUtilityAuto.getIIBDBConnection();
+
+        if (__cmConn == null) {
+            System.err.println("[userheader] ENV: getIIBDBConnection() returned NULL — defaulting to DR");
+        } else {
+            // Debug: kis DB se connect hua (PR/DR verify karne ke liye)
+            try {
+                System.err.println("[userheader] ENV: Connected DB URL = " + __cmConn.getMetaData().getURL());
+            } catch (Exception metaEx) {
+                // metadata fail ho to ignore — sirf logging ke liye tha
+            }
+
+            // Deterministic single-row fetch
+            try (java.sql.Statement stmt = __cmConn.createStatement();
+                 java.sql.ResultSet rs = stmt.executeQuery(
+                     "SELECT FLAG FROM connection_master WHERE ROWNUM = 1")) {
+
+                if (rs.next()) {
+                    String raw = rs.getString("FLAG");
+                    System.err.println("[userheader] ENV: RAW FLAG = [" + raw + "]");
+
+                    if (raw != null && !raw.trim().isEmpty()) {
+                        flagStatus = raw.trim().toUpperCase();
+                    } else {
+                        System.err.println("[userheader] ENV: FLAG is NULL/blank — defaulting to DR");
+                    }
+                } else {
+                    System.err.println("[userheader] ENV: connection_master is EMPTY — defaulting to DR");
+                }
             }
         }
     } catch (Exception e) {
+        System.err.println("[userheader] ENV: fetch FAILED -> " + e.getClass().getName() + ": " + e.getMessage());
+        e.printStackTrace();
         flagStatus = "DR";
     } finally {
         try { if (__cmConn != null) __cmConn.close(); } catch (Exception ignore) {}
     }
 
-    flagStatus = flagStatus.trim().toUpperCase();
+    // Normalize — unexpected value aaye to DR hi maano
+    if (!"PR".equals(flagStatus) && !"DR".equals(flagStatus)) {
+        System.err.println("[userheader] ENV: Unexpected FLAG value [" + flagStatus + "] — defaulting to DR");
+        flagStatus = "DR";
+    }
+
     String __envClass = "DR".equals(flagStatus) ? "is-dr" : "is-pr";
     String __envLabel = "DR".equals(flagStatus) ? "Disaster Recovery" : "Production";
     String __envShort = flagStatus;
