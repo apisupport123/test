@@ -1,7 +1,7 @@
 <%@ page import="java.sql.*, java.util.*, java.text.SimpleDateFormat" %>
+<%@ page import="java.util.concurrent.*" %>
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@page import="com.jdbc.DBUtilityAuto"%>
-<%@ page import="java.sql.*,java.time.LocalTime,java.time.LocalDate,java.util.Date"%>
 <%
 response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
 response.setHeader("Pragma", "no-cache");
@@ -12,25 +12,21 @@ String muteParam = request.getParameter("mute");
 boolean isMuted = "true".equals(muteParam);
 %>
 <%!
-// ── Partition helper: NOV_26 format ──
+// ═══════════════════════════════════════════════════════════
+// PARTITION HELPER — NOV_26 format
+// ═══════════════════════════════════════════════════════════
 String getPartition(java.util.Date fromDate) {
     Calendar cal = Calendar.getInstance();
     cal.setTime(fromDate);
-    String[] months = {"JAN","FEB","MAR","APR","MAY","JUN",
-                       "JUL","AUG","SEP","OCT","NOV","DEC"};
-    String month = months[cal.get(Calendar.MONTH)];
-    String year = String.valueOf(cal.get(Calendar.YEAR)).substring(2);
-    return month + "_" + year;
+    String[] months = {"JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"};
+    return months[cal.get(Calendar.MONTH)] + "_" + String.valueOf(cal.get(Calendar.YEAR)).substring(2);
 }
 
-// ── Resolve partition from fromTime param (or now - 10min) ──
 String resolvePartition(String fromTime) {
     java.util.Date base;
     try {
         if (fromTime != null && !fromTime.isEmpty()) {
-            String normalized = fromTime.replace("T", " ");
-            SimpleDateFormat in = new SimpleDateFormat("yyyy-MM-dd HH:mm");
-            base = in.parse(normalized);
+            base = new SimpleDateFormat("yyyy-MM-dd HH:mm").parse(fromTime.replace("T", " "));
         } else {
             base = new java.util.Date(System.currentTimeMillis() - 10*60*1000);
         }
@@ -40,179 +36,243 @@ String resolvePartition(String fromTime) {
     return getPartition(base);
 }
 
-// ── Ensure master table ──
+// ═══════════════════════════════════════════════════════════
+// MASTER TABLE HELPERS
+// ═══════════════════════════════════════════════════════════
 void ensureTableExists(Connection conn) throws SQLException {
     Statement stmt = null;
     try {
         stmt = conn.createStatement();
-        stmt.executeUpdate(
-            "CREATE TABLE DPG_IP_MASTER (" +
-            "    DPG_IP        VARCHAR2(50) PRIMARY KEY," +
-            "    DPG_MODE      VARCHAR2(10)," +
-            "    LAST_UPDATED  DATE" +
-            ")"
-        );
-    } catch (SQLException e) {
-        if (e.getErrorCode() != 955) throw e;
-    } finally {
-        if (stmt != null) try { stmt.close(); } catch (SQLException e) {}
-    }
+        stmt.executeUpdate("CREATE TABLE DPG_IP_MASTER (" +
+            "DPG_IP VARCHAR2(50) PRIMARY KEY, DPG_MODE VARCHAR2(10), LAST_UPDATED DATE)");
+    } catch (SQLException e) { if (e.getErrorCode() != 955) throw e; }
+    finally { if (stmt != null) try { stmt.close(); } catch (SQLException e) {} }
     try {
         stmt = conn.createStatement();
         stmt.executeUpdate("CREATE INDEX IDX_DPG_MASTER_MODE ON DPG_IP_MASTER(DPG_MODE)");
-    } catch (SQLException e) {
-        if (e.getErrorCode() != 955) throw e;
-    } finally {
-        if (stmt != null) try { stmt.close(); } catch (SQLException e) {}
-    }
+    } catch (SQLException e) { if (e.getErrorCode() != 955) throw e; }
+    finally { if (stmt != null) try { stmt.close(); } catch (SQLException e) {} }
 }
 
-// ── Refresh master table (uses previous-day partition for API_LOG) ──
 void refreshMasterTable(Connection connReport, Connection connIIB) throws SQLException {
     List<String> ipList = new ArrayList<>();
-    Statement stmtIIB = null;
-    ResultSet rsIIB = null;
-
-    // Partition for yesterday (since master refresh looks at previous day's traffic)
-    java.util.Date yesterday = new java.util.Date(System.currentTimeMillis() - 24*60*60*1000);
-    String apiPartition = getPartition(yesterday);
-
+    Statement stmtIIB = null; ResultSet rsIIB = null;
+    String apiPartition = getPartition(new java.util.Date(System.currentTimeMillis() - 24*60*60*1000));
     try {
         stmtIIB = connIIB.createStatement();
-        String queryIIB =
-            "SELECT /*+ PARALLEL(4) */ DISTINCT TRIM(DPG_IP) AS IP " +
+        String q = "SELECT /*+ PARALLEL(4) */ DISTINCT TRIM(DPG_IP) AS IP " +
             "FROM EISAPP.API_LOG PARTITION (" + apiPartition + ") " +
             "WHERE (TRIM(DPG_IP) LIKE '10.191.171.2%' OR TRIM(DPG_IP) LIKE '10.176.0.1%') " +
-            "AND request_date_time >= TRUNC(SYSDATE) - 1 " +
-            "AND request_date_time < TRUNC(SYSDATE)";
-        System.out.println("===== Master refresh API_LOG query =====");
-        System.out.println(queryIIB);
-        System.out.println("=======================================");
-        rsIIB = stmtIIB.executeQuery(queryIIB);
+            "AND request_date_time >= TRUNC(SYSDATE) - 1 AND request_date_time < TRUNC(SYSDATE)";
+        rsIIB = stmtIIB.executeQuery(q);
         while (rsIIB.next()) ipList.add(rsIIB.getString("IP"));
     } finally {
         if (rsIIB != null) try { rsIIB.close(); } catch (SQLException e) {}
         if (stmtIIB != null) try { stmtIIB.close(); } catch (SQLException e) {}
     }
-
     Statement stmtDel = connReport.createStatement();
     stmtDel.executeUpdate("DELETE FROM DPG_IP_MASTER");
     stmtDel.close();
-
     if (!ipList.isEmpty()) {
-        PreparedStatement pstmtIns = connReport.prepareStatement(
+        PreparedStatement ps = connReport.prepareStatement(
             "INSERT INTO DPG_IP_MASTER (DPG_IP, DPG_MODE, LAST_UPDATED) VALUES (?, ?, SYSDATE)");
         for (String ip : ipList) {
-            pstmtIns.setString(1, ip);
-            pstmtIns.setString(2, ip.contains("171.") ? "PR" : "DR");
-            pstmtIns.addBatch();
+            ps.setString(1, ip);
+            ps.setString(2, ip.contains("171.") ? "PR" : "DR");
+            ps.addBatch();
         }
-        pstmtIns.executeBatch();
-        pstmtIns.close();
+        ps.executeBatch(); ps.close();
     }
 }
 
-// ── Build time condition (SAME for API_LOG & BACKEND_LOG) ──
+// ═══════════════════════════════════════════════════════════
+// TIME CONDITION — SHARED by API_LOG & BACKEND_LOG
+// ═══════════════════════════════════════════════════════════
 String buildTimeCondition(String fromTime, String toTime) {
     if (fromTime != null && toTime != null && !fromTime.isEmpty() && !toTime.isEmpty()) {
-        String fromDate = fromTime.replace("T", " ").replace("-", "/");
-        String toDate = toTime.replace("T", " ").replace("-", "/");
-        return "AND REQUEST_DATE_TIME BETWEEN TO_DATE('" + fromDate + "', 'YYYY/MM/DD HH24:MI') " +
-               "AND TO_DATE('" + toDate + "', 'YYYY/MM/DD HH24:MI') ";
+        String f = fromTime.replace("T", " ").replace("-", "/");
+        String t = toTime.replace("T", " ").replace("-", "/");
+        return "AND REQUEST_DATE_TIME BETWEEN TO_DATE('" + f + "','YYYY/MM/DD HH24:MI') " +
+               "AND TO_DATE('" + t + "','YYYY/MM/DD HH24:MI') ";
     }
     return "AND REQUEST_DATE_TIME >= SYSDATE - INTERVAL '10' MINUTE ";
 }
 
-// ── DPG Outbound hits (BACKEND_LOG, port 7443) — with dynamic partition ──
-int getDpgOutboundHits(String fromTime, String toTime) throws SQLException {
-    Connection conn = null;
-    PreparedStatement pstmt = null;
-    ResultSet rs = null;
-    int hits = 0;
+// ═══════════════════════════════════════════════════════════
+// PARALLEL TASK 1: INBOUND (API_LOG)
+// ═══════════════════════════════════════════════════════════
+class InboundResult {
+    List<String> ips = new ArrayList<>();
+    Map<String, Integer> countMap = new HashMap<>();
+    int totalHits = 0, zeroHits = 0, prCount = 0, drCount = 0;
+    long elapsedMs = 0;
+    String error = null;
+    String partition = "";
+}
+
+InboundResult fetchInbound(String fromTime, String toTime, String partition) {
+    InboundResult res = new InboundResult();
+    res.partition = partition;
+    long t0 = System.currentTimeMillis();
+    Connection cR = null, cI = null;
     try {
-        conn = DBUtilityAuto.getIIBDBConnection();
-        String partition = resolvePartition(fromTime);
-        String query =
-            "SELECT /*+ PARALLEL(4) */ COUNT(*) AS TOTAL_HITS " +
-            "FROM EISAPP.BACKEND_LOG PARTITION (" + partition + ") " +
-            "WHERE END_POINT_PORT = '7443' " +
-            buildTimeCondition(fromTime, toTime);
+        // Read master IPs
+        cR = DBUtilityAuto.getReportDBConnection();
+        Statement st = cR.createStatement();
+        ResultSet rs = st.executeQuery("SELECT DPG_IP FROM DPG_IP_MASTER ORDER BY DPG_IP");
+        while (rs.next()) res.ips.add(rs.getString("DPG_IP"));
+        rs.close(); st.close();
+        cR.close(); cR = null;
 
-        System.out.println("===== DPG Outbound hit count query =====");
-        System.out.println(query);
-        System.out.println("========================================");
+        if (res.ips.isEmpty()) {
+            res.elapsedMs = System.currentTimeMillis() - t0;
+            return res;
+        }
 
-        pstmt = conn.prepareStatement(query);
-        rs = pstmt.executeQuery();
-        if (rs.next()) hits = rs.getInt("TOTAL_HITS");
+        StringBuilder in = new StringBuilder();
+        for (int i = 0; i < res.ips.size(); i++) {
+            in.append("'").append(res.ips.get(i)).append("'");
+            if (i < res.ips.size() - 1) in.append(",");
+        }
+
+        cI = DBUtilityAuto.getIIBDBConnection();
+        String q = "SELECT /*+ PARALLEL(4) */ TRIM(DPG_IP) AS DPG_IP, COUNT(1) AS TOTAL_HITS " +
+            "FROM EISAPP.API_LOG PARTITION (" + partition + ") " +
+            "WHERE TRIM(DPG_IP) IN (" + in + ") " + buildTimeCondition(fromTime, toTime) +
+            "GROUP BY TRIM(DPG_IP)";
+        System.out.println("===== INBOUND =====");
+        System.out.println(q);
+        PreparedStatement ps = cI.prepareStatement(q);
+        ResultSet r2 = ps.executeQuery();
+        while (r2.next()) res.countMap.put(r2.getString("DPG_IP"), r2.getInt("TOTAL_HITS"));
+        r2.close(); ps.close();
+
+        for (String ip : res.ips) {
+            int h = res.countMap.getOrDefault(ip, 0);
+            res.countMap.put(ip, h);
+            res.totalHits += h;
+            if (h == 0) res.zeroHits++;
+            if (ip.contains("171.")) res.prCount++;
+            else if (ip.contains("176.")) res.drCount++;
+        }
+    } catch (Exception e) {
+        e.printStackTrace();
+        res.error = e.getMessage();
     } finally {
-        try { if (rs != null) rs.close(); } catch (Exception e) {}
-        try { if (pstmt != null) pstmt.close(); } catch (Exception e) {}
-        try { if (conn != null) conn.close(); } catch (Exception e) {}
+        try { if (cR != null) cR.close(); } catch (Exception e) {}
+        try { if (cI != null) cI.close(); } catch (Exception e) {}
     }
-    return hits;
+    res.elapsedMs = System.currentTimeMillis() - t0;
+    return res;
+}
+
+// ═══════════════════════════════════════════════════════════
+// PARALLEL TASK 2: OUTBOUND (BACKEND_LOG port 7443)
+// ═══════════════════════════════════════════════════════════
+class OutboundResult {
+    int hits = 0;
+    long elapsedMs = 0;
+    String error = null;
+    String partition = "";
+}
+
+OutboundResult fetchOutbound(String fromTime, String toTime, String partition) {
+    OutboundResult res = new OutboundResult();
+    res.partition = partition;
+    long t0 = System.currentTimeMillis();
+    Connection c = null;
+    try {
+        c = DBUtilityAuto.getIIBDBConnection();
+        String q = "SELECT /*+ PARALLEL(4) */ COUNT(*) AS TOTAL_HITS " +
+            "FROM EISAPP.BACKEND_LOG PARTITION (" + partition + ") " +
+            "WHERE END_POINT_PORT = '7443' " + buildTimeCondition(fromTime, toTime);
+        System.out.println("===== OUTBOUND =====");
+        System.out.println(q);
+        PreparedStatement ps = c.prepareStatement(q);
+        ResultSet rs = ps.executeQuery();
+        if (rs.next()) res.hits = rs.getInt("TOTAL_HITS");
+        rs.close(); ps.close();
+    } catch (Exception e) {
+        e.printStackTrace();
+        res.error = e.getMessage();
+    } finally {
+        try { if (c != null) c.close(); } catch (Exception e) {}
+    }
+    res.elapsedMs = System.currentTimeMillis() - t0;
+    return res;
+}
+
+String maskIp(String ip) {
+    if (ip == null || ip.isEmpty()) return "N/A";
+    String[] p = ip.split("\\.");
+    return (p.length >= 4) ? p[2] + "." + p[3] : ip;
+}
+String getMode(String ip) {
+    if (ip == null) return "UNKNOWN";
+    if (ip.contains("171.")) return "PR";
+    if (ip.contains("176.")) return "DR";
+    return "UNKNOWN";
 }
 %>
 <%
-// ── Manual Refresh IP List ──
+// ═══════════════════════════════════════════════════════════
+// MANUAL REFRESH IP LIST
+// ═══════════════════════════════════════════════════════════
 String action = request.getParameter("action");
 if ("refreshMaster".equals(action)) {
-    Connection connReport = null, connIIB = null;
+    Connection cR = null, cI = null;
     try {
-        connReport = DBUtilityAuto.getReportDBConnection();
-        connIIB = DBUtilityAuto.getIIBDBConnection();
-        ensureTableExists(connReport);
-        connReport.setAutoCommit(false);
-        refreshMasterTable(connReport, connIIB);
-        connReport.commit();
-        connReport.setAutoCommit(true);
+        cR = DBUtilityAuto.getReportDBConnection();
+        cI = DBUtilityAuto.getIIBDBConnection();
+        ensureTableExists(cR);
+        cR.setAutoCommit(false);
+        refreshMasterTable(cR, cI);
+        cR.commit();
+        cR.setAutoCommit(true);
     } catch (Exception e) {
         e.printStackTrace();
-        try { if (connReport != null) connReport.rollback(); } catch (Exception ex) {}
+        try { if (cR != null) cR.rollback(); } catch (Exception ex) {}
     } finally {
-        try { if (connReport != null) connReport.close(); } catch (Exception e) {}
-        try { if (connIIB != null) connIIB.close(); } catch (Exception e) {}
+        try { if (cR != null) cR.close(); } catch (Exception e) {}
+        try { if (cI != null) cI.close(); } catch (Exception e) {}
     }
-    String redirectUrl = request.getRequestURI() + "?mute=" + isMuted;
-    if (request.getParameter("fromTime") != null) redirectUrl += "&fromTime=" + request.getParameter("fromTime");
-    if (request.getParameter("toTime") != null) redirectUrl += "&toTime=" + request.getParameter("toTime");
-    response.sendRedirect(redirectUrl);
+    String rUrl = request.getRequestURI() + "?mute=" + isMuted;
+    if (request.getParameter("fromTime") != null) rUrl += "&fromTime=" + request.getParameter("fromTime");
+    if (request.getParameter("toTime") != null) rUrl += "&toTime=" + request.getParameter("toTime");
+    response.sendRedirect(rUrl);
     return;
 }
 
-// ── Auto Refresh IP List ──
-Connection connReportAuto = null, connIIBAuto = null;
+// ── Auto master refresh (new day) ──
+Connection cRA = null, cIA = null;
 try {
-    connReportAuto = DBUtilityAuto.getReportDBConnection();
-    connIIBAuto = DBUtilityAuto.getIIBDBConnection();
-    ensureTableExists(connReportAuto);
-
+    cRA = DBUtilityAuto.getReportDBConnection();
+    cIA = DBUtilityAuto.getIIBDBConnection();
+    ensureTableExists(cRA);
     boolean needsRefresh = false;
-    Statement stmtCheck = connReportAuto.createStatement();
-    ResultSet rsCheck = stmtCheck.executeQuery("SELECT MAX(LAST_UPDATED) FROM DPG_IP_MASTER");
-    Date lastUpdated = null;
-    if (rsCheck.next()) lastUpdated = rsCheck.getDate(1);
-    rsCheck.close();
-    stmtCheck.close();
-
-    if (lastUpdated == null || lastUpdated.before(new java.util.Date(System.currentTimeMillis() - 24*60*60*1000))) {
+    Statement sc = cRA.createStatement();
+    ResultSet rc = sc.executeQuery("SELECT MAX(LAST_UPDATED) FROM DPG_IP_MASTER");
+    Date lastUpd = null;
+    if (rc.next()) lastUpd = rc.getDate(1);
+    rc.close(); sc.close();
+    if (lastUpd == null || lastUpd.before(new java.util.Date(System.currentTimeMillis() - 24*60*60*1000))) {
         needsRefresh = true;
     }
     if (needsRefresh) {
-        connReportAuto.setAutoCommit(false);
-        refreshMasterTable(connReportAuto, connIIBAuto);
-        connReportAuto.commit();
-        connReportAuto.setAutoCommit(true);
+        cRA.setAutoCommit(false);
+        refreshMasterTable(cRA, cIA);
+        cRA.commit(); cRA.setAutoCommit(true);
     }
-} catch (Exception e) {
-    e.printStackTrace();
-    try { if (connReportAuto != null) connReportAuto.rollback(); } catch (Exception ex) {}
+} catch (Exception e) { e.printStackTrace();
+    try { if (cRA != null) cRA.rollback(); } catch (Exception ex) {}
 } finally {
-    try { if (connReportAuto != null) connReportAuto.close(); } catch (Exception e) {}
-    try { if (connIIBAuto != null) connIIBAuto.close(); } catch (Exception e) {}
+    try { if (cRA != null) cRA.close(); } catch (Exception e) {}
+    try { if (cIA != null) cIA.close(); } catch (Exception e) {}
 }
 
-// ── Time Range ──
+// ═══════════════════════════════════════════════════════════
+// TIME + PARTITION SETUP
+// ═══════════════════════════════════════════════════════════
 String manualFromTime = request.getParameter("fromTime");
 String manualToTime = request.getParameter("toTime");
 String timeRangeDisplay;
@@ -220,385 +280,417 @@ if (manualFromTime != null && manualToTime != null && !manualFromTime.isEmpty() 
     timeRangeDisplay = manualFromTime.replace("T", " ").replace("-", "/") + "  →  " +
                        manualToTime.replace("T", " ").replace("-", "/");
 } else {
-    SimpleDateFormat sdfDisplay = new SimpleDateFormat("yyyy/MM/dd HH:mm");
-    java.util.Calendar cal = java.util.Calendar.getInstance();
-    java.util.Date now = cal.getTime();
-    java.util.Date tenMinsAgo = new java.util.Date(now.getTime() - (10 * 60 * 1000));
-    timeRangeDisplay = sdfDisplay.format(tenMinsAgo) + "  →  " + sdfDisplay.format(now) + "  (Last 10 min)";
+    SimpleDateFormat sd = new SimpleDateFormat("yyyy/MM/dd HH:mm");
+    java.util.Date now = new java.util.Date();
+    timeRangeDisplay = sd.format(new java.util.Date(now.getTime() - 10*60*1000)) + "  →  " + sd.format(now) + "  (Last 10 min)";
 }
 
 SimpleDateFormat sdf = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss");
 String currentTime = sdf.format(new java.util.Date());
-
-// ── Resolve partition for display + queries ──
 String activePartition = resolvePartition(manualFromTime);
 
-// ── SQL display strings ──
-String sampleTimeCondition = buildTimeCondition(manualFromTime, manualToTime);
-String displayQuery =
+// ═══════════════════════════════════════════════════════════
+// 🚀 PARALLEL EXECUTION — dono queries SATH main chalti hain
+// ═══════════════════════════════════════════════════════════
+final String fFrom = manualFromTime;
+final String fTo = manualToTime;
+final String fPart = activePartition;
+
+ExecutorService pool = Executors.newFixedThreadPool(2);
+long globalStart = System.currentTimeMillis();
+
+Future<InboundResult> inboundFuture = pool.submit(new Callable<InboundResult>() {
+    public InboundResult call() { return fetchInbound(fFrom, fTo, fPart); }
+});
+Future<OutboundResult> outboundFuture = pool.submit(new Callable<OutboundResult>() {
+    public OutboundResult call() { return fetchOutbound(fFrom, fTo, fPart); }
+});
+
+InboundResult inRes = new InboundResult();
+OutboundResult outRes = new OutboundResult();
+try { inRes = inboundFuture.get(120, TimeUnit.SECONDS); }
+catch (Exception e) { inRes.error = "Inbound timeout/error: " + e.getMessage(); }
+try { outRes = outboundFuture.get(120, TimeUnit.SECONDS); }
+catch (Exception e) { outRes.error = "Outbound timeout/error: " + e.getMessage(); }
+pool.shutdown();
+long totalElapsed = System.currentTimeMillis() - globalStart;
+
+// ── Build display query strings ──
+String sampleTime = buildTimeCondition(manualFromTime, manualToTime);
+String displayInboundQ =
     "SELECT /*+ PARALLEL(4) */ TRIM(DPG_IP) AS DPG_IP, COUNT(1) AS TOTAL_HITS\n" +
     "FROM EISAPP.API_LOG PARTITION (" + activePartition + ")\n" +
-    "WHERE TRIM(DPG_IP) IN ('10.191.171.200', '10.191.171.201', ...)\n" +
-    "  " + sampleTimeCondition + "\n" +
-    "GROUP BY TRIM(DPG_IP)\n" +
-    "ORDER BY DPG_IP";
-
-String displayOutboundQuery =
+    "WHERE TRIM(DPG_IP) IN ('10.191.171.200', ...)\n" +
+    "  " + sampleTime + "\nGROUP BY TRIM(DPG_IP) ORDER BY DPG_IP";
+String displayOutboundQ =
     "SELECT /*+ PARALLEL(4) */ COUNT(*) AS TOTAL_HITS\n" +
     "FROM EISAPP.BACKEND_LOG PARTITION (" + activePartition + ")\n" +
-    "WHERE END_POINT_PORT = '7443'\n" +
-    "  " + sampleTimeCondition;
-
-// ── Stats ──
-int totalHits = 0, totalCarts = 0, zeroHitCarts = 0;
-int prCount = 0, drCount = 0;
-int dpgOutboundHits = 0;
-List<Map<String, Object>> dataList = new ArrayList<>();
-%>
-<%!
-String maskIp(String fullIp) {
-    if (fullIp == null || fullIp.isEmpty()) return "N/A";
-    String[] parts = fullIp.split("\\.");
-    if (parts.length >= 4) return parts[2] + "." + parts[3];
-    return fullIp;
-}
-String getModeFromIp(String ip) {
-    if (ip == null) return "UNKNOWN";
-    if (ip.contains("171.")) return "PR";
-    if (ip.contains("176.")) return "DR";
-    return "UNKNOWN";
-}
+    "WHERE END_POINT_PORT = '7443'\n  " + sampleTime;
 %>
 <!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
-<title>DMZ DPG Monitoring — Inbound &amp; Outbound</title>
+<title>DMZ DPG Monitoring — Inbound & Outbound</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-* { margin:0; padding:0; box-sizing:border-box; }
-body { font-family:'Inter',sans-serif; min-height:100vh; padding:24px; background:#0b0e1a; color:#fff; }
-body::before { content:''; position:fixed; inset:0; background:radial-gradient(ellipse at 20% 50%, rgba(88,70,255,0.15) 0%, transparent 60%), radial-gradient(ellipse at 80% 80%, rgba(0,200,255,0.10) 0%, transparent 50%); pointer-events:none; z-index:0; }
-body::after { content:''; position:fixed; inset:0; background-image:linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px); background-size:60px 60px; pointer-events:none; z-index:0; animation:gridMove 20s linear infinite; }
-@keyframes gridMove { 0% { transform:translate(0,0); } 100% { transform:translate(60px,60px); } }
-.container { max-width:1600px; margin:0 auto; position:relative; z-index:1; }
-.header { background:rgba(255,255,255,0.04); backdrop-filter:blur(24px); border:1px solid rgba(255,255,255,0.08); border-radius:40px; padding:32px 40px 28px; margin-bottom:28px; box-shadow:0 30px 60px rgba(0,0,0,0.5),0 0 0 1px rgba(255,255,255,0.04) inset; }
-.header-top { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:20px; }
-.header h1 { font-size:34px; font-weight:900; letter-spacing:-0.6px; background:linear-gradient(135deg, #ffffff 0%, #a78bfa 40%, #60a5fa 70%, #34d399 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; line-height:1.15; }
-.header h1 small { font-size:16px; font-weight:500; -webkit-text-fill-color:rgba(255,255,255,0.4); letter-spacing:1.5px; text-transform:uppercase; }
-.header-actions { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
-.btn { background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); color:#fff; padding:10px 20px; border-radius:60px; font-size:13px; font-weight:700; cursor:pointer; transition:all 0.3s; display:inline-flex; align-items:center; gap:8px; backdrop-filter:blur(8px); font-family:'Inter',sans-serif; text-decoration:none; letter-spacing:0.3px; }
-.btn:hover { background:rgba(167,139,250,0.2); border-color:rgba(167,139,250,0.4); transform:translateY(-2px); box-shadow:0 12px 30px rgba(167,139,250,0.2); }
-.btn svg { width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:2.5; stroke-linecap:round; stroke-linejoin:round; }
-.btn-refresh-ip { background:rgba(248,113,113,0.12); border-color:rgba(248,113,113,0.25); color:#f87171; }
-.btn-refresh-ip:hover { background:rgba(248,113,113,0.25); border-color:rgba(248,113,113,0.5); }
-.btn-sql { background:rgba(251,191,36,0.12); border-color:rgba(251,191,36,0.25); color:#fbbf24; }
-.btn-sql:hover { background:rgba(251,191,36,0.25); border-color:rgba(251,191,36,0.5); }
-.spin { animation:spin 0.8s linear infinite; }
-@keyframes spin { to { transform:rotate(360deg); } }
-.live-badge { background:rgba(52,211,153,0.15); border:1px solid rgba(52,211,153,0.3); padding:7px 16px; border-radius:60px; font-size:11px; font-weight:800; color:#34d399; display:flex; align-items:center; gap:8px; letter-spacing:1px; text-transform:uppercase; }
-.live-badge .dot { width:8px; height:8px; border-radius:50%; background:#34d399; animation:pulseDot 1.6s ease-in-out infinite; }
-@keyframes pulseDot { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:0.3; transform:scale(0.7); } }
-.time-range-display { background:rgba(0,0,0,0.35); border-radius:16px; padding:12px 22px; margin-top:16px; display:inline-flex; align-items:center; gap:10px; border:1px solid rgba(255,255,255,0.06); font-size:13px; font-weight:600; color:rgba(255,255,255,0.55); letter-spacing:0.4px; flex-wrap:wrap; }
-.time-range-display .time-value { color:#fff; font-weight:800; background:linear-gradient(135deg, #a78bfa, #60a5fa); -webkit-background-clip:text; -webkit-text-fill-color:transparent; font-size:14px; }
-.partition-chip { background:linear-gradient(145deg, rgba(251,191,36,0.18), rgba(251,191,36,0.08)); border:1px solid rgba(251,191,36,0.35); color:#fbbf24; padding:4px 14px; border-radius:30px; font-size:12px; font-weight:900; letter-spacing:1px; text-transform:uppercase; margin-left:auto; }
-.datetime-section { background:rgba(255,255,255,0.03); border-radius:24px; padding:18px 22px; margin-top:16px; border:1px solid rgba(255,255,255,0.05); }
-.datetime-picker { display:flex; gap:16px; align-items:flex-end; justify-content:center; flex-wrap:wrap; }
-.datetime-input { flex:1; min-width:210px; }
-.datetime-input label { display:block; color:rgba(255,255,255,0.5); font-size:11px; font-weight:800; margin-bottom:6px; letter-spacing:1px; text-transform:uppercase; }
-.datetime-input input { width:100%; padding:11px 16px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.10); border-radius:14px; color:#fff; font-size:14px; font-weight:600; transition:all 0.3s; font-family:'Inter',sans-serif; }
-.datetime-input input:focus { border-color:#a78bfa; outline:none; box-shadow:0 0 0 4px rgba(167,139,250,0.15); }
-.datetime-input input::-webkit-calendar-picker-indicator { filter:invert(1); cursor:pointer; }
-.manual-btn { background:linear-gradient(145deg, #7c3aed, #6d28d9); border:none; padding:11px 28px; border-radius:14px; color:#fff; font-size:13px; font-weight:800; cursor:pointer; transition:all 0.3s; box-shadow:0 8px 24px rgba(124,58,237,0.3); font-family:'Inter',sans-serif; letter-spacing:0.5px; text-decoration:none; display:inline-flex; align-items:center; }
-.manual-btn:hover { transform:translateY(-2px); box-shadow:0 14px 34px rgba(124,58,237,0.4); }
-.reset-btn { background:rgba(255,255,255,0.08); box-shadow:none; }
-.reset-btn:hover { background:rgba(255,255,255,0.15); }
-.sql-box { display:none; background:rgba(0,0,0,0.6); border:1px solid rgba(251,191,36,0.25); border-radius:18px; padding:20px; margin:18px 0; }
-.sql-box.show { display:block; }
-.sql-box pre { font-family:'Courier New',monospace; font-size:13px; color:#a5b4fc; white-space:pre-wrap; word-break:break-all; margin:0; padding:14px; background:rgba(255,255,255,0.05); border-radius:10px; border-left:3px solid #fbbf24; }
-.sql-box .copy-btn { margin-top:10px; background:rgba(251,191,36,0.15); border:1px solid rgba(251,191,36,0.35); color:#fbbf24; padding:7px 18px; border-radius:30px; font-size:12px; font-weight:800; cursor:pointer; transition:0.3s; font-family:'Inter',sans-serif; letter-spacing:0.3px; }
-.sql-box .copy-btn:hover { background:rgba(251,191,36,0.3); }
-.sql-box .copy-msg { color:#34d399; font-size:12px; margin-left:10px; display:none; font-weight:700; }
-.sql-box .section-label { color:#fbbf24; font-weight:800; font-size:12px; letter-spacing:1.2px; text-transform:uppercase; margin-bottom:8px; margin-top:16px; }
-.sql-box .section-label:first-child { margin-top:0; }
-.stats-panel { display:grid; grid-template-columns:repeat(auto-fit, minmax(190px, 1fr)); gap:18px; margin:26px 0 30px; }
-.stat-card { background:rgba(255,255,255,0.03); backdrop-filter:blur(10px); border-radius:22px; padding:20px 22px; border:1px solid rgba(255,255,255,0.06); transition:all 0.4s; position:relative; overflow:hidden; box-shadow:0 8px 24px rgba(0,0,0,0.25); }
-.stat-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg, transparent, #a78bfa, #34d399, transparent); opacity:0.6; }
-.stat-card:hover { transform:translateY(-4px); border-color:rgba(167,139,250,0.25); box-shadow:0 20px 48px rgba(0,0,0,0.35); }
-.stat-label { color:rgba(255,255,255,0.5); font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:1.2px; margin-bottom:8px; }
-.stat-value { font-size:38px; font-weight:900; background:linear-gradient(135deg, #fff, #a78bfa); -webkit-background-clip:text; -webkit-text-fill-color:transparent; line-height:1.1; letter-spacing:-1px; }
-.stat-value.green { background:linear-gradient(135deg, #34d399, #6ee7b7); -webkit-background-clip:text; }
-.stat-value.purple { background:linear-gradient(135deg, #a78bfa, #8b5cf6); -webkit-background-clip:text; }
-.stat-value.blue { background:linear-gradient(135deg, #60a5fa, #3b82f6); -webkit-background-clip:text; }
-.stat-value.red { background:linear-gradient(135deg, #f87171, #ef4444); -webkit-background-clip:text; }
-.stat-value.orange { background:linear-gradient(135deg, #fbbf24, #f59e0b); -webkit-background-clip:text; }
-.stat-card.blink-zero-stat { animation:blinkStat 1.2s ease-in-out infinite; border-color:#f87171; }
-@keyframes blinkStat { 0%,100% { background:rgba(255,255,255,0.03); border-color:rgba(248,113,113,0.25); } 50% { background:rgba(248,113,113,0.12); border-color:#f87171; box-shadow:0 0 40px rgba(248,113,113,0.3); } }
-.stat-card.outbound-card { border-color:rgba(251,191,36,0.3); background:linear-gradient(145deg, rgba(251,191,36,0.06), rgba(255,255,255,0.02)); }
-.stat-card.outbound-card::before { background:linear-gradient(90deg, transparent, #fbbf24, #f59e0b, transparent); }
-.stat-card.outbound-card .stat-value { background:linear-gradient(135deg, #fbbf24, #f59e0b); -webkit-background-clip:text; }
-.section-title { font-size:20px; font-weight:900; margin:0 0 16px; letter-spacing:-0.3px; display:flex; align-items:center; gap:10px; }
-.section-title .accent { width:4px; height:22px; border-radius:3px; background:linear-gradient(180deg, #a78bfa, #34d399); }
-.carts-container { display:grid; grid-template-columns:repeat(auto-fill, minmax(300px,1fr)); gap:22px; padding:0 0 20px; }
-.cart { background:rgba(255,255,255,0.03); backdrop-filter:blur(12px); border-radius:24px; padding:24px 22px 20px; border:1px solid rgba(255,255,255,0.06); transition:all 0.45s cubic-bezier(0.23,1,0.32,1); position:relative; overflow:hidden; box-shadow:0 12px 32px rgba(0,0,0,0.3); }
-.cart::before { content:''; position:absolute; inset:0; background:radial-gradient(circle at 30% 20%, rgba(167,139,250,0.08), transparent 70%); pointer-events:none; opacity:0; transition:opacity 0.6s; }
-.cart:hover::before { opacity:1; }
-.cart:hover { transform:translateY(-4px); border-color:rgba(167,139,250,0.2); box-shadow:0 28px 56px rgba(0,0,0,0.45); }
-.cart-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; padding-bottom:12px; border-bottom:1px solid rgba(255,255,255,0.05); }
-.dpg-ip { font-size:20px; font-weight:800; color:#fff; background:linear-gradient(135deg, #fff, #c4b5fd); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
-.dpg-ip .full-ip { font-size:11px; font-weight:500; -webkit-text-fill-color:rgba(255,255,255,0.3); display:block; margin-top:2px; letter-spacing:0.3px; }
-.mode-badge { padding:5px 14px; border-radius:60px; font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase; }
-.mode-badge.pr { background:linear-gradient(145deg, #f43f5e, #e11d48); color:#fff; box-shadow:0 4px 16px rgba(244,63,94,0.35); }
-.mode-badge.dr { background:linear-gradient(145deg, #10b981, #059669); color:#fff; box-shadow:0 4px 16px rgba(16,185,129,0.35); }
-.hits-value { font-size:56px; font-weight:900; text-align:center; margin:10px 0 6px; background:linear-gradient(135deg, #fff, #a78bfa); -webkit-background-clip:text; -webkit-text-fill-color:transparent; line-height:1; letter-spacing:-2px; }
-.hits-value .label { font-size:13px; font-weight:700; -webkit-text-fill-color:rgba(255,255,255,0.35); letter-spacing:2px; display:block; margin-top:6px; }
-.hit-status { text-align:center; padding:9px; border-radius:14px; font-size:13px; font-weight:700; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.05); }
-.hit-status.up { color:#34d399; }
-.hit-status.down { color:#f87171; }
-.cart.blink-zero { animation:blinkRed 1s ease-in-out infinite; border-color:#f87171; }
-@keyframes blinkRed { 0%,100% { background:rgba(255,255,255,0.03); border-color:rgba(248,113,113,0.25); } 50% { background:rgba(248,113,113,0.10); border-color:#f87171; box-shadow:0 0 36px rgba(248,113,113,0.25); } }
-.last-updated { margin-top:14px; font-size:10px; color:rgba(255,255,255,0.22); text-align:right; letter-spacing:0.4px; border-top:1px solid rgba(255,255,255,0.03); padding-top:12px; font-weight:600; }
-.no-data { grid-column:1/-1; text-align:center; padding:60px 40px; background:rgba(255,255,255,0.02); border-radius:32px; border:1px solid rgba(255,255,255,0.05); }
-.no-data h3 { font-size:24px; font-weight:800; margin-bottom:10px; background:linear-gradient(135deg, #fff, #a78bfa); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
-.no-data p { color:rgba(255,255,255,0.45); font-size:15px; }
-.audio-controls { position:fixed; bottom:30px; right:30px; z-index:1000; }
-.mute-btn { width:66px; height:66px; border-radius:50%; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); color:#fff; font-size:12px; font-weight:900; cursor:pointer; transition:all 0.3s; backdrop-filter:blur(12px); box-shadow:0 12px 32px rgba(0,0,0,0.4); position:relative; display:flex; align-items:center; justify-content:center; text-decoration:none; font-family:'Inter',sans-serif; letter-spacing:1px; }
-.mute-btn:hover { transform:scale(1.08); }
-.mute-btn.sound-on { background:rgba(52,211,153,0.18); border-color:rgba(52,211,153,0.35); color:#34d399; }
-.mute-btn.sound-off { background:rgba(248,113,113,0.15); border-color:rgba(248,113,113,0.3); color:#f87171; }
-.mute-btn .indicator { position:absolute; top:-4px; right:-4px; width:16px; height:16px; border-radius:50%; background:#34d399; border:2px solid #0b0e1a; animation:pulseDot 1.6s ease-in-out infinite; }
-.mute-btn.sound-off .indicator { background:#f87171; }
-.footer { margin-top:40px; text-align:center; padding:24px; color:rgba(255,255,255,0.22); font-size:12px; letter-spacing:0.6px; border-top:1px solid rgba(255,255,255,0.04); font-weight:600; }
-.footer strong { color:rgba(255,255,255,0.4); }
-@media (max-width:768px) {
-    body { padding:14px; }
-    .header { padding:22px 20px; }
-    .header h1 { font-size:22px; }
-    .header-top { flex-direction:column; align-items:stretch; }
-    .datetime-picker { flex-direction:column; }
-    .datetime-input { min-width:100%; }
-    .manual-btn { width:100%; justify-content:center; }
-    .stats-panel { grid-template-columns:1fr 1fr; }
-    .stat-value { font-size:28px; }
-    .carts-container { grid-template-columns:1fr; }
-    .hits-value { font-size:44px; }
-    .partition-chip { margin-left:0; margin-top:8px; }
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;min-height:100vh;padding:20px;background:#06080f;color:#fff;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 15% 30%,rgba(88,70,255,.18) 0%,transparent 55%),radial-gradient(ellipse at 85% 80%,rgba(0,200,255,.14) 0%,transparent 55%),radial-gradient(ellipse at 50% 50%,rgba(251,191,36,.05) 0%,transparent 60%);pointer-events:none;z-index:0;}
+body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(255,255,255,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.02) 1px,transparent 1px);background-size:50px 50px;pointer-events:none;z-index:0;animation:gridMove 25s linear infinite;}
+@keyframes gridMove{0%{transform:translate(0,0);}100%{transform:translate(50px,50px);}}
+.container{max-width:1800px;margin:0 auto;position:relative;z-index:1;}
+
+/* ── HEADER ── */
+.header{background:linear-gradient(145deg,rgba(255,255,255,.06),rgba(255,255,255,.02));backdrop-filter:blur(28px);border:1px solid rgba(255,255,255,.08);border-radius:32px;padding:28px 36px;margin-bottom:24px;box-shadow:0 30px 80px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.04) inset;}
+.header-top{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:18px;}
+.header h1{font-size:32px;font-weight:900;letter-spacing:-.8px;line-height:1.1;background:linear-gradient(135deg,#fff 0%,#a78bfa 35%,#60a5fa 65%,#34d399 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.header h1 small{display:block;font-size:13px;font-weight:600;-webkit-text-fill-color:rgba(255,255,255,.45);letter-spacing:2.5px;text-transform:uppercase;margin-top:4px;}
+.header-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+
+/* ── BUTTONS ── */
+.btn{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:#fff;padding:10px 18px;border-radius:60px;font-size:12px;font-weight:800;cursor:pointer;transition:all .3s;display:inline-flex;align-items:center;gap:7px;backdrop-filter:blur(8px);font-family:'Inter',sans-serif;text-decoration:none;letter-spacing:.4px;text-transform:uppercase;}
+.btn:hover{background:rgba(167,139,250,.22);border-color:rgba(167,139,250,.5);transform:translateY(-2px);box-shadow:0 12px 30px rgba(167,139,250,.25);}
+.btn svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;}
+.btn-refresh-ip{background:rgba(248,113,113,.14);border-color:rgba(248,113,113,.3);color:#f87171;}
+.btn-refresh-ip:hover{background:rgba(248,113,113,.28);border-color:rgba(248,113,113,.55);}
+.btn-sql{background:rgba(251,191,36,.14);border-color:rgba(251,191,36,.3);color:#fbbf24;}
+.btn-sql:hover{background:rgba(251,191,36,.28);border-color:rgba(251,191,36,.55);}
+.spin{animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.live-badge{background:rgba(52,211,153,.18);border:1px solid rgba(52,211,153,.35);padding:7px 15px;border-radius:60px;font-size:11px;font-weight:900;color:#34d399;display:flex;align-items:center;gap:7px;letter-spacing:1.5px;text-transform:uppercase;}
+.live-badge .dot{width:8px;height:8px;border-radius:50%;background:#34d399;animation:pulseDot 1.5s ease-in-out infinite;}
+@keyframes pulseDot{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.3;transform:scale(.7);}}
+
+/* ── INFO BAR ── */
+.info-bar{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;align-items:center;}
+.chip{background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:8px 16px;font-size:12px;font-weight:700;color:rgba(255,255,255,.55);display:flex;align-items:center;gap:8px;letter-spacing:.3px;}
+.chip .val{color:#fff;font-weight:800;background:linear-gradient(135deg,#a78bfa,#60a5fa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.chip.partition{background:linear-gradient(145deg,rgba(251,191,36,.15),rgba(251,191,36,.05));border-color:rgba(251,191,36,.35);color:#fbbf24;font-weight:900;letter-spacing:1px;}
+.chip.timing{background:linear-gradient(145deg,rgba(52,211,153,.12),rgba(52,211,153,.04));border-color:rgba(52,211,153,.3);color:#34d399;}
+.chip.timing .val{-webkit-text-fill-color:#34d399;}
+
+/* ── DATETIME ── */
+.dt-section{background:rgba(255,255,255,.03);border-radius:22px;padding:16px 20px;margin-top:14px;border:1px solid rgba(255,255,255,.06);}
+.dt-picker{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;}
+.dt-input{flex:1;min-width:190px;}
+.dt-input label{display:block;color:rgba(255,255,255,.5);font-size:10px;font-weight:900;margin-bottom:6px;letter-spacing:1.2px;text-transform:uppercase;}
+.dt-input input{width:100%;padding:10px 14px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:12px;color:#fff;font-size:13px;font-weight:700;transition:all .3s;font-family:'Inter',sans-serif;}
+.dt-input input:focus{border-color:#a78bfa;outline:none;box-shadow:0 0 0 4px rgba(167,139,250,.18);}
+.dt-input input::-webkit-calendar-picker-indicator{filter:invert(1);cursor:pointer;}
+.apply-btn{background:linear-gradient(145deg,#7c3aed,#6d28d9);border:none;padding:11px 26px;border-radius:12px;color:#fff;font-size:12px;font-weight:900;cursor:pointer;transition:all .3s;box-shadow:0 8px 24px rgba(124,58,237,.35);font-family:'Inter',sans-serif;letter-spacing:.8px;text-transform:uppercase;text-decoration:none;display:inline-flex;align-items:center;}
+.apply-btn:hover{transform:translateY(-2px);box-shadow:0 14px 34px rgba(124,58,237,.5);}
+.apply-btn.reset{background:rgba(255,255,255,.08);box-shadow:none;}
+.apply-btn.reset:hover{background:rgba(255,255,255,.15);}
+
+/* ── SQL BOX ── */
+.sql-box{display:none;background:rgba(0,0,0,.6);border:1px solid rgba(251,191,36,.25);border-radius:18px;padding:20px;margin:16px 0;}
+.sql-box.show{display:block;}
+.sql-box pre{font-family:'Courier New',monospace;font-size:12px;color:#a5b4fc;white-space:pre-wrap;word-break:break-all;margin:0;padding:12px;background:rgba(255,255,255,.05);border-radius:10px;border-left:3px solid #fbbf24;}
+.sql-box .copy-btn{margin-top:8px;background:rgba(251,191,36,.18);border:1px solid rgba(251,191,36,.4);color:#fbbf24;padding:6px 16px;border-radius:30px;font-size:11px;font-weight:900;cursor:pointer;font-family:'Inter',sans-serif;letter-spacing:.5px;text-transform:uppercase;}
+.sql-box .copy-btn:hover{background:rgba(251,191,36,.32);}
+.sql-box .copy-msg{color:#34d399;font-size:12px;margin-left:10px;display:none;font-weight:800;}
+.sql-box .lbl{color:#fbbf24;font-weight:900;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;margin-top:14px;}
+.sql-box .lbl:first-child{margin-top:0;}
+.sql-box .lbl.inbound{color:#60a5fa;}
+.sql-box .lbl.outbound{color:#fbbf24;}
+
+/* ═══════════════════════════════════════════════════════════
+   TWO PANEL GRID — INBOUND | OUTBOUND
+   ═══════════════════════════════════════════════════════════ */
+.panels{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:24px;}
+@media(max-width:1200px){.panels{grid-template-columns:1fr;}}
+.panel{background:linear-gradient(145deg,rgba(255,255,255,.04),rgba(255,255,255,.015));backdrop-filter:blur(20px);border-radius:28px;padding:24px;border:1px solid rgba(255,255,255,.06);box-shadow:0 20px 50px rgba(0,0,0,.35);position:relative;overflow:hidden;}
+.panel::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,#a78bfa,#60a5fa,transparent);opacity:.7;}
+.panel.outbound-panel::before{background:linear-gradient(90deg,transparent,#fbbf24,#f59e0b,transparent);}
+
+.panel-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid rgba(255,255,255,.06);}
+.panel-title{font-size:20px;font-weight:900;letter-spacing:-.3px;display:flex;align-items:center;gap:10px;}
+.panel-title .icon{width:36px;height:36px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;background:linear-gradient(145deg,rgba(167,139,250,.25),rgba(96,165,250,.15));border:1px solid rgba(167,139,250,.35);}
+.panel.outbound-panel .panel-title .icon{background:linear-gradient(145deg,rgba(251,191,36,.25),rgba(245,158,11,.15));border-color:rgba(251,191,36,.35);}
+.panel-title .txt{background:linear-gradient(135deg,#fff,#c4b5fd);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.panel.outbound-panel .panel-title .txt{background:linear-gradient(135deg,#fff,#fbbf24);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.panel-sub{font-size:11px;color:rgba(255,255,255,.35);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-top:2px;}
+.elapsed-badge{background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.3);color:#34d399;padding:5px 12px;border-radius:30px;font-size:10px;font-weight:900;letter-spacing:1px;}
+
+/* ── OUTBOUND BIG CARD ── */
+.outbound-hero{background:linear-gradient(145deg,rgba(251,191,36,.12),rgba(245,158,11,.04));border:1px solid rgba(251,191,36,.3);border-radius:22px;padding:32px 24px;text-align:center;position:relative;overflow:hidden;margin-bottom:16px;}
+.outbound-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 0%,rgba(251,191,36,.15),transparent 60%);pointer-events:none;}
+.outbound-hero .label{font-size:12px;font-weight:900;color:rgba(251,191,36,.7);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;}
+.outbound-hero .value{font-size:80px;font-weight:900;line-height:1;letter-spacing:-4px;background:linear-gradient(135deg,#fbbf24,#f59e0b,#fbbf24);-webkit-background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(0 0 30px rgba(251,191,36,.35));}
+.outbound-hero .unit{font-size:14px;font-weight:800;color:rgba(255,255,255,.4);letter-spacing:3px;margin-top:6px;text-transform:uppercase;}
+.outbound-hero .status{margin-top:14px;display:inline-flex;align-items:center;gap:8px;padding:8px 18px;border-radius:60px;font-size:12px;font-weight:900;letter-spacing:1px;text-transform:uppercase;}
+.outbound-hero .status.up{background:rgba(52,211,153,.15);color:#34d399;border:1px solid rgba(52,211,153,.35);}
+.outbound-hero .status.down{background:rgba(248,113,113,.15);color:#f87171;border:1px solid rgba(248,113,113,.35);}
+.outbound-hero.blink-down{animation:blinkAmber 1s ease-in-out infinite;}
+@keyframes blinkAmber{0%,100%{border-color:rgba(251,191,36,.3);}50%{border-color:#f87171;box-shadow:0 0 40px rgba(248,113,113,.3);}}
+
+.outbound-meta{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+.meta-box{background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:12px 14px;text-align:center;}
+.meta-box .mlabel{font-size:9px;font-weight:900;color:rgba(255,255,255,.35);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:4px;}
+.meta-box .mvalue{font-size:16px;font-weight:900;color:#fff;}
+
+/* ── INBOUND MINI STATS ── */
+.mini-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px;}
+.mini-stat{background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:14px 16px;position:relative;overflow:hidden;}
+.mini-stat::before{content:'';position:absolute;top:0;left:0;bottom:0;width:3px;border-radius:3px;}
+.mini-stat.purple::before{background:#a78bfa;}
+.mini-stat.green::before{background:#34d399;}
+.mini-stat.blue::before{background:#60a5fa;}
+.mini-stat.red::before{background:#f87171;}
+.mini-stat .mlabel{font-size:10px;font-weight:900;color:rgba(255,255,255,.4);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:6px;}
+.mini-stat .mvalue{font-size:26px;font-weight:900;line-height:1;letter-spacing:-1px;}
+.mini-stat.purple .mvalue{background:linear-gradient(135deg,#a78bfa,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.mini-stat.green .mvalue{background:linear-gradient(135deg,#34d399,#6ee7b7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.mini-stat.blue .mvalue{background:linear-gradient(135deg,#60a5fa,#3b82f6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.mini-stat.red .mvalue{background:linear-gradient(135deg,#f87171,#ef4444);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.mini-stat.blink-zero{animation:blinkStat 1.2s ease-in-out infinite;}
+@keyframes blinkStat{0%,100%{background:rgba(0,0,0,.35);}50%{background:rgba(248,113,113,.12);}}
+
+/* ── CARTS GRID ── */
+.carts-title{font-size:13px;font-weight:900;color:rgba(255,255,255,.5);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.carts-title::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,rgba(255,255,255,.1),transparent);}
+.carts{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;max-height:600px;overflow-y:auto;padding-right:4px;}
+.cart{background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);border-radius:18px;padding:16px 14px;transition:all .3s cubic-bezier(.23,1,.32,1);position:relative;overflow:hidden;}
+.cart:hover{transform:translateY(-3px);border-color:rgba(167,139,250,.3);box-shadow:0 16px 36px rgba(0,0,0,.4);}
+.cart-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.cart-ip{font-size:15px;font-weight:900;color:#fff;letter-spacing:-.3px;}
+.cart-ip small{display:block;font-size:9px;color:rgba(255,255,255,.25);font-weight:600;margin-top:1px;letter-spacing:.3px;}
+.mode-tag{padding:3px 9px;border-radius:30px;font-size:9px;font-weight:900;letter-spacing:1px;text-transform:uppercase;}
+.mode-tag.pr{background:linear-gradient(145deg,#f43f5e,#e11d48);color:#fff;box-shadow:0 3px 10px rgba(244,63,94,.35);}
+.mode-tag.dr{background:linear-gradient(145deg,#10b981,#059669);color:#fff;box-shadow:0 3px 10px rgba(16,185,129,.35);}
+.cart-hits{font-size:38px;font-weight:900;text-align:center;line-height:1;letter-spacing:-2px;background:linear-gradient(135deg,#fff,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin:8px 0 4px;}
+.cart-hits .u{font-size:10px;font-weight:800;-webkit-text-fill-color:rgba(255,255,255,.3);letter-spacing:2px;display:block;margin-top:2px;}
+.cart-status{text-align:center;padding:6px;border-radius:10px;font-size:10px;font-weight:800;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);letter-spacing:.5px;text-transform:uppercase;}
+.cart-status.up{color:#34d399;}
+.cart-status.down{color:#f87171;}
+.cart.blink-zero{animation:blinkRed 1s ease-in-out infinite;border-color:#f87171;}
+@keyframes blinkRed{0%,100%{background:rgba(255,255,255,.035);border-color:rgba(248,113,113,.25);}50%{background:rgba(248,113,113,.1);border-color:#f87171;box-shadow:0 0 30px rgba(248,113,113,.25);}}
+
+.empty-state{text-align:center;padding:50px 30px;background:rgba(255,255,255,.02);border-radius:20px;border:1px solid rgba(255,255,255,.05);}
+.empty-state h3{font-size:18px;font-weight:800;margin-bottom:8px;background:linear-gradient(135deg,#fff,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.empty-state p{color:rgba(255,255,255,.4);font-size:13px;}
+.error-box{background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.3);border-radius:14px;padding:16px;color:#f87171;font-size:12px;font-weight:700;word-break:break-word;}
+
+/* ── FOOTER ── */
+.footer{margin-top:32px;text-align:center;padding:22px;color:rgba(255,255,255,.25);font-size:11px;letter-spacing:.8px;border-top:1px solid rgba(255,255,255,.05);font-weight:700;text-transform:uppercase;}
+.footer strong{color:rgba(255,255,255,.5);}
+
+/* ── MUTE ── */
+.audio-controls{position:fixed;bottom:24px;right:24px;z-index:1000;}
+.mute-btn{width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:#fff;font-size:11px;font-weight:900;cursor:pointer;transition:all .3s;backdrop-filter:blur(12px);box-shadow:0 12px 32px rgba(0,0,0,.5);position:relative;display:flex;align-items:center;justify-content:center;text-decoration:none;font-family:'Inter',sans-serif;letter-spacing:1px;}
+.mute-btn:hover{transform:scale(1.08);}
+.mute-btn.sound-on{background:rgba(52,211,153,.18);border-color:rgba(52,211,153,.4);color:#34d399;}
+.mute-btn.sound-off{background:rgba(248,113,113,.15);border-color:rgba(248,113,113,.35);color:#f87171;}
+.mute-btn .indicator{position:absolute;top:-3px;right:-3px;width:14px;height:14px;border-radius:50%;background:#34d399;border:2px solid #06080f;animation:pulseDot 1.5s ease-in-out infinite;}
+.mute-btn.sound-off .indicator{background:#f87171;}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-track{background:rgba(255,255,255,.02);}
+::-webkit-scrollbar-thumb{background:rgba(167,139,250,.3);border-radius:10px;}
+::-webkit-scrollbar-thumb:hover{background:rgba(167,139,250,.5);}
+
+/* ── MOBILE ── */
+@media(max-width:768px){
+    body{padding:12px;}
+    .header{padding:20px 18px;}
+    .header h1{font-size:22px;}
+    .header-top{flex-direction:column;align-items:stretch;}
+    .dt-picker{flex-direction:column;}
+    .dt-input{min-width:100%;}
+    .apply-btn{width:100%;justify-content:center;}
+    .outbound-hero .value{font-size:56px;}
+    .outbound-meta{grid-template-columns:1fr 1fr;}
+    .carts{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));max-height:none;}
+    .mini-stats{grid-template-columns:1fr 1fr;}
 }
-@media (max-width:480px) { .stats-panel { grid-template-columns:1fr; } }
-::-webkit-scrollbar { width:6px; }
-::-webkit-scrollbar-track { background:rgba(255,255,255,0.02); }
-::-webkit-scrollbar-thumb { background:rgba(167,139,250,0.3); border-radius:10px; }
 </style>
 </head>
 <body>
 <div class="container">
 
-<!-- ── HEADER ── -->
+<!-- ═══════════════════ HEADER ═══════════════════ -->
 <div class="header">
 <div class="header-top">
-<h1>DMZ DPG Monitoring <small>Inbound &amp; Outbound · Real-time</small></h1>
+<div>
+<h1>DMZ DPG Monitoring <small>Inbound &amp; Outbound · Parallel Execution · Real-time</small></h1>
+</div>
 <div class="header-actions">
 <span class="live-badge"><span class="dot"></span> LIVE</span>
 <button class="btn" onclick="refreshPage()" id="refreshBtn">
 <svg viewBox="0 0 24 24"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg> Refresh
 </button>
-<a href="<%= request.getRequestURI() %>?action=refreshMaster&mute=<%= isMuted %><%= (manualFromTime!=null?"&fromTime="+manualFromTime:"") %><%= (manualToTime!=null?"&toTime="+manualToTime:"") %>" class="btn btn-refresh-ip" onclick="return confirm('Refresh IP list? This will delete and reload all IPs from API_LOG.');">
-<svg viewBox="0 0 24 24"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg> Refresh IP List
+<a href="<%= request.getRequestURI() %>?action=refreshMaster&mute=<%= isMuted %><%= (manualFromTime!=null?"&fromTime="+manualFromTime:"") %><%= (manualToTime!=null?"&toTime="+manualToTime:"") %>" class="btn btn-refresh-ip" onclick="return confirm('Refresh IP list?');">
+<svg viewBox="0 0 24 24"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg> Refresh IPs
 </a>
 <button class="btn btn-sql" onclick="toggleSqlBox()">
-<svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg> Show SQL
+<svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg> SQL
 </button>
-<span style="font-size:12px;color:rgba(255,255,255,0.3);font-weight:700;letter-spacing:0.5px;"><%= currentTime %></span>
 </div>
 </div>
 
-<!-- ── SQL BOX ── -->
-<div id="sqlBox" class="sql-box">
-<div class="section-label">🔵 Inbound Query (API_LOG)</div>
-<pre id="sqlQueryText"><%= displayQuery %></pre>
-<button class="copy-btn" onclick="copySql('sqlQueryText','copyMsg1')">Copy Inbound SQL</button>
-<span id="copyMsg1" class="copy-msg">Copied!</span>
-
-<div class="section-label">🟡 Outbound Query (BACKEND_LOG · port 7443)</div>
-<pre id="outboundSqlText"><%= displayOutboundQuery %></pre>
-<button class="copy-btn" onclick="copySql('outboundSqlText','copyMsg2')">Copy Outbound SQL</button>
-<span id="copyMsg2" class="copy-msg">Copied!</span>
-</div>
-
-<!-- ── TIME RANGE + PARTITION CHIP ── -->
-<div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;">
-<div class="time-range-display">
-DATA FROM: <span class="time-value"><%= timeRangeDisplay %></span>
-<span class="partition-chip">📅 PARTITION: <%= activePartition %></span>
-</div>
+<!-- ── INFO BAR ── -->
+<div class="info-bar">
+<div class="chip"><span>⏱</span> DATA: <span class="val"><%= timeRangeDisplay %></span></div>
+<div class="chip partition"><span>📅</span> PARTITION: <%= activePartition %></div>
+<div class="chip timing"><span>⚡</span> TOTAL TIME: <span class="val"><%= totalElapsed %> ms</span></div>
+<div class="chip"><span>🕐</span> <span class="val"><%= currentTime %></span></div>
 </div>
 
 <!-- ── DATETIME ── -->
-<div class="datetime-section">
+<div class="dt-section">
 <form method="get" action="" id="mainForm">
-<input type="hidden" name="mute" id="muteInput" value="<%= isMuted %>">
-<div class="datetime-picker">
-<div class="datetime-input"><label>FROM</label><input type="datetime-local" name="fromTime" id="fromTime" value="<%= manualFromTime!=null?manualFromTime:"" %>"></div>
-<div class="datetime-input"><label>TO</label><input type="datetime-local" name="toTime" id="toTime" value="<%= manualToTime!=null?manualToTime:"" %>"></div>
-<button type="submit" class="manual-btn">APPLY</button>
+<input type="hidden" name="mute" value="<%= isMuted %>">
+<div class="dt-picker">
+<div class="dt-input"><label>FROM</label><input type="datetime-local" name="fromTime" id="fromTime" value="<%= manualFromTime!=null?manualFromTime:"" %>"></div>
+<div class="dt-input"><label>TO</label><input type="datetime-local" name="toTime" id="toTime" value="<%= manualToTime!=null?manualToTime:"" %>"></div>
+<button type="submit" class="apply-btn">APPLY</button>
 <% if(manualFromTime != null || manualToTime != null) { %>
-<a href="<%= request.getRequestURI() %>?mute=<%= isMuted %>" class="manual-btn reset-btn">RESET</a>
+<a href="<%= request.getRequestURI() %>?mute=<%= isMuted %>" class="apply-btn reset">RESET</a>
 <% } %>
 </div>
 </form>
 </div>
 </div>
 
-<!-- ── STATS ── -->
-<div class="stats-panel">
-<div class="stat-card" id="totalHitsCard"><div class="stat-label">Total Hits (Inbound)</div><div class="stat-value purple" id="totalHits">0</div></div>
-<div class="stat-card outbound-card" id="dpgOutboundCard"><div class="stat-label">Outbound Hits (Port 7443)</div><div class="stat-value orange" id="dpgOutboundHits">0</div></div>
-<div class="stat-card" id="zeroHitsCard"><div class="stat-label">Zero Hit Carts</div><div class="stat-value red" id="zeroHitsCount">0</div></div>
-<div class="stat-card"><div class="stat-label">Active Carts</div><div class="stat-value blue" id="totalCarts">0</div></div>
-<div class="stat-card"><div class="stat-label">PR Mode</div><div class="stat-value green" id="prCount">0</div></div>
-<div class="stat-card"><div class="stat-label">DR Mode</div><div class="stat-value" id="drCount" style="background:linear-gradient(135deg,#60a5fa,#3b82f6);-webkit-background-clip:text;">0</div></div>
+<!-- ═══════════════════ SQL BOX ═══════════════════ -->
+<div id="sqlBox" class="sql-box">
+<div class="lbl inbound">🔵 Inbound Query — API_LOG</div>
+<pre id="inboundSql"><%= displayInboundQ %></pre>
+<button class="copy-btn" onclick="copySql('inboundSql','copyMsg1')">Copy Inbound</button>
+<span id="copyMsg1" class="copy-msg">✓ Copied!</span>
+
+<div class="lbl outbound">🟡 Outbound Query — BACKEND_LOG (port 7443)</div>
+<pre id="outboundSql"><%= displayOutboundQ %></pre>
+<button class="copy-btn" onclick="copySql('outboundSql','copyMsg2')">Copy Outbound</button>
+<span id="copyMsg2" class="copy-msg">✓ Copied!</span>
 </div>
 
-<!-- ── CARTS ── -->
-<div class="section-title"><span class="accent"></span>DPG Carts — Live Hit Status</div>
-<div id="cartsContainer" class="carts-container">
-<%
-// ── Read master IP list ──
-List<String> allIps = new ArrayList<>();
-Connection connRead = null;
-Statement stmtRead = null;
-ResultSet rsRead = null;
-try {
-    connRead = DBUtilityAuto.getReportDBConnection();
-    stmtRead = connRead.createStatement();
-    rsRead = stmtRead.executeQuery("SELECT DPG_IP FROM DPG_IP_MASTER ORDER BY DPG_IP");
-    while (rsRead.next()) allIps.add(rsRead.getString("DPG_IP"));
-} catch (SQLException e) {
-    e.printStackTrace();
-} finally {
-    try { if (rsRead != null) rsRead.close(); } catch (Exception e) {}
-    try { if (stmtRead != null) stmtRead.close(); } catch (Exception e) {}
-    try { if (connRead != null) connRead.close(); } catch (Exception e) {}
-}
+<!-- ═══════════════════ TWO PANELS — INBOUND | OUTBOUND ═══════════════════ -->
+<div class="panels">
 
-// ── Fetch outbound hits (independent of IP list) ──
-try {
-    dpgOutboundHits = getDpgOutboundHits(manualFromTime, manualToTime);
-} catch (Exception e) {
-    e.printStackTrace();
-    dpgOutboundHits = 0;
-}
+<!-- ─── INBOUND PANEL ─── -->
+<div class="panel">
+<div class="panel-header">
+<div>
+<div class="panel-title">
+<span class="icon">🔵</span>
+<span class="txt">Inbound Traffic</span>
+</div>
+<div class="panel-sub">API_LOG · DPG IP Carts</div>
+</div>
+<div class="elapsed-badge">⚡ <%= inRes.elapsedMs %> ms</div>
+</div>
 
-if (allIps == null || allIps.isEmpty()) {
-%>
-<div class="no-data">
+<% if (inRes.error != null) { %>
+<div class="error-box">❌ <%= inRes.error %></div>
+<% } else if (inRes.ips.isEmpty()) { %>
+<div class="empty-state">
 <h3>IP Master List is Empty</h3>
-<p>Click <strong>"Refresh IP List"</strong> to populate the master table, or wait for auto-refresh (runs daily).</p>
+<p>Click <strong>Refresh IPs</strong> to populate from API_LOG.</p>
 </div>
-<%
-    prCount = 0; drCount = 0; totalHits = 0; totalCarts = 0; zeroHitCarts = 0;
-} else {
-    // ── Build IN clause ──
-    StringBuilder inClause = new StringBuilder();
-    for (int i = 0; i < allIps.size(); i++) {
-        inClause.append("'").append(allIps.get(i)).append("'");
-        if (i < allIps.size() - 1) inClause.append(",");
-    }
+<% } else { %>
 
-    Connection connIIB = null;
-    PreparedStatement pstmtIIB = null;
-    ResultSet rsIIB = null;
-    try {
-        connIIB = DBUtilityAuto.getIIBDBConnection();
-
-        // ── Inbound query WITH dynamic partition ──
-        String countQuery =
-            "SELECT /*+ PARALLEL(4) */ TRIM(DPG_IP) AS DPG_IP, COUNT(1) AS TOTAL_HITS " +
-            "FROM EISAPP.API_LOG PARTITION (" + activePartition + ") " +
-            "WHERE TRIM(DPG_IP) IN (" + inClause.toString() + ") " +
-            buildTimeCondition(manualFromTime, manualToTime) +
-            "GROUP BY TRIM(DPG_IP)";
-
-        System.out.println("===== Inbound hit count query =====");
-        System.out.println(countQuery);
-        System.out.println("===================================");
-
-        pstmtIIB = connIIB.prepareStatement(countQuery);
-        rsIIB = pstmtIIB.executeQuery();
-        Map<String, Integer> countMap = new HashMap<>();
-        while (rsIIB.next()) {
-            countMap.put(rsIIB.getString("DPG_IP"), rsIIB.getInt("TOTAL_HITS"));
-        }
-
-        for (String ip : allIps) {
-            Map<String, Object> row = new HashMap<>();
-            int hits = countMap.getOrDefault(ip, 0);
-            row.put("dpgIp", ip);
-            row.put("hits", hits);
-            dataList.add(row);
-            totalHits += hits;
-            totalCarts++;
-            if (hits == 0) zeroHitCarts++;
-            String mode = getModeFromIp(ip);
-            if ("PR".equals(mode)) prCount++;
-            else if ("DR".equals(mode)) drCount++;
-        }
-    } catch (Exception e) {
-        e.printStackTrace();
-%>
-<div class="no-data">
-<h3>System Error</h3>
-<p><%= e.getMessage() %></p>
+<!-- Mini Stats -->
+<div class="mini-stats">
+<div class="mini-stat purple <%= inRes.totalHits==0?"blink-zero":"" %>">
+<div class="mlabel">Total Hits</div>
+<div class="mvalue"><%= inRes.totalHits %></div>
 </div>
-<%
-    } finally {
-        try { if (rsIIB != null) rsIIB.close(); } catch (Exception e) {}
-        try { if (pstmtIIB != null) pstmtIIB.close(); } catch (Exception e) {}
-        try { if (connIIB != null) connIIB.close(); } catch (Exception e) {}
-    }
-}
+<div class="mini-stat red <%= inRes.zeroHits>0?"blink-zero":"" %>">
+<div class="mlabel">Zero Hit Carts</div>
+<div class="mvalue"><%= inRes.zeroHits %></div>
+</div>
+<div class="mini-stat blue">
+<div class="mlabel">Active Carts</div>
+<div class="mvalue"><%= inRes.ips.size() %></div>
+</div>
+<div class="mini-stat green">
+<div class="mlabel">PR / DR</div>
+<div class="mvalue"><%= inRes.prCount %> / <%= inRes.drCount %></div>
+</div>
+</div>
 
-if (dataList != null && !dataList.isEmpty()) {
-    Collections.sort(dataList, (a,b) -> ((String)a.get("dpgIp")).compareTo((String)b.get("dpgIp")));
-    for (Map<String, Object> row : dataList) {
-        String fullIp = (String) row.get("dpgIp");
-        String maskedIp = maskIp(fullIp);
-        int hits = (Integer) row.get("hits");
-        String mode = getModeFromIp(fullIp);
-        boolean isPr = "PR".equals(mode);
-        String badgeClass = isPr ? "pr" : "dr";
-        String statusClass, statusText, cartExtraClass = "";
-        if (hits == 0) {
-            statusClass = "down"; statusText = "IP Down / No Traffic"; cartExtraClass = "blink-zero";
-        } else {
-            statusClass = "up"; statusText = "Up & Running";
-        }
+<!-- Carts -->
+<div class="carts-title">Live Carts — <%= inRes.ips.size() %> DPG IPs</div>
+<div class="carts">
+<%
+List<String> sortedIps = new ArrayList<>(inRes.ips);
+Collections.sort(sortedIps);
+for (String ip : sortedIps) {
+    int hits = inRes.countMap.getOrDefault(ip, 0);
+    String mode = getMode(ip);
+    String badge = "PR".equals(mode) ? "pr" : "dr";
+    boolean zero = hits == 0;
 %>
-<div class="cart <%= cartExtraClass %>" data-mode="<%= mode %>" data-hits="<%= hits %>">
+<div class="cart <%= zero?"blink-zero":"" %>">
 <div class="cart-header">
-<span class="dpg-ip"><%= maskedIp %><span class="full-ip"><%= fullIp %></span></span>
-<span class="mode-badge <%= badgeClass %>"><%= mode %></span>
+<div class="cart-ip"><%= maskIp(ip) %><small><%= ip %></small></div>
+<span class="mode-tag <%= badge %>"><%= mode %></span>
 </div>
-<div class="hits-value"><%= hits %><span class="label">HITS</span></div>
-<div class="hit-status <%= statusClass %>"><%= statusText %></div>
-<div class="last-updated">Updated: <%= currentTime %></div>
+<div class="cart-hits"><%= hits %><span class="u">HITS</span></div>
+<div class="cart-status <%= zero?"down":"up" %>"><%= zero?"DOWN":"UP" %></div>
 </div>
-<%
-    }
-} else if (dataList != null && dataList.isEmpty() && allIps != null && !allIps.isEmpty()) {
-%>
-<div class="no-data">
-<h3>No Data Available</h3>
-<p>No DPG IP records found in the selected time range.</p>
+<% } %>
 </div>
-<%
-}
-%>
+<% } %>
 </div>
 
+<!-- ─── OUTBOUND PANEL ─── -->
+<div class="panel outbound-panel">
+<div class="panel-header">
+<div>
+<div class="panel-title">
+<span class="icon">🟡</span>
+<span class="txt">Outbound Traffic</span>
+</div>
+<div class="panel-sub">BACKEND_LOG · Port 7443</div>
+</div>
+<div class="elapsed-badge">⚡ <%= outRes.elapsedMs %> ms</div>
+</div>
+
+<% if (outRes.error != null) { %>
+<div class="error-box">❌ <%= outRes.error %></div>
+<% } else { %>
+
+<!-- Hero Card -->
+<div class="outbound-hero <%= outRes.hits==0?"blink-down":"" %>">
+<div class="label">Total Outbound Hits</div>
+<div class="value"><%= outRes.hits %></div>
+<div class="unit">Requests on Port 7443</div>
+<div class="status <%= outRes.hits>0?"up":"down" %>">
+<%= outRes.hits>0?"● ACTIVE":"● NO TRAFFIC" %>
+</div>
+</div>
+
+<!-- Meta Boxes -->
+<div class="outbound-meta">
+<div class="meta-box">
+<div class="mlabel">Port</div>
+<div class="mvalue">7443</div>
+</div>
+<div class="meta-box">
+<div class="mlabel">Partition</div>
+<div class="mvalue" style="color:#fbbf24;font-size:13px;"><%= outRes.partition %></div>
+</div>
+<div class="meta-box">
+<div class="mlabel">Table</div>
+<div class="mvalue" style="font-size:11px;">BACKEND_LOG</div>
+</div>
+</div>
+
+<% } %>
+</div>
+
+</div><!-- end panels -->
+
+<!-- ═══════════════════ FOOTER ═══════════════════ -->
 <div class="footer">
-<p>DMZ DPG Monitoring — <strong>PR</strong> (171.x) &amp; <strong>DR</strong> (176.x) — Auto-refresh every 10 min</p>
-<p style="font-size:11px;margin-top:6px;color:rgba(255,255,255,0.15);">Data Range: <%= timeRangeDisplay %> &nbsp;|&nbsp; Partition: <strong style="color:#fbbf24;"><%= activePartition %></strong></p>
+<p>DMZ DPG Monitoring · <strong>PR</strong> 171.x · <strong>DR</strong> 176.x · Parallel Execution · Auto-refresh 10 min</p>
+<p style="font-size:10px;margin-top:6px;color:rgba(255,255,255,.15);">
+Partition: <strong style="color:#fbbf24;"><%= activePartition %></strong> · Range: <%= timeRangeDisplay %>
+</p>
 </div>
 </div>
 
@@ -621,34 +713,19 @@ if (manualToTime != null) muteUrl += "&toTime=" + manualToTime;
 </audio>
 
 <script>
-const totalHits = <%= totalHits %>;
-const zeroHits = <%= zeroHitCarts %>;
-const dpgOutboundHits = <%= dpgOutboundHits %>;
-document.getElementById('totalHits').textContent = totalHits;
-document.getElementById('zeroHitsCount').textContent = zeroHits;
-document.getElementById('totalCarts').textContent = '<%= totalCarts %>';
-document.getElementById('prCount').textContent = '<%= prCount %>';
-document.getElementById('drCount').textContent = '<%= drCount %>';
-document.getElementById('dpgOutboundHits').textContent = dpgOutboundHits;
-
-const zeroHitsCard = document.getElementById('zeroHitsCard');
-if (zeroHits > 0) zeroHitsCard.classList.add('blink-zero-stat'); else zeroHitsCard.classList.remove('blink-zero-stat');
-
-const totalHitsCard = document.getElementById('totalHitsCard');
-if (totalHits === 0) totalHitsCard.classList.add('blink-zero-stat'); else totalHitsCard.classList.remove('blink-zero-stat');
-
-const dpgOutboundCard = document.getElementById('dpgOutboundCard');
-if (dpgOutboundHits === 0) dpgOutboundCard.classList.add('blink-zero-stat'); else dpgOutboundCard.classList.remove('blink-zero-stat');
-
-// ── Audio ──
-const audio = document.getElementById('alertSound');
+const totalHits = <%= inRes.totalHits %>;
+const zeroHits = <%= inRes.zeroHits %>;
+const outboundHits = <%= outRes.hits %>;
 let isMuted = <%= isMuted %>;
 let alertPlayed = false;
+
+const audio = document.getElementById('alertSound');
 audio.load();
+
 function checkAndPlayAlert() {
     if (totalHits === 0 && !isMuted && !alertPlayed) {
         audio.currentTime = 0;
-        audio.play().catch(e => console.log('Audio play failed:', e));
+        audio.play().catch(e => console.log('Audio failed:', e));
         alertPlayed = true;
         setTimeout(() => { alertPlayed = false; }, 5000);
     }
@@ -658,53 +735,41 @@ setInterval(checkAndPlayAlert, 3000);
 
 function toggleSqlBox() { document.getElementById('sqlBox').classList.toggle('show'); }
 
-function copySql(preId, msgId) {
-    const text = document.getElementById(preId).innerText;
+function copySql(id, msgId) {
+    const text = document.getElementById(id).innerText;
     navigator.clipboard.writeText(text).then(() => {
-        const msg = document.getElementById(msgId);
-        msg.style.display = 'inline';
-        setTimeout(() => { msg.style.display = 'none'; }, 2500);
+        const m = document.getElementById(msgId);
+        m.style.display = 'inline';
+        setTimeout(() => { m.style.display = 'none'; }, 2500);
     }).catch(() => {
         const range = document.createRange();
-        const pre = document.getElementById(preId);
-        range.selectNode(pre);
+        range.selectNode(document.getElementById(id));
         window.getSelection().removeAllRanges();
         window.getSelection().addRange(range);
         document.execCommand('copy');
-        const msg = document.getElementById(msgId);
-        msg.style.display = 'inline';
-        setTimeout(() => { msg.style.display = 'none'; }, 2500);
+        const m = document.getElementById(msgId);
+        m.style.display = 'inline';
+        setTimeout(() => { m.style.display = 'none'; }, 2500);
     });
 }
 
 function refreshPage() {
     const btn = document.getElementById('refreshBtn');
-    const svg = btn.querySelector('svg');
-    svg.classList.add('spin');
-    btn.disabled = true; btn.style.opacity = '0.6';
+    btn.querySelector('svg').classList.add('spin');
+    btn.disabled = true;
+    btn.style.opacity = '0.6';
     document.getElementById('mainForm').submit();
-    setTimeout(() => { svg.classList.remove('spin'); btn.disabled = false; btn.style.opacity = '1'; }, 3000);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    const from = document.getElementById('fromTime');
-    const to = document.getElementById('toTime');
-    if (!from.value) { const now = new Date(); from.value = new Date(now.getTime() - 10*60000).toISOString().slice(0,16); }
-    if (!to.value) { to.value = new Date().toISOString().slice(0,16); }
+    const f = document.getElementById('fromTime');
+    const t = document.getElementById('toTime');
+    if (!f.value) f.value = new Date(Date.now() - 10*60000).toISOString().slice(0,16);
+    if (!t.value) t.value = new Date().toISOString().slice(0,16);
 });
 
-document.querySelectorAll('.cart').forEach(card => {
-    card.addEventListener('mousemove', (e) => {
-        const rect = card.getBoundingClientRect();
-        const x = (e.clientX - rect.left) / rect.width - 0.5;
-        const y = (e.clientY - rect.top) / rect.height - 0.5;
-        card.style.transform = `perspective(1200px) rotateX(${y*5}deg) rotateY(${-x*5}deg) translateZ(10px)`;
-    });
-    card.addEventListener('mouseleave', () => { card.style.transform = 'perspective(1200px) rotateX(0deg) rotateY(0deg) translateZ(0px)'; });
-});
-
-console.log('DMZ DPG Monitoring — partition:', '<%= activePartition %>');
-console.log('Inbound:', totalHits, '| Outbound:', dpgOutboundHits, '| Zero carts:', zeroHits);
+console.log('⚡ Parallel execution — total:', <%= totalElapsed %> + 'ms');
+console.log('🔵 Inbound:', totalHits, '| 🟡 Outbound:', outboundHits);
 </script>
 </body>
 </html>
